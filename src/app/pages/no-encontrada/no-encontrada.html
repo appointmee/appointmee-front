@@ -11,5 +11,19 @@
     Intentaste abrir <code>{{ rutaOriginal }}</code>
   </p>
 
+  <form class="page404__buscar" role="search" aria-label="Buscar en AppointMee" (submit)="buscar($event)">
+    <input
+      type="search"
+      class="page404__buscar-input"
+      placeholder="Buscá lo que estabas buscando..."
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Buscar"
+      [value]="terminoBusqueda()"
+      (input)="actualizarTermino($event)"
+    />
+    <button class="page404__buscar-btn" type="submit">Buscar</button>
+  </form>
+
   <a class="page404__cta" routerLink="/">Ir al Home</a>
 </section>
