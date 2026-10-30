@@ -25,5 +25,15 @@
     <button class="page404__buscar-btn" type="submit">Buscar</button>
   </form>
 
+  @if (idSucursal) {
+    <a
+      class="page404__cta page404__cta--sucursal"
+      [routerLink]="['/']"
+      [queryParams]="{ busqueda: 'sucursal ' + idSucursal }"
+    >
+      Buscar la sucursal {{ idSucursal }}
+    </a>
+  }
+
   <a class="page404__cta" routerLink="/">Ir al Home</a>
 </section>

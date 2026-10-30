@@ -19,6 +19,30 @@ export class NotFoundPage {
   /** Ruta original del 404, sin query params. La barra de direcciones la conserva. */
   protected readonly rutaOriginal = this.router.url.split('?')[0];
 
+  /**
+   * Si la ruta parece un ID de sucursal (ej: `/123`, `/sucursal/123`),
+   * se ofrece la búsqueda de sucursales (criterio 5). No requiere sesión.
+   */
+  protected readonly idSucursal = this.detectarIdSucursal(this.rutaOriginal);
+
+  protected readonly terminoBusqueda = signal('');
+
+  private detectarIdSucursal(ruta: string): string | null {
+    const partes = ruta.split('/').filter(Boolean);
+
+    // Hay sucursal en juego si hay un segmento puramente numérico,
+    // sea directo (/123) o dentro de una ruta de sucursales (/sucursal/123).
+    const esSucursalDirecta = partes.length > 0 && /^\d+$/.test(partes[0]);
+    const esRutaDeSucursales = partes[0]?.toLowerCase().includes('sucursal') ?? false;
+
+    if (esRutaDeSucursales) {
+      const id = partes.find((parte) => /^\d+$/.test(parte));
+      return id ?? null;
+    }
+
+    return esSucursalDirecta ? partes[0] : null;
+  }
+
   protected readonly terminoBusqueda = signal('');
 
   protected actualizarTermino(event: Event): void {
