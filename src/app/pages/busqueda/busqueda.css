@@ -1,0 +1,88 @@
+.busqueda {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 680px;
+  min-height: calc(100dvh - var(--nav-h));
+  margin: 0 auto;
+  padding: 88px 24px 96px;
+}
+
+.busqueda__eyebrow {
+  display: inline-block;
+  padding: 6px 11px;
+  border: 1px solid rgba(247, 198, 90, 0.16);
+  border-radius: 999px;
+  background: rgba(247, 198, 90, 0.06);
+  color: #d9c690;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.busqueda__titulo {
+  margin: 20px 0 10px;
+  color: #f6f8fb;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.busqueda__detalle {
+  margin: 0;
+  color: #98a2b3;
+  font-size: 15.5px;
+}
+
+.busqueda__detalle strong {
+  color: #f6f8fb;
+  font-weight: 600;
+}
+
+.busqueda__card {
+  width: 100%;
+  max-width: 460px;
+  margin-top: 26px;
+  padding: 22px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.busqueda__card h2 {
+  margin: 0 0 6px;
+  color: #f6f8fb;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.busqueda__card p {
+  margin: 0;
+  color: #98a2b3;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.busqueda__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 26px;
+  color: #d9c690;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.busqueda__back svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.busqueda__back:hover {
+  color: #ffd77a;
+}

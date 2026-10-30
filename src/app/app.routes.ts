@@ -102,6 +102,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/section/section').then((module) => module.Section),
   },
   {
+    path: 'busqueda',
+    title: 'AppointMee | Búsqueda',
+    loadComponent: () =>
+      import('./pages/busqueda/busqueda').then((module) => module.BusquedaPage),
+  },
+  {
     path: '**',
     title: 'AppointMee | Página no encontrada',
     loadComponent: () =>

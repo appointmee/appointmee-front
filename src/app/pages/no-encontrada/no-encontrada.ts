@@ -75,7 +75,7 @@ export class NotFoundPage {
     this.terminoBusqueda.set((event.target as HTMLInputElement).value);
   }
 
-  /** Busca con lo que escribió el usuario: navega a la Home con la query `busqueda`. */
+  /** Busca con lo que escribió el usuario: endpoint de búsqueda `/busqueda?q=...`. */
   protected buscar(event: Event): void {
     event.preventDefault();
 
@@ -86,6 +86,6 @@ export class NotFoundPage {
       return;
     }
 
-    void this.router.navigate(['/'], { queryParams: { busqueda: termino } });
+    void this.router.navigate(['/busqueda'], { queryParams: { q: termino } });
   }
 }
