@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  afterNextRender,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink, Router } from '@angular/router';
 
 /**
@@ -14,7 +23,11 @@ import { RouterLink, Router } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NotFoundPage {
+  private readonly meta = inject(Meta);
+  private readonly title = inject(Title);
   private readonly router = inject(Router);
+
+  private readonly titulo = viewChild<ElementRef<HTMLHeadingElement>>('titulo');
 
   /** Ruta original del 404, sin query params. La barra de direcciones la conserva. */
   protected readonly rutaOriginal = this.router.url.split('?')[0];
@@ -41,6 +54,16 @@ export class NotFoundPage {
     }
 
     return esSucursalDirecta ? partes[0] : null;
+  }
+
+  constructor() {
+    // La página 404 no se indexa (criterio 7) y anuncia su título de pestaña.
+    this.meta.addTag({ name: 'robots', content: 'noindex, nofollow' });
+    this.title.setTitle('No encontramos esta página | AppointMee');
+
+    // El foco va al título para que lectores de pantalla y navegación por
+    // teclado sepan con qué página aterrizaron (criterio 8).
+    afterNextRender(() => this.titulo()?.nativeElement.focus());
   }
 
   protected readonly terminoBusqueda = signal('');

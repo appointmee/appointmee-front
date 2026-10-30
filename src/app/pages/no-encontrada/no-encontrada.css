@@ -41,6 +41,17 @@
   line-height: 1.1;
 }
 
+/* El título recibe el foco programático: indicador visible, sin hover seductor. */
+.page404__titulo:focus-visible {
+  outline: none;
+}
+
+.page404__titulo:focus {
+  outline: 3px solid rgba(247, 198, 90, 0.55);
+  outline-offset: 6px;
+  border-radius: 12px;
+}
+
 .page404__detalle {
   max-width: 460px;
   margin: 0;
