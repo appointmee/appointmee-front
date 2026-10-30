@@ -1,11 +1,79 @@
 .page404 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  min-height: calc(100dvh - var(--nav-h));
+  padding: 64px 24px 72px;
+}
+
+/* Halo de miel detrás de la tarjeta */
+.page404::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(
+    520px circle at 78% 26%,
+    rgba(247, 198, 90, 0.09),
+    transparent 65%
+  );
+  pointer-events: none;
+}
+
+/* ── La abeja perdida ─────────────────────────────────────────────────────
+   Decorativa (aria-hidden, sin alt): vaga por la esquina sin rumbo,
+   con pausas de reflexión. Respeta prefers-reduced-motion. */
+.page404__abeja {
+  position: absolute;
+  top: clamp(48px, 9vh, 92px);
+  right: clamp(28px, 12vw, 140px);
+  z-index: 1;
+  animation: abeja-perdida 17s ease-in-out infinite;
+  will-change: transform;
+}
+
+.page404__abeja img {
+  display: block;
+  width: clamp(30px, 5vw, 46px);
+  height: auto;
+  transform-origin: 50% 55%;
+  filter: drop-shadow(0 0 8px rgba(247, 198, 90, 0.45));
+  animation: abejear 2.4s ease-in-out infinite;
+}
+
+.page404__abeja-signo {
+  position: absolute;
+  top: -14px;
+  right: -10px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #17130a;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(247, 198, 90, 0.35);
+  animation: signo-reboton 17s ease-in-out infinite;
+}
+
+.page404__caja {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  max-width: 680px;
-  min-height: calc(100dvh - var(--nav-h));
-  margin: 0 auto;
-  padding: 88px 24px 96px;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 560px;
+  padding: 40px 44px 44px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(13, 17, 23, 0.92), rgba(13, 17, 23, 0.78));
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.5);
   animation: fade-up 0.5s var(--ease) both;
 }
 
@@ -24,24 +92,28 @@
 
 .page404__numero {
   margin: 18px 0 0;
-  color: rgba(247, 198, 90, 0.28);
+  background: linear-gradient(120deg, #ffe6a3, #f7c65a 48%, #a8750e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   font-family: var(--mono);
-  font-size: clamp(5rem, 18vw, 10rem);
+  font-size: clamp(4.6rem, 14vw, 7.5rem);
   font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.04em;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  filter: drop-shadow(0 12px 34px rgba(247, 198, 90, 0.16));
 }
 
 .page404__titulo {
-  margin: 6px 0 12px;
+  margin: 10px 0 12px;
   color: #f6f8fb;
-  font-size: clamp(1.9rem, 5vw, 2.9rem);
+  font-size: clamp(1.7rem, 4.6vw, 2.4rem);
   font-weight: 600;
   letter-spacing: -0.03em;
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
-/* El título recibe el foco programático: indicador visible, sin hover seductor. */
+/* El título recibe el foco programático: indicador visible. */
 .page404__titulo:focus-visible {
   outline: none;
 }
@@ -53,46 +125,29 @@
 }
 
 .page404__detalle {
-  max-width: 460px;
+  max-width: 430px;
   margin: 0;
   color: #98a2b3;
-  font-size: 15.5px;
+  font-size: 15px;
   line-height: 1.7;
 }
 
 .page404__url {
-  margin: 14px 0 0;
+  margin: 16px 0 0;
   color: #6f7a8c;
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
 .page404__url code {
-  padding: 3px 9px;
+  display: inline-block;
+  padding: 4px 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.04);
   color: #d9c690;
   font-family: var(--mono);
-  font-size: 12.5px;
+  font-size: 12px;
   word-break: break-all;
-}
-
-.page404__cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 28px;
-  padding: 11px 20px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: var(--accent-strong);
-  color: #17130a;
-  font-size: 14px;
-  font-weight: 700;
-  text-decoration: none;
-  transition:
-    background 0.2s,
-    transform 0.2s var(--ease);
 }
 
 .page404__buscar {
@@ -100,8 +155,7 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  max-width: 460px;
-  margin-top: 24px;
+  margin-top: 22px;
 }
 
 .page404__buscar-input {
@@ -117,6 +171,7 @@
   transition:
     border-color 0.2s,
     box-shadow 0.2s;
+  caret-color: var(--accent);
 }
 
 .page404__buscar-input:focus-visible {
@@ -147,8 +202,37 @@
   background: rgba(247, 198, 90, 0.08);
 }
 
+.page404__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.page404__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: #17130a;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    transform 0.2s var(--ease);
+}
+
+.page404__cta:hover {
+  background: #ffe6a3;
+  transform: translateY(-1px);
+}
+
 .page404__cta--sucursal {
-  margin-top: 14px;
   padding: 10px 18px;
   border: 1px solid rgba(247, 198, 90, 0.35);
   border-radius: 999px;
@@ -163,9 +247,74 @@
   transform: translateY(-1px);
 }
 
-.page404__cta:hover {
-  background: #ffe6a3;
-  transform: translateY(-1px);
+/* ── La abeja vaga: deriva con pausas, gira sin decidir y vuelve a arrancar ─ */
+@keyframes abeja-perdida {
+  0%,
+  7% {
+    transform: translate(0, 0) rotate(6deg);
+  }
+
+  16%,
+  24% {
+    transform: translate(-70px, 26px) rotate(-14deg);
+  }
+
+  33%,
+  41% {
+    transform: translate(-160px, -14px) rotate(10deg);
+  }
+
+  52%,
+  68% {
+    transform: translate(-88px, 44px) rotate(-8deg);
+  }
+
+  78%,
+  90% {
+    transform: translate(26px, 12px) rotate(12deg);
+  }
+
+  100% {
+    transform: translate(0, 0) rotate(6deg);
+  }
+}
+
+/* Aleteo nervioso de abejita sin rumbo */
+@keyframes abejear {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+
+  50% {
+    transform: translateY(-4px) rotate(5deg);
+  }
+}
+
+/* El signo de interrogación salta cuando dudA más fuerte */
+@keyframes signo-reboton {
+  0%,
+  6%,
+  30%,
+  40%,
+  72%,
+  86%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+
+  11%,
+  35%,
+  78% {
+    transform: translateY(-5px) scale(1.15);
+  }
+
+  50%,
+  64% {
+    opacity: 0.35;
+    transform: translateY(0) scale(0.9);
+  }
 }
 
 @keyframes fade-up {
@@ -177,5 +326,35 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .page404 {
+    padding: 48px 16px 64px;
+    align-items: flex-start;
+  }
+
+  .page404__abeja {
+    left: auto;
+    right: 18px;
+    top: 24px;
+  }
+
+  .page404__caja {
+    padding: 26px 22px 30px;
+    border-radius: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page404__abeja,
+  .page404__abeja img,
+  .page404__abeja-signo {
+    animation: none;
+  }
+
+  .page404__abeja-signo {
+    opacity: 1;
   }
 }

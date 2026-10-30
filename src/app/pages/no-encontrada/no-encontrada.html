@@ -1,39 +1,52 @@
 <section class="page404">
-  <span class="page404__eyebrow">AppointMee</span>
-  <p class="page404__numero" aria-hidden="true">404</p>
-  <h1 #titulo class="page404__titulo" tabindex="-1">No encontramos esta página</h1>
-  <p class="page404__detalle">
-    La dirección que intentaste abrir no existe o cambió. Podés volver a navegar
-    desde acá.
-  </p>
+  <div class="page404__abeja" aria-hidden="true">
+    <img src="appointmee-logo.png" alt="" width="46" height="46" />
+    <span class="page404__abeja-signo">?</span>
+  </div>
 
-  <p class="page404__url">
-    Intentaste abrir <code>{{ rutaOriginal }}</code>
-  </p>
+  <div class="page404__caja">
+    <span class="page404__eyebrow">AppointMee</span>
+    <p class="page404__numero">404</p>
+    <h1 #titulo class="page404__titulo" tabindex="-1">No encontramos esta página</h1>
+    <p class="page404__detalle">
+      Hasta nuestra abeja se perdió buscando esta dirección. Revisá el enlace o
+      volvé a la ruta correcta desde acá.
+    </p>
 
-  <form class="page404__buscar" role="search" aria-label="Buscar en AppointMee" (submit)="buscar($event)">
-    <input
-      type="search"
-      class="page404__buscar-input"
-      placeholder="Buscá lo que estabas buscando..."
-      autocomplete="off"
-      spellcheck="false"
-      aria-label="Buscar"
-      [value]="terminoBusqueda()"
-      (input)="actualizarTermino($event)"
-    />
-    <button class="page404__buscar-btn" type="submit">Buscar</button>
-  </form>
+    <p class="page404__url">
+      Intentaste abrir <code>{{ rutaOriginal }}</code>
+    </p>
 
-  @if (idSucursal) {
-    <a
-      class="page404__cta page404__cta--sucursal"
-      [routerLink]="['/busqueda']"
-      [queryParams]="{ q: 'sucursal ' + idSucursal }"
+    <form
+      class="page404__buscar"
+      role="search"
+      aria-label="Buscar en AppointMee"
+      (submit)="buscar($event)"
     >
-      Buscar la sucursal {{ idSucursal }}
-    </a>
-  }
+      <input
+        type="search"
+        class="page404__buscar-input"
+        placeholder="Buscá lo que estabas buscando..."
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Buscar"
+        [value]="terminoBusqueda()"
+        (input)="actualizarTermino($event)"
+      />
+      <button class="page404__buscar-btn" type="submit">Buscar</button>
+    </form>
 
-  <a class="page404__cta" routerLink="/">Ir al Home</a>
+    <div class="page404__acciones">
+      @if (idSucursal) {
+        <a
+          class="page404__cta page404__cta--sucursal"
+          [routerLink]="['/busqueda']"
+          [queryParams]="{ q: 'sucursal ' + idSucursal }"
+        >
+          Buscar la sucursal {{ idSucursal }}
+        </a>
+      }
+      <a class="page404__cta" routerLink="/">Ir al Home</a>
+    </div>
+  </div>
 </section>
