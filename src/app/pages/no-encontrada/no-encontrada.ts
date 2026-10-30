@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 /**
@@ -13,4 +13,9 @@ import { RouterLink } from '@angular/router';
   styleUrl: './no-encontrada.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NotFoundPage {}
+export class NotFoundPage {
+  private readonly router = inject(Router);
+
+  /** Ruta original del 404, sin query params. La barra de direcciones la conserva. */
+  protected readonly rutaOriginal = this.router.url.split('?')[0];
+}
