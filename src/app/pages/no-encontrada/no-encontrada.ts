@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink, Router } from '@angular/router';
+import { Reporte404 } from './reporte-404';
 
 /**
  * Vista 404 (US-ERR-04).
@@ -26,6 +27,7 @@ export class NotFoundPage {
   private readonly meta = inject(Meta);
   private readonly title = inject(Title);
   private readonly router = inject(Router);
+  private readonly reporte404 = inject(Reporte404);
 
   private readonly titulo = viewChild<ElementRef<HTMLHeadingElement>>('titulo');
 
@@ -57,6 +59,9 @@ export class NotFoundPage {
   }
 
   constructor() {
+    // Registro del 404 para detectar enlaces rotos (criterio 9).
+    this.reporte404.registrar(this.rutaOriginal, document.referrer || null);
+
     // La página 404 no se indexa (criterio 7) y anuncia su título de pestaña.
     this.meta.addTag({ name: 'robots', content: 'noindex, nofollow' });
     this.title.setTitle('No encontramos esta página | AppointMee');
@@ -65,8 +70,6 @@ export class NotFoundPage {
     // teclado sepan con qué página aterrizaron (criterio 8).
     afterNextRender(() => this.titulo()?.nativeElement.focus());
   }
-
-  protected readonly terminoBusqueda = signal('');
 
   protected actualizarTermino(event: Event): void {
     this.terminoBusqueda.set((event.target as HTMLInputElement).value);
