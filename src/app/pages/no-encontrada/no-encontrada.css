@@ -50,7 +50,25 @@
     radial-gradient(420px circle at -4% 6%, rgba(247, 198, 90, 0.18), transparent 70%),
     radial-gradient(540px circle at 104% 92%, rgba(58, 123, 213, 0.16), transparent 72%),
     radial-gradient(620px circle at 28% 30%, rgba(247, 198, 90, 0.09), transparent 68%);
+  animation: orbes-flotando 22s ease-in-out infinite;
+  will-change: transform;
   pointer-events: none;
+}
+
+/* Las luces de fondo vagan con vaivén lánguido: entran, respiran y vuelven. */
+@keyframes orbes-flotando {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(2.2%, -1.6%) scale(1.05);
+  }
+
+  66% {
+    transform: translate(-1.8%, 2.4%) scale(1.02);
+  }
 }
 
 /* El "Error 404" es el titular único de la página, como el 404 de GitHub. */
@@ -146,7 +164,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page404 {
+  .page404,
+  .page404::after {
     animation: none;
   }
 }
