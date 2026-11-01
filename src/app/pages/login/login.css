@@ -35,7 +35,7 @@
   margin-bottom: 16px;
 }
 
-.login__field span {
+.login__field label {
   color: var(--muted);
   font-size: 12px;
   font-weight: 600;
@@ -112,4 +112,64 @@
 
 .login__alt a:hover {
   text-decoration: underline;
+}
+
+.login__password {
+  position: relative;
+}
+
+.login__password input {
+  padding-right: 88px;
+}
+
+.login__toggle {
+  position: absolute;
+  inset: 4px 6px 4px auto;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 10px;
+  background: transparent;
+  color: var(--accent-strong);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.login__toggle:focus-visible,
+.login__retry:focus-visible,
+.login__forgot:focus-visible,
+.login__link:focus-visible,
+.login__submit:focus-visible,
+.login__alt a:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 3px;
+}
+
+.login__validation {
+  color: #ff9d9d;
+  font-size: 12.5px;
+}
+
+.login__validation p {
+  margin: 0;
+}
+
+.login__forgot,
+.login__retry,
+.login__link {
+  display: block;
+  margin: 16px 0;
+  color: var(--accent-strong);
+  text-align: center;
+  font: inherit;
+  font-size: 13px;
+}
+
+.login__retry {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
 }

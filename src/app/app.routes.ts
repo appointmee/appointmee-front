@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './guards/auth-guard';
+import { guestGuard } from './guards/guest-guard';
 
 export const routes: Routes = [
   {
@@ -13,7 +15,8 @@ export const routes: Routes = [
       title: 'Sucursales',
       description: 'Explorá las sucursales disponibles y encontrá la más cercana.',
     },
-    loadComponent: () => import('./pages/sucursales/sucursales').then((module) => module.Sucursales),
+    loadComponent: () =>
+      import('./pages/sucursales/sucursales').then((module) => module.Sucursales),
   },
   {
     path: 'listado-sucursales',
@@ -30,6 +33,7 @@ export const routes: Routes = [
   },
   {
     path: 'mis-turnos',
+    canActivate: [authGuard],
     title: 'AppointMee | Mis Turnos',
     data: {
       title: 'Mis Turnos',
@@ -39,15 +43,18 @@ export const routes: Routes = [
   },
   {
     path: 'mis-sucursales',
+    canActivate: [authGuard],
     title: 'AppointMee | Mis Sucursales',
     data: {
       title: 'Mis Sucursales',
+      roles: ['EMPLEADOR'],
       description: 'Explorá las sucursales disponibles y encontrá la más cercana.',
     },
     loadComponent: () => import('./pages/section/section').then((module) => module.Section),
   },
   {
     path: 'perfil',
+    canActivate: [authGuard],
     title: 'AppointMee | Mi Perfil',
     data: {
       title: 'Mi Perfil',
@@ -57,6 +64,7 @@ export const routes: Routes = [
   },
   {
     path: 'solicitudes',
+    canActivate: [authGuard],
     title: 'AppointMee | Solicitudes',
     data: {
       title: 'Solicitudes',
@@ -65,7 +73,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/section/section').then((module) => module.Section),
   },
   {
+    path: 'configuracion/verificar-email',
+    title: 'AppointMee | Verificar email',
+    data: { title: 'Verificar email', description: 'La verificación de email estará disponible próximamente.' },
+    loadComponent: () => import('./pages/section/section').then(module => module.Section),
+  },
+  {
     path: 'configuracion',
+    canActivate: [authGuard],
     title: 'AppointMee | Ajustes',
     data: {
       title: 'Ajustes',
@@ -80,8 +95,19 @@ export const routes: Routes = [
   },
   {
     path: 'login',
+    canActivate: [guestGuard],
     title: 'AppointMee | Iniciar sesión',
     loadComponent: () => import('./pages/login/login').then((module) => module.LoginPage),
+  },
+  {
+    path: 'olvide-mi-contrasena',
+    title: 'AppointMee | Recuperar contraseña',
+    loadComponent: () => import('./pages/forgot-password/forgot-password').then(module => module.ForgotPasswordPage),
+  },
+  {
+    path: 'verificar-email',
+    redirectTo: 'configuracion/verificar-email',
+    pathMatch: 'full',
   },
   {
     path: 'registrarme',
@@ -94,9 +120,11 @@ export const routes: Routes = [
   },
   {
     path: 'admin',
+    canActivate: [authGuard],
     title: 'AppointMee | Administración',
     data: {
       title: 'Administración',
+      roles: ['ADMINISTRADOR'],
       description: 'Panel interno disponible para usuarios con rol Administrador.',
     },
     loadComponent: () => import('./pages/section/section').then((module) => module.Section),

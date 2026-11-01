@@ -3,12 +3,12 @@ import {
   Component,
   HostListener,
   OnInit,
-  computed,
   inject,
   signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
+import { authService } from '../../services/auth-service';
 
 @Component({
   selector: 'app-home',
@@ -24,17 +24,7 @@ export class Home implements OnInit {
   private readonly scrolled = signal(false);
   private readonly currentYear = signal(new Date().getFullYear());
 
-  protected readonly isAuthenticated = computed(() => {
-    try {
-      if (typeof localStorage === 'undefined') {
-        return false;
-      }
-      const token = localStorage.getItem('token');
-      return !!token && token.trim().length > 0;
-    } catch {
-      return false;
-    }
-  });
+  protected readonly isAuthenticated = inject(authService).autenticado;
 
   @HostListener('window:scroll')
   protected onScroll(): void {
