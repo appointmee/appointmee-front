@@ -13,7 +13,8 @@ export const routes: Routes = [
       title: 'Sucursales',
       description: 'Explorá las sucursales disponibles y encontrá la más cercana.',
     },
-    loadComponent: () => import('./pages/sucursales/sucursales').then((module) => module.Sucursales),
+    loadComponent: () =>
+      import('./pages/sucursales/sucursales').then((module) => module.Sucursales),
   },
   {
     path: 'listado-sucursales',
@@ -100,12 +101,6 @@ export const routes: Routes = [
       description: 'Panel interno disponible para usuarios con rol Administrador.',
     },
     loadComponent: () => import('./pages/section/section').then((module) => module.Section),
-  },
-  {
-    path: 'busqueda',
-    title: 'AppointMee | Búsqueda',
-    loadComponent: () =>
-      import('./pages/busqueda/busqueda').then((module) => module.BusquedaPage),
   },
   {
     path: '**',
