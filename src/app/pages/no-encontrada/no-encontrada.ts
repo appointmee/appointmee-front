@@ -8,7 +8,6 @@ import {
 } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink, Router } from '@angular/router';
-import { Auth } from '../../auth/auth';
 import { Reporte404 } from './reporte-404';
 
 /**
@@ -28,7 +27,6 @@ export class NotFoundPage {
   private readonly title = inject(Title);
   private readonly router = inject(Router);
   private readonly reporte404 = inject(Reporte404);
-  private readonly auth = inject(Auth);
 
   private readonly titulo = viewChild<ElementRef<HTMLHeadingElement>>('titulo');
 
@@ -40,12 +38,6 @@ export class NotFoundPage {
    * se ofrece la búsqueda de sucursales (criterio 5). No requiere sesión.
    */
   protected readonly idSucursal = this.detectarIdSucursal(this.rutaOriginal);
-
-  /**
-   * Con sesión activa, la salida principal es la vista de sucursales (el hub
-   * al que también llega el navbar); sin sesión, el Home público.
-   */
-  protected readonly logueado = this.auth.autenticado;
 
   private detectarIdSucursal(ruta: string): string | null {
     const partes = ruta.split('/').filter(Boolean);
