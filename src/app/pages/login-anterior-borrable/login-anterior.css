@@ -1,0 +1,115 @@
+.login {
+  display: grid;
+  place-items: center;
+  min-height: calc(100dvh - var(--nav-h));
+  padding: 48px 16px;
+}
+
+.login__card {
+  width: min(100%, 420px);
+  padding: 32px 28px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+}
+
+.login__titulo {
+  margin: 0 0 6px;
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.login__sub {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+.login__field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+
+.login__field span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.login__field input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.login__field input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(247, 198, 90, 0.22);
+}
+
+.login__error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 138, 138, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 107, 107, 0.25);
+  color: #ff9d9d;
+  font-size: 12.5px;
+}
+
+.login__submit {
+  width: 100%;
+  padding: 12px 18px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: #17130a;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.2s var(--ease),
+    background 0.2s;
+}
+
+.login__submit:hover:not(:disabled) {
+  background: #ffe6a3;
+  transform: translateY(-1px);
+}
+
+.login__submit:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.login__alt {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.login__alt a {
+  color: var(--accent-strong);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login__alt a:hover {
+  text-decoration: underline;
+}

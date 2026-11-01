@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, RouterOutlet } from '@angular/router';
 import { ApiErrors, apiErrorInterceptor } from './http/api-errors';
-import { Auth } from './auth/auth';
+import { authService } from './services/auth-service';
 import { ErrorPage } from './pages/error/error';
 import { Home } from './pages/home/home';
 import { LoginPage } from './pages/login/login';
@@ -108,7 +108,7 @@ describe('US-ERR-03 recovery flows', () => {
   });
 
   it('takes a 401 through login and returns to the filtered source route', async () => {
-    TestBed.inject(Auth);
+    TestBed.inject(authService);
     localStorage.setItem('token', 'expired-token');
 
     const origin = '/sucursales?busqueda=Flores&categoria=CAFE';
