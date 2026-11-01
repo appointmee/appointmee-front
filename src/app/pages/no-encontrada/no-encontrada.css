@@ -113,14 +113,28 @@
   }
 }
 
-/* El "Error 404" es el titular único de la página, como el 404 de GitHub. */
+/* Rótulo del error, estilo GitHub: la cifra no domina, el mensaje es el titular. */
+.page404__etiqueta {
+  display: inline-block;
+  padding: 7px 12px;
+  border: 1px solid rgba(247, 198, 90, 0.16);
+  border-radius: 999px;
+  background: rgba(247, 198, 90, 0.06);
+  color: #d9c690;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* El mensaje es el titular y recibe el foco programático. */
 .page404__titulo {
-  margin: 0 0 14px;
+  margin: 22px 0 14px;
   color: #f6f8fb;
-  font-size: clamp(3.2rem, 9vw, 5.6rem);
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
   font-weight: 600;
   letter-spacing: -0.03em;
-  line-height: 1.05;
+  line-height: 1.08;
 }
 
 /* El título recibe el foco programático: indicador visible. */
