@@ -6,19 +6,21 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   width: 100%;
   min-height: calc(100dvh - var(--nav-h));
   padding: 88px 24px 96px;
   animation: fade-up 0.5s var(--ease) both;
 }
 
-/* Columna del contenido, centrada: el ancho de la página es del fondo. */
+/* Columna del contenido, centrada en ambos ejes: el ancho de la página es del fondo. */
 .page404__contenido {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  text-align: center;
   width: 100%;
-  max-width: 680px;
+  max-width: 760px;
   margin-inline: auto;
 }
 
@@ -47,15 +49,15 @@
   background:
     radial-gradient(420px circle at -4% 6%, rgba(247, 198, 90, 0.18), transparent 70%),
     radial-gradient(540px circle at 104% 92%, rgba(58, 123, 213, 0.16), transparent 72%),
-    radial-gradient(620px circle at 30% 14%, rgba(247, 198, 90, 0.09), transparent 68%);
+    radial-gradient(620px circle at 50% 26%, rgba(247, 198, 90, 0.09), transparent 68%);
   pointer-events: none;
 }
 
 /* El "Error 404" es el titular único de la página, como el 404 de GitHub. */
 .page404__titulo {
-  margin: 26px 0 14px;
+  margin: 0 0 14px;
   color: #f6f8fb;
-  font-size: clamp(2.8rem, 8vw, 4.6rem);
+  font-size: clamp(3.2rem, 9vw, 5.6rem);
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.05;
@@ -73,10 +75,10 @@
 }
 
 .page404__detalle {
-  max-width: 500px;
+  max-width: 620px;
   margin: 0;
   color: #98a2b3;
-  font-size: 17px;
+  font-size: 18.5px;
   line-height: 1.65;
 }
 
@@ -84,20 +86,21 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 12px;
-  margin-top: 26px;
+  margin-top: 30px;
 }
 
 .page404__cta {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 22px;
+  padding: 13px 26px;
   border: 1px solid transparent;
   border-radius: 999px;
   background: var(--accent-strong);
   color: #17130a;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   text-decoration: none;
   transition:
@@ -111,12 +114,12 @@
 }
 
 .page404__cta--sucursal {
-  padding: 11px 20px;
+  padding: 12px 24px;
   border: 1px solid rgba(247, 198, 90, 0.35);
   border-radius: 999px;
   background: rgba(247, 198, 90, 0.08);
   color: #ffd77a;
-  font-size: 14.5px;
+  font-size: 15.5px;
   font-weight: 600;
 }
 
