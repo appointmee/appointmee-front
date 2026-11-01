@@ -4,7 +4,6 @@ import {
   ElementRef,
   afterNextRender,
   inject,
-  signal,
   viewChild,
 } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
@@ -48,8 +47,6 @@ export class NotFoundPage {
    */
   protected readonly logueado = this.auth.autenticado;
 
-  protected readonly terminoBusqueda = signal('');
-
   private detectarIdSucursal(ruta: string): string | null {
     const partes = ruta.split('/').filter(Boolean);
 
@@ -77,24 +74,5 @@ export class NotFoundPage {
     // El foco va al título para que lectores de pantalla y navegación por
     // teclado sepan con qué página aterrizaron (criterio 8).
     afterNextRender(() => this.titulo()?.nativeElement.focus());
-  }
-
-  protected actualizarTermino(event: Event): void {
-    this.terminoBusqueda.set((event.target as HTMLInputElement).value);
-  }
-
-  /** Busca con lo que escribió el usuario: endpoint de búsqueda `/busqueda?q=...`. */
-  protected buscar(event: Event): void {
-    event.preventDefault();
-
-    const termino = this.terminoBusqueda().trim();
-
-    if (!termino) {
-      // Sin término, la misma salida que el CTA principal: hub según sesión.
-      void this.router.navigate(this.logueado() ? ['/sucursales'] : ['/']);
-      return;
-    }
-
-    void this.router.navigate(['/busqueda'], { queryParams: { q: termino } });
   }
 }
