@@ -41,33 +41,75 @@
   pointer-events: none;
 }
 
-.page404::after {
-  content: '';
+/* Orbes independientes del fondo (decorativos, aria-hidden): cada uno deriva
+   con dirección y velocidad propias, para que el fondo parezca vivo. */
+.page404__orb {
   position: absolute;
-  inset: 0;
   z-index: -1;
-  background:
-    radial-gradient(420px circle at -4% 6%, rgba(247, 198, 90, 0.18), transparent 70%),
-    radial-gradient(540px circle at 104% 92%, rgba(58, 123, 213, 0.16), transparent 72%),
-    radial-gradient(620px circle at 28% 30%, rgba(247, 198, 90, 0.09), transparent 68%);
-  animation: orbes-flotando 22s ease-in-out infinite;
-  will-change: transform;
   pointer-events: none;
+  will-change: transform;
 }
 
-/* Las luces de fondo vagan con vaivén lánguido: entran, respiran y vuelven. */
-@keyframes orbes-flotando {
+.page404__orb--miel {
+  top: -170px;
+  left: -190px;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(247, 198, 90, 0.2), transparent 70%);
+  animation: orbe-miel 26s ease-in-out infinite;
+}
+
+.page404__orb--azul {
+  right: -250px;
+  bottom: -230px;
+  width: 560px;
+  height: 560px;
+  background: radial-gradient(circle, rgba(58, 123, 213, 0.17), transparent 72%);
+  animation: orbe-azul 31s ease-in-out infinite;
+}
+
+/* Glow de miel detrás del titular (a la izquierda, donde empieza el texto). */
+.page404__orb--glow {
+  top: 22%;
+  left: -140px;
+  width: 640px;
+  height: 640px;
+  background: radial-gradient(circle, rgba(247, 198, 90, 0.1), transparent 68%);
+  animation: orbe-glow 19s ease-in-out infinite;
+}
+
+@keyframes orbe-miel {
   0%,
   100% {
     transform: translate(0, 0) scale(1);
   }
 
-  33% {
-    transform: translate(2.2%, -1.6%) scale(1.05);
+  50% {
+    transform: translate(6%, 5%) scale(1.07);
+  }
+}
+
+@keyframes orbe-azul {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
   }
 
-  66% {
-    transform: translate(-1.8%, 2.4%) scale(1.02);
+  50% {
+    transform: translate(-5%, -6%) scale(1.04);
+  }
+}
+
+@keyframes orbe-glow {
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translate(4%, -3%) scale(1.1);
   }
 }
 
@@ -165,7 +207,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .page404,
-  .page404::after {
+  .page404__orb {
     animation: none;
   }
 }
