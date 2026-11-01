@@ -1,13 +1,18 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   afterNextRender,
+  computed,
   inject,
+  signal,
   viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Meta, Title } from '@angular/platform-browser';
-import { RouterLink, Router } from '@angular/router';
+import { NavigationEnd, RouterLink, Router } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { Reporte404 } from './reporte-404';
 
 /**
@@ -27,18 +32,19 @@ export class NotFoundPage {
   private readonly title = inject(Title);
   private readonly router = inject(Router);
   private readonly reporte404 = inject(Reporte404);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly canGoBack = this.hasInternalHistory();
 
   private readonly titulo = viewChild<ElementRef<HTMLHeadingElement>>('titulo');
 
   /** Ruta original del 404, sin query params. La barra de direcciones la conserva. */
-  protected readonly rutaOriginal = this.router.url.split('?')[0];
+  protected readonly rutaOriginal = signal(this.router.url.split('?')[0]);
 
   /**
    * Si la ruta parece un ID de sucursal (ej: `/123`, `/sucursal/123`),
-   * se ofrece la búsqueda de sucursales (criterio 5). No requiere sesión.
+   * se ofrece abrir la ruta de la sucursal (criterio 5). No requiere sesión.
    */
-  protected readonly idSucursal = this.detectarIdSucursal(this.rutaOriginal);
+  protected readonly idSucursal = computed(() => this.detectarIdSucursal(this.rutaOriginal()));
 
   protected goBack(): void {
     if (this.canGoBack) history.back();
@@ -67,11 +73,23 @@ export class NotFoundPage {
 
   constructor() {
     // Registro del 404 para detectar enlaces rotos (criterio 9).
-    this.reporte404.registrar(this.rutaOriginal, document.referrer || null);
+    this.reporte404.registrar(this.rutaOriginal(), document.referrer || null);
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((event) => {
+        const ruta = event.urlAfterRedirects.split('?')[0];
+        if (ruta === this.rutaOriginal()) return;
+        this.rutaOriginal.set(ruta);
+        this.reporte404.registrar(ruta, document.referrer || null);
+      });
 
     // La página 404 no se indexa (criterio 7) y anuncia su título de pestaña.
     this.meta.addTag({ name: 'robots', content: 'noindex, nofollow' });
     this.title.setTitle('No encontramos esta página | AppointMee');
+    this.destroyRef.onDestroy(() => this.meta.removeTag('name="robots"'));
 
     // El foco va al título para que lectores de pantalla y navegación por
     // teclado sepan con qué página aterrizaron (criterio 8).

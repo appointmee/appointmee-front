@@ -11,20 +11,20 @@
     <p class="page404__detalle">Revisá el enlace o volvé a la ruta correcta desde acá.</p>
 
     <p class="page404__url">
-      Intentaste abrir <code>{{ rutaOriginal }}</code>
+      Intentaste abrir <code>{{ rutaOriginal() }}</code>
     </p>
 
     <div class="page404__acciones">
-      @if (idSucursal) {
+      @if (idSucursal()) {
         <a
           class="page404__cta page404__cta--sucursal"
-          [routerLink]="['/sucursales']"
-          [queryParams]="{ busqueda: 'sucursal ' + idSucursal }"
+          [routerLink]="['/sucursal', idSucursal()]"
         >
-          Buscar la sucursal {{ idSucursal }}
+          Abrir la sucursal {{ idSucursal() }}
         </a>
       }
       <button class="page404__cta" type="button" (click)="goBack()">Volver</button>
+      <a class="page404__cta" routerLink="/">Ir al Home</a>
     </div>
   </div>
 </section>
