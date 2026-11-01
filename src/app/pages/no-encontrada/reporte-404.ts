@@ -3,8 +3,10 @@ import { Injectable } from '@angular/core';
 /**
  * Registro del 404 para observabilidad (criterio 9 de US-ERR-04).
  *
- * Registra los detalles mínimos de la ruta en la consola del navegador.
- * Para observabilidad centralizada hace falta conectar un proveedor frontend.
+ * Registra los detalles mínimos de la ruta en consola. En Vercel, Web Analytics
+ * también captura visitas y referrers por URL; esa vista de rutas funciona en
+ * todos los planes. Los eventos personalizados de 404 requieren un plan Pro o
+ * Enterprise y no están habilitados en el proyecto.
  */
 @Injectable({ providedIn: 'root' })
 export class Reporte404 {
