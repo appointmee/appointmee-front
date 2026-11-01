@@ -5,11 +5,6 @@
 @if (apiErrors.notice(); as notice) {
   <aside class="api-notice" role="alert">
     <p>{{ notice.error.message }}</p>
-    @if (notice.retry) {
-      <button type="button" [disabled]="notice.retrying" (click)="notice.retry?.()">
-        {{ notice.retrying ? 'Reintentando…' : 'Reintentar' }}
-      </button>
-    }
     @if (notice.error.status === 403 || notice.error.status === 404) {
       <a routerLink="/">Ir al inicio</a>
     }

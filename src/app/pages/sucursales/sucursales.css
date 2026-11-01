@@ -363,6 +363,20 @@
   text-decoration: underline;
 }
 
+button.estado__link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+button.estado__link:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
 @keyframes card-in {
   to {
     opacity: 1;
