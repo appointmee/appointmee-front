@@ -103,6 +103,8 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: '',
+    title: 'AppointMee | Página no encontrada',
+    loadComponent: () =>
+      import('./pages/no-encontrada/no-encontrada').then((module) => module.NotFoundPage),
   },
 ];

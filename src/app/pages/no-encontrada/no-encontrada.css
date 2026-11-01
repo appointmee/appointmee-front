@@ -1,0 +1,251 @@
+/* Página 404 integrada: el fondo ocupa todo el ancho disponible (como el hero
+   del Home); el contenido queda en su columna propia, sin caja flotante. */
+.page404 {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  min-height: calc(100dvh - var(--nav-h));
+  padding: 88px 24px 96px;
+  animation: fade-up 0.5s var(--ease) both;
+}
+
+/* Contenido en su columna, pegado a la izquierda (start), centrado verticalmente:
+   el ancho y alto de la página quedan para el fondo. */
+.page404__contenido {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+/* Fondo en capas, a puro lenguaje del Home: grilla del hero (US-HOME-02)
+   más presente y orbes de miel/azul como los del hero, con un resplandor
+   suave detrás del titular. */
+.page404::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: radial-gradient(circle at 50% 22%, #000 0%, transparent 85%);
+  -webkit-mask-image: radial-gradient(circle at 50% 22%, #000 0%, transparent 85%);
+  pointer-events: none;
+}
+
+/* Orbes independientes del fondo (decorativos, aria-hidden): cada uno deriva
+   con dirección y velocidad propias, para que el fondo parezca vivo. */
+.page404__orb {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.page404__orb--miel {
+  top: -170px;
+  left: -190px;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(247, 198, 90, 0.2), transparent 70%);
+  animation: orbe-miel 26s ease-in-out infinite;
+}
+
+.page404__orb--azul {
+  right: -250px;
+  bottom: -230px;
+  width: 560px;
+  height: 560px;
+  background: radial-gradient(circle, rgba(58, 123, 213, 0.17), transparent 72%);
+  animation: orbe-azul 31s ease-in-out infinite;
+}
+
+/* Glow de miel detrás del titular (a la izquierda, donde empieza el texto). */
+.page404__orb--glow {
+  top: 22%;
+  left: -140px;
+  width: 640px;
+  height: 640px;
+  background: radial-gradient(circle, rgba(247, 198, 90, 0.1), transparent 68%);
+  animation: orbe-glow 19s ease-in-out infinite;
+}
+
+@keyframes orbe-miel {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(6%, 5%) scale(1.07);
+  }
+}
+
+@keyframes orbe-azul {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-5%, -6%) scale(1.04);
+  }
+}
+
+@keyframes orbe-glow {
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translate(4%, -3%) scale(1.1);
+  }
+}
+
+/* Código del error destacado, sin tratarlo como una etiqueta. */
+.page404__etiqueta {
+  display: block;
+  color: #f7c65a;
+  font-family: var(--mono);
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* El mensaje es el titular y recibe el foco programático. */
+.page404__titulo {
+  margin: 22px 0 14px;
+  color: #f6f8fb;
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+}
+
+/* El título recibe el foco programático: indicador visible. */
+.page404__titulo:focus-visible {
+  outline: none;
+}
+
+.page404__titulo:focus {
+  outline: 3px solid rgba(247, 198, 90, 0.55);
+  outline-offset: 6px;
+  border-radius: 12px;
+}
+
+.page404__detalle {
+  max-width: 620px;
+  margin: 0;
+  color: #98a2b3;
+  font-size: 18.5px;
+  line-height: 1.65;
+}
+
+.page404__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+/* La URL original impresa de forma discreta, para corregirla a la vista. */
+.page404__url {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: #596273;
+  font-size: 12px;
+}
+
+.page404__url code {
+  padding: 0;
+  color: #788294;
+  font-family: var(--mono);
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.page404__busqueda { display: grid; gap: 10px; width: min(100%, 520px); margin-top: 22px; color: #98a2b3; font-size: 14px; }
+.page404__busqueda > div { display: flex; gap: 10px; }
+.page404__busqueda input { flex: 1; min-width: 0; padding: 13px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; }
+.page404__busqueda input:focus-visible, .page404__busqueda button:focus-visible, .page404__cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.page404__busqueda button { padding: 0 20px; border: 0; border-radius: 12px; background: var(--accent); color: #17130a; font: 600 14px var(--font); cursor: pointer; }
+.page404__busqueda button:disabled { cursor: not-allowed; opacity: .55; }
+
+.page404__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: #17130a;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    transform 0.2s var(--ease);
+}
+
+.page404__cta:hover {
+  background: #ffe6a3;
+  transform: translateY(-1px);
+}
+
+.page404__cta--sucursal {
+  padding: 12px 24px;
+  border: 1px solid rgba(247, 198, 90, 0.35);
+  border-radius: 999px;
+  background: rgba(247, 198, 90, 0.08);
+  color: #ffd77a;
+  font-size: 15.5px;
+  font-weight: 600;
+}
+
+.page404__cta--sucursal:hover {
+  background: rgba(247, 198, 90, 0.14);
+  transform: translateY(-1px);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .page404 {
+    padding: 56px 16px 72px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page404,
+  .page404__orb {
+    animation: none;
+  }
+}
