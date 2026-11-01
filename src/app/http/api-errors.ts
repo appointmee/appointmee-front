@@ -100,7 +100,7 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
         const returnTo = router.url.startsWith('/error') ? '/' : router.url;
         void router.navigate(['/error'], {
           state: { status: cause.status, errorReference: error.reference, returnTo },
-          replaceUrl: router.url.startsWith('/error'),
+          replaceUrl: true,
         });
       } else if (![0, 403, 404, 409, 429, 500, 502, 503].includes(cause.status)) {
         // Los errores de operaciones que pueden modificar datos se quedan en
@@ -108,7 +108,10 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
         if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
           errors.notice.set({ error });
         } else {
-          void router.navigate(['/error'], { state: { status: cause.status, errorReference: error.reference } });
+          void router.navigate(['/error'], {
+            state: { status: cause.status, errorReference: error.reference },
+            replaceUrl: true,
+          });
         }
       } else {
         errors.notice.set({ error });
