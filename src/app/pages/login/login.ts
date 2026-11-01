@@ -3,6 +3,7 @@ import { FormField, email, form, required } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { CuentaSinVerificarModal } from '../../components/cuenta-sin-verificar-modal/cuenta-sin-verificar-modal';
+import { verificacionPendienteService } from '../../services/verificacion-pendiente-service';
 import { LoginModel } from '../../models/auth';
 import { ApiError } from '../../http/api-errors-service';
 import { authService } from '../../services/auth-service';
@@ -20,6 +21,7 @@ export class LoginPage {
   private auth = inject(authService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private pendiente = inject(verificacionPendienteService);
 
 
   loginModel = signal<LoginModel>({
@@ -89,14 +91,23 @@ export class LoginPage {
   irAVerificar(): void {
     this.modalVerificacion.set(false);
 
-    void this.router.navigate(['/configuracion/verificar-email'], {
-      queryParams: { email: this.loginModel().email },
-    });
+    void this.router.navigate(['/configuracion/verificar-email']);
+  }
+
+
+  cancelarVerificacion(): void {
+    this.pendiente.limpiar();
+    this.modalVerificacion.set(false);
   }
 
 
   private mostrarError(error: ApiError): void {
     if (error.code === 'EMAIL_NOT_VERIFIED') {
+      if (!error.verificationToken) {
+        this.mensaje.set('No pudimos continuar la verificación. Volvé a intentar.');
+        return;
+      }
+      this.pendiente.guardarEmail(this.loginModel().email, error.verificationToken, error.verificationExpiresIn ?? 900);
       this.emailSinVerificar.set(true);
       this.modalVerificacion.set(true);
       this.mensaje.set('Tu cuenta todavía no está verificada. Verificá tu email para iniciar sesión.');

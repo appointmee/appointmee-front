@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
+import { verificacionPendienteService } from '../services/verificacion-pendiente-service';
 import { authService } from '../services/auth-service';
 import { backendService } from '../services/backend-service';
 import { apiErrorInterceptor } from '../http/api-errors-service';
@@ -169,5 +170,55 @@ describe('Autenticación e interceptor', () => {
     rechazar(`${API_URL}/publico`);
     backend.expectNone(`${API_URL}/auth/refresh`);
     expect(router.url).toBe('/');
+  });
+  it('los métodos de verificación son públicos y usan el contrato del backend', () => {
+    sesion();
+    TestBed.inject(verificacionPendienteService).guardarEmail('ana@example.com', 'ticket-prueba');
+    auth.solicitarVerificacion('ana@example.com').subscribe();
+    const envio = backend.expectOne(`${API_URL}/auth/send-verification`);
+    expect(envio.request.method).toBe('POST');
+    expect(envio.request.body).toEqual({ email: 'ana@example.com', reenviar: true });
+    expect(envio.request.headers.get('X-Verification-Token')).toBe('ticket-prueba');
+    expect(envio.request.headers.has('Authorization')).toBe(false);
+    envio.flush({ verificada: false, enviado: true, enviadoAhora: true, retryAfterSeconds: 15, attemptsRemaining: 5, expiresInSeconds: 300 }, { status: 202, statusText: 'Accepted' });
+    auth.verificarEmail('ana@example.com', '012345').subscribe();
+    const confirmacion = backend.expectOne(`${API_URL}/auth/verify-email`);
+    expect(confirmacion.request.body).toEqual({ email: 'ana@example.com', codigo: '012345' });
+    expect(confirmacion.request.headers.has('Authorization')).toBe(false);
+    confirmacion.flush({ ...tokens, accessToken: tokens.token, message: 'Email verificado', usuario: perfil });
+    expect(auth.autenticado()).toBe(true);
+    expect(auth.perfil()?.email).toBe('ana@example.com');
+    expect(localStorage.getItem('refreshToken')).toBe('refresh-nuevo');
+  });
+
+  it('recupera una confirmación aplicada si se perdió su respuesta, sin decir código inválido', () => {
+    const pending = TestBed.inject(verificacionPendienteService); pending.guardarEmail('ana@example.com', 'ticket');
+    let exito = false;
+    auth.verificarEmail('ana@example.com', '012345').subscribe(() => { exito = true; });
+    backend.expectOne(`${API_URL}/auth/verify-email`).error(new ProgressEvent('error'));
+    const status = backend.expectOne(`${API_URL}/auth/verification-status`);
+    expect(status.request.headers.get('X-Verification-Token')).toBe('ticket');
+    expect(status.request.body).toEqual({ email: 'ana@example.com' });
+    status.flush({ verificada: true, enviado: false, enviadoAhora: false, retryAfterSeconds: 0, attemptsRemaining: 0, expiresInSeconds: 0 });
+    expect(auth.autenticado()).toBe(false);
+    backend.expectOne(`${API_URL}/auth/complete-verification`).flush({ ...tokens, accessToken: tokens.token, message: 'ok', usuario: perfil });
+    expect(exito).toBe(true); expect(auth.autenticado()).toBe(true);
+  });
+
+  it('una respuesta incompleta no guarda tokens ni marca autenticación antes de recuperarla', () => {
+    TestBed.inject(verificacionPendienteService).guardarEmail('ana@example.com', 'ticket');
+    auth.verificarEmail('ana@example.com', '012345').subscribe({ error: () => undefined });
+    backend.expectOne(`${API_URL}/auth/verify-email`).flush({ message: 'ok' });
+    expect(localStorage.getItem('token')).toBeNull(); expect(auth.autenticado()).toBe(false);
+    backend.expectOne(`${API_URL}/auth/verification-status`).flush({ verificada: false, enviado: true, enviadoAhora: false, retryAfterSeconds: 10, attemptsRemaining: 5, expiresInSeconds: 250 });
+    expect(auth.autenticado()).toBe(false); backend.expectNone(`${API_URL}/auth/complete-verification`);
+  });
+
+  it('cancelar mientras verifica no revive una sesión al llegar una respuesta tardía', () => {
+    const pending = TestBed.inject(verificacionPendienteService); pending.guardarEmail('ana@example.com', 'ticket');
+    auth.verificarEmail('ana@example.com', '012345').subscribe({ error: () => undefined });
+    pending.limpiar();
+    backend.expectOne(`${API_URL}/auth/verify-email`).flush({ ...tokens, accessToken: tokens.token, message: 'ok', usuario: perfil });
+    expect(auth.autenticado()).toBe(false); expect(localStorage.getItem('token')).toBeNull();
   });
 });

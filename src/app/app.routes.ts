@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth-guard';
+import { verificationGuard } from './guards/verification-guard';
 import { guestGuard } from './guards/guest-guard';
 
 export const routes: Routes = [
@@ -74,19 +75,15 @@ export const routes: Routes = [
   },
   {
     path: 'configuracion/verificar-email',
-    title: 'AppointMee | Verificar email',
-    data: { title: 'Verificar email', description: 'La verificación de email estará disponible próximamente.' },
-    loadComponent: () => import('./pages/section/section').then(module => module.Section),
+    canActivate: [verificationGuard],
+    title: 'AppointMee | Ajustes · Verificar cuenta',
+    loadComponent: () => import('./pages/configuracion/configuracion').then(module => module.Configuracion),
   },
   {
     path: 'configuracion',
     canActivate: [authGuard],
     title: 'AppointMee | Ajustes',
-    data: {
-      title: 'Ajustes',
-      description: 'Personalizá tus preferencias y la forma en que usás AppointMee.',
-    },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () => import('./pages/configuracion/configuracion').then(module => module.Configuracion),
   },
   {
     path: 'error',
