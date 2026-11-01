@@ -1,18 +1,25 @@
-/* Página 404 integrada: misma estructura de página que busqueda/section:
-   una columna propia, sin caja flotante ni modal por encima del contenido. */
+/* Página 404 integrada: el fondo ocupa todo el ancho disponible (como el hero
+   del Home); el contenido queda en su columna propia, sin caja flotante. */
 .page404 {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-height: calc(100dvh - var(--nav-h));
+  padding: 88px 24px 96px;
+  animation: fade-up 0.5s var(--ease) both;
+}
+
+/* Columna del contenido, centrada: el ancho de la página es del fondo. */
+.page404__contenido {
+  display: flex;
+  flex-direction: column;
   align-items: flex-start;
   width: 100%;
   max-width: 680px;
-  min-height: calc(100dvh - var(--nav-h));
-  margin: 0 auto;
-  padding: 88px 24px 96px;
-  animation: fade-up 0.5s var(--ease) both;
+  margin-inline: auto;
 }
 
 /* Fondo en capas, a puro lenguaje del Home: grilla del hero (US-HOME-02)

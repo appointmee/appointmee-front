@@ -1,24 +1,26 @@
 <section class="page404">
-  <h1 #titulo class="page404__titulo" tabindex="-1">Error 404</h1>
+  <div class="page404__contenido">
+    <h1 #titulo class="page404__titulo" tabindex="-1">Error 404</h1>
 
-  <p class="page404__detalle">
-    No encontramos esta página. Revisá el enlace o volvé a la ruta correcta desde acá.
-  </p>
+    <p class="page404__detalle">
+      No encontramos esta página. Revisá el enlace o volvé a la ruta correcta desde acá.
+    </p>
 
-  <div class="page404__acciones">
-    @if (idSucursal) {
-      <a
-        class="page404__cta page404__cta--sucursal"
-        [routerLink]="['/busqueda']"
-        [queryParams]="{ q: 'sucursal ' + idSucursal }"
-      >
-        Buscar la sucursal {{ idSucursal }}
-      </a>
-    }
-    @if (logueado()) {
-      <a class="page404__cta" routerLink="/sucursales">Ir a sucursales</a>
-    } @else {
-      <a class="page404__cta" routerLink="/">Ir al Home</a>
-    }
+    <div class="page404__acciones">
+      @if (idSucursal) {
+        <a
+          class="page404__cta page404__cta--sucursal"
+          [routerLink]="['/busqueda']"
+          [queryParams]="{ q: 'sucursal ' + idSucursal }"
+        >
+          Buscar la sucursal {{ idSucursal }}
+        </a>
+      }
+      @if (logueado()) {
+        <a class="page404__cta" routerLink="/sucursales">Ir a sucursales</a>
+      } @else {
+        <a class="page404__cta" routerLink="/">Ir al Home</a>
+      }
+    </div>
   </div>
 </section>
