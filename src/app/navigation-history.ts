@@ -25,8 +25,10 @@ export class NavigationHistory {
   }
 
   backTarget(skipUrl?: string): string | null {
+    const currentUrl = this.entries.at(-1)?.url;
     for (let index = this.entries.length - 2; index >= 0; index--) {
-      if (!skipUrl || this.entries[index].url !== skipUrl) return this.entries[index].url;
+      const candidate = this.entries[index].url;
+      if (candidate !== currentUrl && (!skipUrl || candidate !== skipUrl)) return candidate;
     }
     return null;
   }
