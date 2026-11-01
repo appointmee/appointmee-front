@@ -35,4 +35,15 @@ describe('NotFoundPage', () => {
     expect(router.url.split('?')[0]).toBe('/sucursales');
     expect(router.parseUrl(router.url).queryParams['busqueda']).toBe('Flores');
   });
+
+  it('offers both Home and a safe fallback from Volver when there is no internal route', async () => {
+    const fixture = TestBed.createComponent(NotFoundPage);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('a[routerLink="/"]')?.textContent).toContain('Ir al Home');
+
+    element.querySelector<HTMLButtonElement>('.page404__acciones button')!.click();
+    await fixture.whenStable();
+    expect(TestBed.inject(Router).url).toBe('/');
+  });
 });
