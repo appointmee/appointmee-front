@@ -25,12 +25,12 @@ export const routes: Routes = [
   },
   {
     path: 'sucursal/:id',
+    canActivate: [authGuard],
     title: 'AppointMee | Sucursal',
-    data: {
-      title: 'Sucursal',
-      description: 'Detalle de la sucursal seleccionada.',
-    },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () =>
+      import('./pages/sucursal-detalle/sucursal-detalle').then(
+        (module) => module.SucursalDetalle,
+      ),
   },
   {
     path: 'mis-turnos',

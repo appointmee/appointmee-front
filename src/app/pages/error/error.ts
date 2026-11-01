@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, viewChild } from '@angular/core';
 import { Meta } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 
 const SAFE_REFERENCE = /^[A-Za-z0-9_-]{1,40}$/;
+
+export type ErrorPageVariant = 'default' | 'sucursal-no-encontrada';
 
 @Component({
   selector: 'app-error-page',
@@ -21,6 +23,24 @@ export class ErrorPage {
 
   protected readonly reference = this.safeReference(this.state['errorReference']);
   protected readonly canGoBack = this.hasInternalHistory();
+
+  /**
+   * Permite reutilizar esta pantalla desde otras vistas (por ejemplo el detalle
+   * de sucursal) sin duplicar el diseño de error existente.
+   */
+  readonly variant = input<ErrorPageVariant>('default');
+
+  protected readonly heading = computed(() =>
+    this.variant() === 'sucursal-no-encontrada'
+      ? 'No encontramos esta sucursal'
+      : 'Algo salió mal',
+  );
+
+  protected readonly description = computed(() =>
+    this.variant() === 'sucursal-no-encontrada'
+      ? 'La sucursal que buscás no existe o ya no está disponible. Volvé al listado para elegir otra.'
+      : 'No pudimos completar tu solicitud. Podés volver a intentarlo o continuar desde el inicio.',
+  );
 
   constructor() {
     this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
