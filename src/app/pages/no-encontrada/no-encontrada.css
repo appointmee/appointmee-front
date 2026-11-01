@@ -12,40 +12,14 @@
   animation: fade-up 0.5s var(--ease) both;
 }
 
-.page404__eyebrow {
-  display: inline-block;
-  padding: 6px 11px;
-  border: 1px solid rgba(247, 198, 90, 0.16);
-  border-radius: 999px;
-  background: rgba(247, 198, 90, 0.06);
-  color: #d9c690;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-/* El 404 gigante se integra al flujo de la página, no flota por arriba. */
-.page404__numero {
-  margin: 24px 0 0;
-  background: linear-gradient(120deg, #ffe6a3, #f7c65a 48%, #a8750e);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  font-family: var(--mono);
-  font-size: clamp(4.2rem, 13vw, 6.8rem);
-  font-weight: 600;
-  line-height: 0.95;
-  letter-spacing: -0.05em;
-}
-
+/* El "Error 404" es el titular único de la página, como el 404 de GitHub. */
 .page404__titulo {
-  margin: 10px 0 12px;
+  margin: 14px 0 10px;
   color: #f6f8fb;
-  font-size: clamp(1.7rem, 4.6vw, 2.4rem);
+  font-size: clamp(2.4rem, 7vw, 3.6rem);
   font-weight: 600;
   letter-spacing: -0.03em;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 
 /* El título recibe el foco programático: indicador visible. */
