@@ -2,35 +2,43 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
-  computed,
   inject,
   signal,
 } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Auth } from '../../auth/auth';
+import { BranchCategory } from '../../models/branch';
+import { BranchSearch } from '../../services/branch-search';
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Home {
+  private readonly auth = inject(Auth);
+  protected readonly branchSearch = inject(BranchSearch);
   private readonly mobileOpen = signal(false);
   private readonly scrolled = signal(false);
   private readonly currentYear = signal(new Date().getFullYear());
 
-  protected readonly isAuthenticated = computed(() => {
-    try {
-      if (typeof localStorage === 'undefined') {
-        return false;
-      }
-      const token = localStorage.getItem('token');
-      return !!token && token.trim().length > 0;
-    } catch {
-      return false;
-    }
-  });
+  protected readonly isAuthenticated = this.auth.autenticado;
+
+  protected submitSearch(event: Event): void {
+    event.preventDefault();
+    this.branchSearch.submit();
+  }
+
+  protected selectCategory(category: BranchCategory | null): void {
+    this.branchSearch.selectCategory(category);
+  }
+
+  protected imageError(event: Event): void {
+    (event.target as HTMLImageElement).hidden = true;
+  }
 
   @HostListener('window:scroll')
   protected onScroll(): void {

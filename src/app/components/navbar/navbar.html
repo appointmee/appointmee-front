@@ -44,15 +44,13 @@
           #searchInput
           class="search__input"
           type="search"
-          placeholder="Buscá tu próximo turno..."
+          placeholder="Buscar sucursal por nombre..."
           autocomplete="off"
           spellcheck="false"
-          [value]="searchTerm()"
-          (input)="updateSearch($event)"
-          (keydown.enter)="submitSearch($event)"
-          aria-label="Buscar turnos"
+          [formControl]="branchSearch.search"
+          aria-label="Buscar sucursales por nombre"
         />
-        @if (searchTerm()) {
+        @if (branchSearch.term()) {
           <button
             class="search__clear"
             type="button"

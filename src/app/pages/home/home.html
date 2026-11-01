@@ -76,6 +76,41 @@
         <p class="hero__subtitle reveal" style="--delay: 0.16s">
           AppointMee es una plataforma diseñada para conectar clientes con establecimientos y facilitar la gestión de turnos de manera simple, rápida y organizada.
         </p>
+        <form
+          class="branch-search reveal"
+          role="search"
+          aria-label="Buscar sucursales"
+          style="--delay: 0.2s"
+          (submit)="submitSearch($event)"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m21 21-4.4-4.4M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
+          </svg>
+          <label class="sr-only" for="branch-search">Buscar sucursal por nombre</label>
+          <input
+            id="branch-search"
+            type="search"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Nombre de la sucursal..."
+            [formControl]="branchSearch.search"
+          />
+          @if (branchSearch.term()) {
+            <button
+              class="branch-search__clear"
+              type="button"
+              (click)="branchSearch.clear()"
+              aria-label="Limpiar búsqueda"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m6 6 12 12M18 6 6 18" />
+              </svg>
+            </button>
+          }
+        </form>
+        @if (branchSearch.termTooShort()) {
+          <p class="branch-search__hint">Ingresá al menos 2 caracteres para buscar.</p>
+        }
         <div class="hero__actions reveal" style="--delay: 0.24s">
           <a class="landing-btn landing-btn--primary landing-btn--lg" routerLink="/login">
             Crear cuenta
@@ -138,6 +173,109 @@
             <span>Turno confirmado</span>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section branches" aria-labelledby="branches-title">
+    <div class="section__inner branches__inner">
+      <div class="section__header branches__header">
+        <span class="eyebrow">
+          <span class="eyebrow__dot"></span>
+          Explorar
+        </span>
+        <h2 id="branches-title" class="section__title">Sucursales disponibles</h2>
+        <p class="section__lead">Encontrá el lugar indicado y compará sus valoraciones.</p>
+      </div>
+
+      <div class="branch-filters" role="group" aria-label="Filtrar por categoría">
+        <button
+          type="button"
+          class="branch-filter"
+          [class.branch-filter--active]="branchSearch.selectedCategory() === null"
+          [attr.aria-pressed]="branchSearch.selectedCategory() === null"
+          (click)="selectCategory(null)"
+        >
+          Todas
+        </button>
+        @for (category of branchSearch.categories(); track category) {
+          <button
+            type="button"
+            class="branch-filter"
+            [class.branch-filter--active]="branchSearch.selectedCategory() === category"
+            [attr.aria-pressed]="branchSearch.selectedCategory() === category"
+            (click)="selectCategory(category)"
+          >
+            {{ branchSearch.categoryLabel(category) }}
+          </button>
+        }
+      </div>
+
+      <div class="branch-results" [attr.aria-busy]="branchSearch.loading()">
+        <p class="branch-results__summary" role="status" aria-live="polite" aria-atomic="true">
+          @if (!branchSearch.loading() && !branchSearch.error()) {
+            {{ branchSearch.branches().length }}
+            {{ branchSearch.branches().length === 1 ? 'sucursal encontrada' : 'sucursales encontradas' }}
+            @if (branchSearch.appliedTerm()) {
+              para “{{ branchSearch.appliedTerm() }}”
+            }
+          }
+        </p>
+
+        @if (branchSearch.loading()) {
+          <div class="branch-state branch-state--loading">
+            <span class="branch-loader" aria-hidden="true"></span>
+            <p>Buscando sucursales...</p>
+          </div>
+        } @else if (branchSearch.error()) {
+          <div class="branch-state branch-state--error" role="alert">
+            <strong>No pudimos completar la búsqueda</strong>
+            <p>{{ branchSearch.error() }}</p>
+            <button type="button" class="branch-action" (click)="branchSearch.retry()">
+              Reintentar
+            </button>
+          </div>
+        } @else if (branchSearch.branches().length === 0) {
+          <div class="branch-state">
+            <strong>No se encontraron sucursales</strong>
+            @if (branchSearch.appliedTerm()) {
+              <p>No encontramos resultados para “{{ branchSearch.appliedTerm() }}”.</p>
+            } @else {
+              <p>No hay sucursales disponibles para esta categoría.</p>
+            }
+            <button type="button" class="branch-action" (click)="branchSearch.clearFilters()">
+              Limpiar búsqueda
+            </button>
+          </div>
+        } @else {
+          <div class="branch-grid">
+            @for (branch of branchSearch.branches(); track branch.id) {
+              <article class="branch-card">
+                <div class="branch-card__media">
+                  @if (branch.fotoPerfil) {
+                    <img [src]="branch.fotoPerfil" alt="" (error)="imageError($event)" />
+                  }
+                  <span>{{ branchSearch.categoryLabel(branch.categoria) }}</span>
+                </div>
+                <div class="branch-card__body">
+                  <h3>{{ branch.nombre }}</h3>
+                  @if (branch.puntuacion !== null) {
+                    <span
+                      class="branch-rating"
+                      [attr.aria-label]="branch.puntuacion + ' de 5 estrellas, ' + branch.cantidadPuntuaciones + ' valoraciones'"
+                    >
+                      <span aria-hidden="true">★</span>
+                      {{ branch.puntuacion.toFixed(1) }}
+                      <small>({{ branch.cantidadPuntuaciones }})</small>
+                    </span>
+                  } @else {
+                    <span class="branch-rating branch-rating--empty">Sin reseñas</span>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        }
       </div>
     </div>
   </section>
