@@ -1,0 +1,31 @@
+<section class="page404">
+  <div class="page404__orb page404__orb--miel" aria-hidden="true"></div>
+  <div class="page404__orb page404__orb--azul" aria-hidden="true"></div>
+  <div class="page404__orb page404__orb--glow" aria-hidden="true"></div>
+
+  <div class="page404__contenido">
+    <span class="page404__etiqueta">Error 404</span>
+
+    <h1 #titulo class="page404__titulo" tabindex="-1">No encontramos esta página</h1>
+
+    <p class="page404__detalle">Revisá el enlace o volvé a la ruta correcta desde acá.</p>
+
+    <p class="page404__url">
+      Intentaste abrir <code>{{ rutaOriginal() }}</code>
+    </p>
+
+    <div class="page404__acciones">
+      @if (idSucursal()) {
+        <a
+          class="page404__cta page404__cta--sucursal"
+          [routerLink]="['/sucursales']"
+          [queryParams]="{ busqueda: idSucursal() }"
+        >
+          Buscar la sucursal {{ idSucursal() }}
+        </a>
+      }
+      <button class="page404__cta" type="button" (click)="goBack()">Volver</button>
+      <a class="page404__cta" routerLink="/">Ir al Home</a>
+    </div>
+  </div>
+</section>
