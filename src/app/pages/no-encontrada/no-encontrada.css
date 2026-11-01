@@ -164,6 +164,27 @@
   margin-top: 30px;
 }
 
+/* La URL original impresa de forma discreta, para corregirla a la vista. */
+.page404__url {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: #6f7a8c;
+  font-size: 13px;
+}
+
+.page404__url code {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #d9c690;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  word-break: break-all;
+}
+
 .page404__cta {
   display: inline-flex;
   align-items: center;
