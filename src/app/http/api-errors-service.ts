@@ -8,7 +8,11 @@ export interface ApiError {
   readonly message: string;
   readonly fields: Readonly<Record<string, string>>;
   readonly reference: string;
-  readonly code?: 'EMAIL_NOT_VERIFIED';
+  readonly code?: 'EMAIL_NOT_VERIFIED' | 'EMAIL_ALREADY_VERIFIED' | 'VERIFICATION_CODE_INVALID'
+    | 'VERIFICATION_CODE_EXPIRED' | 'VERIFICATION_ATTEMPTS_EXCEEDED' | 'VERIFICATION_SESSION_FAILED';
+  readonly verificationToken?: string;
+  readonly verificationExpiresIn?: number;
+  readonly attemptsRemaining?: number;
   readonly retryAfterSeconds?: number;
 }
 
@@ -51,14 +55,22 @@ export class apiErrorsService {
         : (SAFE_MESSAGES[response.status] ??
           'Ocurrió un error inesperado. Volvé al inicio e intentá nuevamente.');
 
-    const code = conflictCode === 'EMAIL_NOT_VERIFIED' ? 'EMAIL_NOT_VERIFIED' : undefined;
-    const retryAfter = response.headers.get('Retry-After');
+    const permitidos = ['EMAIL_NOT_VERIFIED', 'EMAIL_ALREADY_VERIFIED', 'VERIFICATION_CODE_INVALID',
+      'VERIFICATION_CODE_EXPIRED', 'VERIFICATION_ATTEMPTS_EXCEEDED'];
+    const code = permitidos.includes(String(conflictCode)) ? conflictCode as ApiError['code'] : undefined;
+    const verificationToken = code === 'EMAIL_NOT_VERIFIED' && response.status === 403
+      && typeof response.error?.verificationToken === 'string' ? response.error.verificationToken : undefined;
+    const verificationExpiresIn = Number.isFinite(response.error?.verificationExpiresIn)
+      ? response.error.verificationExpiresIn : undefined;
+    const attemptsRemaining = Number.isInteger(response.error?.attemptsRemaining)
+      ? response.error.attemptsRemaining : undefined;
+    const retryAfter = response.headers.get('Retry-After') ?? (Number.isFinite(response.error?.retryAfterSeconds) ? String(response.error.retryAfterSeconds) : null);
     const seconds = retryAfter && /^\d+$/.test(retryAfter)
       ? Number(retryAfter)
       : retryAfter ? Math.ceil((Date.parse(retryAfter) - Date.now()) / 1000) : 0;
     const retryAfterSeconds = Number.isFinite(seconds) && seconds > 0 ? seconds : undefined;
 
-    return { status: response.status, message, fields, reference, code, retryAfterSeconds };
+    return { status: response.status, message, fields, reference, code, retryAfterSeconds, verificationToken, verificationExpiresIn, attemptsRemaining };
   }
 
   dismiss(): void {

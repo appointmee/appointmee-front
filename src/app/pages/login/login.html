@@ -52,12 +52,11 @@
     </div>
 
     @if (emailSinVerificar()) {
-      <a class="login__link" routerLink="/configuracion/verificar-email" [queryParams]="{ email: loginModel().email }">
-        Verificar mi email
-      </a>
+      <button class="login__link" type="button" (click)="irAVerificar()">Verificar mi email</button>
     }
 
     <button class="login__submit" type="submit" [disabled]="cargando()">
+      @if (cargando()) { <span class="login__spinner" aria-hidden="true"></span> }
       {{ cargando() ? 'Ingresando…' : 'Iniciar sesión' }}
     </button>
 
@@ -65,8 +64,7 @@
       <button class="login__retry" type="submit" [disabled]="cargando()">Reintentar</button>
     }
 
-    <a class="login__forgot" routerLink="/olvide-mi-contrasena"
-       [queryParams]="{ email: loginModel().email }">Olvidé mi contraseña</a>
+    <a class="login__forgot" routerLink="/olvide-mi-contrasena">Olvidé mi contraseña</a>
 
     <p class="login__alt">¿No tenés cuenta? <a routerLink="/registrarme">Crear cuenta</a></p>
   </form>
@@ -76,5 +74,5 @@
   <app-cuenta-sin-verificar-modal
     [email]="loginModel().email"
     (aceptar)="irAVerificar()"
-    (cancelar)="modalVerificacion.set(false)" />
+    (cancelar)="cancelarVerificacion()" />
 }

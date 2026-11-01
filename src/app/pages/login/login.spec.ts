@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { Subject, of } from 'rxjs';
 import { LoginPage } from './login';
+import { verificacionPendienteService } from '../../services/verificacion-pendiente-service';
 import { authService } from '../../services/auth-service';
 
 describe('Login con Signal Forms', () => {
@@ -11,6 +12,7 @@ describe('Login con Signal Forms', () => {
 
   beforeEach(async () => {
     vi.resetAllMocks();
+    sessionStorage.clear();
     // JSDOM does not implement native dialog methods; browser supplies focus trapping.
     Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
       configurable: true,
@@ -55,6 +57,7 @@ describe('Login con Signal Forms', () => {
     expect(auth.login).toHaveBeenCalledTimes(1);
     const button = fixture.nativeElement.querySelector('.login__submit') as HTMLButtonElement;
     expect(button.disabled).toBe(true); expect(button.textContent).toContain('Ingresando');
+    expect(button.querySelector('.login__spinner')).not.toBeNull();
   });
 
   it('ante 401 conserva email, borra contraseña y la enfoca', () => {
@@ -78,10 +81,10 @@ describe('Login con Signal Forms', () => {
 
   it('muestra el caso sin verificar y precarga el email del enlace', () => {
     const response = new Subject<void>(); auth.login.mockReturnValue(response);
-    completar(); enviar(); response.error({ status: 403, code: 'EMAIL_NOT_VERIFIED' }); fixture.detectChanges();
-    const link = fixture.nativeElement.querySelector('.login__link') as HTMLAnchorElement;
-    expect(new URL(link.href).searchParams.get('email')).toBe('ana@example.com');
-    expect(new URL(link.href).pathname).toBe('/configuracion/verificar-email');
+    completar(); enviar(); response.error({ status: 403, code: 'EMAIL_NOT_VERIFIED', verificationToken: 'ticket-prueba' }); fixture.detectChanges();
+    const link = fixture.nativeElement.querySelector('.login__link') as HTMLButtonElement;
+    expect(link.type).toBe('button');
+    expect(link.getAttribute('href')).toBeNull();
     expect(fixture.nativeElement.querySelector('app-cuenta-sin-verificar-modal')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Tu cuenta todavía no está verificada');
   });
@@ -89,21 +92,24 @@ describe('Login con Signal Forms', () => {
   it('aceptar el modal abre configuración de verificación con el email', () => {
     const response = new Subject<void>(); auth.login.mockReturnValue(response);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
-    completar(); enviar(); response.error({ status: 403, code: 'EMAIL_NOT_VERIFIED' }); fixture.detectChanges();
+    completar(); enviar(); response.error({ status: 403, code: 'EMAIL_NOT_VERIFIED', verificationToken: 'ticket-prueba' }); fixture.detectChanges();
     fixture.nativeElement.querySelector('.verificacion-modal__aceptar').click(); fixture.detectChanges();
-    expect(navigate).toHaveBeenCalledWith(['/configuracion/verificar-email'], { queryParams: { email: 'ana@example.com' } });
+    expect(navigate).toHaveBeenCalledWith(['/configuracion/verificar-email']);
+    expect(TestBed.inject(verificacionPendienteService).leer()?.email).toBe('ana@example.com');
     expect(page.modalVerificacion()).toBe(false);
   });
 
   it('cancelar o Escape cierran el modal sin navegar', () => {
     const response = new Subject<void>(); auth.login.mockReturnValue(response);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
-    completar(); enviar(); response.error({ status: 403, code: 'EMAIL_NOT_VERIFIED' }); fixture.detectChanges();
+    completar(); enviar(); response.error({ status: 403, code: 'EMAIL_NOT_VERIFIED', verificationToken: 'ticket-prueba' }); fixture.detectChanges();
+    TestBed.inject(verificacionPendienteService).guardarEmail('ana@example.com', 'ticket-prueba');
     fixture.nativeElement.querySelector('.verificacion-modal__cancelar').click(); fixture.detectChanges();
     expect(page.modalVerificacion()).toBe(false);
     page.modalVerificacion.set(true); fixture.detectChanges();
     fixture.nativeElement.querySelector('dialog').dispatchEvent(new Event('cancel')); fixture.detectChanges();
     expect(page.modalVerificacion()).toBe(false); expect(navigate).not.toHaveBeenCalled();
+    expect(TestBed.inject(verificacionPendienteService).leer()).toBeNull();
   });
 
   it('muestra espera cuando recibe 429', () => {
