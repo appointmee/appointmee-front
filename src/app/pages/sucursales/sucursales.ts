@@ -15,6 +15,7 @@ import { catchError, debounceTime, distinctUntilChanged, startWith, switchMap, t
 
 import { SucursalService } from '../../services/sucursal.service';
 import { SucursalMiniDTO } from '../../models/sucursal.model';
+import { ApiErrors } from '../../http/api-errors';
 
 @Component({
   selector: 'app-sucursales',
@@ -25,6 +26,7 @@ import { SucursalMiniDTO } from '../../models/sucursal.model';
 })
 export class Sucursales {
   private readonly service = inject(SucursalService);
+  private readonly apiErrors = inject(ApiErrors);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -42,8 +44,12 @@ export class Sucursales {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly requiereLogin = signal(false);
+  /** True mientras un reintento está en vuelo: bloquea dobles clics (US-ERR-03). */
+  protected readonly reintentando = signal(false);
 
   private readonly searchSubject = new Subject<string>();
+  /** Re-emitido al presionar "Reintentar": re-ejecuta la consulta fallida tal como estaba. */
+  private readonly reintento = new Subject<void>();
 
   constructor() {
     const search$ = this.searchSubject.pipe(
@@ -52,8 +58,9 @@ export class Sucursales {
       startWith(this.searchTerm()),
     );
     const category$ = toObservable(this.selectedCategory);
+    const reintento$ = this.reintento.pipe(startWith(undefined as void));
 
-    combineLatest([search$, category$])
+    combineLatest([search$, category$, reintento$])
       .pipe(
         tap(() => {
           this.loading.set(true);
@@ -63,6 +70,9 @@ export class Sucursales {
         switchMap(([nombre, categoria]) =>
           this.service.filtrar(categoria, nombre).pipe(
             catchError((err: HttpErrorResponse) => {
+              // Este listado presenta el error en contexto y ofrece su propio
+              // reintento, que conserva búsqueda y categoría sin duplicar avisos.
+              this.apiErrors.dismiss();
               if (err.status === 401) {
                 this.error.set('Necesitás iniciar sesión para ver las sucursales.');
                 this.requiereLogin.set(true);
@@ -82,6 +92,9 @@ export class Sucursales {
       .subscribe((lista) => {
         this.sucursales.set(lista ?? []);
         this.loading.set(false);
+        // Tanto el reintento exitoso como el fallido pasan por acá: el botón
+        // vuelve a estar disponible sólo después de tener veredicto (US-ERR-03).
+        this.reintentando.set(false);
       });
 
     this.service
@@ -124,6 +137,12 @@ export class Sucursales {
 
   protected selectCategory(categoria: string | null): void {
     this.selectedCategory.set(categoria);
+  }
+
+  protected retry(): void {
+    if (this.reintentando()) return;
+    this.reintentando.set(true);
+    this.reintento.next();
   }
 
   protected onImageError(event: Event): void {

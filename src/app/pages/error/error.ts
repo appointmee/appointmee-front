@@ -39,8 +39,8 @@ export class ErrorPage {
   }
 
   private hasInternalHistory(): boolean {
-    const referrer = document.referrer;
-    return history.length > 1 && (!referrer || new URL(referrer).origin === location.origin);
+    const previous = this.navigation?.previousNavigation;
+    return !!previous && this.router.serializeUrl(previous.finalUrl ?? previous.extractedUrl).startsWith('/');
   }
 
   private logErrorView(): void {

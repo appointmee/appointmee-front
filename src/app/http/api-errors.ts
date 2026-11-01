@@ -90,15 +90,15 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
     const error = errors.map(cause);
     const isLogin = request.url.includes('/usuarios/inicio-sesion');
 
-    if (cause.status === 401 && !isLogin && request.headers.has('Authorization')) {
+    if (cause.status === 401 && !isLogin) {
       auth.cerrarSesion();
-      const returnTo = router.url === '/error' ? '/' : router.url;
+      const returnTo = router.url.startsWith('/login') || router.url.startsWith('/error') ? '/' : router.url;
       void router.navigate(['/login'], { queryParams: { returnTo, expired: '1' } });
     } else if (cause.status !== 400 && cause.status !== 422 && !isLogin) {
       if (![0, 403, 404, 409, 429, 500, 502, 503].includes(cause.status)) {
         void router.navigate(['/error'], { state: { status: cause.status, errorReference: error.reference } });
       } else {
-        const canRetry = [500, 502, 503].includes(cause.status);
+        const canRetry = request.method === 'GET' && [500, 502, 503].includes(cause.status);
         const retry: (() => void) | undefined = canRetry ? () => {
           const current = errors.notice();
           if (current?.retrying) return;
