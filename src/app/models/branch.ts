@@ -14,7 +14,10 @@ export const BRANCH_CATEGORIES = [
   'DEPILACION',
 ] as const;
 
-export type BranchCategory = (typeof BRANCH_CATEGORIES)[number];
+export type KnownBranchCategory = (typeof BRANCH_CATEGORIES)[number];
+
+// The API may add enum values before this frontend is redeployed.
+export type BranchCategory = string;
 
 export interface BranchSummary {
   readonly id: number;

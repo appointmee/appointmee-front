@@ -16,10 +16,10 @@ import {
   tap,
 } from 'rxjs';
 import {
-  BRANCH_CATEGORIES,
   BranchCategory,
   BranchFilters,
   BranchSummary,
+  KnownBranchCategory,
 } from '../models/branch';
 import { BranchService } from './branch.service';
 
@@ -34,6 +34,24 @@ interface SearchFailure {
 }
 
 type SearchResult = SearchSuccess | SearchFailure;
+
+type CategoriesStatus = 'idle' | 'loading' | 'loaded' | 'error';
+
+const CATEGORY_LABELS: Record<KnownBranchCategory, string> = {
+  PELUQUERIA: 'Peluquería',
+  SPA: 'Spa',
+  VETERINARIA: 'Veterinaria',
+  ODONTOLOGIA: 'Odontología',
+  PODOLOGIA: 'Podología',
+  TATUAJE: 'Tatuaje',
+  MANICURA: 'Manicura',
+  BARBERIA: 'Barbería',
+  PELUQUERIA_CANINA: 'Peluquería canina',
+  FOTOGRAFIA: 'Fotografía',
+  OCULISTA: 'Oculista',
+  MASAJE: 'Masaje',
+  DEPILACION: 'Depilación',
+};
 
 function normalizeTerm(value: string): string {
   return value.trim();
@@ -51,8 +69,18 @@ function isValidTerm(value: string): boolean {
   return term.length === 0 || term.length >= 2;
 }
 
-function isBranchCategory(value: string | null): value is BranchCategory {
-  return !!value && (BRANCH_CATEGORIES as readonly string[]).includes(value);
+function categoryLabel(category: BranchCategory): string {
+  const knownLabel = CATEGORY_LABELS[category as KnownBranchCategory];
+  if (knownLabel) {
+    return knownLabel;
+  }
+
+  const label = category.trim().replaceAll('_', ' ').toLocaleLowerCase('es');
+  return label ? `${label.charAt(0).toLocaleUpperCase('es')}${label.slice(1)}` : category;
+}
+
+function filtersKey(filters: BranchFilters): string {
+  return `${comparisonKey(filters.nombre ?? '')}|${filters.categoria ?? ''}`;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -64,12 +92,16 @@ export class BranchSearch {
   private readonly requested = new Subject<BranchFilters>();
   private readonly retried = new Subject<void>();
   private currentFilters: BranchFilters = {};
-  private categoriesRequested = false;
+  private categoriesStatus: CategoriesStatus = 'idle';
+  private pendingCategoryValidation = false;
   private pendingTermKey: string | null = null;
+  private lastRequestedFiltersKey: string | null = null;
 
   readonly search = new FormControl('', { nonNullable: true });
   readonly branches = signal<readonly BranchSummary[]>([]);
-  readonly categories = signal<readonly BranchCategory[]>(BRANCH_CATEGORIES);
+  readonly categories = signal<readonly BranchCategory[]>([]);
+  readonly categoriesLoading = signal(false);
+  readonly categoriesError = signal<string | null>(null);
   readonly selectedCategory = signal<BranchCategory | null>(null);
   readonly appliedTerm = signal('');
   readonly loading = signal(false);
@@ -78,6 +110,10 @@ export class BranchSearch {
   readonly termTooShort = computed(() => {
     const term = normalizeTerm(this.term());
     return term.length === 1;
+  });
+  readonly resultCountLabel = computed(() => {
+    const count = this.branches().length;
+    return `${count} ${count === 1 ? 'sucursal' : 'sucursales'}`;
   });
 
   constructor() {
@@ -88,11 +124,7 @@ export class BranchSearch {
       ),
       this.submitted,
     )
-      .pipe(
-        map(normalizeTerm),
-        filter(isValidTerm),
-        takeUntilDestroyed(),
-      )
+      .pipe(map(normalizeTerm), filter(isValidTerm), takeUntilDestroyed())
       .subscribe((term) => this.navigateToSearch(term));
 
     this.router.events
@@ -102,10 +134,7 @@ export class BranchSearch {
       )
       .subscribe(() => this.restoreFromUrl());
 
-    merge(
-      this.requested,
-      this.retried.pipe(map(() => this.currentFilters)),
-    )
+    merge(this.requested, this.retried.pipe(map(() => this.currentFilters)))
       .pipe(
         switchMap((filters) =>
           defer(() => {
@@ -171,9 +200,26 @@ export class BranchSearch {
     this.retried.next();
   }
 
+  retryCategories(): void {
+    if (this.categoriesStatus === 'loading') {
+      return;
+    }
+
+    const category = this.categoryFromUrl();
+    this.categoriesStatus = 'idle';
+    this.categoriesError.set(null);
+    this.pendingCategoryValidation = !!category;
+
+    if (category) {
+      this.loading.set(true);
+      this.error.set(null);
+    }
+
+    this.loadCategories();
+  }
+
   categoryLabel(category: BranchCategory): string {
-    const label = category.replaceAll('_', ' ').toLocaleLowerCase('es');
-    return `${label.charAt(0).toLocaleUpperCase('es')}${label.slice(1)}`;
+    return categoryLabel(category);
   }
 
   private navigateToSearch(term: string): void {
@@ -206,36 +252,101 @@ export class BranchSearch {
 
     const queryTerm = normalizeTerm(tree.queryParams['busqueda'] ?? '');
     const term = isValidTerm(queryTerm) ? queryTerm : '';
-    const categoryParam = tree.queryParams['categoria'] ?? null;
-    const category = isBranchCategory(categoryParam) ? categoryParam : null;
+    const category = this.categoryFromUrl();
 
     this.pendingTermKey = null;
     this.search.setValue(queryTerm, { emitEvent: false });
     this.term.set(queryTerm);
     this.appliedTerm.set(term);
+
+    if (category && (this.categoriesStatus === 'idle' || this.categoriesStatus === 'loading')) {
+      this.selectedCategory.set(category);
+      this.loading.set(true);
+      this.error.set(null);
+      this.pendingCategoryValidation = true;
+      this.loadCategories();
+      return;
+    }
+
+    this.loadCategories();
+
+    if (category && this.categoriesStatus === 'loaded' && !this.categories().includes(category)) {
+      this.selectedCategory.set(null);
+      this.loading.set(true);
+      this.error.set(null);
+      void this.router.navigate([], {
+        queryParams: { categoria: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+      return;
+    }
+
+    this.applyFilters(term, category);
+  }
+
+  private loadCategories(): void {
+    if (this.categoriesStatus !== 'idle') {
+      return;
+    }
+
+    this.categoriesStatus = 'loading';
+    this.categoriesLoading.set(true);
+    this.branchService
+      .getCategories()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (categories) => {
+          this.categories.set([
+            ...new Set(
+              categories.filter((category) => typeof category === 'string' && category.trim()),
+            ),
+          ]);
+          this.categoriesStatus = 'loaded';
+          this.categoriesLoading.set(false);
+          this.resumePendingCategoryValidation();
+        },
+        error: () => {
+          this.categories.set([]);
+          this.categoriesStatus = 'error';
+          this.categoriesLoading.set(false);
+          this.categoriesError.set(
+            'No pudimos cargar las categorías. Podés seguir usando el listado.',
+          );
+          this.resumePendingCategoryValidation();
+        },
+      });
+  }
+
+  private resumePendingCategoryValidation(): void {
+    if (!this.pendingCategoryValidation) {
+      return;
+    }
+
+    this.pendingCategoryValidation = false;
+    this.restoreFromUrl();
+  }
+
+  private applyFilters(term: string, category: BranchCategory | null): void {
     this.selectedCategory.set(category);
     this.currentFilters = {
       ...(term ? { nombre: term } : {}),
       ...(category ? { categoria: category } : {}),
     };
 
-    this.loadCategories();
-    this.requested.next(this.currentFilters);
-  }
-
-  private loadCategories(): void {
-    if (this.categoriesRequested) {
+    const key = filtersKey(this.currentFilters);
+    if (key === this.lastRequestedFiltersKey) {
+      this.loading.set(false);
       return;
     }
 
-    this.categoriesRequested = true;
-    this.branchService
-      .getCategories()
-      .pipe(
-        catchError(() => of(BRANCH_CATEGORIES)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((categories) => this.categories.set(categories));
+    this.lastRequestedFiltersKey = key;
+    this.requested.next(this.currentFilters);
+  }
+
+  private categoryFromUrl(): BranchCategory | null {
+    const value = this.router.parseUrl(this.router.url).queryParams['categoria'];
+    return typeof value === 'string' && value.trim() ? value : null;
   }
 
   private errorMessage(error: unknown): string {

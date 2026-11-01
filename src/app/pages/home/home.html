@@ -188,7 +188,12 @@
         <p class="section__lead">Encontrá el lugar indicado y compará sus valoraciones.</p>
       </div>
 
-      <div class="branch-filters" role="group" aria-label="Filtrar por categoría">
+      <div
+        class="branch-filters"
+        role="group"
+        aria-label="Filtrar por categoría"
+        [attr.aria-busy]="branchSearch.categoriesLoading()"
+      >
         <button
           type="button"
           class="branch-filter"
@@ -196,6 +201,9 @@
           [attr.aria-pressed]="branchSearch.selectedCategory() === null"
           (click)="selectCategory(null)"
         >
+          <span class="branch-filter__indicator" aria-hidden="true">
+            <svg viewBox="0 0 16 16"><path d="m3 8 3 3 7-7" /></svg>
+          </span>
           Todas
         </button>
         @for (category of branchSearch.categories(); track category) {
@@ -206,24 +214,30 @@
             [attr.aria-pressed]="branchSearch.selectedCategory() === category"
             (click)="selectCategory(category)"
           >
+            <span class="branch-filter__indicator" aria-hidden="true">
+              <svg viewBox="0 0 16 16"><path d="m3 8 3 3 7-7" /></svg>
+            </span>
             {{ branchSearch.categoryLabel(category) }}
           </button>
         }
       </div>
 
+      @if (branchSearch.categoriesError()) {
+        <div class="branch-filters__notice" role="status">
+          <span>{{ branchSearch.categoriesError() }}</span>
+          <button type="button" (click)="branchSearch.retryCategories()">Reintentar</button>
+        </div>
+      }
+
       <div class="branch-results" [attr.aria-busy]="branchSearch.loading()">
         <p class="branch-results__summary" role="status" aria-live="polite" aria-atomic="true">
           @if (!branchSearch.loading() && !branchSearch.error()) {
-            {{ branchSearch.branches().length }}
-            {{ branchSearch.branches().length === 1 ? 'sucursal encontrada' : 'sucursales encontradas' }}
-            @if (branchSearch.appliedTerm()) {
-              para “{{ branchSearch.appliedTerm() }}”
-            }
+            {{ branchSearch.resultCountLabel() }}
           }
         </p>
 
         @if (branchSearch.loading()) {
-          <div class="branch-state branch-state--loading">
+          <div class="branch-state branch-state--loading" role="status" aria-live="polite">
             <span class="branch-loader" aria-hidden="true"></span>
             <p>Buscando sucursales...</p>
           </div>
