@@ -15,31 +15,32 @@
   animation: fade-up 0.5s var(--ease) both;
 }
 
-/* Grilla sutil de fondo, igualita que la del hero del Home (US-HOME-02). */
+/* Fondo en capas, a puro lenguaje del Home: grilla del hero (US-HOME-02)
+   más presente y orbes de miel/azul como los del hero, con un resplandor
+   suave detrás del titular. */
 .page404::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 80px 80px;
-  mask-image: radial-gradient(circle at 50% 20%, #000 0%, transparent 78%);
-  -webkit-mask-image: radial-gradient(circle at 50% 20%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(circle at 50% 22%, #000 0%, transparent 85%);
+  -webkit-mask-image: radial-gradient(circle at 50% 22%, #000 0%, transparent 85%);
   pointer-events: none;
 }
 
-/* Orbe de miel arriba a la derecha, como los orbs del Home. */
 .page404::after {
   content: '';
   position: absolute;
+  inset: 0;
   z-index: -1;
-  top: -240px;
-  right: -220px;
-  width: 520px;
-  height: 520px;
-  background: radial-gradient(circle, rgba(247, 198, 90, 0.16), transparent 72%);
+  background:
+    radial-gradient(420px circle at -4% 6%, rgba(247, 198, 90, 0.18), transparent 70%),
+    radial-gradient(540px circle at 104% 92%, rgba(58, 123, 213, 0.16), transparent 72%),
+    radial-gradient(620px circle at 30% 14%, rgba(247, 198, 90, 0.09), transparent 68%);
   pointer-events: none;
 }
 
