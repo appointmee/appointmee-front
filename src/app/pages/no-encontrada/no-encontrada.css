@@ -13,12 +13,12 @@
   animation: fade-up 0.5s var(--ease) both;
 }
 
-/* Columna del contenido, centrada en ambos ejes: el ancho de la página es del fondo. */
+/* Contenido en su columna, pegado a la izquierda (start), centrado verticalmente:
+   el ancho y alto de la página quedan para el fondo. */
 .page404__contenido {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
   width: 100%;
   max-width: 760px;
   margin-inline: auto;
@@ -49,7 +49,7 @@
   background:
     radial-gradient(420px circle at -4% 6%, rgba(247, 198, 90, 0.18), transparent 70%),
     radial-gradient(540px circle at 104% 92%, rgba(58, 123, 213, 0.16), transparent 72%),
-    radial-gradient(620px circle at 50% 26%, rgba(247, 198, 90, 0.09), transparent 68%);
+    radial-gradient(620px circle at 28% 30%, rgba(247, 198, 90, 0.09), transparent 68%);
   pointer-events: none;
 }
 
@@ -86,7 +86,6 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
   gap: 12px;
   margin-top: 30px;
 }
