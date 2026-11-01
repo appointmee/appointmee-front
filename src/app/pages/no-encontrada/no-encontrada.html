@@ -18,9 +18,10 @@
       @if (idSucursal()) {
         <a
           class="page404__cta page404__cta--sucursal"
-          [routerLink]="['/sucursal', idSucursal()]"
+          [routerLink]="['/sucursales']"
+          [queryParams]="{ busqueda: idSucursal() }"
         >
-          Abrir la sucursal {{ idSucursal() }}
+          Buscar la sucursal {{ idSucursal() }}
         </a>
       }
       <button class="page404__cta" type="button" (click)="goBack()">Volver</button>
