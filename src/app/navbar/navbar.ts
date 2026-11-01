@@ -12,7 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
-import { Auth } from '../auth/auth';
+import { authService } from '../services/auth-service';
 
 interface NavItem {
   readonly label: string;
@@ -50,7 +50,7 @@ const ICONS = {
 export class Navbar {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly auth = inject(Auth);
+  protected readonly auth = inject(authService);
 
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
   private readonly burger = viewChild<ElementRef<HTMLButtonElement>>('burger');
@@ -248,9 +248,9 @@ export class Navbar {
   }
 
   protected logout(): void {
-    this.auth.cerrarSesion();
     this.closeAll();
-    void this.router.navigate(['/login']);
+    const volver = () => { void this.router.navigate(['/login']); };
+    this.auth.logout().subscribe({ next: volver, error: volver });
   }
 
   protected closeAll(devolverFoco: boolean = false): void {

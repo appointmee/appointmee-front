@@ -13,8 +13,8 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { combineLatest, of, Subject } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, startWith, switchMap, tap } from 'rxjs/operators';
 
-import { SucursalService } from '../../services/sucursal.service';
-import { SucursalMiniDTO } from '../../models/sucursal.model';
+import { sucursalService } from '../../services/sucursal-service';
+import { SucursalMiniDTO } from '../../models/sucursal';
 
 @Component({
   selector: 'app-sucursales',
@@ -24,7 +24,7 @@ import { SucursalMiniDTO } from '../../models/sucursal.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Sucursales {
-  private readonly service = inject(SucursalService);
+  private readonly service = inject(sucursalService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -68,7 +68,7 @@ export class Sucursales {
                 this.requiereLogin.set(true);
               } else if (err.status === 0) {
                 this.error.set(
-                  'No pudimos conectar con el backend. Verificá que esté corriendo en http://localhost:8080 y que uses npm start (puerto 3000).',
+                  'No pudimos conectar con el backend. Verificá que esté corriendo en http://localhost:8080 y que uses npm start (puerto 4200).',
                 );
               } else {
                 this.error.set('No pudimos cargar las sucursales. Intentá de nuevo.');

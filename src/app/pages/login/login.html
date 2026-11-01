@@ -1,42 +1,80 @@
 <section class="login">
-  <form class="login__card" aria-labelledby="login-titulo" (submit)="enviar($event)">
+  <form class="login__card" (submit)="onSubmit($event)" novalidate
+        aria-labelledby="login-titulo" [attr.aria-busy]="cargando()">
+
     <h1 id="login-titulo" class="login__titulo">Iniciar sesión</h1>
-    <p class="login__sub">Ingresá tus datos para volver a gestionar tus turnos.</p>
+    <p class="login__sub">Ingresá a tu cuenta de AppointMee.</p>
 
-    <label class="login__field">
-      <span>Email</span>
-      <input
-        type="email"
-        name="email"
-        autocomplete="email"
-        required
-        [value]="email()"
-        (input)="actualizarEmail($event)"
-      />
-    </label>
-    @if (fieldErrors()['email']; as message) { <p class="login__error" role="alert">{{ message }}</p> }
+    <div class="login__field">
+      <label for="login-email">Email</label>
+      <input id="login-email" type="email" autocomplete="email"
+             [formField]="loginForm.email" [readOnly]="cargando()"
+             [attr.aria-invalid]="loginForm.email().touched() && loginForm.email().invalid()"
+             aria-describedby="login-email-error" />
 
-    <label class="login__field">
-      <span>Contraseña</span>
-      <input
-        type="password"
-        name="pass"
-        autocomplete="current-password"
-        required
-        [value]="contrasenia()"
-        (input)="actualizarContrasenia($event)"
-      />
-    </label>
-    @if (fieldErrors()['pass'] ?? fieldErrors()['contrasenia']; as message) { <p class="login__error" role="alert">{{ message }}</p> }
+      <div id="login-email-error" class="login__validation" aria-live="polite">
+        @if (loginForm.email().touched()) {
+          @for (error of loginForm.email().errors(); track error.kind) {
+            <p>{{ error.message }}</p>
+          }
+        }
+      </div>
+    </div>
 
-    @if (error()) {
-      <p class="login__error" role="alert">{{ error() }}</p>
+    <div class="login__field">
+      <label for="login-password">Contraseña</label>
+      <div class="login__password">
+        <input id="login-password" [type]="mostrarPassword() ? 'text' : 'password'"
+               autocomplete="current-password"
+               [formField]="loginForm.password" [readOnly]="cargando()"
+               [attr.aria-invalid]="loginForm.password().touched() && loginForm.password().invalid()"
+               aria-describedby="login-password-error" />
+
+        <button class="login__toggle" type="button" aria-controls="login-password"
+                [attr.aria-pressed]="mostrarPassword()"
+                [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                (click)="mostrarPassword.set(!mostrarPassword())">
+          {{ mostrarPassword() ? 'Ocultar' : 'Mostrar' }}
+        </button>
+      </div>
+
+      <div id="login-password-error" class="login__validation" aria-live="polite">
+        @if (loginForm.password().touched()) {
+          @for (error of loginForm.password().errors(); track error.kind) {
+            <p>{{ error.message }}</p>
+          }
+        }
+      </div>
+    </div>
+
+    <div class="login__feedback" aria-live="polite" aria-atomic="true">
+      @if (mensaje()) { <p class="login__error">{{ mensaje() }}</p> }
+    </div>
+
+    @if (emailSinVerificar()) {
+      <a class="login__link" routerLink="/configuracion/verificar-email" [queryParams]="{ email: loginModel().email }">
+        Verificar mi email
+      </a>
     }
 
-    <button class="login__submit" type="submit" [disabled]="enviando()">
-      {{ enviando() ? 'Ingresando…' : 'Iniciar sesión' }}
+    <button class="login__submit" type="submit" [disabled]="cargando()">
+      {{ cargando() ? 'Ingresando…' : 'Iniciar sesión' }}
     </button>
+
+    @if (puedeReintentar()) {
+      <button class="login__retry" type="submit" [disabled]="cargando()">Reintentar</button>
+    }
+
+    <a class="login__forgot" routerLink="/olvide-mi-contrasena"
+       [queryParams]="{ email: loginModel().email }">Olvidé mi contraseña</a>
 
     <p class="login__alt">¿No tenés cuenta? <a routerLink="/registrarme">Crear cuenta</a></p>
   </form>
 </section>
+
+@if (modalVerificacion()) {
+  <app-cuenta-sin-verificar-modal
+    [email]="loginModel().email"
+    (aceptar)="irAVerificar()"
+    (cancelar)="modalVerificacion.set(false)" />
+}

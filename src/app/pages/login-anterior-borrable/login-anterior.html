@@ -1,0 +1,42 @@
+<section class="login">
+  <form class="login__card" aria-labelledby="login-titulo" (submit)="enviar($event)">
+    <h1 id="login-titulo" class="login__titulo">Iniciar sesión</h1>
+    <p class="login__sub">Ingresá tus datos para volver a gestionar tus turnos.</p>
+
+    <label class="login__field">
+      <span>Email</span>
+      <input
+        type="email"
+        name="email"
+        autocomplete="email"
+        required
+        [value]="email()"
+        (input)="actualizarEmail($event)"
+      />
+    </label>
+    @if (fieldErrors()['email']; as message) { <p class="login__error" role="alert">{{ message }}</p> }
+
+    <label class="login__field">
+      <span>Contraseña</span>
+      <input
+        type="password"
+        name="pass"
+        autocomplete="current-password"
+        required
+        [value]="contrasenia()"
+        (input)="actualizarContrasenia($event)"
+      />
+    </label>
+    @if (fieldErrors()['pass'] ?? fieldErrors()['contrasenia']; as message) { <p class="login__error" role="alert">{{ message }}</p> }
+
+    @if (error()) {
+      <p class="login__error" role="alert">{{ error() }}</p>
+    }
+
+    <button class="login__submit" type="submit" [disabled]="enviando()">
+      {{ enviando() ? 'Ingresando…' : 'Iniciar sesión' }}
+    </button>
+
+    <p class="login__alt">¿No tenés cuenta? <a routerLink="/registrarme">Crear cuenta</a></p>
+  </form>
+</section>
