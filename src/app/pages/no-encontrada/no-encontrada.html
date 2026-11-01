@@ -5,10 +5,6 @@
     No encontramos esta página. Revisá el enlace o volvé a la ruta correcta desde acá.
   </p>
 
-  <p class="page404__url">
-    Intentaste abrir <code>{{ rutaOriginal }}</code>
-  </p>
-
   <form
     class="page404__buscar"
     role="search"
@@ -38,6 +34,10 @@
         Buscar la sucursal {{ idSucursal }}
       </a>
     }
-    <a class="page404__cta" routerLink="/">Ir al Home</a>
+    @if (logueado()) {
+      <a class="page404__cta" routerLink="/sucursales">Ir a sucursales</a>
+    } @else {
+      <a class="page404__cta" routerLink="/">Ir al Home</a>
+    }
   </div>
 </section>
