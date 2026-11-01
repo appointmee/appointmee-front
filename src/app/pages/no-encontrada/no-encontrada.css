@@ -113,17 +113,14 @@
   }
 }
 
-/* Rótulo del error, estilo GitHub: la cifra no domina, el mensaje es el titular. */
+/* Código del error destacado, sin tratarlo como una etiqueta. */
 .page404__etiqueta {
-  display: inline-block;
-  padding: 7px 12px;
-  border: 1px solid rgba(247, 198, 90, 0.16);
-  border-radius: 999px;
-  background: rgba(247, 198, 90, 0.06);
-  color: #d9c690;
+  display: block;
+  color: #f7c65a;
   font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.14em;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -169,19 +166,16 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  color: #6f7a8c;
-  font-size: 13px;
+  gap: 6px;
+  color: #596273;
+  font-size: 12px;
 }
 
 .page404__url code {
-  padding: 4px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #d9c690;
+  padding: 0;
+  color: #788294;
   font-family: var(--mono);
-  font-size: 12.5px;
+  font-size: 11px;
   word-break: break-all;
 }
 
@@ -194,8 +188,10 @@
   border-radius: 999px;
   background: var(--accent-strong);
   color: #17130a;
+  font-family: inherit;
   font-size: 16px;
   font-weight: 700;
+  cursor: pointer;
   text-decoration: none;
   transition:
     background 0.2s,

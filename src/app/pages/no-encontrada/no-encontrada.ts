@@ -27,6 +27,7 @@ export class NotFoundPage {
   private readonly title = inject(Title);
   private readonly router = inject(Router);
   private readonly reporte404 = inject(Reporte404);
+  protected readonly canGoBack = this.hasInternalHistory();
 
   private readonly titulo = viewChild<ElementRef<HTMLHeadingElement>>('titulo');
 
@@ -38,6 +39,15 @@ export class NotFoundPage {
    * se ofrece la búsqueda de sucursales (criterio 5). No requiere sesión.
    */
   protected readonly idSucursal = this.detectarIdSucursal(this.rutaOriginal);
+
+  protected goBack(): void {
+    if (this.canGoBack) history.back();
+    else void this.router.navigateByUrl('/');
+  }
+
+  private hasInternalHistory(): boolean {
+    return history.length > 1;
+  }
 
   private detectarIdSucursal(ruta: string): string | null {
     const partes = ruta.split('/').filter(Boolean);
