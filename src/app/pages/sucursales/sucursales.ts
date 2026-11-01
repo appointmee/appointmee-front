@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { combineLatest, of, Subject } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, startWith, switchMap, tap } from 'rxjs/operators';
 
@@ -28,6 +28,7 @@ export class Sucursales {
   private readonly service = inject(SucursalService);
   private readonly apiErrors = inject(ApiErrors);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly placeholderImage = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -127,16 +128,38 @@ export class Sucursales {
   protected onSearchInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.searchTerm.set(value);
-    this.searchSubject.next(value);
+    this.updateFilterUrl(
+      { busqueda: value || null, categoria: this.selectedCategory() },
+      () => this.searchSubject.next(value),
+    );
   }
 
   protected clearSearch(): void {
     this.searchTerm.set('');
-    this.searchSubject.next('');
+    this.updateFilterUrl(
+      { busqueda: null, categoria: this.selectedCategory() },
+      () => this.searchSubject.next(''),
+    );
   }
 
   protected selectCategory(categoria: string | null): void {
     this.selectedCategory.set(categoria);
+    this.updateFilterUrl(
+      { busqueda: this.searchTerm() || null, categoria },
+      () => this.selectedCategory.set(categoria),
+    );
+  }
+
+  private updateFilterUrl(
+    queryParams: { busqueda: string | null; categoria: string | null },
+    onCommitted: () => void,
+  ): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    }).then(onCommitted);
   }
 
   protected retry(): void {

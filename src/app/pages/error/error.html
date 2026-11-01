@@ -12,6 +12,11 @@
     }
 
     <div class="error-card__actions">
+      @if (canRetry) {
+        <button class="error-button error-button--primary" type="button" [disabled]="retrying()" (click)="retry()">
+          {{ retrying() ? 'Reintentando…' : 'Reintentar' }}
+        </button>
+      }
       <button class="error-button" type="button" (click)="goBack()">Volver</button>
       <a class="error-button error-button--quiet" routerLink="/">Ir al inicio</a>
     </div>
