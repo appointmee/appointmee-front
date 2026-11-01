@@ -92,7 +92,11 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
 
     if (cause.status === 401 && !isLogin) {
       auth.cerrarSesion();
-      const returnTo = router.url.startsWith('/login') || router.url.startsWith('/error') ? '/' : router.url;
+      // Si el 401 llega mientras el router está cambiando de pantalla, router.url
+      // todavía puede apuntar a la ruta anterior. Preferimos el destino activo.
+      const activeUrl = router.getCurrentNavigation()?.finalUrl;
+      const currentUrl = activeUrl ? router.serializeUrl(activeUrl) : router.url;
+      const returnTo = currentUrl.startsWith('/login') || currentUrl.startsWith('/error') ? '/' : currentUrl;
       void router.navigate(['/login'], { queryParams: { returnTo, expired: '1' } });
     } else if (cause.status !== 400 && cause.status !== 422 && !isLogin) {
       const retryableRead = request.method === 'GET' && [500, 502, 503].includes(cause.status);

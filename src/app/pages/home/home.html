@@ -12,6 +12,7 @@
       <a href="#inicio" (click)="scrollToSection($event, 'inicio')">Inicio</a>
       <a href="#quienes-somos" (click)="scrollToSection($event, 'quienes-somos')">¿Quiénes somos?</a>
       <a href="#como-funciona" (click)="scrollToSection($event, 'como-funciona')">¿Cómo funciona?</a>
+      <a routerLink="/sucursales">Sucursales</a>
     </nav>
 
     <div class="landing-nav__actions">
@@ -45,6 +46,7 @@
       <a href="#inicio" (click)="scrollToSection($event, 'inicio'); closeMobile()">Inicio</a>
       <a href="#quienes-somos" (click)="scrollToSection($event, 'quienes-somos'); closeMobile()">¿Quiénes somos?</a>
       <a href="#como-funciona" (click)="scrollToSection($event, 'como-funciona'); closeMobile()">¿Cómo funciona?</a>
+      <a routerLink="/sucursales" (click)="closeMobile()">Sucursales</a>
       <div class="landing-sheet__divider"></div>
       @if (isAuthenticated()) {
         <a routerLink="/mis-turnos" (click)="closeMobile()">Mi cuenta</a>
