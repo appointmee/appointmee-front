@@ -1,0 +1,22 @@
+<dialog #dialogo class="verificacion-modal"
+        aria-labelledby="verificacion-modal-titulo"
+        aria-describedby="verificacion-modal-descripcion"
+        (cancel)="cancelar.emit()">
+
+  <h2 id="verificacion-modal-titulo">Tu cuenta no está verificada</h2>
+
+  <p id="verificacion-modal-descripcion">
+    La cuenta de <strong>{{ email() }}</strong> todavía no está verificada.
+    ¿Querés verificarla ahora?
+  </p>
+
+  <div class="verificacion-modal__acciones">
+    <button class="verificacion-modal__cancelar" type="button" autofocus (click)="cancelar.emit()">
+      Ahora no
+    </button>
+
+    <button class="verificacion-modal__aceptar" type="button" (click)="aceptar.emit()">
+      Aceptar y verificar
+    </button>
+  </div>
+</dialog>

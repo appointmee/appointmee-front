@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
-import { Auth } from '../auth/auth';
+import { authService } from '../services/auth-service';
 
 export interface ApiError {
   readonly status: number;
@@ -84,14 +84,14 @@ export class ApiErrors {
 export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
   const errors = inject(ApiErrors);
   const router = inject(Router);
-  const auth = inject(Auth);
+  const auth = inject(authService);
   return next(request).pipe(catchError((cause: unknown) => {
     if (!(cause instanceof HttpErrorResponse)) return throwError(() => cause);
     const error = errors.map(cause);
     const isLogin = request.url.includes('/usuarios/inicio-sesion');
 
     if (cause.status === 401 && !isLogin) {
-      auth.cerrarSesion();
+      auth.limpiarSesion();
       const returnTo = router.url.startsWith('/login') || router.url.startsWith('/error') ? '/' : router.url;
       void router.navigate(['/login'], { queryParams: { returnTo, expired: '1' } });
     } else if (cause.status !== 400 && cause.status !== 422 && !isLogin) {

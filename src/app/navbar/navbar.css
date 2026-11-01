@@ -1339,3 +1339,8 @@ input:focus-visible {
     max-width: 360px;
   }
 }
+
+/* Mantiene el acceso a registro en las pantallas de autenticación, también en mobile. */
+.navbar__cta--auth {
+  display: inline-flex;
+}

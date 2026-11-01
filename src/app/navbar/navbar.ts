@@ -12,7 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
-import { Auth } from '../auth/auth';
+import { authService } from '../services/auth-service';
 
 interface NavItem {
   readonly label: string;
@@ -50,11 +50,21 @@ const ICONS = {
 export class Navbar {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly auth = inject(Auth);
+  protected readonly auth = inject(authService);
 
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
   private readonly burger = viewChild<ElementRef<HTMLButtonElement>>('burger');
   private readonly sheet = viewChild<ElementRef<HTMLElement>>('sheet');
+
+  private readonly rutaActual = signal(this.router.url);
+
+  protected readonly navbarSimple = computed(() => {
+    const ruta = this.rutaActual().split(/[?#]/)[0];
+
+    return ruta === '/login'
+      || ruta === '/configuracion/verificar-email'
+      || ruta === '/verificar-email';
+  });
 
   protected readonly mobileOpen = signal(false);
   protected readonly profileOpen = signal(false);
@@ -96,7 +106,10 @@ export class Navbar {
         filter((event) => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => this.closeAll());
+      .subscribe((event) => {
+        this.rutaActual.set(event.urlAfterRedirects);
+        this.closeAll();
+      });
 
     this.destroyRef.onDestroy(() => {
       document.body.classList.remove('nav-locked');
@@ -217,6 +230,10 @@ export class Navbar {
   }
 
   protected openSearch(): void {
+    if (this.navbarSimple()) {
+      return;
+    }
+
     this.searchOpen.set(true);
     this.profileOpen.set(false);
     this.closeMobile();
@@ -248,9 +265,9 @@ export class Navbar {
   }
 
   protected logout(): void {
-    this.auth.cerrarSesion();
     this.closeAll();
-    void this.router.navigate(['/login']);
+    const volver = () => { void this.router.navigate(['/login']); };
+    this.auth.logout().subscribe({ next: volver, error: volver });
   }
 
   protected closeAll(devolverFoco: boolean = false): void {
