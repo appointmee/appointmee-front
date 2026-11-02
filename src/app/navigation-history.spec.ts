@@ -7,6 +7,8 @@ import { NavigationHistory } from './navigation-history';
 class TestRoute {}
 
 describe('NavigationHistory', () => {
+  beforeEach(() => sessionStorage.removeItem('appointmee.navigation-history'));
+
   it('returns the prior internal route around a replaced failed route and avoids self-loops', async () => {
     TestBed.configureTestingModule({
       providers: [
@@ -27,5 +29,25 @@ describe('NavigationHistory', () => {
 
     await router.navigateByUrl('/home', { replaceUrl: true });
     expect(history.backTarget()).toBeNull();
+  });
+
+  it('persists the visited routes so a full page load keeps the back target', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([
+          { path: 'home', component: TestRoute },
+          { path: 'sucursales', component: TestRoute },
+        ]),
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const history = TestBed.inject(NavigationHistory);
+
+    await router.navigateByUrl('/home');
+    await router.navigateByUrl('/sucursales');
+
+    expect(history.backTarget()).toBe('/home');
+    expect(JSON.parse(sessionStorage.getItem('appointmee.navigation-history') ?? '[]')
+      .map((entry: { url: string }) => entry.url)).toEqual(['/home', '/sucursales']);
   });
 });

@@ -4,8 +4,9 @@ import { filter } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class NavigationHistory {
+  private static readonly STORAGE_KEY = 'appointmee.navigation-history';
   private readonly router = inject(Router);
-  private readonly entries: Array<{ id: number; url: string }> = [];
+  private readonly entries: Array<{ id: number; url: string }> = this.restore();
   private restoredId: number | null = null;
   private replaceCurrent = false;
 
@@ -43,6 +44,7 @@ export class NavigationHistory {
         this.entries.push({ id, url });
       }
       this.restoredId = null;
+      this.persist();
       return;
     }
 
@@ -52,5 +54,26 @@ export class NavigationHistory {
       this.entries.push({ id, url });
     }
     this.replaceCurrent = false;
+    this.persist();
+  }
+
+  private restore(): Array<{ id: number; url: string }> {
+    try {
+      const value: unknown = JSON.parse(sessionStorage.getItem(NavigationHistory.STORAGE_KEY) ?? '[]');
+      if (!Array.isArray(value)) return [];
+      return value.filter((entry): entry is { id: number; url: string } =>
+        !!entry && typeof entry.id === 'number' && typeof entry.url === 'string' && entry.url.startsWith('/'));
+    } catch {
+      return [];
+    }
+  }
+
+  private persist(): void {
+    try {
+      // El historial es solo navegación reciente de esta pestaña.
+      sessionStorage.setItem(NavigationHistory.STORAGE_KEY, JSON.stringify(this.entries.slice(-50)));
+    } catch {
+      // La navegación sigue funcionando si el navegador bloquea el storage.
+    }
   }
 }

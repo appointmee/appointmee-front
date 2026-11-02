@@ -123,15 +123,15 @@ describe('US-ERR-03 recovery flows', () => {
     expect(router.parseUrl(router.url).root.children['primary'].segments.map((segment) => segment.path).join('/')).toBe('login');
     expect(router.parseUrl(router.url).queryParams['returnTo']).toBe(origin);
     const element = fixture.nativeElement as HTMLElement;
-    const email = element.querySelector<HTMLInputElement>('input[name="email"]')!;
-    const password = element.querySelector<HTMLInputElement>('input[name="pass"]')!;
+    const email = element.querySelector<HTMLInputElement>('input[type="email"]')!;
+    const password = element.querySelector<HTMLInputElement>('input[type="password"]')!;
     email.value = 'user@example.com';
     email.dispatchEvent(new Event('input'));
     password.value = 'safe-password';
     password.dispatchEvent(new Event('input'));
     element.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
-    backend.expectOne('http://localhost:8080/usuarios/inicio-sesion').flush({ token: 'fresh-token' });
+    backend.expectOne('http://localhost:8080/auth/login').flush({ token: 'fresh-token', refreshToken: 'fresh-refresh', expiresIn: 900 });
     backend.expectOne('http://localhost:8080/usuarios/me').flush({ id: 7, roles: ['CLIENTE'], fotoPerfil: null });
     await fixture.whenStable();
     fixture.detectChanges();
