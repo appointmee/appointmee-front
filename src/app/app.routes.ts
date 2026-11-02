@@ -24,6 +24,15 @@ export const routes: Routes = [
     redirectTo: 'sucursales',
   },
   {
+    path: 'sucursal/:id/resenias',
+    canActivate: [authGuard],
+    title: 'AppointMee | Reseñas',
+    loadComponent: () =>
+      import('./pages/sucursal-resenias/sucursal-resenias').then(
+        (module) => module.SucursalResenias,
+      ),
+  },
+  {
     path: 'sucursal/:id',
     canActivate: [authGuard],
     title: 'AppointMee | Sucursal',
