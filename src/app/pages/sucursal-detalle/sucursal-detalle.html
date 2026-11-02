@@ -1,0 +1,286 @@
+<section class="detalle">
+  @if (loading()) {
+    <h1 class="sr-only">Cargando sucursal</h1>
+    <div class="detalle__hero detalle__hero--skeleton" aria-hidden="true">
+      <div class="skeleton skeleton--hero"></div>
+      <div class="detalle__hero-content detalle__hero-content--skeleton">
+        <div class="skeleton skeleton--line skeleton--eyebrow"></div>
+        <div class="skeleton skeleton--line skeleton--title"></div>
+        <div class="skeleton skeleton--line skeleton--short"></div>
+      </div>
+    </div>
+
+    <div class="detalle__inner">
+      <div class="detalle__grid">
+        <div class="detalle__main">
+          <article class="panel panel--skeleton" aria-hidden="true">
+            <div class="skeleton skeleton--line skeleton--panel-title"></div>
+            <div class="skeleton skeleton--line"></div>
+            <div class="skeleton skeleton--line"></div>
+            <div class="skeleton skeleton--line skeleton--short"></div>
+          </article>
+          <article class="panel panel--skeleton" aria-hidden="true">
+            <div class="skeleton skeleton--line skeleton--panel-title"></div>
+            <div class="skeleton skeleton--line"></div>
+          </article>
+        </div>
+        <aside class="detalle__aside">
+          <article class="panel panel--skeleton" aria-hidden="true">
+            <div class="skeleton skeleton--line skeleton--panel-title"></div>
+            <div class="skeleton skeleton--line"></div>
+            <div class="skeleton skeleton--button"></div>
+          </article>
+        </aside>
+      </div>
+    </div>
+
+    <span class="sr-only" role="status">Cargando información de la sucursal…</span>
+  } @else if (noEncontrada()) {
+    <app-error-page variant="sucursal-no-encontrada" />
+  } @else if (error()) {
+    <div class="detalle__estado" role="alert">
+      <span class="detalle__estado-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3l-7.5-13.1a2 2 0 0 0-3.4 0Z" />
+        </svg>
+      </span>
+      <h1 id="detalle-titulo">No pudimos mostrar la sucursal</h1>
+      <p>{{ error() }}</p>
+      <div class="detalle__estado-acciones">
+        <button class="btn btn--primary" type="button" (click)="reintentar()">Reintentar</button>
+        <a class="btn btn--ghost" routerLink="/sucursales">Volver al listado</a>
+      </div>
+    </div>
+  } @else if (sucursal(); as s) {
+    <header class="detalle__hero">
+      <img
+        class="detalle__hero-img"
+        [src]="s.fotoPerfil || placeholderImage"
+        [alt]="'Fachada de ' + s.nombre"
+        (error)="onImageError($event)"
+      />
+      <div class="detalle__hero-overlay" aria-hidden="true"></div>
+
+      <div class="detalle__hero-top">
+        <a class="volver" routerLink="/sucursales">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 12H5M11 18l-6-6 6-6" />
+          </svg>
+          Volver al listado
+        </a>
+      </div>
+
+      <div class="detalle__hero-content">
+        <span class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true"></span>
+          {{ categoria() || 'Sucursal' }}
+        </span>
+
+        <h1 id="detalle-titulo">{{ s.nombre }}</h1>
+
+        <div class="detalle__hero-meta">
+          <span class="meta-pill meta-pill--rating">
+            <span class="meta-pill__bees" aria-hidden="true">
+              @for (llena of abejas(); track $index) {
+                <span class="bee" [class.bee--vacia]="!llena">🐝</span>
+              }
+            </span>
+            @if (hayPuntuaciones()) {
+              <span class="meta-pill__text">{{ puntuacion() }} de 5</span>
+              <span class="meta-pill__muted">· {{ cantidadPuntuaciones() }} reseñas</span>
+            } @else {
+              <span class="meta-pill__muted">Sin reseñas todavía</span>
+            }
+            <span class="sr-only">
+              Puntuación {{ puntuacion() }} de 5 sobre {{ cantidadPuntuaciones() }} reseñas
+            </span>
+          </span>
+
+          @if (horario(); as h) {
+            <span class="meta-pill">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+              {{ h.apertura }} a {{ h.cierre }} h
+            </span>
+          }
+        </div>
+      </div>
+    </header>
+
+    <div class="detalle__inner">
+      <div class="detalle__grid">
+        <div class="detalle__main">
+          <article class="panel panel--descripcion">
+            <header class="panel__head">
+              <h2>Sobre esta sucursal</h2>
+            </header>
+            <p class="descripcion" [class.descripcion--colgada]="descripcionLarga() && !descripcionExpandida()">
+              {{ descripcion() || 'Esta sucursal todavía no cargó su descripción.' }}
+            </p>
+            @if (descripcionLarga()) {
+              <button class="link-btn" type="button" (click)="alternarDescripcion()">
+                {{ descripcionExpandida() ? 'Ver menos' : 'Ver más' }}
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" [attr.transform]="descripcionExpandida() ? 'rotate(180 12 12)' : null" />
+                </svg>
+              </button>
+            }
+          </article>
+
+          <div class="datos">
+            @if (s.direccion?.trim()) {
+              <article class="dato">
+                <span class="dato__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                </span>
+                <div class="dato__content">
+                  <h3>Dirección</h3>
+                  <p>{{ s.direccion }}</p>
+                </div>
+              </article>
+            }
+
+            @if (telefono(); as tel) {
+              <article class="dato">
+                <span class="dato__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.4 2.1L8.1 9.6a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.4c.8.3 1.7.5 2.6.6a2 2 0 0 1 2 2.3Z" />
+                  </svg>
+                </span>
+                <div class="dato__content">
+                  <h3>Teléfono</h3>
+                  @if (telefonoHref(); as href) {
+                    <a [href]="href">{{ tel }}</a>
+                  } @else {
+                    <p>{{ tel }}</p>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        </div>
+
+        <aside class="detalle__aside">
+          <article class="panel panel--reserva">
+            <span class="panel__eyebrow">Reservá online</span>
+            <h2 class="panel__titulo">Tu próximo turno, a un paso</h2>
+            <p class="panel__texto">
+              Elegí el día y el horario que mejor te queden. La reserva online de esta sucursal
+              va a estar disponible muy pronto.
+            </p>
+            <button class="btn btn--primary btn--block" type="button">Reservar turno</button>
+            <span class="panel__nota">La reserva estará disponible próximamente.</span>
+          </article>
+        </aside>
+
+        @if (horario() || dias().length) {
+          <article class="panel panel--horarios">
+            <header class="panel__head">
+              <h2>Horarios de atención</h2>
+              <span class="panel__hint">Hora local</span>
+            </header>
+
+            <div class="horarios__grid">
+              @if (horario(); as h) {
+                <div class="horario">
+                  <div class="horario__bloque">
+                    <span class="horario__label">Apertura</span>
+                    <strong class="horario__hora">{{ h.apertura }}</strong>
+                  </div>
+                  <span class="horario__linea" aria-hidden="true"></span>
+                  <div class="horario__bloque">
+                    <span class="horario__label">Cierre</span>
+                    <strong class="horario__hora">{{ h.cierre }}</strong>
+                  </div>
+                </div>
+              }
+
+              @if (dias().length) {
+                <div class="dias">
+                  <span class="dias__label">Días de atención</span>
+                  <ul class="dias__lista" aria-label="Días de atención">
+                    @for (dia of dias(); track dia) {
+                      <li class="dia">{{ dia }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </div>
+
+      <div class="reservadas">
+        <article class="reservada reservada--resenias" aria-labelledby="resenias-titulo">
+          <header class="reservada__head">
+            <span class="reservada__icon" aria-hidden="true">🍯</span>
+            <div>
+              <span class="reservada__eyebrow">Reseñas</span>
+              <h2 id="resenias-titulo">Lo que dicen los clientes</h2>
+            </div>
+          </header>
+
+          <div class="reservada__score">
+            <div class="reservada__bees" aria-hidden="true">
+              @for (llena of abejas(); track $index) {
+                <span class="bee bee--grande" [class.bee--vacia]="!llena">🐝</span>
+              }
+            </div>
+            @if (hayPuntuaciones()) {
+              <p class="reservada__promedio">
+                {{ puntuacion() }}<span>/5</span>
+                <small>{{ cantidadPuntuaciones() }} reseñas</small>
+              </p>
+            } @else {
+              <p class="reservada__promedio reservada__promedio--vacio">
+                Sin puntuaciones
+                <small>Todavía no hay reseñas de esta sucursal.</small>
+              </p>
+            }
+          </div>
+
+          <p class="reservada__placeholder">
+            Las reseñas van a estar disponibles en una próxima actualización.
+          </p>
+        </article>
+
+        <article class="reservada reservada--equipo" aria-labelledby="equipo-titulo">
+          <header class="reservada__head">
+            <span class="reservada__icon reservada__icon--equipo" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </span>
+            <div>
+              <span class="reservada__eyebrow">Nuestro equipo</span>
+              <h2 id="equipo-titulo">Quiénes te atienden</h2>
+            </div>
+          </header>
+
+          <div class="equipo" aria-hidden="true">
+            <span class="equipo__avatar"></span>
+            <span class="equipo__avatar"></span>
+            <span class="equipo__avatar"></span>
+            <span class="equipo__avatar equipo__avatar--mas">+</span>
+          </div>
+
+          <p class="reservada__placeholder">
+            Muy pronto vas a poder conocer al equipo de esta sucursal.
+          </p>
+        </article>
+      </div>
+    </div>
+
+    <div class="detalle__cta-mobile">
+      <div class="detalle__cta-copy">
+        <strong>{{ s.nombre }}</strong>
+        <span>{{ categoria() }}</span>
+      </div>
+      <button class="btn btn--primary" type="button">Reservar turno</button>
+    </div>
+  }
+</section>
