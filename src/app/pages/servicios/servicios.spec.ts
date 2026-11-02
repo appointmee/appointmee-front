@@ -149,6 +149,25 @@ describe('US-SERV-01 · Elegir servicio', () => {
     expect(detalle?.getAttribute('href')).toBe('/sucursal/7');
   });
 
+  it('si la cuenta no tiene rol CLIENTE muestra un mensaje específico y no ofrece reintentar', async () => {
+    await router.navigateByUrl('/sucursal/7/servicios');
+    fixture.detectChanges();
+
+    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush(SUCURSAL);
+    backend
+      .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
+      .flush({}, { status: 403, statusText: 'Forbidden' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(texto(host)).toContain('Tu cuenta no tiene el rol Cliente');
+    expect(host.querySelector('.estado--error button.boton')).toBeNull();
+    const volver = host.querySelector<HTMLAnchorElement>('.estado--error a.boton--ghost');
+    expect(volver?.textContent?.trim()).toBe('Volver al detalle');
+    expect(volver?.getAttribute('href')).toBe('/sucursal/7');
+  });
+
   it('ante una falla muestra el error inline y el reintento conserva la sucursal', async () => {
     await router.navigateByUrl('/sucursal/7/servicios');
     fixture.detectChanges();
