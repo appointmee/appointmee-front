@@ -25,6 +25,7 @@ export const routes: Routes = [
   },
   {
     path: 'sucursal/:sucursalId/servicios',
+    canActivate: [authGuard],
     title: 'AppointMee | Elegir servicio',
     data: {
       title: 'Elegir servicio',
@@ -35,6 +36,7 @@ export const routes: Routes = [
   },
   {
     path: 'servicios',
+    canActivate: [authGuard],
     title: 'AppointMee | Elegir servicio',
     data: {
       title: 'Elegir servicio',

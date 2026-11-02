@@ -1,4 +1,4 @@
-<section class="detalle">
+<section class="detalle" [class.detalle--con-aviso]="avisoRol()">
   @if (loading()) {
     <h1 class="sr-only">Cargando sucursal</h1>
     <div class="detalle__hero detalle__hero--skeleton" aria-hidden="true">
@@ -165,15 +165,26 @@
         </div>
 
         <aside class="detalle__aside">
-          <article class="panel panel--reserva">
+          <article class="panel panel--reserva" id="panel-reserva">
             <span class="panel__eyebrow">Reservá online</span>
             <h2 class="panel__titulo">Tu próximo turno, a un paso</h2>
-            <p class="panel__texto">
-              Elegí el día y el horario que mejor te queden. La reserva online de esta sucursal
-              va a estar disponible muy pronto.
-            </p>
-            <button class="btn btn--primary btn--block" type="button">Reservar turno</button>
-            <span class="panel__nota">La reserva estará disponible próximamente.</span>
+            <p class="panel__texto" id="reserva-ayuda">{{ ayudaReserva }}</p>
+
+            @if (avisoRol()) {
+              <p class="panel__aviso" role="alert">{{ avisoRol() }}</p>
+            }
+
+            <button
+              class="btn btn--primary btn--block"
+              type="button"
+              [disabled]="navegando()"
+              [attr.aria-busy]="navegando()"
+              [attr.aria-label]="'Reservar turno en ' + s.nombre"
+              aria-describedby="reserva-ayuda"
+              (click)="iniciarReserva()"
+            >
+              {{ navegando() ? 'Abriendo…' : 'Reservar turno' }}
+            </button>
           </article>
         </aside>
 
@@ -276,11 +287,25 @@
     </div>
 
     <div class="detalle__cta-mobile">
+      @if (avisoRol()) {
+        <p class="detalle__cta-aviso" role="alert">{{ avisoRol() }}</p>
+      }
+
       <div class="detalle__cta-copy">
         <strong>{{ s.nombre }}</strong>
         <span>{{ categoria() }}</span>
       </div>
-      <button class="btn btn--primary" type="button">Reservar turno</button>
+      <button
+        class="btn btn--primary"
+        type="button"
+        [disabled]="navegando()"
+        [attr.aria-busy]="navegando()"
+        [attr.aria-label]="'Reservar turno en ' + s.nombre"
+        aria-describedby="reserva-ayuda"
+        (click)="iniciarReserva()"
+      >
+        {{ navegando() ? 'Abriendo…' : 'Reservar turno' }}
+      </button>
     </div>
   }
 </section>
