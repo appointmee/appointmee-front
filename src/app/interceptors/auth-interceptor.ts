@@ -51,7 +51,12 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const expire = () => {
     auth.limpiarSesion();
     if (!router.url.startsWith('/login')) {
-      void router.navigate(['/login'], { queryParams: { returnTo: router.url, expired: '1' } });
+      // Durante una navegación protegida, router.url todavía puede ser la
+      // pantalla anterior. El destino final contiene la ruta que se quiso abrir.
+      const activeUrl = router.getCurrentNavigation()?.finalUrl;
+      const currentUrl = activeUrl ? router.serializeUrl(activeUrl) : router.url;
+      const returnTo = currentUrl.startsWith('/login') || currentUrl.startsWith('/error') ? '/' : currentUrl;
+      void router.navigate(['/login'], { queryParams: { returnTo, expired: '1' } });
     }
   };
 

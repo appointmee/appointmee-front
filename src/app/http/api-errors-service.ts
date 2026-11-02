@@ -2,6 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { authService } from '../services/auth-service';
 
 export interface ApiError {
   readonly status: number;
@@ -123,6 +124,7 @@ export class apiErrorsService {
 export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
   const errors = inject(apiErrorsService);
   const router = inject(Router);
+  const auth = inject(authService);
 
   return next(request).pipe(
     catchError((cause: unknown) => {
@@ -132,14 +134,28 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
       const isLogin =
         request.url.includes('/usuarios/inicio-sesion') || request.url.includes('/auth/');
 
-      // El interceptor de autenticación se ocupa de renovar y cerrar la sesión.
-      if (![400, 401, 422].includes(cause.status) && !isLogin) {
+      if (cause.status === 401 && !isLogin) {
+        auth.limpiarSesion();
+        const activeUrl = router.getCurrentNavigation()?.finalUrl;
+        const currentUrl = activeUrl ? router.serializeUrl(activeUrl) : router.url;
+        const returnTo = currentUrl.startsWith('/login') || currentUrl.startsWith('/error') ? '/' : currentUrl;
+        void router.navigate(['/login'], { queryParams: { returnTo, expired: '1' } });
+      } else if (![400, 401, 422].includes(cause.status) && !isLogin) {
         if (![0, 403, 404, 409, 429, 500, 502, 503].includes(cause.status)) {
           void router.navigate(['/error'], {
             state: { status: cause.status, errorReference: error.reference },
           });
         } else {
           const canRetry = [500, 502, 503].includes(cause.status);
+          if (canRetry && request.method === 'GET') {
+            const activeUrl = router.getCurrentNavigation()?.finalUrl;
+            const currentUrl = activeUrl ? router.serializeUrl(activeUrl) : router.url;
+            void router.navigate(['/error'], {
+              state: { status: cause.status, errorReference: error.reference, returnTo: currentUrl },
+              replaceUrl: true,
+            });
+            return throwError(() => error);
+          }
           const retry: (() => void) | undefined = canRetry
             ? () => {
                 const current = errors.notice();
