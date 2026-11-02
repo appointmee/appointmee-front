@@ -1,7 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { Navbar } from './navbar/navbar';
-import { apiErrorsService } from './http/api-errors-service';
+import { ApiErrors } from './http/api-errors';
+import { NavigationHistory } from './navigation-history';
 
 @Component({
   imports: [RouterOutlet, RouterLink, Navbar],
@@ -10,5 +11,6 @@ import { apiErrorsService } from './http/api-errors-service';
   templateUrl: './app.html',
 })
 export class App {
-  protected readonly apiErrors = inject(apiErrorsService);
+  protected readonly apiErrors = inject(ApiErrors);
+  private readonly navigationHistory = inject(NavigationHistory);
 }

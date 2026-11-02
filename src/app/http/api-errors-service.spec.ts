@@ -1,10 +1,6 @@
-import {
-  HttpClient,
-  HttpErrorResponse,
-  HttpHeaders,
-  provideHttpClient,
-  withInterceptors,
-} from '@angular/common/http';
+import { authService } from '../services/auth-service';
+import { Location } from '@angular/common';
+import { HttpClient, HttpHeaders, HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
@@ -100,6 +96,7 @@ describe('apiErrorInterceptor', () => {
         provideRouter([
           { path: 'login', component: TestRoute },
           { path: 'private', component: TestRoute },
+          { path: 'error', component: TestRoute },
         ]),
         provideHttpClient(withInterceptors([apiErrorInterceptor])),
         provideHttpClientTesting(),
@@ -122,17 +119,41 @@ describe('apiErrorInterceptor', () => {
     expect(errors.notice()).toBeNull();
   });
 
-  it('replays a failed server request once and clears the notice on success', async () => {
+  it('routes a failed GET to the error view with its original URL for retry', async () => {
+    await router.navigateByUrl('/private?tab=history');
     http.get('/api/data').subscribe({ error: () => undefined });
     backend.expectOne('/api/data').flush({}, { status: 503, statusText: 'Unavailable' });
-    await Promise.resolve();
-    expect(errors.notice()?.error.message).toBe(
-      'Tuvimos un problema. Probá de nuevo en unos segundos.',
-    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    errors.notice()?.retry?.();
-    backend.expectOne('/api/data').flush({ ok: true });
-    await Promise.resolve();
+    expect(router.url).toBe('/error');
+    const navigationState = TestBed.inject(Location).getState() as Record<string, unknown>;
+    expect(navigationState['returnTo']).toBe('/private?tab=history');
+    expect(navigationState['status']).toBe(503);
     expect(errors.notice()).toBeNull();
+  });
+
+  it('does not navigate or retry a failed POST, preserving the current form route', async () => {
+    await router.navigateByUrl('/private?step=details');
+    http.post('/api/operation', { note: 'draft' }).subscribe({ error: () => undefined });
+    backend.expectOne('/api/operation').flush({}, { status: 503, statusText: 'Unavailable' });
+    await Promise.resolve();
+
+    expect(router.url).toBe('/private?step=details');
+    expect(errors.notice()?.error.status).toBe(503);
+  });
+
+  it('clears an authenticated session and redirects to login with the current URL', async () => {
+    TestBed.inject(authService);
+    localStorage.setItem('token', 'expired-token');
+    await router.navigateByUrl('/private?tab=history');
+
+    http.get('/api/private', { headers: { Authorization: 'Bearer expired-token' } }).subscribe({ error: () => undefined });
+    backend.expectOne('/api/private').flush({}, { status: 401, statusText: 'Unauthorized' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(router.url).toContain('/login?');
+    expect(router.url).toContain('returnTo=%2Fprivate%3Ftab%3Dhistory');
+    expect(router.url).toContain('expired=1');
   });
 });
