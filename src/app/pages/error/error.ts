@@ -33,11 +33,13 @@ export class ErrorPage {
     this.destroyRef.onDestroy(() => this.meta.removeTag('name="robots"'));
   }
 
-  protected goBack(): void {
-    const target = this.navigationHistory.backTarget(this.returnTo ?? undefined);
-    void this.router.navigateByUrl(target ?? '/', { replaceUrl: true });
-  }
+protected goBack(): void {
+  const target = this.navigationHistory.backTarget(this.router.url);
 
+  if (target) {
+    void this.router.navigateByUrl(target, { replaceUrl: true });
+  }
+}
   protected retry(): void {
     if (!this.canRetry || this.retrying()) return;
     this.retrying.set(true);

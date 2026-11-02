@@ -48,9 +48,13 @@ export class NotFoundPage {
    */
   protected readonly idSucursal = computed(() => this.detectarIdSucursal(this.rutaOriginal()));
 
-  protected goBack(): void {
-    void this.router.navigateByUrl(this.navigationHistory.backTarget() ?? '/', { replaceUrl: true });
+ protected goBack(): void {
+  const target = this.navigationHistory.backTarget(this.router.url);
+
+  if (target) {
+    void this.router.navigateByUrl(target, { replaceUrl: true });
   }
+}
 
   protected buscarSucursal(event: Event): void {
     event.preventDefault();
