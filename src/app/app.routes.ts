@@ -24,6 +24,26 @@ export const routes: Routes = [
     redirectTo: 'sucursales',
   },
   {
+    path: 'sucursal/:sucursalId/servicios',
+    title: 'AppointMee | Elegir servicio',
+    data: {
+      title: 'Elegir servicio',
+      description: 'Elegí el servicio que querés reservar en esta sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/servicios/servicios').then((module) => module.Servicios),
+  },
+  {
+    path: 'servicios',
+    title: 'AppointMee | Elegir servicio',
+    data: {
+      title: 'Elegir servicio',
+      description: 'Elegí el servicio que querés reservar en esta sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/servicios/servicios').then((module) => module.Servicios),
+  },
+  {
     path: 'sucursal/:id',
     title: 'AppointMee | Sucursal',
     data: {
