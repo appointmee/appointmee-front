@@ -113,6 +113,18 @@
   outline-offset: 3px;
 }
 
+.volver--flotante {
+  position: sticky;
+  top: calc(var(--nav-h) + 12px);
+  z-index: 40;
+  align-self: flex-start;
+  margin-left: clamp(24px, 4vw, 44px);
+}
+
+.detalle__grid > .reservadas {
+  grid-column: 1 / -1;
+}
+
 /* Breadcrumb */
 
 .breadcrumb {
@@ -1167,6 +1179,10 @@
 }
 
 @media (max-width: 767px) {
+  .volver--flotante {
+    position: static;
+  }
+
   .detalle__cta-mobile {
     position: fixed;
     left: 0;
@@ -1183,6 +1199,13 @@
     backdrop-filter: blur(16px) saturate(150%);
     -webkit-backdrop-filter: blur(16px) saturate(150%);
     box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  .detalle__cta-acciones {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
 
   .detalle__cta-copy {
