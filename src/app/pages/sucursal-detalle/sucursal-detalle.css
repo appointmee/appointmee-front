@@ -1170,7 +1170,11 @@
   }
 
   .detalle__aside {
+<<<<<<< HEAD
     align-self: start;
+=======
+    position: static;
+>>>>>>> origin/SCRUM-223-ver-la-informacion-general-de-la-sucursal
   }
 }
 
