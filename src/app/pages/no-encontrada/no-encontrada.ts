@@ -14,10 +14,6 @@ import { Meta, Title } from '@angular/platform-browser';
 import { NavigationEnd, RouterLink, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { Reporte404 } from './reporte-404';
-<<<<<<< HEAD
-=======
-import { NavigationHistory } from '../../navigation-history';
->>>>>>> origin/develop
 
 /**
  * Vista 404 (US-ERR-04).
