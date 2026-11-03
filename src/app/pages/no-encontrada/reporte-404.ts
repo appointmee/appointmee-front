@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { catchError, timeout } from 'rxjs/operators';
 import { of } from 'rxjs';
-import { backendService } from '../../services/backend-service';
+import { API_URL } from '../../auth/auth';
 
 /**
  * Registro del 404 para observabilidad (criterio 9 de US-ERR-04).
@@ -13,7 +13,6 @@ import { backendService } from '../../services/backend-service';
 @Injectable({ providedIn: 'root' })
 export class Reporte404 {
   private readonly http = inject(HttpClient);
-  private readonly backend = inject(backendService);
 
   registrar(ruta: string, referrer: string | null): void {
     const apiUrl = this.apiUrl();
@@ -31,7 +30,7 @@ export class Reporte404 {
   private apiUrl(): string | null {
     if (typeof window === 'undefined') return null;
     const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') return this.backend.baseUrl;
+    if (host === 'localhost' || host === '127.0.0.1') return API_URL;
     return 'https://appointmee-vcs2.onrender.com';
   }
 

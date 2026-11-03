@@ -9,9 +9,9 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { combineLatest, of, Subject } from 'rxjs';
-import { catchError, debounceTime, distinctUntilChanged, startWith, switchMap, tap } from 'rxjs/operators';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { combineLatest, Observable, of, Subject } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators';
 
 import { sucursalService } from '../../services/sucursal-service';
 import { SucursalMiniDTO } from '../../models/sucursal';
@@ -69,7 +69,7 @@ export class Sucursales {
           this.requiereLogin.set(false);
         }),
         switchMap(([nombre, categoria]) =>
-          this.service.filtrar(categoria, nombre).pipe(
+          this.buscarSucursales(categoria, nombre).pipe(
             catchError((err: HttpErrorResponse) => {
               // Este listado presenta el error en contexto y ofrece su propio
               // reintento, que conserva búsqueda y categoría sin duplicar avisos.
@@ -123,6 +123,26 @@ export class Sucursales {
         this.selectedCategory.set(categoria);
       }
     });
+  }
+
+  private buscarSucursales(
+    categoria: string | null,
+    nombre: string | null,
+  ): Observable<SucursalMiniDTO[]> {
+    const termino = nombre?.trim() ?? '';
+    if (/^\d+$/.test(termino)) {
+      return this.service.listar().pipe(
+        map((lista) =>
+          (lista ?? []).filter(
+            (sucursal) =>
+              String(sucursal.id) === termino &&
+              (!categoria || sucursal.categoria === categoria),
+          ),
+        ),
+      );
+    }
+
+    return this.service.filtrar(categoria, nombre);
   }
 
   protected onSearchInput(event: Event): void {
