@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { backendService } from './backend-service';
-import { SucursalMiniDTO } from '../models/sucursal';
+import { SucursalDetalleDTO, SucursalMiniDTO } from '../models/sucursal';
 
 @Injectable({ providedIn: 'root' })
 export class sucursalService {
@@ -30,5 +30,9 @@ export class sucursalService {
 
   categorias(): Observable<string[]> {
     return this.http.get<string[]>(`${this.api.baseUrl}/sucursales/categorias`);
+  }
+
+  obtenerPorId(id: number): Observable<SucursalDetalleDTO> {
+    return this.http.get<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales/${id}`);
   }
 }

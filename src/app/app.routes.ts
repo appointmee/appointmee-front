@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { SucursalDetalle } from './pages/sucursal-detalle/sucursal-detalle';
 import { authGuard } from './guards/auth-guard';
 import { verificationGuard } from './guards/verification-guard';
 import { guestGuard } from './guards/guest-guard';
@@ -25,12 +26,9 @@ export const routes: Routes = [
   },
   {
     path: 'sucursal/:id',
+    canActivate: [authGuard],
     title: 'AppointMee | Sucursal',
-    data: {
-      title: 'Sucursal',
-      description: 'Detalle de la sucursal seleccionada.',
-    },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    component: SucursalDetalle,
   },
   {
     path: 'mis-turnos',

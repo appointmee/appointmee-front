@@ -79,7 +79,7 @@ export class Sucursales {
                 this.requiereLogin.set(true);
               } else if (err.status === 0) {
                 this.error.set(
-                  'No pudimos conectar con el backend. Verificá que esté corriendo en http://localhost:8080 y que uses npm start (puerto 4200).',
+                  'No pudimos cargar las sucursales. Revisá tu conexión e intentá de nuevo.',
                 );
               } else {
                 this.error.set('No pudimos cargar las sucursales. Intentá de nuevo.');
