@@ -125,12 +125,27 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
   const errors = inject(apiErrorsService);
   const router = inject(Router);
   const auth = inject(authService);
+  const navigation = router.getCurrentNavigation();
+  const attemptedUrl = navigation?.finalUrl ?? navigation?.extractedUrl;
+  const requestOrigin = attemptedUrl ? router.serializeUrl(attemptedUrl) : router.url;
 
   return next(request).pipe(
     catchError((cause: unknown) => {
       if (!(cause instanceof HttpErrorResponse)) return throwError(() => cause);
 
       const error = errors.map(cause);
+
+      // El guard decide qué hacer con la validación de sesión. El listado y
+      // el detalle ya muestran sus propios errores de carga y reintentos.
+      const path = new URL(request.url, globalThis.location.origin).pathname;
+      const validacionDeSesion = path.endsWith('/usuarios/me');
+      const cargaDeSucursales = request.method === 'GET'
+        && /\/sucursales(?:\/|$)/.test(path)
+        && [0, 500, 502, 503].includes(cause.status);
+
+      if (validacionDeSesion || cargaDeSucursales) {
+        return throwError(() => error);
+      }
       const isLogin =
         request.url.includes('/usuarios/inicio-sesion') || request.url.includes('/auth/');
 
@@ -147,9 +162,8 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
           });
         } else {
           const canRetry = [500, 502, 503].includes(cause.status);
-          if (canRetry && request.method === 'GET') {
-            const activeUrl = router.getCurrentNavigation()?.finalUrl;
-            const currentUrl = activeUrl ? router.serializeUrl(activeUrl) : router.url;
+          if ((canRetry || cause.status === 0) && request.method === 'GET') {
+            const currentUrl = requestOrigin;
             void router.navigate(['/error'], {
               state: { status: cause.status, errorReference: error.reference, returnTo: currentUrl },
               replaceUrl: true,

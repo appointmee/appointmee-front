@@ -118,7 +118,8 @@
   top: calc(var(--nav-h) + 12px);
   z-index: 40;
   align-self: flex-start;
-  margin-left: clamp(24px, 4vw, 44px);
+  margin-top: 16px;
+  margin-left: max(24px, calc((100% - 1180px) / 2));
 }
 
 .detalle__grid > .reservadas {
@@ -1166,21 +1167,17 @@
 
   .panel--horarios {
     grid-column: 1 / -1;
-    /* El panel de horarios no es interactivo y, al scrollear, queda por encima
-       de la tarjeta sticky. Deja pasar los clics para que "Reservar turno"
-       se pueda presionar en todo momento. */
-    pointer-events: none;
   }
 
   .detalle__aside {
-    position: sticky;
-    top: calc(var(--nav-h) + 20px);
+    align-self: start;
   }
 }
 
 @media (max-width: 767px) {
   .volver--flotante {
     position: static;
+    margin-left: 16px;
   }
 
   .detalle__cta-mobile {

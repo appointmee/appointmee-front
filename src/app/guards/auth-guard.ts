@@ -36,7 +36,7 @@ export const authGuard: CanActivateFn = (route, state) => {
       
       // Conservamos las credenciales ante errores de red o del servidor.
 
-      return of(router.createUrlTree(['/error'], { queryParams: { status: status ?? 500 } }));
+      return of(router.createUrlTree(['/error'], { queryParams: { status: status ?? 500, returnTo: state.url } }));
     }),
   );
 };
