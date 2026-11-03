@@ -767,54 +767,6 @@
   margin: 0;
 }
 
-.equipo {
-  display: flex;
-  align-items: center;
-  padding-left: 12px;
-}
-
-.equipo__avatar {
-  display: grid;
-  width: 52px;
-  height: 52px;
-  margin-left: -12px;
-  place-items: center;
-  border: 2px solid #0e131b;
-  border-radius: 50%;
-  background: linear-gradient(145deg, rgba(247, 198, 90, 0.2), rgba(255, 255, 255, 0.04));
-}
-
-.equipo__avatar::before {
-  content: '';
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 1px solid rgba(247, 198, 90, 0.28);
-  background: rgba(247, 198, 90, 0.12);
-}
-
-.equipo__avatar--mas {
-  border: 2px dashed rgba(247, 198, 90, 0.32);
-  background: rgba(247, 198, 90, 0.06);
-  color: #d9c690;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.equipo__avatar--mas::before {
-  display: none;
-}
-
-.reservada__placeholder {
-  margin: auto 0 0;
-  padding-top: 16px;
-  border-top: 1px dashed var(--line);
-  color: #8b95a7;
-  font-size: 13px;
-  font-style: italic;
-  line-height: 1.6;
-}
-
 /* =========================================================
    Estados: skeleton, error
    ========================================================= */

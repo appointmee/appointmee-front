@@ -246,16 +246,11 @@
             </div>
           </header>
 
-          <div class="equipo" aria-hidden="true">
-            <span class="equipo__avatar"></span>
-            <span class="equipo__avatar"></span>
-            <span class="equipo__avatar"></span>
-            <span class="equipo__avatar equipo__avatar--mas">+</span>
-          </div>
-
-          <p class="reservada__placeholder">
-            Muy pronto vas a poder conocer al equipo de esta sucursal.
-          </p>
+          <app-equipo-sucursal
+            [sucursalId]="s.id"
+            [limite]="5"
+            [mostrarVerMas]="true"
+          />
         </article>
       </div>
     </div>
