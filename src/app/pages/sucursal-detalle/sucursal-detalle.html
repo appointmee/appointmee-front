@@ -86,6 +86,12 @@
       <div class="detalle__hero-overlay" aria-hidden="true"></div>
 
       <div class="detalle__hero-top">
+        <a class="volver volver--flotante" routerLink="/sucursales">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 12H5M11 18l-6-6 6-6" />
+          </svg>
+          Volver al listado
+        </a>
         <nav class="breadcrumb" aria-label="Migas de pan">
           <ol class="breadcrumb__list">
             <li class="breadcrumb__item">
@@ -148,13 +154,6 @@
         </div>
       </div>
     </header>
-
-    <a class="volver volver--flotante" routerLink="/sucursales">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M19 12H5M11 18l-6-6 6-6" />
-      </svg>
-      Volver al listado
-    </a>
 
     <div class="detalle__inner">
       <div class="detalle__grid">
@@ -260,66 +259,66 @@
             </div>
           </article>
         }
+      </div>
 
-        <div class="reservadas">
-          <article class="reservada reservada--resenias" aria-labelledby="resenias-titulo">
-            <header class="reservada__head">
-              <span class="reservada__icon" aria-hidden="true">🍯</span>
-              <div>
-                <span class="reservada__eyebrow">Reseñas</span>
-                <h2 id="resenias-titulo">Lo que dicen los clientes</h2>
-              </div>
-            </header>
+      <div class="reservadas">
+        <article class="reservada reservada--resenias" aria-labelledby="resenias-titulo">
+          <header class="reservada__head">
+            <span class="reservada__icon" aria-hidden="true">🍯</span>
+            <div>
+              <span class="reservada__eyebrow">Reseñas</span>
+              <h2 id="resenias-titulo">Lo que dicen los clientes</h2>
+            </div>
+          </header>
 
-            <div class="reservada__score">
-              <div class="reservada__bees" aria-hidden="true">
-                @for (llena of abejas(); track $index) {
-                  <span class="bee bee--grande" [class.bee--vacia]="!llena">🐝</span>
-                }
-              </div>
-              @if (hayPuntuaciones()) {
-                <p class="reservada__promedio">
-                  {{ puntuacion() }}<span>/5</span>
-                  <small>{{ cantidadPuntuaciones() }} reseñas</small>
-                </p>
-              } @else {
-                <p class="reservada__promedio reservada__promedio--vacio">
-                  Sin puntuaciones
-                  <small>Todavía no hay reseñas de esta sucursal.</small>
-                </p>
+          <div class="reservada__score">
+            <div class="reservada__bees" aria-hidden="true">
+              @for (llena of abejas(); track $index) {
+                <span class="bee bee--grande" [class.bee--vacia]="!llena">🐝</span>
               }
             </div>
+            @if (hayPuntuaciones()) {
+              <p class="reservada__promedio">
+                {{ puntuacion() }}<span>/5</span>
+                <small>{{ cantidadPuntuaciones() }} reseñas</small>
+              </p>
+            } @else {
+              <p class="reservada__promedio reservada__promedio--vacio">
+                Sin puntuaciones
+                <small>Todavía no hay reseñas de esta sucursal.</small>
+              </p>
+            }
+          </div>
 
-            <p class="reservada__placeholder">
-              Las reseñas van a estar disponibles en una próxima actualización.
-            </p>
-          </article>
+          <p class="reservada__placeholder">
+            Las reseñas van a estar disponibles en una próxima actualización.
+          </p>
+        </article>
 
-          <article class="reservada reservada--equipo" aria-labelledby="equipo-titulo">
-            <header class="reservada__head">
-              <span class="reservada__icon reservada__icon--equipo" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-              </span>
-              <div>
-                <span class="reservada__eyebrow">Nuestro equipo</span>
-                <h2 id="equipo-titulo">Quiénes te atienden</h2>
-              </div>
-            </header>
-
-            <div class="equipo" aria-hidden="true">
-              <span class="equipo__avatar"></span>
-              <span class="equipo__avatar"></span>
-              <span class="equipo__avatar"></span>
-              <span class="equipo__avatar equipo__avatar--mas">+</span>
+        <article class="reservada reservada--equipo" aria-labelledby="equipo-titulo">
+          <header class="reservada__head">
+            <span class="reservada__icon reservada__icon--equipo" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </span>
+            <div>
+              <span class="reservada__eyebrow">Nuestro equipo</span>
+              <h2 id="equipo-titulo">Quiénes te atienden</h2>
             </div>
+          </header>
 
-            <p class="reservada__placeholder">
-              Muy pronto vas a poder conocer al equipo de esta sucursal.
-            </p>
-          </article>
-        </div>
+          <div class="equipo" aria-hidden="true">
+            <span class="equipo__avatar"></span>
+            <span class="equipo__avatar"></span>
+            <span class="equipo__avatar"></span>
+            <span class="equipo__avatar equipo__avatar--mas">+</span>
+          </div>
+
+          <p class="reservada__placeholder">
+            Muy pronto vas a poder conocer al equipo de esta sucursal.
+          </p>
+        </article>
       </div>
 
       <div class="detalle__cta-mobile">

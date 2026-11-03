@@ -114,15 +114,9 @@
 }
 
 .volver--flotante {
-  position: sticky;
-  top: calc(var(--nav-h) + 12px);
-  z-index: 40;
-  align-self: flex-start;
-  margin-left: clamp(24px, 4vw, 44px);
-}
-
-.detalle__grid > .reservadas {
-  grid-column: 1 / -1;
+  flex-shrink: 0;
+  margin-top: 8px;
+  margin-left: max(24px, calc(50vw - 566px));
 }
 
 /* Breadcrumb */
@@ -1173,14 +1167,13 @@
   }
 
   .detalle__aside {
-    position: sticky;
-    top: calc(var(--nav-h) + 20px);
+    position: static;
   }
 }
 
 @media (max-width: 767px) {
   .volver--flotante {
-    position: static;
+    display: none;
   }
 
   .detalle__cta-mobile {
