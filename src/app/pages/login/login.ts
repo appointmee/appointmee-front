@@ -1,82 +1,136 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { FormField, email, form, required } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Auth } from '../../auth/auth';
-import { ApiError } from '../../http/api-errors';
 
-/**
- * Login mínimo para poder levantar sesión durante el demo 2 (navbar autenticado).
- * Después se reemplaza por la US del flujo de login.
- */
+import { CuentaSinVerificarModal } from '../../components/cuenta-sin-verificar-modal/cuenta-sin-verificar-modal';
+import { verificacionPendienteService } from '../../services/verificacion-pendiente-service';
+import { LoginModel } from '../../models/auth';
+import { ApiError } from '../../http/api-errors-service';
+import { authService } from '../../services/auth-service';
+import { destinoDespuesDelLogin } from '../../guards/login-destination';
+
 @Component({
   selector: 'app-login',
-  imports: [RouterLink],
+  imports: [FormField, RouterLink, CuentaSinVerificarModal],
   templateUrl: './login.html',
   styleUrl: './login.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginPage {
-  private readonly auth = inject(Auth);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
 
-  protected readonly email = signal('');
-  protected readonly contrasenia = signal('');
-  protected readonly enviando = signal(false);
-  protected readonly error = signal('');
-  protected readonly fieldErrors = signal<Readonly<Record<string, string>>>({});
+  private auth = inject(authService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private pendiente = inject(verificacionPendienteService);
 
-  constructor() {
-    if (this.route.snapshot.queryParamMap.get('expired') === '1') {
-      this.error.set('Tu sesión expiró. Iniciá sesión para continuar.');
-    }
-  }
 
-  protected actualizarEmail(event: Event): void {
-    this.email.set((event.target as HTMLInputElement).value);
-  }
+  loginModel = signal<LoginModel>({
+    email: '',
+    password: '',
+  });
 
-  protected actualizarContrasenia(event: Event): void {
-    this.contrasenia.set((event.target as HTMLInputElement).value);
-  }
+  loginForm = form(this.loginModel, (campos) => {
+    required(campos.email, { message: 'Ingresá tu email.' });
+    email(campos.email, { message: 'Ingresá un email válido.' });
 
-  protected enviar(event: Event): void {
+    required(campos.password, { message: 'Ingresá tu contraseña.' });
+  });
+
+
+  cargando = signal(false);
+  mostrarPassword = signal(false);
+  puedeReintentar = signal(false);
+  emailSinVerificar = signal(false);
+  modalVerificacion = signal(false);
+
+  mensaje = signal(
+    this.route.snapshot.queryParamMap.get('expired') === '1'
+      ? 'Tu sesión expiró. Iniciá sesión para continuar.'
+      : '',
+  );
+
+
+  onSubmit(event: Event): void {
     event.preventDefault();
 
-    const email = this.email().trim();
+    if (this.cargando()) return;
 
-    if (!email || !this.contrasenia()) {
-      this.error.set('Completá email y contraseña.');
+    this.loginModel.update(datos => ({ ...datos, email: datos.email.trim() }));
+    this.loginForm().markAsTouched();
+
+    if (this.loginForm().invalid()) {
+      const campo = this.loginForm.email().invalid() ? this.loginForm.email : this.loginForm.password;
+      campo().focusBoundControl();
       return;
     }
 
-    this.enviando.set(true);
-    this.error.set('');
-    this.fieldErrors.set({});
+    this.cargando.set(true);
+    this.mensaje.set('');
+    this.puedeReintentar.set(false);
+    this.emailSinVerificar.set(false);
+    this.modalVerificacion.set(false);
 
-    this.auth.iniciarSesion(email, this.contrasenia()).subscribe({
+    const datos = this.loginModel();
+
+    this.auth.login(datos.email, datos.password).subscribe({
       next: () => {
-        this.enviando.set(false);
-        void this.router.navigateByUrl(this.safeReturnTo());
+        this.cargando.set(false);
+
+        const destino = destinoDespuesDelLogin(this.router, this.route.snapshot.queryParamMap.get('returnTo'));
+        void this.router.navigateByUrl(destino);
       },
-      error: (cause: ApiError) => {
-        this.enviando.set(false);
-        if ([400, 422, 409].includes(cause?.status) && Object.keys(cause.fields).length) {
-          this.fieldErrors.set(cause.fields);
-          return;
-        }
-        this.error.set(cause?.status === 0
-          ? 'No pudimos conectarnos. Revisá tu conexión e intentá nuevamente.'
-          : cause?.status === 409
-            ? cause.message
-            : 'No pudimos iniciar sesión. Revisá el email y la contraseña.');
+
+      error: (error: ApiError) => {
+        this.cargando.set(false);
+        this.mostrarError(error);
       },
     });
   }
 
-  private safeReturnTo(): string {
-    const destination = this.route.snapshot.queryParamMap.get('returnTo');
-    return destination?.startsWith('/') && !destination.startsWith('//') && !destination.startsWith('/login')
-      ? destination
-      : '/';
+
+  irAVerificar(): void {
+    this.modalVerificacion.set(false);
+
+    void this.router.navigate(['/configuracion/verificar-email']);
+  }
+
+
+  cancelarVerificacion(): void {
+    this.pendiente.limpiar();
+    this.modalVerificacion.set(false);
+  }
+
+
+  private mostrarError(error: ApiError): void {
+    if (error.code === 'EMAIL_NOT_VERIFIED') {
+      if (!error.verificationToken) {
+        this.mensaje.set('No pudimos continuar la verificación. Volvé a intentar.');
+        return;
+      }
+      this.pendiente.guardarEmail(this.loginModel().email, error.verificationToken, error.verificationExpiresIn ?? 900);
+      this.emailSinVerificar.set(true);
+      this.modalVerificacion.set(true);
+      this.mensaje.set('Tu cuenta todavía no está verificada. Verificá tu email para iniciar sesión.');
+      return;
+    }
+
+    if (error.status === 401) {
+      this.mensaje.set('Email o contraseña incorrectos');
+      this.loginModel.update(datos => ({ ...datos, password: '' }));
+      this.loginForm.password().focusBoundControl();
+      return;
+    }
+
+    if (error.status === 429) {
+      this.mensaje.set(error.retryAfterSeconds
+        ? `Demasiados intentos. Esperá ${error.retryAfterSeconds} segundos antes de reintentar.`
+        : 'Demasiados intentos. Esperá un momento antes de reintentar.');
+      return;
+    }
+
+    this.puedeReintentar.set(error.status === 0 || error.status >= 500);
+    this.mensaje.set(error.status === 0
+      ? 'No pudimos conectarnos. Revisá tu conexión y volvé a intentar.'
+      : 'No pudimos iniciar sesión. Intentá nuevamente en unos momentos.');
   }
 }

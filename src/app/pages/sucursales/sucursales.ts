@@ -13,8 +13,9 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { combineLatest, Observable, of, Subject } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators';
 
-import { SucursalService } from '../../services/sucursal.service';
-import { SucursalMiniDTO } from '../../models/sucursal.model';
+import { sucursalService } from '../../services/sucursal-service';
+import { SucursalMiniDTO } from '../../models/sucursal';
+import { ApiErrors } from '../../http/api-errors';
 
 @Component({
   selector: 'app-sucursales',
@@ -24,8 +25,10 @@ import { SucursalMiniDTO } from '../../models/sucursal.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Sucursales {
-  private readonly service = inject(SucursalService);
+  private readonly service = inject(sucursalService);
+  private readonly apiErrors = inject(ApiErrors);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly placeholderImage = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -42,8 +45,12 @@ export class Sucursales {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly requiereLogin = signal(false);
+  /** True mientras un reintento está en vuelo: bloquea dobles clics (US-ERR-03). */
+  protected readonly reintentando = signal(false);
 
   private readonly searchSubject = new Subject<string>();
+  /** Re-emitido al presionar "Reintentar": re-ejecuta la consulta fallida tal como estaba. */
+  private readonly reintento = new Subject<void>();
 
   constructor() {
     const search$ = this.searchSubject.pipe(
@@ -52,8 +59,9 @@ export class Sucursales {
       startWith(this.searchTerm()),
     );
     const category$ = toObservable(this.selectedCategory);
+    const reintento$ = this.reintento.pipe(startWith(undefined as void));
 
-    combineLatest([search$, category$])
+    combineLatest([search$, category$, reintento$])
       .pipe(
         tap(() => {
           this.loading.set(true);
@@ -63,12 +71,15 @@ export class Sucursales {
         switchMap(([nombre, categoria]) =>
           this.buscarSucursales(categoria, nombre).pipe(
             catchError((err: HttpErrorResponse) => {
+              // Este listado presenta el error en contexto y ofrece su propio
+              // reintento, que conserva búsqueda y categoría sin duplicar avisos.
+              this.apiErrors.dismiss();
               if (err.status === 401) {
                 this.error.set('Necesitás iniciar sesión para ver las sucursales.');
                 this.requiereLogin.set(true);
               } else if (err.status === 0) {
                 this.error.set(
-                  'No pudimos conectar con el backend. Verificá que esté corriendo en http://localhost:8080 y que uses npm start (puerto 3000).',
+                  'No pudimos conectar con el backend. Verificá que esté corriendo en http://localhost:8080 y que uses npm start (puerto 4200).',
                 );
               } else {
                 this.error.set('No pudimos cargar las sucursales. Intentá de nuevo.');
@@ -82,6 +93,9 @@ export class Sucursales {
       .subscribe((lista) => {
         this.sucursales.set(lista ?? []);
         this.loading.set(false);
+        // Tanto el reintento exitoso como el fallido pasan por acá: el botón
+        // vuelve a estar disponible sólo después de tener veredicto (US-ERR-03).
+        this.reintentando.set(false);
       });
 
     this.service
@@ -134,16 +148,44 @@ export class Sucursales {
   protected onSearchInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.searchTerm.set(value);
-    this.searchSubject.next(value);
+    this.updateFilterUrl(
+      { busqueda: value || null, categoria: this.selectedCategory() },
+      () => this.searchSubject.next(value),
+    );
   }
 
   protected clearSearch(): void {
     this.searchTerm.set('');
-    this.searchSubject.next('');
+    this.updateFilterUrl(
+      { busqueda: null, categoria: this.selectedCategory() },
+      () => this.searchSubject.next(''),
+    );
   }
 
   protected selectCategory(categoria: string | null): void {
     this.selectedCategory.set(categoria);
+    this.updateFilterUrl(
+      { busqueda: this.searchTerm() || null, categoria },
+      () => this.selectedCategory.set(categoria),
+    );
+  }
+
+  private updateFilterUrl(
+    queryParams: { busqueda: string | null; categoria: string | null },
+    onCommitted: () => void,
+  ): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    }).then(onCommitted);
+  }
+
+  protected retry(): void {
+    if (this.reintentando()) return;
+    this.reintentando.set(true);
+    this.reintento.next();
   }
 
   protected onImageError(event: Event): void {

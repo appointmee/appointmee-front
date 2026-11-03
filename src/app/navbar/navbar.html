@@ -9,7 +9,7 @@
       <span class="brand__text">Appoint<span class="brand__accent">Mee</span></span>
     </a>
 
-    @if (auth.autenticado()) {
+    @if (auth.autenticado() && !navbarSimple()) {
       <nav class="nav" aria-label="Navegación principal">
         <ul class="nav__list">
           @for (link of primaryLinks(); track link.path) {
@@ -29,6 +29,7 @@
       </nav>
     }
 
+    @if (!navbarSimple()) {
     <div class="navbar__search-wrap" [class.is-open]="searchOpen()">
       <form
         class="search"
@@ -69,7 +70,14 @@
       </form>
     </div>
 
+    }
+
     <div class="navbar__actions">
+      @if (navbarSimple()) {
+        <a class="navbar__cta navbar__cta--solid navbar__cta--auth" routerLink="/registrarme">
+          Crear cuenta
+        </a>
+      } @else {
       <button
         class="icon-btn search-trigger"
         type="button"
@@ -186,11 +194,12 @@
         <span></span>
         <span></span>
       </button>
+      }
     </div>
   </div>
 </header>
 
-@if (mobileOpen()) {
+@if (mobileOpen() && !navbarSimple()) {
   <div class="scrim" (click)="closeMobile()" aria-hidden="true"></div>
   <aside
     #sheet

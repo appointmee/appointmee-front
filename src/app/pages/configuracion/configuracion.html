@@ -1,0 +1,99 @@
+<section class="ajustes" aria-labelledby="ajustes-titulo">
+  <span class="ajustes__marca">AppointMee</span>
+  <h1 id="ajustes-titulo">Ajustes</h1>
+  <p class="ajustes__descripcion">Personalizá tus preferencias y la forma en que usás AppointMee.</p>
+
+  <nav class="ajustes__pestanas" aria-label="Secciones de ajustes">
+    <span class="ajustes__pestana ajustes__pestana--activa" aria-current="page">Verificar cuenta</span>
+  </nav>
+
+  <section class="verificacion" aria-labelledby="verificacion-titulo">
+    <div class="verificacion__cabecera">
+      <div>
+        <h2 id="verificacion-titulo">Verificación de la cuenta</h2>
+        <p>Confirmá tu email para mantener tu cuenta lista para reservar.</p>
+      </div>
+      <span class="verificacion__estado" [class.verificacion__estado--lista]="verificada()">
+        {{ verificada() ? 'Verificada' : 'Pendiente' }}
+      </span>
+    </div>
+
+    @if (verificada()) {
+      <div class="verificacion__exito" role="status">
+        <h3>{{ redirigiendo() ? '¡Todo bien!' : 'Tu cuenta ya está verificada' }}</h3>
+        <p>{{ aviso() || 'No necesitás volver a verificar tu email.' }}</p>
+      </div>
+
+      @if (redirigiendo()) {
+        <p class="verificacion__aviso">En un momento te llevamos a Sucursales…</p>
+        <button class="verificacion__principal" type="button" (click)="irASucursales()">Ir a Sucursales</button>
+      } @else if (!auth.autenticado()) {
+        <button class="verificacion__principal" type="button" (click)="volverAlLogin()">Volver al inicio de sesión</button>
+      }
+    } @else if (contextoValido()) {
+      <div class="verificacion__destinatario">
+        <p>{{ enviando() ? 'Enviando un código de 6 dígitos…' : codigoEnviado() ? 'Te enviamos un código de 6 dígitos' : 'No pudimos enviar el código. Intentá nuevamente.' }}</p>
+        <strong>{{ emailEnmascarado() }}</strong>
+      </div>
+
+      <form (submit)="confirmarCodigo($event)" novalidate [attr.aria-busy]="enviando() || confirmando()">
+        <fieldset class="verificacion__grupo-codigo" aria-describedby="codigo-ayuda verificacion-codigo-error">
+          <legend>Código de verificación</legend>
+          <p id="codigo-ayuda" class="verificacion__ayuda">Completá las casillas con los 6 dígitos del código.</p>
+
+          @if (codigoEnviado()) {
+            <p class="verificacion__vigencia" role="timer" aria-live="off">
+              {{ segundosVigencia() > 0 ? 'El código vence en ' + tiempoVigencia() : 'El código venció. Pedí uno nuevo.' }}
+            </p>
+          }
+          <span class="verificacion__sr" role="status" aria-live="polite" aria-atomic="true">{{ avisoVigencia() }}</span>
+
+          <div class="verificacion__fila-codigo">
+          <div class="verificacion__casillas">
+            @for (indice of indicesCodigo; track indice) {
+              <input #casillaCodigo [id]="'verificacion-codigo-' + indice"
+                     class="verificacion__casilla" type="text" inputmode="numeric"
+                     [attr.autocomplete]="indice === 0 ? 'one-time-code' : 'off'"
+                     [attr.maxlength]="indice === 0 ? 6 : 1"
+                     [attr.aria-label]="'Dígito ' + (indice + 1) + ' de 6'"
+                     [attr.aria-invalid]="verificacionForm.codigo().touched() && verificacionForm.codigo().invalid()"
+                     [value]="digito(indice)" (input)="ingresarCodigo($event, indice)"
+                     (paste)="pegarCodigo($event, indice)" (keydown)="teclaCodigo($event, indice)"
+                     (focus)="seleccionarCodigo($event)"
+                     [readOnly]="enviando() || confirmando() || bloqueada()" />
+            }
+          </div>
+        <button class="verificacion__secundario" type="button" (click)="enviarCodigo()"
+                [disabled]="enviando() || confirmando() || segundosReenvio() > 0">
+          {{ enviando() ? 'Enviando…' : segundosReenvio() > 0 ? 'Reenviar en ' + segundosReenvio() + ' s' : reenvioSugerido() || bloqueada() ? 'Pedir un código nuevo' : codigoEnviado() ? 'Reenviar código' : 'Enviar código' }}
+        </button>
+          </div>
+
+          <div id="verificacion-codigo-error" class="verificacion__validacion" aria-live="polite">
+            @if (verificacionForm.codigo().touched()) {
+              @for (error of verificacionForm.codigo().errors(); track error.kind) { <p>{{ error.message }}</p> }
+            }
+          </div>
+        </fieldset>
+
+        <div class="verificacion__mensajes" aria-live="polite" aria-atomic="true">
+          @if (aviso()) { <p class="verificacion__aviso">{{ aviso() }}</p> }
+          @if (error()) { <p class="verificacion__error">{{ error() }}</p> }
+          @if (bloqueada()) {
+            <p class="verificacion__error">Alcanzaste el máximo de intentos. Pedí un código nuevo para continuar.</p>
+          }
+        </div>
+
+        <div class="verificacion__acciones-verificar">
+          <button class="verificacion__principal" type="submit" [disabled]="!puedeVerificar()">
+            {{ confirmando() ? 'Verificando…' : 'Verificar' }}
+          </button>
+          <button class="verificacion__salir" type="button" aria-label="Volver al inicio de sesión" (click)="volverAlLogin()">Volver</button>
+        </div>
+      </form>
+    } @else {
+      <p class="verificacion__aviso">Volvé a iniciar sesión para continuar con la verificación de tu cuenta.</p>
+      <button class="verificacion__salir" type="button" (click)="volverAlLogin()">Volver al inicio de sesión</button>
+    }
+  </section>
+</section>

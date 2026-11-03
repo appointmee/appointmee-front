@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
-import { Auth } from '../auth/auth';
+import { authService } from '../services/auth-service';
 
 export interface ApiError {
   readonly status: number;
@@ -24,7 +24,7 @@ const SAFE_MESSAGES: Readonly<Record<number, string>> = {
 
 @Injectable({ providedIn: 'root' })
 export class ApiErrors {
-  readonly notice = signal<{ error: ApiError; retry?: () => void; retrying?: boolean } | null>(null);
+  readonly notice = signal<{ error: ApiError } | null>(null);
 
   map(response: HttpErrorResponse): ApiError {
     const reference = crypto.randomUUID();
@@ -84,34 +84,41 @@ export class ApiErrors {
 export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
   const errors = inject(ApiErrors);
   const router = inject(Router);
-  const auth = inject(Auth);
+  const auth = inject(authService);
   return next(request).pipe(catchError((cause: unknown) => {
     if (!(cause instanceof HttpErrorResponse)) return throwError(() => cause);
     const error = errors.map(cause);
     const isLogin = request.url.includes('/usuarios/inicio-sesion');
 
-    if (cause.status === 401 && !isLogin && request.headers.has('Authorization')) {
-      auth.cerrarSesion();
-      const returnTo = router.url === '/error' ? '/' : router.url;
+    if (cause.status === 401 && !isLogin) {
+      auth.limpiarSesion();
+      // Si el 401 llega mientras el router está cambiando de pantalla, router.url
+      // todavía puede apuntar a la ruta anterior. Preferimos el destino activo.
+      const activeUrl = router.getCurrentNavigation()?.finalUrl;
+      const currentUrl = activeUrl ? router.serializeUrl(activeUrl) : router.url;
+      const returnTo = currentUrl.startsWith('/login') || currentUrl.startsWith('/error') ? '/' : currentUrl;
       void router.navigate(['/login'], { queryParams: { returnTo, expired: '1' } });
     } else if (cause.status !== 400 && cause.status !== 422 && !isLogin) {
-      if (![0, 403, 404, 409, 429, 500, 502, 503].includes(cause.status)) {
-        void router.navigate(['/error'], { state: { status: cause.status, errorReference: error.reference } });
-      } else {
-        const canRetry = [500, 502, 503].includes(cause.status);
-        const retry: (() => void) | undefined = canRetry ? () => {
-          const current = errors.notice();
-          if (current?.retrying) return;
-          errors.notice.update((notice) => notice ? { ...notice, retrying: true } : notice);
-          void next(request).subscribe({
-            next: () => errors.dismiss(),
-            error: (retryCause: HttpErrorResponse) => {
-              const retryError = errors.map(retryCause);
-              errors.notice.set({ error: retryError, retry, retrying: false });
-            },
+      const retryableRead = request.method === 'GET' && [500, 502, 503].includes(cause.status);
+      if (retryableRead) {
+        const returnTo = router.url.startsWith('/error') ? '/' : router.url;
+        void router.navigate(['/error'], {
+          state: { status: cause.status, errorReference: error.reference, returnTo },
+          replaceUrl: true,
+        });
+      } else if (![0, 403, 404, 409, 429, 500, 502, 503].includes(cause.status)) {
+        // Los errores de operaciones que pueden modificar datos se quedan en
+        // el formulario para evitar perderlo o repetir una acción no idempotente.
+        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
+          errors.notice.set({ error });
+        } else {
+          void router.navigate(['/error'], {
+            state: { status: cause.status, errorReference: error.reference },
+            replaceUrl: true,
           });
-        } : undefined;
-        errors.notice.set({ error, retry });
+        }
+      } else {
+        errors.notice.set({ error });
       }
     }
 
