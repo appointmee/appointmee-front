@@ -21,6 +21,7 @@ import { sucursalService } from '../../services/sucursal-service';
 type CargaResultado =
   | { readonly estado: 'ok'; readonly sucursal: SucursalDetalleDTO }
   | { readonly estado: 'no-encontrada' }
+  | { readonly estado: 'sin-conexion' }
   | { readonly estado: 'error'; readonly mensaje: string };
 
 const NOMBRES_DIAS: Readonly<Record<string, string>> = {
@@ -58,9 +59,15 @@ export class SucursalDetalle {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly noEncontrada = signal(false);
+  protected readonly sinConexion = signal(false);
+  protected readonly reintentando = signal(false);
   protected readonly descripcionExpandida = signal(false);
 
-  private readonly recargar$ = new Subject<void>();
+  private readonly recargar$ = new Subject<boolean>();
+
+  protected readonly tituloError = computed(() =>
+    this.sinConexion() ? 'Sin conexión a internet' : 'No pudimos mostrar la sucursal',
+  );
 
   protected readonly categoria = computed(() => this.humanizarCategoria(this.sucursal()?.categoria));
 
@@ -122,16 +129,31 @@ export class SucursalDetalle {
     this.route.paramMap
       .pipe(
         map((params) => params.get('id')),
-        switchMap((id) => this.recargar$.pipe(startWith(undefined), map(() => id))),
-        tap(() => this.reiniciarEstado()),
-        switchMap((id) => this.cargar(id)),
+        switchMap((id) =>
+          this.recargar$.pipe(
+            startWith(false),
+            map((esReintento) => ({ id, esReintento })),
+          ),
+        ),
+        tap(({ esReintento }) => {
+          if (esReintento) {
+            this.reintentando.set(true);
+          } else {
+            this.reiniciarEstado();
+          }
+        }),
+        switchMap(({ id }) => this.cargar(id)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((resultado) => this.aplicarResultado(resultado));
   }
 
   protected reintentar(): void {
-    this.recargar$.next();
+    if (this.reintentando() || !this.error()) {
+      return;
+    }
+
+    this.recargar$.next(true);
   }
 
   protected alternarDescripcion(): void {
@@ -167,11 +189,7 @@ export class SucursalDetalle {
     }
 
     if (err.status === 0) {
-      return {
-        estado: 'error',
-        mensaje:
-          'No pudimos conectarnos con el servidor. Revisá tu conexión e intentá de nuevo.',
-      };
+      return { estado: 'sin-conexion' };
     }
 
     return {
@@ -181,16 +199,35 @@ export class SucursalDetalle {
   }
 
   private aplicarResultado(resultado: CargaResultado): void {
+    this.reintentando.set(false);
+
     switch (resultado.estado) {
       case 'ok':
         this.sucursal.set(resultado.sucursal);
+        this.error.set(null);
+        this.noEncontrada.set(false);
+        this.sinConexion.set(false);
         this.title.setTitle(`AppointMee | ${resultado.sucursal.nombre}`);
         break;
       case 'no-encontrada':
+        this.sucursal.set(null);
+        this.error.set(null);
         this.noEncontrada.set(true);
+        this.sinConexion.set(false);
+        break;
+      case 'sin-conexion':
+        this.sucursal.set(null);
+        this.error.set(
+          'No pudimos conectarnos. Revisá tu conexión a internet e intentá de nuevo.',
+        );
+        this.noEncontrada.set(false);
+        this.sinConexion.set(true);
         break;
       case 'error':
+        this.sucursal.set(null);
         this.error.set(resultado.mensaje);
+        this.noEncontrada.set(false);
+        this.sinConexion.set(false);
         break;
     }
 
@@ -201,6 +238,8 @@ export class SucursalDetalle {
     this.sucursal.set(null);
     this.error.set(null);
     this.noEncontrada.set(false);
+    this.sinConexion.set(false);
+    this.reintentando.set(false);
     this.descripcionExpandida.set(false);
     this.loading.set(true);
   }

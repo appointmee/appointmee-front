@@ -14,14 +14,6 @@
       Intentaste abrir <code>{{ rutaOriginal() }}</code>
     </p>
 
-    <form class="page404__busqueda" role="search" aria-label="Buscar sucursales" (submit)="buscarSucursal($event)">
-      <label for="busqueda-sucursal">Buscar una sucursal</label>
-      <div>
-        <input id="busqueda-sucursal" type="search" [value]="busqueda()" (input)="busqueda.set($any($event.target).value)" placeholder="Nombre o ubicación" />
-        <button type="submit" [disabled]="!busqueda().trim()">Buscar</button>
-      </div>
-    </form>
-
     <div class="page404__acciones">
       @if (idSucursal()) {
         <a
