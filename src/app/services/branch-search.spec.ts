@@ -133,20 +133,21 @@ describe('BranchSearch', () => {
     });
   });
 
-  it('keeps an unverified URL category when the categories endpoint fails', async () => {
+  it('selects Todas and keeps the name search when the categories endpoint fails', async () => {
     getCategories.mockReturnValue(throwError(() => new Error('network')));
     list.mockReturnValue(of([CENTRO]));
 
     await router.navigateByUrl('/?busqueda=Centro&categoria=SPA');
+    await vi.waitFor(() => expect(router.url).toBe('/?busqueda=Centro'));
 
-    expect(router.url).toBe('/?busqueda=Centro&categoria=SPA');
     expect(search.categories()).toEqual([]);
     expect(search.categoriesError()).toBe(
       'No pudimos cargar las categorías. Podés seguir usando el listado.',
     );
-    expect(search.selectedCategory()).toBe('SPA');
+    expect(search.selectedCategory()).toBeNull();
     expect(search.branches()).toEqual([CENTRO]);
-    expect(list).toHaveBeenLastCalledWith({ nombre: 'Centro', categoria: 'SPA' });
+    expect(list).toHaveBeenCalledOnce();
+    expect(list).toHaveBeenLastCalledWith({ nombre: 'Centro' });
   });
 
   it('allows retrying the categories request without reloading the listing', async () => {

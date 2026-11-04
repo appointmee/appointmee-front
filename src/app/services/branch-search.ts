@@ -19,7 +19,6 @@ import {
   BranchCategory,
   BranchFilters,
   BranchSummary,
-  KnownBranchCategory,
 } from '../models/branch';
 import { BranchService } from './branch.service';
 
@@ -37,20 +36,13 @@ type SearchResult = SearchSuccess | SearchFailure;
 
 type CategoriesStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
-const CATEGORY_LABELS: Record<KnownBranchCategory, string> = {
-  PELUQUERIA: 'Peluquería',
-  SPA: 'Spa',
-  VETERINARIA: 'Veterinaria',
-  ODONTOLOGIA: 'Odontología',
-  PODOLOGIA: 'Podología',
-  TATUAJE: 'Tatuaje',
-  MANICURA: 'Manicura',
-  BARBERIA: 'Barbería',
-  PELUQUERIA_CANINA: 'Peluquería canina',
-  FOTOGRAFIA: 'Fotografía',
-  OCULISTA: 'Oculista',
-  MASAJE: 'Masaje',
-  DEPILACION: 'Depilación',
+const CATEGORY_WORD_LABELS: Readonly<Record<string, string>> = {
+  PELUQUERIA: 'peluquería',
+  ODONTOLOGIA: 'odontología',
+  PODOLOGIA: 'podología',
+  BARBERIA: 'barbería',
+  FOTOGRAFIA: 'fotografía',
+  DEPILACION: 'depilación',
 };
 
 function normalizeTerm(value: string): string {
@@ -70,12 +62,12 @@ function isValidTerm(value: string): boolean {
 }
 
 function categoryLabel(category: BranchCategory): string {
-  const knownLabel = CATEGORY_LABELS[category as KnownBranchCategory];
-  if (knownLabel) {
-    return knownLabel;
-  }
-
-  const label = category.trim().replaceAll('_', ' ').toLocaleLowerCase('es');
+  const label = category
+    .trim()
+    .split('_')
+    .filter(Boolean)
+    .map((word) => CATEGORY_WORD_LABELS[word] ?? word.toLocaleLowerCase('es'))
+    .join(' ');
   return label ? `${label.charAt(0).toLocaleUpperCase('es')}${label.slice(1)}` : category;
 }
 
@@ -284,6 +276,7 @@ export class BranchSearch {
 
     this.applyFilters(term, category);
   }
+  //Obtener categorías desde el backend
 
   private loadCategories(): void {
     if (this.categoriesStatus !== 'idle') {
@@ -324,6 +317,17 @@ export class BranchSearch {
     }
 
     this.pendingCategoryValidation = false;
+
+    if (this.categoriesStatus === 'error') {
+      this.selectedCategory.set(null);
+      void this.router.navigate([], {
+        queryParams: { categoria: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+      return;
+    }
+
     this.restoreFromUrl();
   }
 
