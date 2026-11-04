@@ -51,6 +51,10 @@ function isValidTerm(value: string): boolean {
   return term.length === 0 || term.length >= 2;
 }
 
+function filtersKey(filters: BranchFilters): string {
+  return `${comparisonKey(filters.nombre ?? '')}|${filters.categoria ?? ''}`;
+}
+
 function isBranchCategory(value: string | null): value is BranchCategory {
   return !!value && (BRANCH_CATEGORIES as readonly string[]).includes(value);
 }
@@ -65,7 +69,8 @@ export class BranchSearch {
   private readonly retried = new Subject<void>();
   private currentFilters: BranchFilters = {};
   private categoriesRequested = false;
-  private pendingTermKey: string | null = null;
+  private pendingTerm: string | null = null;
+  private lastRequestedFiltersKey: string | null = null;
 
   readonly search = new FormControl('', { nonNullable: true });
   readonly branches = signal<readonly BranchSummary[]>([]);
@@ -180,16 +185,15 @@ export class BranchSearch {
     const tree = this.router.parseUrl(this.router.url);
     const currentTerm = tree.queryParams['busqueda'];
     const onHome = (tree.root.children[PRIMARY_OUTLET]?.segments.length ?? 0) === 0;
-    const termKey = comparisonKey(term);
 
     if (
-      this.pendingTermKey === termKey ||
-      (onHome && comparisonKey(currentTerm ?? '') === termKey)
+      this.pendingTerm === term ||
+      (onHome && normalizeTerm(currentTerm ?? '') === term)
     ) {
       return;
     }
 
-    this.pendingTermKey = termKey;
+    this.pendingTerm = term;
     void this.router.navigate(['/'], {
       queryParams: { busqueda: term || null },
       queryParamsHandling: 'merge',
@@ -209,7 +213,7 @@ export class BranchSearch {
     const categoryParam = tree.queryParams['categoria'] ?? null;
     const category = isBranchCategory(categoryParam) ? categoryParam : null;
 
-    this.pendingTermKey = null;
+    this.pendingTerm = null;
     this.search.setValue(queryTerm, { emitEvent: false });
     this.term.set(queryTerm);
     this.appliedTerm.set(term);
@@ -220,6 +224,12 @@ export class BranchSearch {
     };
 
     this.loadCategories();
+    const key = filtersKey(this.currentFilters);
+    if (key === this.lastRequestedFiltersKey) {
+      return;
+    }
+
+    this.lastRequestedFiltersKey = key;
     this.requested.next(this.currentFilters);
   }
 

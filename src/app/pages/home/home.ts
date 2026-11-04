@@ -36,6 +36,15 @@ export class Home {
     this.branchSearch.selectCategory(category);
   }
 
+  protected clearEmptyState(): void {
+    if (this.branchSearch.appliedTerm()) {
+      this.branchSearch.clear();
+      return;
+    }
+
+    this.branchSearch.clearFilters();
+  }
+
   protected imageError(event: Event): void {
     (event.target as HTMLImageElement).hidden = true;
   }

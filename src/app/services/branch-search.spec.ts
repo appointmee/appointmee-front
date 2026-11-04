@@ -135,6 +135,31 @@ describe('BranchSearch', () => {
     expect(list).toHaveBeenLastCalledWith({ categoria: 'SPA' });
   });
 
+  it('restores the complete listing after the field stays empty for 350 ms', async () => {
+    await router.navigateByUrl('/?busqueda=Centro');
+    vi.useFakeTimers();
+
+    search.search.setValue('   ');
+    await vi.advanceTimersByTimeAsync(350);
+    await vi.waitFor(() => expect(router.url).toBe('/'));
+
+    expect(search.appliedTerm()).toBe('');
+    expect(list).toHaveBeenLastCalledWith({});
+  });
+
+  it('syncs case and accents in the URL without repeating an equivalent request', async () => {
+    await router.navigateByUrl('/?busqueda=Centro');
+    const requestsAfterInitialSearch = list.mock.calls.length;
+    vi.useFakeTimers();
+
+    search.search.setValue('céntro');
+    await vi.advanceTimersByTimeAsync(350);
+    await vi.waitFor(() => expect(router.url).toBe('/?busqueda=c%C3%A9ntro'));
+
+    expect(search.appliedTerm()).toBe('céntro');
+    expect(list).toHaveBeenCalledTimes(requestsAfterInitialSearch);
+  });
+
   it('restores prior searches when navigation returns to an earlier URL', async () => {
     await router.navigateByUrl('/?busqueda=Centro');
     await router.navigateByUrl('/?busqueda=Norte');
@@ -173,6 +198,44 @@ describe('BranchSearch', () => {
     expect(navbarInput.value).toBe('Centro');
     expect(homeInput.value).toBe('Centro');
     expect(search.search.value).toBe('Centro');
+  });
+
+  it('renders accessible search forms and clear buttons in Home and Navbar', async () => {
+    await router.navigateByUrl('/');
+    search.search.setValue('Centro');
+    const navbarFixture = TestBed.createComponent(Navbar);
+    const homeFixture = TestBed.createComponent(Home);
+    navbarFixture.detectChanges();
+    homeFixture.detectChanges();
+
+    const navbarForm = navbarFixture.nativeElement.querySelector('#navbar-search') as HTMLFormElement;
+    const navbarInput = navbarForm.querySelector('input') as HTMLInputElement;
+    const homeForm = homeFixture.nativeElement.querySelector('.branch-search') as HTMLFormElement;
+    const homeInput = homeForm.querySelector('input') as HTMLInputElement;
+
+    expect(navbarForm.getAttribute('role')).toBe('search');
+    expect(navbarInput.getAttribute('aria-label')).toBe('Buscar sucursales por nombre');
+    expect(navbarForm.querySelector('[aria-label="Limpiar búsqueda"]')).toBeTruthy();
+    expect(homeForm.getAttribute('role')).toBe('search');
+    expect(homeInput.labels?.[0]?.textContent?.trim()).toBe('Buscar sucursal por nombre');
+    expect(homeForm.querySelector('[aria-label="Limpiar búsqueda"]')).toBeTruthy();
+  });
+
+  it('shows an empty result with the term and clears only the name filter', async () => {
+    await router.navigateByUrl('/?busqueda=Centro&categoria=SPA');
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+
+    const emptyState = fixture.nativeElement.querySelector('.branch-state') as HTMLElement;
+    const clearButton = emptyState.querySelector('.branch-action') as HTMLButtonElement;
+
+    expect(emptyState.textContent).toContain('No se encontraron sucursales');
+    expect(emptyState.textContent).toContain('Centro');
+
+    clearButton.click();
+    await vi.waitFor(() => expect(router.url).toBe('/?categoria=SPA'));
+    expect(search.selectedCategory()).toBe('SPA');
+    expect(list).toHaveBeenLastCalledWith({ categoria: 'SPA' });
   });
 
   it('keeps only the newest response when requests finish out of order', async () => {
