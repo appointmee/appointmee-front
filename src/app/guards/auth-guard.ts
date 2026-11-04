@@ -14,6 +14,10 @@ export const authGuard: CanActivateFn = (route, state) => {
 
   if (!auth.getAccessToken() && !auth.getRefreshToken()) return login();
 
+  // Sin conexión no validamos la sesión por red: la pantalla de destino (por
+  // ejemplo el detalle de sucursal) se encarga de mostrar el aviso correspondiente.
+  if (!navigator.onLine) return of(true);
+
 
   // Primero validamos la sesión y después los roles de la ruta.
 
@@ -33,10 +37,17 @@ export const authGuard: CanActivateFn = (route, state) => {
         auth.limpiarSesion();
         return of(login());
       }
-      
+
+      // Ante un error de red (sin conexión) dejamos pasar a la ruta para que
+      // la propia pantalla (por ejemplo el detalle de sucursal) muestre su aviso
+      // de "sin conexión" con la opción "Reintentar", en lugar de enviar al error genérico.
+      if (status === 0 || status === undefined || status === null) {
+        return of(true);
+      }
+
       // Conservamos las credenciales ante errores de red o del servidor.
 
-      return of(router.createUrlTree(['/error'], { queryParams: { status: status ?? 500 } }));
+      return of(router.createUrlTree(['/error'], { queryParams: { status: status ?? 500, returnTo: state.url } }));
     }),
   );
 };

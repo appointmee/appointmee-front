@@ -14,7 +14,6 @@ import { Meta, Title } from '@angular/platform-browser';
 import { NavigationEnd, RouterLink, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { Reporte404 } from './reporte-404';
-import { NavigationHistory } from '../../navigation-history';
 
 /**
  * Vista 404 (US-ERR-04).
@@ -33,9 +32,8 @@ export class NotFoundPage {
   private readonly title = inject(Title);
   private readonly router = inject(Router);
   private readonly reporte404 = inject(Reporte404);
-  private readonly navigationHistory = inject(NavigationHistory);
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly busqueda = signal('');
+  protected readonly canGoBack = this.hasInternalHistory();
 
   private readonly titulo = viewChild<ElementRef<HTMLHeadingElement>>('titulo');
 
@@ -49,14 +47,12 @@ export class NotFoundPage {
   protected readonly idSucursal = computed(() => this.detectarIdSucursal(this.rutaOriginal()));
 
   protected goBack(): void {
-    void this.router.navigateByUrl(this.navigationHistory.backTarget() ?? '/', { replaceUrl: true });
+    if (this.canGoBack) history.back();
+    else void this.router.navigateByUrl('/');
   }
 
-  protected buscarSucursal(event: Event): void {
-    event.preventDefault();
-    const termino = this.busqueda().trim();
-    if (!termino) return;
-    void this.router.navigate(['/sucursales'], { queryParams: { busqueda: termino } });
+  private hasInternalHistory(): boolean {
+    return history.length > 1;
   }
 
   private detectarIdSucursal(ruta: string): string | null {
