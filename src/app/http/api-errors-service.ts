@@ -3,6 +3,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { authService } from '../services/auth-service';
+import { SIN_MANEJO_GLOBAL_DE_ERRORES } from './error-handling-context';
 
 export interface ApiError {
   readonly status: number;
@@ -122,6 +123,10 @@ export class apiErrorsService {
 // Errores HTTP que se muestran en la interfaz
 
 export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
+  // La pantalla que marcó la petición resuelve el error inline y ofrece su
+  // propio reintento; el interceptor no debe navegar ni duplicar el aviso.
+  if (request.context.get(SIN_MANEJO_GLOBAL_DE_ERRORES)) return next(request);
+
   const errors = inject(apiErrorsService);
   const router = inject(Router);
   const auth = inject(authService);

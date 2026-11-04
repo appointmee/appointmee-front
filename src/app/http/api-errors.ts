@@ -3,6 +3,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { authService } from '../services/auth-service';
+import { SIN_MANEJO_GLOBAL_DE_ERRORES } from './error-handling-context';
 
 export interface ApiError {
   readonly status: number;
@@ -82,6 +83,8 @@ export class ApiErrors {
 }
 
 export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
+  if (request.context.get(SIN_MANEJO_GLOBAL_DE_ERRORES)) return next(request);
+
   const errors = inject(ApiErrors);
   const router = inject(Router);
   const auth = inject(authService);

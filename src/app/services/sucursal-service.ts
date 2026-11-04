@@ -1,7 +1,8 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { backendService } from './backend-service';
+import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import { SucursalDetalleDTO, SucursalMiniDTO } from '../models/sucursal';
 
 @Injectable({ providedIn: 'root' })
@@ -32,6 +33,21 @@ export class sucursalService {
     return this.http.get<string[]>(`${this.api.baseUrl}/sucursales/categorias`);
   }
 
+  /**
+   * Detalle de una sucursal. `silenciarErroresGlobales` permite que la pantalla
+   * que lo consume muestre su propio estado de error sin navegar a /error.
+   */
+  obtenerPorId(
+    idSucursal: number,
+    silenciarErroresGlobales = false,
+  ): Observable<SucursalDetalleDTO> {
+    const url = `${this.api.baseUrl}/sucursales/${idSucursal}`;
+    if (!silenciarErroresGlobales) {
+      return this.http.get<SucursalDetalleDTO>(url);
+    }
+    return this.http.get<SucursalDetalleDTO>(url, {
+      context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+    });
   obtenerPorId(id: number): Observable<SucursalDetalleDTO> {
     return this.http.get<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales/${id}`);
   }
