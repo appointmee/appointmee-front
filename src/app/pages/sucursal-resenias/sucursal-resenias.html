@@ -55,11 +55,11 @@
                   <span class="bee" [class.bee--vacia]="!llena">🐝</span>
                 }
               </span>
-              <span class="rating__promedio">{{ puntuacion() }}<span>/5</span></span>
+              <span class="rating__promedio">{{ puntuacion().toFixed(1) }}<span>/5</span></span>
               <span class="rating__etiqueta">{{ etiqueta() }}</span>
               <span class="rating__cantidad">{{ cantidad() }} reseñas</span>
               <span class="sr-only">
-                Promedio {{ puntuacion() }} de 5 sobre {{ cantidad() }} reseñas
+                Promedio {{ puntuacion().toFixed(1) }} de 5 sobre {{ cantidad() }} reseñas
               </span>
             </div>
           } @else {

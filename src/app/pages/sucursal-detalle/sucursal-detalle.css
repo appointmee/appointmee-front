@@ -1175,9 +1175,10 @@
   }
 
   .detalle__aside {
-    position: sticky;
-    top: calc(var(--nav-h) + 20px);
-  }
+  
+    position: static;
+    align-self: start;
+}
 }
 
 @media (max-width: 767px) {

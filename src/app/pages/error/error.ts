@@ -52,24 +52,6 @@ export class ErrorPage {
         : 'No pudimos completar tu solicitud. Podés volver a intentarlo o continuar desde el inicio.',
   );
 
-  /**
-   * Permite reutilizar esta pantalla desde otras vistas (por ejemplo el detalle
-   * de sucursal) sin duplicar el diseño de error existente.
-   */
-  readonly variant = input<ErrorPageVariant>('default');
-
-  protected readonly heading = computed(() =>
-    this.variant() === 'sucursal-no-encontrada'
-      ? 'No encontramos esta sucursal'
-      : 'Algo salió mal',
-  );
-
-  protected readonly description = computed(() =>
-    this.variant() === 'sucursal-no-encontrada'
-      ? 'La sucursal que buscás no existe o ya no está disponible. Volvé al listado para elegir otra.'
-      : 'No pudimos completar tu solicitud. Podés volver a intentarlo o continuar desde el inicio.',
-  );
-
   constructor() {
     this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
     afterNextRender(() => this.titleElement()?.nativeElement.focus());
