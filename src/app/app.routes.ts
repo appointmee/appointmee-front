@@ -36,6 +36,16 @@ export const routes: Routes = [
   },
   {
     path: 'servicios',
+    path: 'sucursal/:id/resenias',
+    canActivate: [authGuard],
+    title: 'AppointMee | Reseñas',
+    loadComponent: () =>
+      import('./pages/sucursal-resenias/sucursal-resenias').then(
+        (module) => module.SucursalResenias,
+      ),
+  },
+  {
+    path: 'sucursal/:id',
     canActivate: [authGuard],
     title: 'AppointMee | Elegir servicio',
     data: {

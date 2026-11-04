@@ -1,0 +1,92 @@
+<section class="resenias" aria-label="Reseñas de la sucursal">
+  @if (mostrarResumen()) {
+    <div class="resenias__score">
+      <div class="resenias__bees" aria-hidden="true">
+        @for (llena of abejas(); track $index) {
+          <span class="bee bee--grande" [class.bee--vacia]="!llena">🐝</span>
+        }
+      </div>
+      @if (hayResenias() && promedio() > 0) {
+        <p class="resenias__promedio">
+          {{ promedio() }}<span>/5</span>
+          <small>{{ total() }} reseñas</small>
+        </p>
+        <span class="resenias__etiqueta">{{ etiquetaPromedio() }}</span>
+        <span class="sr-only">
+          Puntuación promedio {{ promedio() }} de 5 sobre {{ total() }} reseñas
+        </span>
+      } @else {
+        <p class="resenias__promedio resenias__promedio--vacio">
+          Sin puntuaciones
+          <small>Aún no hay puntuaciones registradas.</small>
+        </p>
+      }
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="resenias__estado" aria-live="polite" aria-busy="true">
+      <span class="sr-only">Cargando reseñas…</span>
+      <div class="resenias__skeleton-list">
+        @for (_ of [1, 2, 3]; track $index) {
+          <article class="resenia-card resenia-card--skeleton" aria-hidden="true">
+            <div class="resenia-card__top">
+              <div class="skeleton skeleton--bees"></div>
+              <div class="skeleton skeleton--line skeleton--line--xs"></div>
+            </div>
+            <div class="skeleton skeleton--line"></div>
+            <div class="skeleton skeleton--line"></div>
+            <div class="skeleton skeleton--line skeleton--line--mid"></div>
+          </article>
+        }
+      </div>
+    </div>
+  } @else if (error()) {
+    <div class="resenias__estado resenias__estado--error" role="alert">
+      <p class="resenias__estado-texto">{{ error() }}</p>
+      <button class="resenias__reintentar" type="button" (click)="reintentar()">Reintentar</button>
+    </div>
+  } @else if (!hayResenias()) {
+    <div class="resenias__vacio">
+      <p class="resenias__vacio-titulo">Todavía no hay reseñas</p>
+      <p class="resenias__vacio-texto">
+        Cuando los clientes compartan su experiencia, las vas a ver acá.
+      </p>
+    </div>
+  } @else {
+    <div class="resenias__lista">
+      @for (resenia of visibles(); track $index) {
+        <article class="resenia-card">
+          <header class="resenia-card__header">
+            <div class="resenia-card__puntuacion">
+              <div class="resenia-card__bees" aria-hidden="true">
+                @for (llena of abejasResenia(resenia); track $index) {
+                  <span class="bee" [class.bee--vacia]="!llena">🐝</span>
+                }
+              </div>
+              <span class="resenia-card__valor">{{ puntuacionResenia(resenia) }} / 5</span>
+              <span class="resenia-card__etiqueta">{{ etiquetaResenia(resenia) }}</span>
+            </div>
+            <time class="resenia-card__fecha">{{ fechaResenia(resenia) }}</time>
+          </header>
+          <p class="resenia-card__comentario">{{ comentarioResenia(resenia) }}</p>
+        </article>
+      }
+    </div>
+
+    @if (hayMas()) {
+      <div class="resenias__acciones">
+        <a
+          class="resenias__ver-mas"
+          [routerLink]="['/sucursal', sucursalId(), 'resenias']"
+          aria-label="Ver todas las reseñas de esta sucursal"
+        >
+          Ver más
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 6 6 6-6 6" />
+          </svg>
+        </a>
+      </div>
+    }
+  }
+</section>

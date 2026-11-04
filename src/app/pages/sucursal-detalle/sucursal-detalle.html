@@ -278,32 +278,21 @@
             <span class="reservada__icon" aria-hidden="true">🍯</span>
             <div>
               <span class="reservada__eyebrow">Reseñas</span>
-              <h2 id="resenias-titulo">Lo que dicen los clientes</h2>
+              <h2 id="resenias-titulo">
+                <a class="reservada__titulo-link" [routerLink]="['/sucursal', s.id, 'resenias']">
+                  Lo que dicen los clientes
+                </a>
+              </h2>
             </div>
           </header>
 
-          <div class="reservada__score">
-            <div class="reservada__bees" aria-hidden="true">
-              @for (llena of abejas(); track $index) {
-                <span class="bee bee--grande" [class.bee--vacia]="!llena">🐝</span>
-              }
-            </div>
-            @if (hayPuntuaciones()) {
-              <p class="reservada__promedio">
-                {{ puntuacion() }}<span>/5</span>
-                <small>{{ cantidadPuntuaciones() }} reseñas</small>
-              </p>
-            } @else {
-              <p class="reservada__promedio reservada__promedio--vacio">
-                Sin puntuaciones
-                <small>Todavía no hay reseñas de esta sucursal.</small>
-              </p>
-            }
-          </div>
-
-          <p class="reservada__placeholder">
-            Las reseñas van a estar disponibles en una próxima actualización.
-          </p>
+          <app-resenias-sucursal
+            [sucursalId]="s.id"
+            [puntuacion]="s.puntuacion"
+            [cantidad]="s.cantidadPuntuaciones"
+            [limite]="5"
+            [mostrarVerMas]="true"
+          />
         </article>
 
         <article class="reservada reservada--equipo" aria-labelledby="equipo-titulo">
@@ -331,6 +320,7 @@
           </p>
         </article>
       </div>
+    </div>
 
       <div class="detalle__cta-mobile">
         @if (avisoRol()) {
@@ -355,6 +345,14 @@
             {{ navegando() ? 'Abriendo…' : 'Reservar turno' }}
           </button>
         </div>
+    <div class="detalle__cta-mobile">
+      <div class="detalle__cta-copy">
+        <strong>{{ s.nombre }}</strong>
+        <span>{{ categoria() }}</span>
+      </div>
+      <div class="detalle__cta-acciones">
+        <a class="btn btn--ghost" routerLink="/sucursales">Volver</a>
+        <button class="btn btn--primary" type="button">Reservar turno</button>
       </div>
     </div>
   }
