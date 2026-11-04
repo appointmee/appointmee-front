@@ -108,7 +108,7 @@ export class SucursalDetalle {
   protected readonly puntuacion = computed(() => {
     const valor = this.sucursal()?.puntuacion;
     return typeof valor === 'number' && Number.isFinite(valor)
-      ? Math.max(0, Math.min(5, Math.round(valor)))
+      ? Math.round(Math.max(0, Math.min(5, valor)) * 10) / 10
       : 0;
   });
 

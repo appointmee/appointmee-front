@@ -267,7 +267,11 @@
             <span class="reservada__icon" aria-hidden="true">🍯</span>
             <div>
               <span class="reservada__eyebrow">Reseñas</span>
-              <h2 id="resenias-titulo">Lo que dicen los clientes</h2>
+              <h2 id="resenias-titulo">
+                <a class="reservada__titulo-link" [routerLink]="['/sucursal', s.id, 'resenias']">
+                  Lo que dicen los clientes
+                </a>
+              </h2>
             </div>
           </header>
 
@@ -312,20 +316,9 @@
         <strong>{{ s.nombre }}</strong>
         <span>{{ categoria() }}</span>
       </div>
-      <button class="btn btn--primary" type="button">Reservar turno</button>
-    </div>
-  }
-</section>
-
-      <div class="detalle__cta-mobile">
-        <div class="detalle__cta-copy">
-          <strong>{{ s.nombre }}</strong>
-          <span>{{ categoria() }}</span>
-        </div>
-        <div class="detalle__cta-acciones">
-          <a class="btn btn--ghost" routerLink="/sucursales">Volver</a>
-          <button class="btn btn--primary" type="button">Reservar turno</button>
-        </div>
+      <div class="detalle__cta-acciones">
+        <a class="btn btn--ghost" routerLink="/sucursales">Volver</a>
+        <button class="btn btn--primary" type="button">Reservar turno</button>
       </div>
     </div>
   }
