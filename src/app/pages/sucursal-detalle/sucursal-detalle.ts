@@ -13,6 +13,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Observable, Subject, catchError, map, of, startWith, switchMap, tap } from 'rxjs';
 
 import { ErrorPage } from '../error/error';
+import { ReseniasSucursal } from '../../components/resenias-sucursal/resenias-sucursal';
 import { apiErrorsService } from '../../http/api-errors-service';
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import { sucursalService } from '../../services/sucursal-service';
@@ -38,7 +39,7 @@ const LARGO_DESCRIPCION_COLGADA = 280;
 
 @Component({
   selector: 'app-sucursal-detalle',
-  imports: [ErrorPage, RouterLink],
+  imports: [ErrorPage, ReseniasSucursal, RouterLink],
   templateUrl: './sucursal-detalle.html',
   styleUrl: './sucursal-detalle.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -107,7 +108,7 @@ export class SucursalDetalle {
   protected readonly puntuacion = computed(() => {
     const valor = this.sucursal()?.puntuacion;
     return typeof valor === 'number' && Number.isFinite(valor)
-      ? Math.max(0, Math.min(5, Math.round(valor)))
+      ? Math.round(Math.max(0, Math.min(5, valor)) * 10) / 10
       : 0;
   });
 

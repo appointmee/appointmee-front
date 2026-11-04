@@ -733,6 +733,7 @@
 .reservadas {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  align-items: start;
   gap: 20px;
 }
 
@@ -1167,14 +1168,15 @@
 
   .panel--horarios {
     grid-column: 1 / -1;
+    /* El panel de horarios no es interactivo y, al scrollear, queda por encima
+       de la tarjeta sticky. Deja pasar los clics para que "Reservar turno"
+       se pueda presionar en todo momento. */
+    pointer-events: none;
   }
 
   .detalle__aside {
-<<<<<<< HEAD
-    align-self: start;
-=======
     position: static;
->>>>>>> origin/SCRUM-223-ver-la-informacion-general-de-la-sucursal
+    align-self: start;
   }
 }
 
@@ -1316,4 +1318,19 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+.reservada__titulo-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.reservada__titulo-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.reservada__titulo-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
 }
