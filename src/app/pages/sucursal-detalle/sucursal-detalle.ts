@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Observable, Subject, catchError, map, of, startWith, switchMap, tap } from 'rxjs';
 
 import { ErrorPage } from '../error/error';
@@ -17,6 +17,7 @@ import { EquipoSucursal } from '../../components/equipo-sucursal/equipo-sucursal
 import { ReseniasSucursal } from '../../components/resenias-sucursal/resenias-sucursal';
 import { apiErrorsService } from '../../http/api-errors-service';
 import { SucursalDetalleDTO } from '../../models/sucursal';
+import { authService } from '../../services/auth-service';
 import { sucursalService } from '../../services/sucursal-service';
 
 type CargaResultado =
@@ -48,6 +49,8 @@ const LARGO_DESCRIPCION_COLGADA = 280;
 export class SucursalDetalle {
   private readonly service = inject(sucursalService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly auth = inject(authService);
   private readonly title = inject(Title);
   private readonly apiErrors = inject(apiErrorsService);
   private readonly destroyRef = inject(DestroyRef);
@@ -63,6 +66,12 @@ export class SucursalDetalle {
   protected readonly sinConexion = signal(false);
   protected readonly reintentando = signal(false);
   protected readonly descripcionExpandida = signal(false);
+  /** Bloquea el CTA mientras el router resuelve la navegación. */
+  protected readonly navegando = signal(false);
+  /** Mensaje específico para una sesión autenticada sin rol CLIENTE. */
+  protected readonly avisoRol = signal<string | null>(null);
+
+  protected readonly ayudaReserva = 'Elegí el servicio, el profesional y el horario.';
 
   private readonly recargar$ = new Subject<boolean>();
 
@@ -157,6 +166,45 @@ export class SucursalDetalle {
     this.recargar$.next(true);
   }
 
+  /**
+   * Inicia la reserva desde el detalle:
+   * - cliente autenticado: va directo a elegir servicio;
+   * - visitante: va al login conservando el destino;
+   * - sesión sin rol CLIENTE: muestra un aviso específico en vez de un 403.
+   */
+  protected iniciarReserva(): void {
+    if (this.navegando()) {
+      return;
+    }
+
+    const sucursal = this.sucursal();
+    if (!sucursal) {
+      return;
+    }
+
+    this.avisoRol.set(null);
+
+    if (this.auth.autenticado() && !this.auth.tieneAlgunRol('CLIENTE')) {
+      this.avisoRol.set(
+        'Tu cuenta no tiene el rol Cliente, necesario para reservar. Ingresá con una cuenta de cliente para continuar.',
+      );
+      return;
+    }
+
+    const destino = `/sucursal/${sucursal.id}/servicios`;
+    this.navegando.set(true);
+
+    const navegacion = this.auth.autenticado()
+      ? this.router.navigateByUrl(destino)
+      : this.router.navigate(['/login'], { queryParams: { returnTo: destino } });
+
+    void navegacion.then((navego) => {
+      if (!navego) {
+        this.navegando.set(false);
+      }
+    });
+  }
+
   protected alternarDescripcion(): void {
     this.descripcionExpandida.update((expandida) => !expandida);
   }
@@ -175,7 +223,7 @@ export class SucursalDetalle {
       return of<CargaResultado>({ estado: 'no-encontrada' });
     }
 
-    return this.service.obtenerPorId(id).pipe(
+    return this.service.obtenerPorId(id, true).pipe(
       map((sucursal): CargaResultado => ({ estado: 'ok', sucursal })),
       catchError((err: HttpErrorResponse) => of(this.mapearError(err))),
     );
@@ -242,6 +290,8 @@ export class SucursalDetalle {
     this.sinConexion.set(false);
     this.reintentando.set(false);
     this.descripcionExpandida.set(false);
+    this.navegando.set(false);
+    this.avisoRol.set(null);
     this.loading.set(true);
   }
 

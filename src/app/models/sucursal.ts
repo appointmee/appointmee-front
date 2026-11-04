@@ -8,13 +8,6 @@ export interface SucursalMiniDTO {
   readonly diasApertura?: readonly string[];
 }
 
-/** Datos mínimos de la sucursal que necesita el flujo de reserva. */
-export interface SucursalDetalleDTO {
-  readonly id: number;
-  readonly nombre: string;
-  readonly direccion?: string | null;
-  readonly categoria?: string | null;
-  readonly fotoPerfil?: string | null;
 /**
  * Respuesta de GET /sucursales/{id} (SucursalResponseDTO del backend).
  * Solo se tipan los campos que consume el detalle: el endpoint también

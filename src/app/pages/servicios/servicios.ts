@@ -47,6 +47,8 @@ export class Servicios {
   protected readonly cargando = signal(this.sucursalId !== null);
   protected readonly error = signal<string | null>(null);
   protected readonly requiereLogin = signal(false);
+  /** La cuenta está autenticada pero no puede reservar por su rol. */
+  protected readonly requiereRolCliente = signal(false);
   protected readonly reintentando = signal(false);
 
   protected readonly nombreSucursal = computed(
@@ -81,6 +83,7 @@ export class Servicios {
           // inicial.
           this.cargando.set(this.error() === null);
           this.requiereLogin.set(false);
+          this.requiereRolCliente.set(false);
         }),
         switchMap(() =>
           forkJoin({
@@ -170,6 +173,14 @@ export class Servicios {
     if (error.status === 401) {
       this.error.set('Necesitás iniciar sesión para ver los servicios de esta sucursal.');
       this.requiereLogin.set(true);
+      return;
+    }
+
+    if (error.status === 403) {
+      this.error.set(
+        'Tu cuenta no tiene el rol Cliente, necesario para reservar. Ingresá con una cuenta de cliente para continuar.',
+      );
+      this.requiereRolCliente.set(true);
       return;
     }
 

@@ -28,7 +28,7 @@ export class NavigationHistory {
       });
   }
 
-  backTarget(currentUrl: string): string | null {
+  backTarget(currentUrl: string = this.router.url): string | null {
     for (let index = this.entries.length - 1; index >= 0; index--) {
       const candidate = this.entries[index].url;
 

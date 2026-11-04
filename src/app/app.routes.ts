@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { SucursalDetalle } from './pages/sucursal-detalle/sucursal-detalle';
 import { authGuard } from './guards/auth-guard';
 import { verificationGuard } from './guards/verification-guard';
 import { guestGuard } from './guards/guest-guard';
@@ -26,6 +25,7 @@ export const routes: Routes = [
   },
   {
     path: 'sucursal/:sucursalId/servicios',
+    canActivate: [authGuard],
     title: 'AppointMee | Elegir servicio',
     data: {
       title: 'Elegir servicio',
@@ -43,6 +43,8 @@ export const routes: Routes = [
     },
     loadComponent: () =>
       import('./pages/servicios/servicios').then((module) => module.Servicios),
+  },
+  {
     path: 'sucursal/:id/resenias',
     canActivate: [authGuard],
     title: 'AppointMee | Reseñas',
@@ -61,10 +63,13 @@ export const routes: Routes = [
       ),
   },
   {
+    // El detalle es público: el CTA decide si inicia sesión antes de reservar.
     path: 'sucursal/:id',
-    canActivate: [authGuard],
     title: 'AppointMee | Sucursal',
-    component: SucursalDetalle,
+    loadComponent: () =>
+      import('./pages/sucursal-detalle/sucursal-detalle').then(
+        (module) => module.SucursalDetalle,
+      ),
   },
   {
     path: 'mis-turnos',

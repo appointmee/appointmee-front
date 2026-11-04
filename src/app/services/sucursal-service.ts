@@ -48,7 +48,5 @@ export class sucursalService {
     return this.http.get<SucursalDetalleDTO>(url, {
       context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
     });
-  obtenerPorId(id: number): Observable<SucursalDetalleDTO> {
-    return this.http.get<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales/${id}`);
   }
 }
