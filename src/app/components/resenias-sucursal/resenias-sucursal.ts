@@ -60,7 +60,7 @@ export class ReseniasSucursal {
   protected readonly promedio = computed(() => {
     const declarado = this.puntuacion();
     if (typeof declarado === 'number' && Number.isFinite(declarado)) {
-      return this.normalizarPuntuacion(declarado);
+      return Math.round(this.normalizarPuntuacion(declarado) * 10) / 10;
     }
 
     const lista = this.resenias();
@@ -72,7 +72,7 @@ export class ReseniasSucursal {
       (acumulado, resenia) => acumulado + this.normalizarPuntuacion(resenia.puntuacion),
       0,
     );
-    return Math.round(suma / lista.length);
+    return Math.round((suma / lista.length) * 10) / 10;
   });
 
   protected readonly hayResenias = computed(() => this.total() > 0 || this.resenias().length > 0);
@@ -182,12 +182,12 @@ export class ReseniasSucursal {
 
   private normalizarPuntuacion(valor: number | null | undefined): number {
     return typeof valor === 'number' && Number.isFinite(valor)
-      ? Math.max(0, Math.min(5, Math.round(valor)))
+      ? Math.max(0, Math.min(5, valor))
       : 0;
   }
 
   private etiqueta(puntuacion: number): string {
-    return ESCALA_TEXTO[puntuacion] ?? 'Sin puntuación';
+    return ESCALA_TEXTO[Math.round(puntuacion)] ?? 'Sin puntuación';
   }
 
   private mensajeError(error: HttpErrorResponse): string {

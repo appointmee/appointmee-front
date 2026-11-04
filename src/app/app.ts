@@ -1,5 +1,6 @@
-import { Component, inject } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Component, inject, signal } from '@angular/core';
+import { NavigationEnd, NavigationError, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Navbar } from './navbar/navbar';
 import { ApiErrors } from './http/api-errors';
 import { NavigationHistory } from './navigation-history';
@@ -13,4 +14,30 @@ import { NavigationHistory } from './navigation-history';
 export class App {
   protected readonly apiErrors = inject(ApiErrors);
   private readonly navigationHistory = inject(NavigationHistory);
+  private readonly router = inject(Router);
+
+  protected readonly rutaFallida = signal<string | null>(null);
+  protected readonly reintentando = signal(false);
+
+  constructor() {
+    this.router.events.pipe(takeUntilDestroyed()).subscribe(event => {
+      if (event instanceof NavigationError) {
+        this.rutaFallida.set(event.url);
+        this.reintentando.set(false);
+      } else if (event instanceof NavigationEnd) {
+        this.rutaFallida.set(null);
+        this.reintentando.set(false);
+      }
+    });
+  }
+
+  protected reintentarNavegacion(): void {
+    const ruta = this.rutaFallida();
+    if (!ruta || this.reintentando()) return;
+
+    this.reintentando.set(true);
+    void this.router.navigateByUrl(ruta)
+      .catch(() => undefined)
+      .finally(() => this.reintentando.set(false));
+  }
 }
