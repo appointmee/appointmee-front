@@ -34,6 +34,15 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'sucursal/:id/equipo',
+    canActivate: [authGuard],
+    title: 'AppointMee | Equipo',
+    loadComponent: () =>
+      import('./pages/sucursal-equipo/sucursal-equipo').then(
+        (module) => module.SucursalEquipo,
+      ),
+  },
+  {
     path: 'sucursal/:id',
     canActivate: [authGuard],
     title: 'AppointMee | Sucursal',

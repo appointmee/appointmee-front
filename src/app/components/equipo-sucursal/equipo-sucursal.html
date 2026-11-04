@@ -1,0 +1,85 @@
+<section class="equipo" aria-label="Nuestro equipo">
+  @if (loading()) {
+    <div class="equipo__estado" aria-live="polite" aria-busy="true">
+      <span class="sr-only">Cargando profesionales…</span>
+      <div class="equipo__skeleton-list">
+        @for (_ of [1, 2, 3]; track $index) {
+          <article class="equipo-card equipo-card--skeleton" aria-hidden="true">
+            <span class="skeleton skeleton--avatar"></span>
+            <div class="equipo-card__body">
+              <span class="skeleton skeleton--line skeleton--name"></span>
+              <span class="skeleton skeleton--line skeleton--line--short"></span>
+              <span class="skeleton skeleton--bees"></span>
+            </div>
+          </article>
+        }
+      </div>
+    </div>
+  } @else if (error()) {
+    <div class="equipo__estado equipo__estado--error" role="alert">
+      <p class="equipo__estado-texto">{{ error() }}</p>
+      <button class="equipo__reintentar" type="button" (click)="reintentar()">Reintentar</button>
+    </div>
+  } @else if (!hayEmpleados()) {
+    <div class="equipo__vacio">
+      <p class="equipo__vacio-titulo">Todavía no hay profesionales cargados</p>
+      <p class="equipo__vacio-texto">
+        Cuando se sume el equipo de esta sucursal, lo vas a poder conocer acá.
+      </p>
+    </div>
+  } @else {
+    <div class="equipo__lista">
+      @for (empleado of visibles(); track empleado.id) {
+        <article class="equipo-card">
+          <img
+            class="equipo-card__avatar"
+            [src]="empleado.urlFotoPerfil || placeholderAvatar"
+            [alt]="'Fotografía de ' + nombreCompleto(empleado)"
+            loading="lazy"
+            decoding="async"
+            (error)="onImageError($event)"
+          />
+
+          <div class="equipo-card__body">
+            <h3 class="equipo-card__nombre">{{ nombre(empleado) }}</h3>
+            @if (apellido(empleado); as apellido) {
+              <p class="equipo-card__apellido">{{ apellido }}</p>
+            }
+
+            <div class="equipo-card__rating">
+              @if (tienePuntuacion(empleado)) {
+                <span class="equipo-card__bees" aria-hidden="true">
+                  @for (llena of abejas(empleado); track $index) {
+                    <span class="bee" [class.bee--vacia]="!llena">🐝</span>
+                  }
+                </span>
+                <span class="equipo-card__valor">{{ puntuacion(empleado) }} / 5</span>
+                <span class="equipo-card__etiqueta">{{ etiqueta(empleado) }}</span>
+                <span class="sr-only">
+                  Puntuación promedio {{ puntuacion(empleado) }} de 5
+                </span>
+              } @else {
+                <span class="equipo-card__sin-puntuacion">Sin puntuaciones</span>
+              }
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+
+    @if (hayMas()) {
+      <div class="equipo__acciones">
+        <a
+          class="equipo__ver-mas"
+          [routerLink]="['/sucursal', sucursalId(), 'equipo']"
+          aria-label="Ver todos los profesionales de esta sucursal"
+        >
+          Ver más
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 6 6 6-6 6" />
+          </svg>
+        </a>
+      </div>
+    }
+  }
+</section>
