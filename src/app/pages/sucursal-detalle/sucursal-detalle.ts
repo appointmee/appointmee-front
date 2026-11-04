@@ -13,6 +13,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Observable, Subject, catchError, map, of, startWith, switchMap, tap } from 'rxjs';
 
 import { ErrorPage } from '../error/error';
+import { EquipoSucursal } from '../../components/equipo-sucursal/equipo-sucursal';
 import { ReseniasSucursal } from '../../components/resenias-sucursal/resenias-sucursal';
 import { apiErrorsService } from '../../http/api-errors-service';
 import { SucursalDetalleDTO } from '../../models/sucursal';
@@ -40,7 +41,7 @@ const LARGO_DESCRIPCION_COLGADA = 280;
 
 @Component({
   selector: 'app-sucursal-detalle',
-  imports: [ErrorPage, ReseniasSucursal, RouterLink],
+  imports: [ErrorPage, EquipoSucursal, ReseniasSucursal, RouterLink],
   templateUrl: './sucursal-detalle.html',
   styleUrl: './sucursal-detalle.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

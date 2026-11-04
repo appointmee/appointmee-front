@@ -115,9 +115,11 @@
               <div class="card__rating">
                 @if (hasReviews(sucursal)) {
                   <span class="bees" aria-hidden="true">{{ beeString(sucursal.puntuacion) }}</span>
-                  <span class="sr-only">Puntuación: {{ sucursal.puntuacion }} de 5</span>
+                  <span class="sr-only">Puntuación: {{ promedioFormateado(sucursal.puntuacion) }} de 5</span>
                   <span class="rating__text">
-                    {{ sucursal.puntuacion }} de 5 · {{ sucursal.cantidadPuntuaciones }} reseñas
+                    <span>{{ promedioFormateado(sucursal.puntuacion) }} de 5</span>
+                    <span class="rating__separator" aria-hidden="true">—</span>
+                    <span>{{ sucursal.cantidadPuntuaciones }} reseñas</span>
                   </span>
                 } @else {
                   <span class="rating__text rating__text--muted">Sin reseñas</span>

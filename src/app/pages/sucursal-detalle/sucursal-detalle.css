@@ -1186,9 +1186,10 @@
   }
 
   .detalle__aside {
+  
     position: static;
     align-self: start;
-  }
+}
 }
 
 @media (max-width: 767px) {

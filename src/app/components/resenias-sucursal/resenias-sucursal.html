@@ -8,12 +8,12 @@
       </div>
       @if (hayResenias() && promedio() > 0) {
         <p class="resenias__promedio">
-          {{ promedio() }}<span>/5</span>
+          {{ promedio().toFixed(1) }}<span>/5</span>
           <small>{{ total() }} reseñas</small>
         </p>
         <span class="resenias__etiqueta">{{ etiquetaPromedio() }}</span>
         <span class="sr-only">
-          Puntuación promedio {{ promedio() }} de 5 sobre {{ total() }} reseñas
+          Puntuación promedio {{ promedio().toFixed(1) }} de 5 sobre {{ total() }} reseñas
         </span>
       } @else {
         <p class="resenias__promedio resenias__promedio--vacio">

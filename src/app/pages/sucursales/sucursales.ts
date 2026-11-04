@@ -209,6 +209,12 @@ export class Sucursales {
     );
   }
 
+  protected promedioFormateado(puntuacion: number | null): string {
+    return typeof puntuacion === 'number' && Number.isFinite(puntuacion)
+      ? puntuacion.toFixed(1)
+      : '0.0';
+  }
+
   protected beeString(puntuacion: number | null): string {
     const score = Math.max(0, Math.min(5, Math.round(puntuacion ?? 0)));
     return '🐝'.repeat(score);
@@ -218,7 +224,7 @@ export class Sucursales {
     if (!this.hasReviews(sucursal)) {
       return 'Sin reseñas';
     }
-    return `${sucursal.puntuacion} de 5, ${sucursal.cantidadPuntuaciones} reseñas`;
+    return `${this.promedioFormateado(sucursal.puntuacion)} de 5, ${sucursal.cantidadPuntuaciones} reseñas`;
   }
 
   protected cardAriaLabel(sucursal: SucursalMiniDTO): string {
@@ -226,7 +232,7 @@ export class Sucursales {
     if (!this.hasReviews(sucursal)) {
       return `${base}, sin reseñas. Ver detalle`;
     }
-    return `${base}, ${sucursal.puntuacion} de 5, ${sucursal.cantidadPuntuaciones} reseñas. Ver detalle`;
+    return `${base}, ${this.promedioFormateado(sucursal.puntuacion)} de 5, ${sucursal.cantidadPuntuaciones} reseñas. Ver detalle`;
   }
 
   protected trackById(_index: number, sucursal: SucursalMiniDTO): number {

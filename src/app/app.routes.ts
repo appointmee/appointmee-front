@@ -36,6 +36,15 @@ export const routes: Routes = [
   },
   {
     path: 'servicios',
+    title: 'AppointMee | Elegir servicio',
+    data: {
+      title: 'Elegir servicio',
+      description: 'Elegí el servicio que querés reservar en esta sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/servicios/servicios').then((module) => module.Servicios),
+  },
+  {
     path: 'sucursal/:id/resenias',
     canActivate: [authGuard],
     title: 'AppointMee | Reseñas',
@@ -45,15 +54,13 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'sucursal/:id',
+    path: 'sucursal/:id/equipo',
     canActivate: [authGuard],
-    title: 'AppointMee | Elegir servicio',
-    data: {
-      title: 'Elegir servicio',
-      description: 'Elegí el servicio que querés reservar en esta sucursal.',
-    },
+    title: 'AppointMee | Equipo',
     loadComponent: () =>
-      import('./pages/servicios/servicios').then((module) => module.Servicios),
+      import('./pages/sucursal-equipo/sucursal-equipo').then(
+        (module) => module.SucursalEquipo,
+      ),
   },
   {
     // El detalle es público: el CTA decide si inicia sesión antes de reservar.

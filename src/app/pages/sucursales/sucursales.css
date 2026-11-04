@@ -283,6 +283,10 @@
 }
 
 .rating__text {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   color: var(--muted);
   font-size: 13px;
 }
