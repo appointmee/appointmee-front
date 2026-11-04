@@ -17,7 +17,10 @@ export class NavigationHistory {
           this.restoredId = event.navigationTrigger === 'popstate'
             ? event.restoredState?.['navigationId'] ?? null
             : null;
-          this.replaceCurrent = !!this.router.getCurrentNavigation()?.extras.replaceUrl;
+          // Al iniciar después de escribir una URL, la última entrada guardada
+          // pertenece a la pantalla anterior y no debe reemplazarse por el 404.
+          this.replaceCurrent = this.router.navigated
+            && !!this.router.getCurrentNavigation()?.extras.replaceUrl;
           return;
         }
 
@@ -25,12 +28,15 @@ export class NavigationHistory {
       });
   }
 
-  backTarget(skipUrl?: string): string | null {
-    const currentUrl = this.entries.at(-1)?.url;
-    for (let index = this.entries.length - 2; index >= 0; index--) {
+  backTarget(currentUrl: string = this.router.url): string | null {
+    for (let index = this.entries.length - 1; index >= 0; index--) {
       const candidate = this.entries[index].url;
-      if (candidate !== currentUrl && (!skipUrl || candidate !== skipUrl)) return candidate;
+
+      if (candidate !== currentUrl) {
+        return candidate;
+      }
     }
+
     return null;
   }
 

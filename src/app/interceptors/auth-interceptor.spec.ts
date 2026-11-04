@@ -27,6 +27,7 @@ describe('Autenticación e interceptor', () => {
         provideRouter([
           { path: 'login', component: TestPage },
           { path: 'private', component: TestPage },
+          { path: 'error', component: TestPage },
         ]),
         provideHttpClient(withInterceptors([apiErrorInterceptor, authInterceptor])),
         provideHttpClientTesting(),

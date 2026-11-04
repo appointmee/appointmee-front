@@ -62,10 +62,10 @@ describe('authGuard', () => {
     expect(((await ejecutar()) as UrlTree).toString()).toBe('/login?returnTo=%2Fadmin');
     expect(auth.limpiarSesion).toHaveBeenCalled();
   });
-  it('no borra credenciales por un fallo de red', async () => {
+  it('deja pasar y conserva credenciales ante un fallo de red', async () => {
     auth.getRefreshToken.mockReturnValue('refresh');
     auth.validarToken.mockReturnValue(throwError(() => ({ status: 0 })));
-    expect(((await ejecutar()) as UrlTree).toString()).toBe('/error?status=0');
+    expect(await ejecutar()).toBe(true);
     expect(auth.limpiarSesion).not.toHaveBeenCalled();
   });
 });

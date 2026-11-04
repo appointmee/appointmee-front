@@ -38,18 +38,42 @@
   } @else if (noEncontrada()) {
     <app-error-page variant="sucursal-no-encontrada" />
   } @else if (error()) {
-    <div class="detalle__estado" role="alert">
+    <div class="detalle__estado" role="alert" [class.detalle__estado--conexion]="sinConexion()">
       <span class="detalle__estado-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24">
-          <path d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3l-7.5-13.1a2 2 0 0 0-3.4 0Z" />
-        </svg>
+        @if (sinConexion()) {
+          <svg viewBox="0 0 24 24">
+            <path d="M2 2 22 22M8.5 8.5A10.9 10.9 0 0 1 12 8c4 0 7.4 2 9 5M5 13c1-1.4 2.4-2.4 4-3M8.5 16.5a4.5 4.5 0 0 1 7 0M12 20h.01" />
+          </svg>
+        } @else {
+          <svg viewBox="0 0 24 24">
+            <path d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3l-7.5-13.1a2 2 0 0 0-3.4 0Z" />
+          </svg>
+        }
       </span>
-      <h1 id="detalle-titulo">No pudimos mostrar la sucursal</h1>
+      <h1 id="detalle-titulo">{{ tituloError() }}</h1>
       <p>{{ error() }}</p>
       <div class="detalle__estado-acciones">
-        <button class="btn btn--primary" type="button" (click)="reintentar()">Reintentar</button>
+        <button
+          class="btn btn--primary detalle__reintentar"
+          type="button"
+          (click)="reintentar()"
+          [disabled]="reintentando()"
+          [attr.aria-busy]="reintentando()"
+        >
+          @if (reintentando()) {
+            <span class="detalle__spinner" aria-hidden="true"></span>
+            Reintentando…
+          } @else {
+            Reintentar
+          }
+        </button>
         <a class="btn btn--ghost" routerLink="/sucursales">Volver al listado</a>
       </div>
+      <span class="sr-only" role="status" aria-live="polite">
+        @if (reintentando()) {
+          Reintentando la carga de la sucursal…
+        }
+      </span>
     </div>
   } @else if (sucursal(); as s) {
     <header class="detalle__hero">
@@ -62,12 +86,35 @@
       <div class="detalle__hero-overlay" aria-hidden="true"></div>
 
       <div class="detalle__hero-top">
-        <a class="volver" routerLink="/sucursales">
+        <a class="volver volver--flotante" routerLink="/sucursales">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M19 12H5M11 18l-6-6 6-6" />
           </svg>
           Volver al listado
         </a>
+        <nav class="breadcrumb" aria-label="Migas de pan">
+          <ol class="breadcrumb__list">
+            <li class="breadcrumb__item">
+              <a class="breadcrumb__link" routerLink="/">Home</a>
+              <span class="breadcrumb__separator" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="m9 6 6 6-6 6" />
+                </svg>
+              </span>
+            </li>
+            <li class="breadcrumb__item">
+              <a class="breadcrumb__link" routerLink="/sucursales">Sucursales</a>
+              <span class="breadcrumb__separator" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="m9 6 6 6-6 6" />
+                </svg>
+              </span>
+            </li>
+            <li class="breadcrumb__item breadcrumb__item--actual">
+              <span class="breadcrumb__actual" aria-current="page">{{ s.nombre }}</span>
+            </li>
+          </ol>
+        </nav>
       </div>
 
       <div class="detalle__hero-content">
@@ -284,28 +331,31 @@
           </p>
         </article>
       </div>
-    </div>
 
-    <div class="detalle__cta-mobile">
-      @if (avisoRol()) {
-        <p class="detalle__cta-aviso">{{ avisoRol() }}</p>
-      }
+      <div class="detalle__cta-mobile">
+        @if (avisoRol()) {
+          <p class="detalle__cta-aviso" role="alert">{{ avisoRol() }}</p>
+        }
 
-      <div class="detalle__cta-copy">
-        <strong>{{ s.nombre }}</strong>
-        <span>{{ categoria() }}</span>
+        <div class="detalle__cta-copy">
+          <strong>{{ s.nombre }}</strong>
+          <span>{{ categoria() }}</span>
+        </div>
+        <div class="detalle__cta-acciones">
+          <a class="btn btn--ghost" routerLink="/sucursales">Volver</a>
+          <button
+            class="btn btn--primary"
+            type="button"
+            [disabled]="navegando()"
+            [attr.aria-busy]="navegando()"
+            [attr.aria-label]="'Reservar turno en ' + s.nombre"
+            aria-describedby="reserva-ayuda"
+            (click)="iniciarReserva()"
+          >
+            {{ navegando() ? 'Abriendo…' : 'Reservar turno' }}
+          </button>
+        </div>
       </div>
-      <button
-        class="btn btn--primary"
-        type="button"
-        [disabled]="navegando()"
-        [attr.aria-busy]="navegando()"
-        [attr.aria-label]="'Reservar turno en ' + s.nombre"
-        aria-describedby="reserva-ayuda"
-        (click)="iniciarReserva()"
-      >
-        {{ navegando() ? 'Abriendo…' : 'Reservar turno' }}
-      </button>
     </div>
   }
 </section>

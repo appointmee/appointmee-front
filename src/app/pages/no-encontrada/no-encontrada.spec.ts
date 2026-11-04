@@ -12,28 +12,29 @@ describe('NotFoundPage', () => {
     await TestBed.configureTestingModule({
       imports: [NotFoundPage],
       providers: [
-        provideRouter([{ path: 'sucursales', component: TestRoute }, { path: '', component: TestRoute }]),
+        provideRouter([
+          { path: 'sucursales', component: TestRoute },
+          { path: '', component: TestRoute },
+          { path: '**', component: TestRoute },
+        ]),
         { provide: Reporte404, useValue: { registrar: () => undefined } },
       ],
     }).compileComponents();
   });
 
-  it('searches branches from the 404 and keeps the search text in the URL', async () => {
+  it('ofrece buscar la sucursal detectada desde la ruta 404', async () => {
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/sucursal/123');
+
     const fixture = TestBed.createComponent(NotFoundPage);
     fixture.detectChanges();
-    const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('#busqueda-sucursal')!;
-    input.value = 'Flores';
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
 
-    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button[type="submit"]')!;
-    expect(button.disabled).toBe(false);
-    button.click();
-    await fixture.whenStable();
-
-    const router = TestBed.inject(Router);
-    expect(router.url.split('?')[0]).toBe('/sucursales');
-    expect(router.parseUrl(router.url).queryParams['busqueda']).toBe('Flores');
+    const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+      'a.page404__cta--sucursal',
+    );
+    expect(link).not.toBeNull();
+    expect(link?.textContent).toContain('Buscar la sucursal 123');
+    expect(link?.getAttribute('href')).toBe('/sucursales?busqueda=123');
   });
 
   it('offers both Home and a safe fallback from Volver when there is no internal route', async () => {

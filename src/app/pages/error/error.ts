@@ -1,17 +1,6 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  ElementRef,
-  afterNextRender,
-  computed,
-  inject,
-  input,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, signal, viewChild } from '@angular/core';
 import { Meta } from '@angular/platform-browser';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NavigationHistory } from '../../navigation-history';
 
 const SAFE_REFERENCE = /^[A-Za-z0-9_-]{1,40}$/;
@@ -27,6 +16,7 @@ export type ErrorPageVariant = 'default' | 'sucursal-no-encontrada';
 })
 export class ErrorPage {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly meta = inject(Meta);
   private readonly destroyRef = inject(DestroyRef);
   private readonly navigationHistory = inject(NavigationHistory);
@@ -36,8 +26,11 @@ export class ErrorPage {
 
   protected readonly reference = this.safeReference(this.state['errorReference']);
   protected readonly retrying = signal(false);
-  protected readonly returnTo = this.safeReturnTo(this.state['returnTo']);
-  protected readonly canRetry = [500, 502, 503].includes(Number(this.state['status'])) && !!this.returnTo;
+  private readonly statusValue = this.state['status'] ?? this.route.snapshot.queryParamMap.get('status');
+  protected readonly status = this.statusValue == null ? null : Number(this.statusValue);
+  protected readonly returnTo = this.safeReturnTo(this.route.snapshot.queryParamMap.get('returnTo') ?? this.state['returnTo']);
+  protected readonly canRetry = this.status !== null
+    && [0, 500, 502, 503].includes(this.status) && !!this.returnTo;
 
   /**
    * Permite reutilizar esta pantalla desde otras vistas (por ejemplo el detalle
@@ -48,13 +41,15 @@ export class ErrorPage {
   protected readonly heading = computed(() =>
     this.variant() === 'sucursal-no-encontrada'
       ? 'No encontramos esta sucursal'
-      : 'Algo salió mal',
+      : this.status === 0 ? 'No pudimos conectarnos' : 'Algo salió mal',
   );
 
   protected readonly description = computed(() =>
     this.variant() === 'sucursal-no-encontrada'
       ? 'La sucursal que buscás no existe o ya no está disponible. Volvé al listado para elegir otra.'
-      : 'No pudimos completar tu solicitud. Podés volver a intentarlo o continuar desde el inicio.',
+      : this.status === 0
+        ? 'Revisá tu conexión e intentá de nuevo.'
+        : 'No pudimos completar tu solicitud. Podés volver a intentarlo o continuar desde el inicio.',
   );
 
   constructor() {
@@ -64,17 +59,19 @@ export class ErrorPage {
     this.destroyRef.onDestroy(() => this.meta.removeTag('name="robots"'));
   }
 
-  protected goBack(): void {
-    const target = this.navigationHistory.backTarget(this.returnTo ?? undefined);
-    void this.router.navigateByUrl(target ?? '/', { replaceUrl: true });
-  }
+protected goBack(): void {
+  const target = this.navigationHistory.backTarget(this.router.url);
 
+  if (target) {
+    void this.router.navigateByUrl(target, { replaceUrl: true });
+  }
+}
   protected retry(): void {
     if (!this.canRetry || this.retrying()) return;
     this.retrying.set(true);
     void this.router.navigateByUrl(this.returnTo!, { replaceUrl: true }).then((navigated) => {
       if (!navigated) this.retrying.set(false);
-    });
+    }).catch(() => this.retrying.set(false));
   }
 
   private safeReference(value: unknown): string | null {
@@ -82,7 +79,7 @@ export class ErrorPage {
   }
 
   private safeReturnTo(value: unknown): string | null {
-    return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') && !value.startsWith('/error')
+    return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') && !value.startsWith('/error') && !/[\\\x00-\x1f]/.test(value)
       ? value
       : null;
   }

@@ -25,7 +25,7 @@ describe('NavigationHistory', () => {
     await router.navigateByUrl('/home');
     await router.navigateByUrl('/sucursales?busqueda=Flores');
     await router.navigateByUrl('/error', { replaceUrl: true });
-    expect(history.backTarget('/sucursales?busqueda=Flores')).toBe('/home');
+    expect(history.backTarget('/error')).toBe('/home');
 
     await router.navigateByUrl('/home', { replaceUrl: true });
     expect(history.backTarget()).toBeNull();
