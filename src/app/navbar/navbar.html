@@ -1,0 +1,301 @@
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<header class="navbar" [class.navbar--scrolled]="scrolled()">
+  <div class="navbar__inner">
+    <a class="brand" routerLink="/" (click)="closeAll()" aria-label="AppointMee, ir al inicio">
+      <span class="brand__mark">
+        <img src="appointmee-logo.png" alt="" width="34" height="34" />
+      </span>
+      <span class="brand__text">Appoint<span class="brand__accent">Mee</span></span>
+    </a>
+
+    @if (auth.autenticado() && !navbarSimple()) {
+      <nav class="nav" aria-label="Navegación principal">
+        <ul class="nav__list">
+          @for (link of primaryLinks(); track link.path) {
+            <li class="nav__item">
+              <a
+                class="nav__link"
+                [routerLink]="link.path"
+                routerLinkActive="nav__link--active"
+                [routerLinkActiveOptions]="{ exact: link.exact }"
+                ariaCurrentWhenActive="page"
+              >
+                {{ link.label }}
+              </a>
+            </li>
+          }
+        </ul>
+      </nav>
+    }
+
+    @if (!navbarSimple()) {
+    <div class="navbar__search-wrap" [class.is-open]="searchOpen()">
+      <form
+        class="search"
+        id="navbar-search"
+        role="search"
+        aria-label="Buscar en AppointMee"
+        (submit)="submitSearch($event)"
+      >
+        <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="icons.search" />
+        </svg>
+        <input
+          #searchInput
+          class="search__input"
+          type="search"
+          placeholder="Buscá tu próximo turno..."
+          autocomplete="off"
+          spellcheck="false"
+          [value]="searchTerm()"
+          (input)="updateSearch($event)"
+          (keydown.enter)="submitSearch($event)"
+          aria-label="Buscar turnos"
+        />
+        @if (searchTerm()) {
+          <button
+            class="search__clear"
+            type="button"
+            (click)="clearSearch()"
+            aria-label="Limpiar búsqueda"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </button>
+        } @else {
+          <kbd class="search__hint">⌘ K</kbd>
+        }
+      </form>
+    </div>
+
+    }
+
+    <div class="navbar__actions">
+      @if (navbarSimple()) {
+        <a class="navbar__cta navbar__cta--solid navbar__cta--auth" routerLink="/registrarme">
+          Crear cuenta
+        </a>
+      } @else {
+      <button
+        class="icon-btn search-trigger"
+        type="button"
+        (click)="openSearch()"
+        [attr.aria-expanded]="searchOpen()"
+        aria-controls="navbar-search"
+        aria-label="Abrir búsqueda"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="icons.search" />
+        </svg>
+      </button>
+
+      @if (auth.restaurando()) {
+        <!-- Placeholder durante la restauración de sesión (criterio 11). -->
+        <button
+          class="profile profile--placeholder"
+          type="button"
+          disabled
+          aria-label="Restaurando sesión"
+        >
+          <span class="skeleton skeleton--avatar"></span>
+          <span class="profile__copy">
+            <span class="skeleton skeleton--line"></span>
+            <span class="skeleton skeleton--line skeleton--line-short"></span>
+          </span>
+        </button>
+      } @else if (auth.visitante()) {
+        <a class="navbar__cta" routerLink="/login" (click)="closeAll()">Iniciar sesión</a>
+        <a class="navbar__cta navbar__cta--solid" routerLink="/registrarme" (click)="closeAll()">
+          Crear cuenta
+        </a>
+      } @else {
+        <div class="profile">
+          <button
+            class="profile__trigger"
+            type="button"
+            (click)="toggleProfile($event)"
+            [attr.aria-expanded]="profileOpen()"
+            aria-haspopup="menu"
+            aria-controls="profile-menu"
+            aria-label="Abrir menú de cuenta"
+          >
+            <!-- Foto del usuario o iniciales como fallback (criterio 5). -->
+            @if (auth.perfil()?.fotoPerfil; as foto) {
+              <span class="profile__avatar"><img [src]="foto" alt="" /></span>
+            } @else {
+              <span class="profile__avatar" aria-hidden="true">{{ auth.iniciales() }}</span>
+            }
+            <span class="profile__copy">
+              <span class="profile__name">{{ auth.perfil()?.email?.split('@')[0] ?? 'Mi cuenta' }}</span>
+              <span class="profile__hint">AppointMee</span>
+            </span>
+            <svg
+              class="profile__chevron"
+              [class.is-open]="profileOpen()"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path [attr.d]="icons.chevron" />
+            </svg>
+          </button>
+
+          @if (profileOpen()) {
+            <div class="menu" id="profile-menu" role="menu" aria-label="Cuenta">
+              <div class="menu__head">
+                @if (auth.perfil()?.fotoPerfil; as foto) {
+                  <span class="menu__avatar"><img [src]="foto" alt="" /></span>
+                } @else {
+                  <span class="menu__avatar" aria-hidden="true">{{ auth.iniciales() }}</span>
+                }
+                <div>
+                  <strong>AppointMee</strong>
+                  <span>{{ auth.perfil()?.email ?? '' }}</span>
+                </div>
+              </div>
+              <div class="menu__divider"></div>
+              @for (link of linksCuenta; track link.path) {
+                <a class="menu__link" [routerLink]="link.path" role="menuitem">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="link.icon" />
+                  </svg>
+                  <span>{{ link.label }}</span>
+                </a>
+              }
+              <div class="menu__divider"></div>
+              <button
+                class="menu__link menu__link--danger"
+                type="button"
+                role="menuitem"
+                (click)="logout()"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="icons.logout" />
+                </svg>
+                <span>Cerrar Sesión</span>
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <button
+        #burger
+        class="burger"
+        type="button"
+        [class.is-open]="mobileOpen()"
+        (click)="toggleMobile()"
+        [disabled]="auth.restaurando()"
+        [attr.aria-expanded]="mobileOpen()"
+        aria-controls="mobile-menu"
+        [attr.aria-label]="mobileOpen() ? 'Cerrar menú' : 'Abrir menú'"
+      >
+        <span></span>
+        <span></span>
+      </button>
+      }
+    </div>
+  </div>
+</header>
+
+@if (mobileOpen() && !navbarSimple()) {
+  <div class="scrim" (click)="closeMobile()" aria-hidden="true"></div>
+  <aside
+    #sheet
+    class="sheet"
+    id="mobile-menu"
+    aria-label="Menú de navegación"
+    (keydown.tab)="atraparFoco($event)"
+  >
+    <nav>
+      @if (auth.restaurando()) {
+        <p class="sheet__loading" role="status">Restaurando tu sesión…</p>
+      } @else if (auth.visitante()) {
+        <p class="sheet__label">Cuenta</p>
+        <ul class="sheet__list">
+          <li>
+            <a class="sheet__link" [routerLink]="['/login']" routerLinkActive="sheet__link--active" (click)="closeMobile()">
+              <span class="sheet__icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icons.user" /></svg>
+              </span>
+              <span>Iniciar sesión</span>
+              <svg class="sheet__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="icons.chevron" />
+              </svg>
+            </a>
+          </li>
+          <li>
+            <a class="sheet__link" [routerLink]="['/registrarme']" routerLinkActive="sheet__link--active" (click)="closeMobile()">
+              <span class="sheet__icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icons.plus" /></svg>
+              </span>
+              <span>Crear cuenta</span>
+              <svg class="sheet__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="icons.chevron" />
+              </svg>
+            </a>
+          </li>
+        </ul>
+      } @else {
+        <p class="sheet__label">Menú</p>
+        <ul class="sheet__list">
+          @for (link of primaryLinks(); track link.path) {
+            <li>
+              <a
+                class="sheet__link"
+                [routerLink]="link.path"
+                routerLinkActive="sheet__link--active"
+                [routerLinkActiveOptions]="{ exact: link.exact }"
+                ariaCurrentWhenActive="page"
+                (click)="closeMobile()"
+              >
+                <span class="sheet__icon">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="link.icon" />
+                  </svg>
+                </span>
+                <span>{{ link.label }}</span>
+                <svg class="sheet__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="icons.chevron" />
+                </svg>
+              </a>
+            </li>
+          }
+        </ul>
+
+        <p class="sheet__label">Cuenta</p>
+        <ul class="sheet__list">
+          @for (link of linksCuenta; track link.path) {
+            <li>
+              <a
+                class="sheet__link"
+                [routerLink]="link.path"
+                routerLinkActive="sheet__link--active"
+                ariaCurrentWhenActive="page"
+                (click)="closeMobile()"
+              >
+                <span class="sheet__icon">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="link.icon" />
+                  </svg>
+                </span>
+                <span>{{ link.label }}</span>
+                <svg class="sheet__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="icons.chevron" />
+                </svg>
+              </a>
+            </li>
+          }
+        </ul>
+
+        <button class="sheet__logout" type="button" (click)="logout()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="icons.logout" />
+          </svg>
+          Cerrar Sesión
+        </button>
+      }
+    </nav>
+  </aside>
+}

@@ -1,1 +1,94 @@
-/* You can add global styles to this file, and also import other style files */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/geist-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('/fonts/geist-mono-latin.woff2') format('woff2');
+}
+
+:root {
+  color-scheme: dark;
+  --nav-h: 76px;
+  --page-bg: #07090d;
+  --surface: #0d1117;
+  --line: rgba(255, 255, 255, 0.08);
+  --text: #eef2f7;
+  --muted: #98a2b3;
+  --accent: #f7c65a;
+  --accent-strong: #ffd77a;
+  --accent-soft: rgba(247, 198, 90, 0.12);
+  --danger: #ff7a7a;
+  --font:
+    'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body.nav-locked {
+  overflow: hidden;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: rgba(247, 198, 90, 0.28);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--page-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid var(--page-bg);
+  border-radius: 99px;
+  background: #242c38;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #303a49;
+}

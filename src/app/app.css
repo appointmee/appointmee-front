@@ -1,0 +1,46 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+.app-main {
+  min-height: 100dvh;
+  padding-top: var(--nav-h);
+}
+
+/* "Saltar al contenido": oculto hasta recibir foco por teclado. */
+.skip-link {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1200;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #10131a;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  transform: translateY(calc(-100% - 20px));
+  pointer-events: none;
+  transition: transform 0.2s ease;
+}
+
+.skip-link:focus-visible {
+  transform: none;
+  pointer-events: auto;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* El <main> recibe foco con tabindex="-1" al "saltar al contenido". */
+.app-main:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -4px;
+}
+
+.api-notice { position: fixed; z-index: 1100; right: 20px; bottom: 20px; display: flex; max-width: min(560px, calc(100vw - 40px)); flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 0 16px 48px #0008; }
+.api-notice p { flex: 1 1 100%; margin: 0; line-height: 1.5; }
+.api-notice button, .api-notice a { padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--text); font: inherit; text-decoration: none; cursor: pointer; }
+.api-notice button:focus-visible, .api-notice a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
