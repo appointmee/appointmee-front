@@ -1,12 +1,13 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { API_URL } from '../auth/auth';
+import { backendService } from './backend-service';
 import { BranchService } from './branch.service';
 
 describe('BranchService', () => {
   let service: BranchService;
   let http: HttpTestingController;
+  let apiUrl: string;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -14,6 +15,7 @@ describe('BranchService', () => {
     });
     service = TestBed.inject(BranchService);
     http = TestBed.inject(HttpTestingController);
+    apiUrl = TestBed.inject(backendService).baseUrl;
   });
 
   afterEach(() => http.verify());
@@ -21,7 +23,7 @@ describe('BranchService', () => {
   it('uses the complete listing when there are no filters', () => {
     service.list().subscribe();
 
-    const request = http.expectOne(`${API_URL}/sucursales/listar`);
+    const request = http.expectOne(`${apiUrl}/sucursales/listar`);
     expect(request.request.method).toBe('GET');
     expect(request.request.params.keys()).toEqual([]);
     request.flush([]);
@@ -31,7 +33,7 @@ describe('BranchService', () => {
     service.list({ nombre: '  Centro  ', categoria: 'SPA' }).subscribe();
 
     const request = http.expectOne(
-      (candidate) => candidate.url === `${API_URL}/sucursales/listar/filtrar`,
+      (candidate) => candidate.url === `${apiUrl}/sucursales/listar/filtrar`,
     );
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('nombre')).toBe('Centro');

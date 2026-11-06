@@ -5,7 +5,6 @@ import { provideRouter, Router } from '@angular/router';
 import { Observable, Subject, of, throwError } from 'rxjs';
 import { Navbar } from '../components/navbar/navbar';
 import { BranchFilters, BranchSummary } from '../models/branch';
-import { Home } from '../pages/home/home';
 import { BranchSearch } from './branch-search';
 import { BranchService } from './branch.service';
 
@@ -38,7 +37,7 @@ describe('BranchSearch', () => {
     getCategories = vi.fn(() => of(['SPA', 'BARBERIA'] as const));
 
     TestBed.configureTestingModule({
-      imports: [Home, Navbar],
+      imports: [Navbar],
       providers: [
         provideHttpClient(),
         provideRouter([
@@ -173,69 +172,18 @@ describe('BranchSearch', () => {
     expect(search.appliedTerm()).toBe('Norte');
   });
 
-  it('shares the same form state between Navbar and Home', async () => {
-    await router.navigateByUrl('/');
-    const navbarFixture = TestBed.createComponent(Navbar);
-    const homeFixture = TestBed.createComponent(Home);
-    navbarFixture.detectChanges();
-    homeFixture.detectChanges();
-    const navbarSearch = (navbarFixture.componentInstance as unknown as { branchSearch: BranchSearch })
-      .branchSearch;
-    const homeSearch = (homeFixture.componentInstance as unknown as { branchSearch: BranchSearch })
-      .branchSearch;
-    const navbarInput = navbarFixture.nativeElement.querySelector(
-      '#navbar-search input',
-    ) as HTMLInputElement;
-    const homeInput = homeFixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
-
-    expect(navbarSearch).toBe(search);
-    expect(homeSearch).toBe(search);
-
-    search.search.setValue('Centro');
-    navbarFixture.detectChanges();
-    homeFixture.detectChanges();
-
-    expect(navbarInput.value).toBe('Centro');
-    expect(homeInput.value).toBe('Centro');
-    expect(search.search.value).toBe('Centro');
-  });
-
-  it('renders accessible search forms and clear buttons in Home and Navbar', async () => {
+  it('renders an accessible search form and clear button in Navbar', async () => {
     await router.navigateByUrl('/');
     search.search.setValue('Centro');
     const navbarFixture = TestBed.createComponent(Navbar);
-    const homeFixture = TestBed.createComponent(Home);
     navbarFixture.detectChanges();
-    homeFixture.detectChanges();
 
     const navbarForm = navbarFixture.nativeElement.querySelector('#navbar-search') as HTMLFormElement;
     const navbarInput = navbarForm.querySelector('input') as HTMLInputElement;
-    const homeForm = homeFixture.nativeElement.querySelector('.branch-search') as HTMLFormElement;
-    const homeInput = homeForm.querySelector('input') as HTMLInputElement;
 
     expect(navbarForm.getAttribute('role')).toBe('search');
     expect(navbarInput.getAttribute('aria-label')).toBe('Buscar sucursales por nombre');
     expect(navbarForm.querySelector('[aria-label="Limpiar búsqueda"]')).toBeTruthy();
-    expect(homeForm.getAttribute('role')).toBe('search');
-    expect(homeInput.labels?.[0]?.textContent?.trim()).toBe('Buscar sucursal por nombre');
-    expect(homeForm.querySelector('[aria-label="Limpiar búsqueda"]')).toBeTruthy();
-  });
-
-  it('shows an empty result with the term and clears only the name filter', async () => {
-    await router.navigateByUrl('/?busqueda=Centro&categoria=SPA');
-    const fixture = TestBed.createComponent(Home);
-    fixture.detectChanges();
-
-    const emptyState = fixture.nativeElement.querySelector('.branch-state') as HTMLElement;
-    const clearButton = emptyState.querySelector('.branch-action') as HTMLButtonElement;
-
-    expect(emptyState.textContent).toContain('No se encontraron sucursales');
-    expect(emptyState.textContent).toContain('Centro');
-
-    clearButton.click();
-    await vi.waitFor(() => expect(router.url).toBe('/?categoria=SPA'));
-    expect(search.selectedCategory()).toBe('SPA');
-    expect(list).toHaveBeenLastCalledWith({ categoria: 'SPA' });
   });
 
   it('keeps only the newest response when requests finish out of order', async () => {

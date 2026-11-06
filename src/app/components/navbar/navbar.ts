@@ -13,8 +13,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
+import { authService } from '../../services/auth-service';
 import { BranchSearch } from '../../services/branch-search';
-import { authService } from '../services/auth-service';
 
 interface NavItem {
   readonly label: string;
@@ -52,8 +52,8 @@ const ICONS = {
 export class Navbar {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly branchSearch = inject(BranchSearch);
   protected readonly auth = inject(authService);
+  protected readonly branchSearch = inject(BranchSearch);
 
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
   private readonly burger = viewChild<ElementRef<HTMLButtonElement>>('burger');

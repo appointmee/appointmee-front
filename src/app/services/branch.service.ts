@@ -1,13 +1,13 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { API_URL } from '../auth/auth';
 import { BranchCategory, BranchFilters, BranchSummary } from '../models/branch';
+import { backendService } from './backend-service';
 
 @Injectable({ providedIn: 'root' })
 export class BranchService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = `${API_URL}/sucursales`;
+  private readonly apiUrl = `${inject(backendService).baseUrl}/sucursales`;
 
   list(filters: BranchFilters = {}): Observable<readonly BranchSummary[]> {
     const hasFilters = !!filters.nombre || !!filters.categoria;
