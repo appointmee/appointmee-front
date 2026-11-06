@@ -140,7 +140,6 @@
                     role="option"
                     [class.branch-suggestion--active]="activeSuggestionIndex() === i"
                     [attr.aria-selected]="activeSuggestionIndex() === i"
-                    (mouseenter)="activeSuggestionIndex.set(i)"
                     (click)="selectSuggestion(sucursal)"
                   >
                     @if (sucursal.fotoPerfil) {

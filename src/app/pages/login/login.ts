@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField, email, form, required } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -22,6 +23,11 @@ export class LoginPage {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private pendiente = inject(verificacionPendienteService);
+  private destroyRef = inject(DestroyRef);
+
+  modoModal = input(false);
+  destinoRetorno = input<string | null>(null);
+  sesionIniciada = output<void>();
 
 
   loginModel = signal<LoginModel>({
@@ -36,6 +42,8 @@ export class LoginPage {
     required(campos.password, { message: 'Ingresá tu contraseña.' });
   });
 
+
+  registroExitoso = signal(this.router.getCurrentNavigation()?.extras.state?.['registroExitoso'] === true);
 
   cargando = signal(false);
   mostrarPassword = signal(false);
@@ -72,9 +80,14 @@ export class LoginPage {
 
     const datos = this.loginModel();
 
-    this.auth.login(datos.email, datos.password).subscribe({
+    this.auth.login(datos.email, datos.password).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.cargando.set(false);
+
+        if (this.modoModal()) {
+          this.sesionIniciada.emit();
+          return;
+        }
 
         const destino = destinoDespuesDelLogin(this.router, this.route.snapshot.queryParamMap.get('returnTo'));
         void this.router.navigateByUrl(destino);
@@ -90,8 +103,8 @@ export class LoginPage {
 
   irAVerificar(): void {
     this.modalVerificacion.set(false);
-
-    void this.router.navigate(['/configuracion/verificar-email']);
+    const returnTo = this.destinoRetorno() ?? this.route.snapshot.queryParamMap.get('returnTo');
+    void this.router.navigate(['/configuracion/verificar-email'], returnTo ? { queryParams: { returnTo } } : undefined);
   }
 
 

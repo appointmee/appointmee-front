@@ -1,0 +1,135 @@
+<section class="login">
+  <form class="login__card" (submit)="onSubmit($event)" novalidate
+        aria-labelledby="registro-titulo" [attr.aria-busy]="cargando()">
+    <h1 id="registro-titulo" class="login__titulo">Crear cuenta</h1>
+    <p class="login__sub">Registrate como cliente en AppointMee.</p>
+    <div class="registro__datos">
+    <div class="login__field">
+      <label for="registro-nombre">Nombre</label>
+      <input id="registro-nombre" type="text" autocomplete="given-name"
+             [formField]="registroForm.nombre" [readOnly]="cargando()"
+             [attr.aria-invalid]="registroForm.nombre().touched() && (registroForm.nombre().invalid())"
+             aria-describedby="registro-nombre-error" />
+      <div id="registro-nombre-error" class="login__validation" aria-live="polite">
+        @if (registroForm.nombre().touched()) {
+          @for (error of registroForm.nombre().errors(); track error.kind) {
+            <p>{{ error.message }}</p>
+          }
+        }
+      </div>
+    </div>
+    <div class="login__field">
+      <label for="registro-apellido">Apellido</label>
+      <input id="registro-apellido" type="text" autocomplete="family-name"
+             [formField]="registroForm.apellido" [readOnly]="cargando()"
+             [attr.aria-invalid]="registroForm.apellido().touched() && (registroForm.apellido().invalid())"
+             aria-describedby="registro-apellido-error" />
+      <div id="registro-apellido-error" class="login__validation" aria-live="polite">
+        @if (registroForm.apellido().touched()) {
+          @for (error of registroForm.apellido().errors(); track error.kind) {
+            <p>{{ error.message }}</p>
+          }
+        }
+      </div>
+    </div>
+    <div class="login__field">
+      <label for="registro-email">Email</label>
+      <input id="registro-email" type="email" autocomplete="email"
+             [formField]="registroForm.email" [readOnly]="cargando()"
+             [attr.aria-invalid]="registroForm.email().touched() && (registroForm.email().invalid())"
+             aria-describedby="registro-email-error" />
+      <div id="registro-email-error" class="login__validation" aria-live="polite">
+        @if (registroForm.email().touched()) {
+          @for (error of registroForm.email().errors(); track error.kind) {
+            <p>{{ error.message }}</p>
+          }
+        }
+      </div>
+    </div>
+    <div class="login__field">
+      <label for="registro-confirmarEmail">Confirmar email</label>
+      <input id="registro-confirmarEmail" type="email" autocomplete="off"
+             [formField]="registroForm.confirmarEmail" [readOnly]="cargando()" (paste)="impedirPegado($event)" (drop)="impedirPegado($event)"
+             [attr.aria-invalid]="registroForm.confirmarEmail().touched() && (registroForm.confirmarEmail().invalid() || !emailsCoinciden())"
+             aria-describedby="registro-confirmarEmail-error" />
+      <div id="registro-confirmarEmail-error" class="login__validation" aria-live="polite">
+        @if (registroForm.confirmarEmail().touched()) {
+          @for (error of registroForm.confirmarEmail().errors(); track error.kind) {
+            <p>{{ error.message }}</p>
+          }
+        }
+        @if (registroModel().confirmarEmail) {
+          <p class="registro__coincidencia" [class.registro__coincidencia--ok]="emailsCoinciden()">
+            {{ emailsCoinciden() ? 'Los emails coinciden.' : 'Los emails no coinciden.' }}
+          </p>
+        }
+      </div>
+    </div>
+    <div class="login__field">
+      <label for="registro-password">Contraseña</label>
+      <div class="login__password">
+      <input id="registro-password" [type]="mostrarPassword() ? 'text' : 'password'" autocomplete="new-password"
+             [formField]="registroForm.password" [readOnly]="cargando()"
+             [attr.aria-invalid]="registroForm.password().touched() && (registroForm.password().invalid())"
+             aria-describedby="registro-password-error registro-password-ayuda" />
+        <button class="login__toggle" type="button" aria-controls="registro-password registro-confirmarPassword"
+                [attr.aria-pressed]="mostrarPassword()"
+                [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseñas' : 'Mostrar contraseñas'"
+                (click)="mostrarPassword.set(!mostrarPassword())">
+          {{ mostrarPassword() ? 'Ocultar' : 'Mostrar' }}
+        </button>
+      </div>
+      <ul id="registro-password-ayuda" class="registro__requisitos" aria-label="Requisitos de contraseña">
+        @for (requisito of requisitosPassword(); track requisito.texto) {
+          <li [class.registro__requisito--cumplido]="requisito.cumplido">
+            <span aria-hidden="true">{{ requisito.cumplido ? '✓' : '○' }}</span>
+            <span>{{ requisito.texto }}</span>
+            <span class="sr-only">{{ requisito.cumplido ? 'Cumplido' : 'Pendiente' }}</span>
+          </li>
+        }
+      </ul>
+      <div id="registro-password-error" class="login__validation" aria-live="polite">
+        @if (registroForm.password().touched()) {
+          @for (error of registroForm.password().errors(); track error.kind) {
+            <p>{{ error.message }}</p>
+          }
+        }
+      </div>
+    </div>
+    <div class="login__field">
+      <label for="registro-confirmarPassword">Confirmar contraseña</label>
+      <input id="registro-confirmarPassword" [type]="mostrarPassword() ? 'text' : 'password'" autocomplete="off"
+             [formField]="registroForm.confirmarPassword" [readOnly]="cargando()" (paste)="impedirPegado($event)" (drop)="impedirPegado($event)"
+             [attr.aria-invalid]="registroForm.confirmarPassword().touched() && (registroForm.confirmarPassword().invalid() || !passwordsCoinciden())"
+             aria-describedby="registro-confirmarPassword-error" />
+      <div id="registro-confirmarPassword-error" class="login__validation" aria-live="polite">
+        @if (registroForm.confirmarPassword().touched()) {
+          @for (error of registroForm.confirmarPassword().errors(); track error.kind) {
+            <p>{{ error.message }}</p>
+          }
+        }
+        @if (registroModel().confirmarPassword) {
+          <p class="registro__coincidencia" [class.registro__coincidencia--ok]="passwordsCoinciden()">
+            {{ passwordsCoinciden() ? 'Las contraseñas coinciden.' : 'Las contraseñas no coinciden.' }}
+          </p>
+        }
+      </div>
+    </div>
+    </div>
+    <p class="registro__ayuda">Escribí nuevamente el email y la contraseña en sus confirmaciones; no se permite pegar en esos campos.</p>
+    <div class="login__feedback" aria-live="polite" aria-atomic="true">
+      @if (mensaje()) { <p class="login__error">{{ mensaje() }}</p> }
+    </div>
+    @if (cuentaExistente()) {
+      <div class="registro__recuperar">
+        <a routerLink="/login">Iniciar sesión</a>
+        <a routerLink="/olvide-mi-contrasena">Restablecer contraseña</a>
+      </div>
+    }
+    <button class="login__submit" type="submit" [disabled]="cargando()">
+      @if (cargando()) { <span class="login__spinner" aria-hidden="true"></span> }
+      {{ cargando() ? 'Creando cuenta…' : puedeReintentar() ? 'Reintentar' : 'Crear cuenta' }}
+    </button>
+    <p class="login__alt">¿Ya tenés cuenta? <a routerLink="/login">Iniciar sesión</a></p>
+  </form>
+</section>

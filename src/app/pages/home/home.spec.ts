@@ -131,4 +131,67 @@ describe('Home branch autocomplete', () => {
 
     await vi.waitFor(() => expect(router.url).toBe('/sucursales?busqueda=pelu'));
   });
+
+  it('Enter with multiple results preserves the search in the listing even after hovering', async () => {
+    vi.useFakeTimers();
+    filtrar.mockReturnValue(of([PELUQUERIA, { ...PELUQUERIA, id: 18, nombre: 'Peluquería Norte' }]));
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
+    input.focus();
+    input.value = '  pelu  ';
+    input.dispatchEvent(new Event('input'));
+    await vi.advanceTimersByTimeAsync(350);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.branch-suggestion').dispatchEvent(new MouseEvent('mouseenter'));
+    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    input.dispatchEvent(enter);
+    expect(enter.defaultPrevented).toBe(false);
+    fixture.nativeElement.querySelector('.branch-search').dispatchEvent(new Event('submit'));
+    await vi.waitFor(() => expect(router.url).toBe('/sucursales?busqueda=pelu'));
+  });
+
+  it('Enter opens the detail when the current search has exactly one result', async () => {
+    vi.useFakeTimers();
+    filtrar.mockReturnValue(of([PELUQUERIA]));
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
+    input.focus();
+    input.value = 'pelu';
+    input.dispatchEvent(new Event('input'));
+    await vi.advanceTimersByTimeAsync(350);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.branch-search').dispatchEvent(new Event('submit'));
+    await vi.waitFor(() => expect(router.url).toBe('/sucursal/17'));
+  });
+
+  it('does not use a previous single result while a different search is pending', async () => {
+    vi.useFakeTimers();
+    filtrar.mockReturnValue(of([PELUQUERIA]));
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
+    input.value = 'pelu'; input.dispatchEvent(new Event('input'));
+    await vi.advanceTimersByTimeAsync(350);
+    input.value = 'barbería'; input.dispatchEvent(new Event('input'));
+    fixture.nativeElement.querySelector('.branch-search').dispatchEvent(new Event('submit'));
+    await vi.waitFor(() => expect(decodeURI(router.url)).toBe('/sucursales?busqueda=barbería'));
+  });
+
+  it('allows selecting a particular suggestion with arrows and Enter', async () => {
+    vi.useFakeTimers();
+    filtrar.mockReturnValue(of([PELUQUERIA, { ...PELUQUERIA, id: 18 }]));
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
+    input.focus(); input.value = 'pelu'; input.dispatchEvent(new Event('input'));
+    await vi.advanceTimersByTimeAsync(350); fixture.detectChanges();
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    input.dispatchEvent(enter);
+    expect(enter.defaultPrevented).toBe(true);
+    await vi.waitFor(() => expect(router.url).toBe('/sucursal/18'));
+  });
 });

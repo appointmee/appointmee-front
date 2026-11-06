@@ -94,7 +94,7 @@ describe('Login con Signal Forms', () => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     completar(); enviar(); response.error({ status: 403, code: 'EMAIL_NOT_VERIFIED', verificationToken: 'ticket-prueba' }); fixture.detectChanges();
     fixture.nativeElement.querySelector('.verificacion-modal__aceptar').click(); fixture.detectChanges();
-    expect(navigate).toHaveBeenCalledWith(['/configuracion/verificar-email']);
+    expect(navigate).toHaveBeenCalledWith(['/configuracion/verificar-email'], { queryParams: { returnTo: '/perfil' } });
     expect(TestBed.inject(verificacionPendienteService).leer()?.email).toBe('ana@example.com');
     expect(page.modalVerificacion()).toBe(false);
   });
@@ -137,5 +137,20 @@ describe('Login con Signal Forms', () => {
     expect(fixture.nativeElement.querySelector('a[href="/registrarme"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.login__forgot').getAttribute('href')).toContain('/olvide-mi-contrasena');
     expect(fixture.nativeElement.querySelector('.login__feedback').getAttribute('aria-live')).toBe('polite');
+  });
+
+  it('en modo modal informa el éxito sin navegar fuera de la página del turno', () => {
+    fixture.componentRef.setInput('modoModal', true);
+    fixture.componentRef.setInput('destinoRetorno', '/sucursal/7/servicios/3/turnos?empleadoId=9');
+    fixture.detectChanges();
+    const completado = vi.fn();
+    page.sesionIniciada.subscribe(completado);
+    auth.login.mockReturnValue(of(undefined));
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigateByUrl');
+    completar(); enviar();
+    expect(completado).toHaveBeenCalledTimes(1);
+    expect(navegar).not.toHaveBeenCalled();
+    const registro = fixture.nativeElement.querySelector('a[href*="registrarme"]') as HTMLAnchorElement;
+    expect(new URL(registro.href).searchParams.get('returnTo')).toContain('/sucursal/7/servicios/3/turnos');
   });
 });

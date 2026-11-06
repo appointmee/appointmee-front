@@ -10,7 +10,7 @@ export interface ApiError {
   readonly message: string;
   readonly fields: Readonly<Record<string, string>>;
   readonly reference: string;
-  readonly code?: 'EMAIL_NOT_VERIFIED' | 'EMAIL_ALREADY_VERIFIED' | 'VERIFICATION_CODE_INVALID'
+  readonly code?: 'REGISTRATION_PENDING_VERIFICATION' | 'EMAIL_NOT_VERIFIED' | 'EMAIL_ALREADY_VERIFIED' | 'VERIFICATION_CODE_INVALID'
     | 'VERIFICATION_CODE_EXPIRED' | 'VERIFICATION_ATTEMPTS_EXCEEDED' | 'VERIFICATION_SESSION_FAILED';
   readonly verificationToken?: string;
   readonly verificationExpiresIn?: number;
@@ -57,7 +57,7 @@ export class apiErrorsService {
         : (SAFE_MESSAGES[response.status] ??
           'Ocurrió un error inesperado. Volvé al inicio e intentá nuevamente.');
 
-    const permitidos = ['EMAIL_NOT_VERIFIED', 'EMAIL_ALREADY_VERIFIED', 'VERIFICATION_CODE_INVALID',
+    const permitidos = ['REGISTRATION_PENDING_VERIFICATION', 'EMAIL_NOT_VERIFIED', 'EMAIL_ALREADY_VERIFIED', 'VERIFICATION_CODE_INVALID',
       'VERIFICATION_CODE_EXPIRED', 'VERIFICATION_ATTEMPTS_EXCEEDED'];
     const code = permitidos.includes(String(conflictCode)) ? conflictCode as ApiError['code'] : undefined;
     const verificationToken = code === 'EMAIL_NOT_VERIFIED' && response.status === 403

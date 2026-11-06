@@ -110,14 +110,17 @@ export class Home implements OnInit {
 
   protected submitSearch(event: Event): void {
     event.preventDefault();
-    const activeSuggestion = this.suggestions()[this.activeSuggestionIndex()];
-    if (this.suggestionsOpen() && activeSuggestion) {
-      this.selectSuggestion(activeSuggestion);
+    const term = this.search.value.trim();
+    if (term.length < 2) {
       return;
     }
 
-    const term = this.search.value.trim();
-    if (term.length < 2) {
+    const suggestions = this.suggestions();
+    const resultadosActuales = !this.suggestionsLoading() && !this.suggestionsError()
+      && comparisonKey(this.lastSuggestionTerm() ?? '') === comparisonKey(term);
+
+    if (resultadosActuales && suggestions.length === 1) {
+      this.selectSuggestion(suggestions[0]);
       return;
     }
 
@@ -156,6 +159,13 @@ export class Home implements OnInit {
 
     const suggestions = this.suggestions();
     if (!this.suggestionsOpen() || suggestions.length === 0) {
+      return;
+    }
+
+    // Enter confirma una opción elegida explícitamente con las flechas.
+    if (event.key === 'Enter' && this.activeSuggestionIndex() >= 0) {
+      event.preventDefault();
+      this.selectSuggestion(suggestions[this.activeSuggestionIndex()]);
       return;
     }
 
