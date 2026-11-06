@@ -1,55 +1,38 @@
-import { provideHttpClient } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { Observable, Subject, of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { Navbar } from '../components/navbar/navbar';
-import { BranchCategory, BranchFilters, BranchSummary } from '../models/branch';
 import { Home } from '../pages/home/home';
+import { authService } from './auth-service';
 import { BranchSearch } from './branch-search';
-import { BranchService } from './branch.service';
 
 @Component({ template: '' })
 class EmptyPage {}
 
-const CENTRO: BranchSummary = {
-  id: 1,
-  nombre: 'Centro',
-  categoria: 'SPA',
-  fotoPerfil: null,
-  puntuacion: 4.5,
-  cantidadPuntuaciones: 10,
-};
-
-const NORTE: BranchSummary = {
-  ...CENTRO,
-  id: 2,
-  nombre: 'Norte',
-};
-
-describe('BranchSearch', () => {
+describe('Navegación de sucursales desde Home', () => {
   let router: Router;
   let search: BranchSearch;
-  let list: ReturnType<typeof vi.fn>;
-  let getCategories: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    list = vi.fn<(filters?: BranchFilters) => Observable<readonly BranchSummary[]>>(() => of([]));
-    getCategories = vi.fn<() => Observable<readonly BranchCategory[]>>(() =>
-      of(['SPA', 'BARBERIA']),
-    );
-
     TestBed.configureTestingModule({
       imports: [Home, Navbar],
       providers: [
-        provideHttpClient(),
         provideRouter([
           { path: '', component: EmptyPage },
-          { path: 'otra', component: EmptyPage },
+          { path: 'sucursales', component: EmptyPage },
         ]),
         {
-          provide: BranchService,
-          useValue: { list, getCategories },
+          provide: authService,
+          useValue: {
+            autenticado: signal(false),
+            visitante: signal(true),
+            restaurando: signal(false),
+            perfil: signal(null),
+            iniciales: signal('AM'),
+            tieneAlgunRol: () => false,
+            logout: () => of(undefined),
+          },
         },
       ],
     });
@@ -58,292 +41,108 @@ describe('BranchSearch', () => {
     search = TestBed.inject(BranchSearch);
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+  afterEach(() => vi.useRealTimers());
 
-  it('restores search and category from the URL and combines both filters', async () => {
-    await router.navigateByUrl('/?busqueda=%20Centro%20&categoria=SPA');
-
-    expect(search.search.value).toBe('Centro');
-    expect(search.appliedTerm()).toBe('Centro');
-    expect(search.selectedCategory()).toBe('SPA');
-    expect(list).toHaveBeenCalledWith({ nombre: 'Centro', categoria: 'SPA' });
-    expect(getCategories).toHaveBeenCalledOnce();
-  });
-
-  it('selects a category and then Todas without losing the applied search', async () => {
-    await router.navigateByUrl('/?busqueda=Centro');
-
-    search.selectCategory('SPA');
-    await vi.waitFor(() => expect(router.url).toBe('/?busqueda=Centro&categoria=SPA'));
-
-    expect(search.selectedCategory()).toBe('SPA');
-    expect(list).toHaveBeenLastCalledWith({ nombre: 'Centro', categoria: 'SPA' });
-
-    search.selectCategory(null);
-    await vi.waitFor(() => expect(router.url).toBe('/?busqueda=Centro'));
-
-    expect(search.selectedCategory()).toBeNull();
-    expect(search.search.value).toBe('Centro');
-    expect(list).toHaveBeenLastCalledWith({ nombre: 'Centro' });
-  });
-
-  it('preserves the selected category when searching by name', async () => {
-    await router.navigateByUrl('/?categoria=SPA');
+  it('envía la búsqueda del hero a Sucursales después del debounce', async () => {
+    await router.navigateByUrl('/');
     vi.useFakeTimers();
 
-    search.search.setValue('Central');
-    await vi.advanceTimersByTimeAsync(350);
-    await vi.waitFor(() => expect(router.url).toBe('/?categoria=SPA&busqueda=Central'));
-
-    expect(list).toHaveBeenLastCalledWith({ nombre: 'Central', categoria: 'SPA' });
-  });
-
-  it('accepts new categories returned by the API and formats their fallback label', async () => {
-    getCategories.mockReturnValue(of(['SERVICIO_NUEVO']));
-
-    await router.navigateByUrl('/?categoria=SERVICIO_NUEVO');
-
-    expect(search.selectedCategory()).toBe('SERVICIO_NUEVO');
-    expect(search.categoryLabel('SERVICIO_NUEVO')).toBe('Servicio nuevo');
-    expect(list).toHaveBeenLastCalledWith({ categoria: 'SERVICIO_NUEVO' });
-  });
-
-  it('uses explicit presentation labels with accents', () => {
-    expect(search.categoryLabel('PELUQUERIA')).toBe('Peluquería');
-    expect(search.categoryLabel('PELUQUERIA_CANINA')).toBe('Peluquería canina');
-    expect(search.categoryLabel('ODONTOLOGIA')).toBe('Odontología');
-  });
-
-  it('removes an invalid category without adding history or losing the search', async () => {
-    const navigate = vi.spyOn(router, 'navigate');
-
-    await router.navigateByUrl('/?busqueda=Centro&categoria=INVALIDA');
-    await vi.waitFor(() => expect(router.url).toBe('/?busqueda=Centro'));
-
-    expect(search.selectedCategory()).toBeNull();
-    expect(search.search.value).toBe('Centro');
-    expect(list).toHaveBeenCalledTimes(1);
-    expect(list).toHaveBeenLastCalledWith({ nombre: 'Centro' });
-    expect(navigate).toHaveBeenCalledWith([], {
-      queryParams: { categoria: null },
-      queryParamsHandling: 'merge',
-      replaceUrl: true,
-    });
-  });
-
-  it('selects Todas and keeps the name search when the categories endpoint fails', async () => {
-    getCategories.mockReturnValue(throwError(() => new Error('network')));
-    list.mockReturnValue(of([CENTRO]));
-
-    await router.navigateByUrl('/?busqueda=Centro&categoria=SPA');
-    await vi.waitFor(() => expect(router.url).toBe('/?busqueda=Centro'));
-
-    expect(search.categories()).toEqual([]);
-    expect(search.categoriesError()).toBe(
-      'No pudimos cargar las categorías. Podés seguir usando el listado.',
-    );
-    expect(search.selectedCategory()).toBeNull();
-    expect(search.branches()).toEqual([CENTRO]);
-    expect(list).toHaveBeenCalledOnce();
-    expect(list).toHaveBeenLastCalledWith({ nombre: 'Centro' });
-  });
-
-  it('allows retrying the categories request without reloading the listing', async () => {
-    getCategories
-      .mockReturnValueOnce(throwError(() => new Error('network')))
-      .mockReturnValueOnce(of(['SPA']));
-
-    await router.navigateByUrl('/');
-    expect(search.categoriesError()).not.toBeNull();
-
-    search.retryCategories();
-
-    expect(search.categories()).toEqual(['SPA']);
-    expect(search.categoriesError()).toBeNull();
-    expect(getCategories).toHaveBeenCalledTimes(2);
-    expect(list).toHaveBeenCalledTimes(1);
-  });
-
-  it('debounces for 350 ms and does not search one-character terms', async () => {
-    await router.navigateByUrl('/');
-    const navigate = vi.spyOn(router, 'navigate');
-    navigate.mockClear();
-    vi.useFakeTimers();
-
-    search.search.setValue('c');
-    await vi.advanceTimersByTimeAsync(350);
-    expect(navigate).not.toHaveBeenCalled();
-
-    search.search.setValue('centro');
+    search.search.setValue('Centro');
     await vi.advanceTimersByTimeAsync(349);
-    expect(navigate).not.toHaveBeenCalled();
+    expect(router.url).toBe('/');
 
     await vi.advanceTimersByTimeAsync(1);
-    expect(navigate).toHaveBeenCalledTimes(1);
-    expect(navigate).toHaveBeenCalledWith(['/'], {
-      queryParams: { busqueda: 'centro' },
-      queryParamsHandling: 'merge',
-    });
+    await vi.waitFor(() => expect(router.url).toBe('/sucursales?busqueda=Centro'));
   });
 
-  it('submits immediately on Enter without duplicating the debounced navigation', async () => {
+  it('envía Enter inmediatamente sin duplicar la navegación diferida', async () => {
     await router.navigateByUrl('/');
     const navigate = vi.spyOn(router, 'navigate');
-    navigate.mockClear();
     vi.useFakeTimers();
 
     search.search.setValue('  Centro  ');
     search.submit();
-
-    expect(navigate).toHaveBeenCalledTimes(1);
-    expect(navigate).toHaveBeenCalledWith(['/'], {
-      queryParams: { busqueda: 'Centro' },
-      queryParamsHandling: 'merge',
-    });
-
+    await vi.waitFor(() => expect(router.url).toBe('/sucursales?busqueda=Centro'));
     await vi.advanceTimersByTimeAsync(350);
+
     expect(navigate).toHaveBeenCalledTimes(1);
   });
 
-  it('navigates to Home when a search is applied from another page', async () => {
-    await router.navigateByUrl('/otra');
-    const navigate = vi.spyOn(router, 'navigate');
-    navigate.mockClear();
+  it('no navega con un término de un carácter y muestra la ayuda', async () => {
+    await router.navigateByUrl('/');
+    vi.useFakeTimers();
 
-    search.search.setValue('Palermo', { emitEvent: false });
-    search.submit();
+    search.search.setValue('c');
+    await vi.advanceTimersByTimeAsync(350);
 
-    expect(navigate).toHaveBeenCalledWith(['/'], {
-      queryParams: { busqueda: 'Palermo' },
-      queryParamsHandling: 'merge',
-    });
+    expect(router.url).toBe('/');
+    expect(search.termTooShort()).toBe(true);
   });
 
-  it('clears the query while preserving the selected category', async () => {
-    await router.navigateByUrl('/?busqueda=centro&categoria=SPA');
+  it('limpia el término y conserva la categoría existente', async () => {
+    await router.navigateByUrl('/sucursales?busqueda=Centro&categoria=SPA');
+    search.search.setValue('Centro', { emitEvent: false });
 
     search.clear();
-    await vi.waitFor(() => expect(router.url).toBe('/?categoria=SPA'));
+    await vi.waitFor(() => expect(router.url).toBe('/sucursales?categoria=SPA'));
 
     expect(search.search.value).toBe('');
-    expect(list).toHaveBeenLastCalledWith({ categoria: 'SPA' });
+    expect(search.term()).toBe('');
   });
 
-  it('restores prior searches when navigation returns to an earlier URL', async () => {
-    await router.navigateByUrl('/?busqueda=Centro');
-    await router.navigateByUrl('/?busqueda=Norte');
-
-    await router.navigateByUrl('/?busqueda=Centro');
-    expect(search.search.value).toBe('Centro');
-    expect(search.appliedTerm()).toBe('Centro');
-
-    await router.navigateByUrl('/?busqueda=Norte');
-    expect(search.search.value).toBe('Norte');
-    expect(search.appliedTerm()).toBe('Norte');
-  });
-
-  it('shares the same form state between Navbar and Home', async () => {
-    await router.navigateByUrl('/');
-    const navbarFixture = TestBed.createComponent(Navbar);
-    const homeFixture = TestBed.createComponent(Home);
-    navbarFixture.detectChanges();
-    homeFixture.detectChanges();
-    const navbarSearch = (
-      navbarFixture.componentInstance as unknown as { branchSearch: BranchSearch }
-    ).branchSearch;
-    const homeSearch = (homeFixture.componentInstance as unknown as { branchSearch: BranchSearch })
-      .branchSearch;
-    const navbarInput = navbarFixture.nativeElement.querySelector(
-      '#navbar-search input',
-    ) as HTMLInputElement;
-    const homeInput = homeFixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
-
-    expect(navbarSearch).toBe(search);
-    expect(homeSearch).toBe(search);
-
-    search.search.setValue('Centro');
-    navbarFixture.detectChanges();
-    homeFixture.detectChanges();
-
-    expect(navbarInput.value).toBe('Centro');
-    expect(homeInput.value).toBe('Centro');
-    expect(search.search.value).toBe('Centro');
-  });
-
-  it('renders Todas as an accessible keyboard button and announces the result count', async () => {
-    list.mockReturnValue(of([CENTRO]));
+  it('Home ya no renderiza filtros, resultados ni tarjetas de sucursales', async () => {
     await router.navigateByUrl('/');
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
-    const filters = fixture.nativeElement.querySelector('.branch-filters') as HTMLElement;
-    const allButton = filters.querySelector('button') as HTMLButtonElement;
-    const summary = fixture.nativeElement.querySelector('.branch-results__summary') as HTMLElement;
 
-    expect(allButton.getAttribute('aria-pressed')).toBe('true');
-    expect(allButton.querySelector('.branch-filter__indicator')).toBeTruthy();
-    allButton.focus();
-    expect(document.activeElement).toBe(allButton);
-    expect(getComputedStyle(filters).overflowX).toBe('auto');
-    expect(summary.getAttribute('aria-live')).toBe('polite');
-    expect(summary.textContent?.trim()).toBe('1 sucursal');
+    expect(fixture.nativeElement.querySelector('.branches')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.branch-filters')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.branch-card')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Sucursales disponibles');
   });
 
-  it('updates the rendered counter after applying a category', async () => {
-    list.mockImplementation((filters?: BranchFilters) =>
-      filters?.categoria ? of([]) : of([CENTRO, NORTE]),
-    );
+  it('mantiene las acciones del hero y Conocer sucursales apunta al listado', async () => {
     await router.navigateByUrl('/');
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
-    const summary = () =>
-      (
-        fixture.nativeElement.querySelector('.branch-results__summary') as HTMLElement
-      ).textContent?.trim();
-
-    expect(summary()).toBe('2 sucursales');
-
-    search.selectCategory('SPA');
-    await vi.waitFor(() => expect(search.selectedCategory()).toBe('SPA'));
-    fixture.detectChanges();
-
-    expect(summary()).toBe('0 sucursales');
-  });
-
-  it('keeps only the newest response when requests finish out of order', async () => {
-    const centroResponse = new Subject<readonly BranchSummary[]>();
-    const norteResponse = new Subject<readonly BranchSummary[]>();
-    list.mockImplementation((filters?: BranchFilters) =>
-      filters?.nombre === 'Centro' ? centroResponse : norteResponse,
+    const actions = Array.from(
+      fixture.nativeElement.querySelectorAll('.hero__actions a') as NodeListOf<HTMLAnchorElement>,
     );
 
-    await router.navigateByUrl('/?busqueda=Centro');
-    await router.navigateByUrl('/?busqueda=Norte');
-
-    norteResponse.next([NORTE]);
-    norteResponse.complete();
-    expect(search.branches()).toEqual([NORTE]);
-
-    centroResponse.next([CENTRO]);
-    centroResponse.complete();
-    expect(search.branches()).toEqual([NORTE]);
+    expect(actions.map((link) => link.textContent?.trim())).toEqual([
+      expect.stringContaining('Crear cuenta'),
+      'Conocer sucursales',
+    ]);
+    expect(actions[1]?.getAttribute('href')).toBe('/sucursales');
   });
 
-  it('preserves filters after an error and retries the same search', async () => {
-    list
-      .mockReturnValueOnce(throwError(() => new Error('network')))
-      .mockReturnValueOnce(of([CENTRO]));
-
+  it('redirige URLs antiguas de Home con filtros hacia Sucursales', async () => {
     await router.navigateByUrl('/?busqueda=Centro&categoria=SPA');
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
 
-    expect(search.error()).toBe('No pudimos cargar las sucursales. Intentá nuevamente.');
-    expect(search.search.value).toBe('Centro');
+    await vi.waitFor(() =>
+      expect(router.url).toBe('/sucursales?busqueda=Centro&categoria=SPA'),
+    );
+  });
 
-    search.retry();
+  it('Navbar no renderiza buscador, disparador ni atajo visual', async () => {
+    await router.navigateByUrl('/sucursales');
+    const fixture = TestBed.createComponent(Navbar);
+    fixture.detectChanges();
 
-    expect(list).toHaveBeenLastCalledWith({ nombre: 'Centro', categoria: 'SPA' });
-    expect(search.error()).toBeNull();
-    expect(search.branches()).toEqual([CENTRO]);
+    expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.search-trigger')).toBeNull();
+    expect(fixture.nativeElement.querySelector('kbd')).toBeNull();
+  });
+
+  it('Navbar conserva logo, navegación y acciones de cuenta', async () => {
+    await router.navigateByUrl('/sucursales');
+    const fixture = TestBed.createComponent(Navbar);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.brand')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Iniciar sesión');
+    expect(fixture.nativeElement.textContent).toContain('Crear cuenta');
   });
 });

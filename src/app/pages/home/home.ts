@@ -2,13 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  OnInit,
   inject,
   signal,
 } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { Auth } from '../../auth/auth';
-import { BranchCategory } from '../../models/branch';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { authService } from '../../services/auth-service';
 import { BranchSearch } from '../../services/branch-search';
 
 @Component({
@@ -18,8 +18,10 @@ import { BranchSearch } from '../../services/branch-search';
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Home {
-  private readonly auth = inject(Auth);
+export class Home implements OnInit {
+  private readonly auth = inject(authService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   protected readonly branchSearch = inject(BranchSearch);
   private readonly mobileOpen = signal(false);
   private readonly scrolled = signal(false);
@@ -30,14 +32,6 @@ export class Home {
   protected submitSearch(event: Event): void {
     event.preventDefault();
     this.branchSearch.submit();
-  }
-
-  protected selectCategory(category: BranchCategory | null): void {
-    this.branchSearch.selectCategory(category);
-  }
-
-  protected imageError(event: Event): void {
-    (event.target as HTMLImageElement).hidden = true;
   }
 
   @HostListener('window:scroll')
@@ -71,6 +65,13 @@ export class Home {
   protected closeMobile(): void {
     this.mobileOpen.set(false);
     document.body.classList.remove('nav-locked');
+  }
+
+  ngOnInit(): void {
+    const qp = this.route.snapshot.queryParams;
+    if (qp['busqueda'] || qp['categoria']) {
+      void this.router.navigate(['/sucursales'], { queryParams: qp });
+    }
   }
 
   protected scrollToSection(event: Event, sectionId: string): void {

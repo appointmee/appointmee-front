@@ -9,7 +9,7 @@
       <span class="brand__text">Appoint<span class="brand__accent">Mee</span></span>
     </a>
 
-    @if (auth.autenticado()) {
+    @if (auth.autenticado() && !navbarSimple()) {
       <nav class="nav" aria-label="Navegación principal">
         <ul class="nav__list">
           @for (link of primaryLinks(); track link.path) {
@@ -29,58 +29,12 @@
       </nav>
     }
 
-    <div class="navbar__search-wrap" [class.is-open]="searchOpen()">
-      <form
-        class="search"
-        id="navbar-search"
-        role="search"
-        aria-label="Buscar en AppointMee"
-        (submit)="submitSearch($event)"
-      >
-        <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="icons.search" />
-        </svg>
-        <input
-          #searchInput
-          class="search__input"
-          type="search"
-          placeholder="Buscar sucursal por nombre..."
-          autocomplete="off"
-          spellcheck="false"
-          [formControl]="branchSearch.search"
-          aria-label="Buscar sucursales por nombre"
-        />
-        @if (branchSearch.term()) {
-          <button
-            class="search__clear"
-            type="button"
-            (click)="clearSearch()"
-            aria-label="Limpiar búsqueda"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m6 6 12 12M18 6 6 18" />
-            </svg>
-          </button>
-        } @else {
-          <kbd class="search__hint">⌘ K</kbd>
-        }
-      </form>
-    </div>
-
     <div class="navbar__actions">
-      <button
-        class="icon-btn search-trigger"
-        type="button"
-        (click)="openSearch()"
-        [attr.aria-expanded]="searchOpen()"
-        aria-controls="navbar-search"
-        aria-label="Abrir búsqueda"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="icons.search" />
-        </svg>
-      </button>
-
+      @if (navbarSimple()) {
+        <a class="navbar__cta navbar__cta--solid navbar__cta--auth" routerLink="/registrarme">
+          Crear cuenta
+        </a>
+      } @else {
       @if (auth.restaurando()) {
         <!-- Placeholder durante la restauración de sesión (criterio 11). -->
         <button
@@ -184,11 +138,12 @@
         <span></span>
         <span></span>
       </button>
+      }
     </div>
   </div>
 </header>
 
-@if (mobileOpen()) {
+@if (mobileOpen() && !navbarSimple()) {
   <div class="scrim" (click)="closeMobile()" aria-hidden="true"></div>
   <aside
     #sheet

@@ -39,3 +39,8 @@
   outline: 2px solid var(--accent);
   outline-offset: -4px;
 }
+
+.api-notice { position: fixed; z-index: 1100; right: 20px; bottom: 20px; display: flex; max-width: min(560px, calc(100vw - 40px)); flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 0 16px 48px #0008; }
+.api-notice p { flex: 1 1 100%; margin: 0; line-height: 1.5; }
+.api-notice button, .api-notice a { padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--text); font: inherit; text-decoration: none; cursor: pointer; }
+.api-notice button:focus-visible, .api-notice a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

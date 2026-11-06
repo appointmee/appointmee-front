@@ -12,6 +12,7 @@
       <a href="#inicio" (click)="scrollToSection($event, 'inicio')">Inicio</a>
       <a href="#quienes-somos" (click)="scrollToSection($event, 'quienes-somos')">¿Quiénes somos?</a>
       <a href="#como-funciona" (click)="scrollToSection($event, 'como-funciona')">¿Cómo funciona?</a>
+      <a routerLink="/sucursales">Sucursales</a>
     </nav>
 
     <div class="landing-nav__actions">
@@ -45,6 +46,7 @@
       <a href="#inicio" (click)="scrollToSection($event, 'inicio'); closeMobile()">Inicio</a>
       <a href="#quienes-somos" (click)="scrollToSection($event, 'quienes-somos'); closeMobile()">¿Quiénes somos?</a>
       <a href="#como-funciona" (click)="scrollToSection($event, 'como-funciona'); closeMobile()">¿Cómo funciona?</a>
+      <a routerLink="/sucursales" (click)="closeMobile()">Sucursales</a>
       <div class="landing-sheet__divider"></div>
       @if (isAuthenticated()) {
         <a routerLink="/mis-turnos" (click)="closeMobile()">Mi cuenta</a>
@@ -118,8 +120,8 @@
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </a>
-          <a class="landing-btn landing-btn--ghost landing-btn--lg" href="#como-funciona" (click)="scrollToSection($event, 'como-funciona')">
-            Conocer cómo funciona
+          <a class="landing-btn landing-btn--ghost landing-btn--lg" routerLink="/sucursales">
+            Conocer sucursales
           </a>
         </div>
         <div class="hero__notes reveal" style="--delay: 0.32s">
@@ -177,130 +179,13 @@
     </div>
   </section>
 
-  <section class="section branches" aria-labelledby="branches-title">
-    <div class="section__inner branches__inner">
-      <div class="section__header branches__header">
-        <span class="eyebrow">
-          <span class="eyebrow__dot"></span>
-          Explorar
-        </span>
-        <h2 id="branches-title" class="section__title">Sucursales disponibles</h2>
-        <p class="section__lead">Encontrá el lugar indicado y compará sus valoraciones.</p>
-      </div>
-
-      <div
-        class="branch-filters"
-        role="group"
-        aria-label="Filtrar por categoría"
-        [attr.aria-busy]="branchSearch.categoriesLoading()"
-      >
-        <button
-          type="button"
-          class="branch-filter"
-          [class.branch-filter--active]="branchSearch.selectedCategory() === null"
-          [attr.aria-pressed]="branchSearch.selectedCategory() === null"
-          (click)="selectCategory(null)"
-        >
-          <span class="branch-filter__indicator" aria-hidden="true">
-            <svg viewBox="0 0 16 16"><path d="m3 8 3 3 7-7" /></svg>
-          </span>
-          Todas
-        </button>
-        @for (category of branchSearch.categories(); track category) {
-          <button
-            type="button"
-            class="branch-filter"
-            [class.branch-filter--active]="branchSearch.selectedCategory() === category"
-            [attr.aria-pressed]="branchSearch.selectedCategory() === category"
-            (click)="selectCategory(category)"
-          >
-            <span class="branch-filter__indicator" aria-hidden="true">
-              <svg viewBox="0 0 16 16"><path d="m3 8 3 3 7-7" /></svg>
-            </span>
-            {{ branchSearch.categoryLabel(category) }}
-          </button>
-        }
-      </div>
-
-      @if (branchSearch.categoriesError()) {
-        <div class="branch-filters__notice" role="status">
-          <span>{{ branchSearch.categoriesError() }}</span>
-          <button type="button" (click)="branchSearch.retryCategories()">Reintentar</button>
-        </div>
-      }
-
-      <div class="branch-results" [attr.aria-busy]="branchSearch.loading()">
-        <p class="branch-results__summary" role="status" aria-live="polite" aria-atomic="true">
-          @if (!branchSearch.loading() && !branchSearch.error()) {
-            {{ branchSearch.resultCountLabel() }}
-          }
-        </p>
-
-        @if (branchSearch.loading()) {
-          <div class="branch-state branch-state--loading" role="status" aria-live="polite">
-            <span class="branch-loader" aria-hidden="true"></span>
-            <p>Buscando sucursales...</p>
-          </div>
-        } @else if (branchSearch.error()) {
-          <div class="branch-state branch-state--error" role="alert">
-            <strong>No pudimos completar la búsqueda</strong>
-            <p>{{ branchSearch.error() }}</p>
-            <button type="button" class="branch-action" (click)="branchSearch.retry()">
-              Reintentar
-            </button>
-          </div>
-        } @else if (branchSearch.branches().length === 0) {
-          <div class="branch-state">
-            <strong>No se encontraron sucursales</strong>
-            @if (branchSearch.appliedTerm()) {
-              <p>No encontramos resultados para “{{ branchSearch.appliedTerm() }}”.</p>
-            } @else {
-              <p>No hay sucursales disponibles para esta categoría.</p>
-            }
-            <button type="button" class="branch-action" (click)="branchSearch.clearFilters()">
-              Limpiar búsqueda
-            </button>
-          </div>
-        } @else {
-          <div class="branch-grid">
-            @for (branch of branchSearch.branches(); track branch.id) {
-              <article class="branch-card">
-                <div class="branch-card__media">
-                  @if (branch.fotoPerfil) {
-                    <img [src]="branch.fotoPerfil" alt="" (error)="imageError($event)" />
-                  }
-                  <span>{{ branchSearch.categoryLabel(branch.categoria) }}</span>
-                </div>
-                <div class="branch-card__body">
-                  <h3>{{ branch.nombre }}</h3>
-                  @if (branch.puntuacion !== null) {
-                    <span
-                      class="branch-rating"
-                      [attr.aria-label]="branch.puntuacion + ' de 5 estrellas, ' + branch.cantidadPuntuaciones + ' valoraciones'"
-                    >
-                      <span aria-hidden="true">★</span>
-                      {{ branch.puntuacion.toFixed(1) }}
-                      <small>({{ branch.cantidadPuntuaciones }})</small>
-                    </span>
-                  } @else {
-                    <span class="branch-rating branch-rating--empty">Sin reseñas</span>
-                  }
-                </div>
-              </article>
-            }
-          </div>
-        }
-      </div>
-    </div>
-  </section>
-
   <!-- ¿Quiénes somos? -->
   <section id="quienes-somos" class="section about" aria-labelledby="about-title">
     <div class="section__inner about__inner">
       <div class="about__content">
         <span class="eyebrow reveal">
           <span class="eyebrow__dot"></span>
-          Identidad
+          Acerca de nosotros
         </span>
         <h2 id="about-title" class="section__title reveal">¿Quiénes somos?</h2>
         <p class="section__lead reveal">Simplificamos la manera de gestionar tus turnos.</p>
