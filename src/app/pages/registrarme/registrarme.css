@@ -1,11 +1,55 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.login {
+  align-items: start;
+  padding: clamp(20px, 4vw, 48px) clamp(12px, 3vw, 32px);
+}
+
 .login__card {
-  width: min(100%, 640px);
+  width: min(100%, 760px);
+  min-width: 0;
+  padding: clamp(20px, 4vw, 36px);
 }
 
 .registro__datos {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 20px;
+  gap: 4px 24px;
+  align-items: start;
+}
+
+.login__field,
+.login__password {
+  min-width: 0;
+}
+
+.login__field input {
+  min-width: 0;
+  min-height: 46px;
+  font-size: 16px;
+  scroll-margin-block: calc(var(--nav-h) + 24px);
+}
+
+.login__validation,
+.login__error,
+.registro__ayuda,
+.registro__recuperar a {
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.login__submit {
+  min-height: 48px;
+}
+
+.login__alt a,
+.registro__recuperar a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .registro__ayuda {
@@ -50,7 +94,7 @@
 .registro__requisitos li {
   display: flex;
   gap: 8px;
-  align-items: center;
+  align-items: baseline;
 }
 
 .registro__requisito--cumplido {
@@ -68,8 +112,25 @@
   white-space: nowrap;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 640px) {
   .registro__datos {
     grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .login__card {
+    border-radius: 16px;
+  }
+
+  .registro__recuperar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+@media (max-height: 600px) and (min-width: 641px) {
+  .login {
+    padding-block: 16px;
   }
 }
