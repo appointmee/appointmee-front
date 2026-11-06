@@ -15,6 +15,7 @@ import {
 
 import type { Tokens, UsuarioSesion, PerfilResponse, MensajeResponse, VerificacionEmailResponse, EstadoVerificacion } from '../models/auth';
 import { verificacionPendienteService } from './verificacion-pendiente-service';
+import type { RegistroRequest } from '../models/registro';
 import { backendService } from './backend-service';
 
 @Injectable({ providedIn: 'root' })
@@ -103,8 +104,23 @@ export class authService {
   }
 
 
+  registrar(datos: RegistroRequest): Observable<MensajeResponse> {
+    return this.http.post<MensajeResponse>(`${this.api.baseUrl}/auth/register`, datos);
+  }
+
+
   solicitarRecuperacion(email: string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.api.baseUrl}/auth/forgot-password`, { email });
+  }
+
+
+  restablecerPassword(token: string, newPassword: string): Observable<MensajeResponse> {
+    return this.http.post<MensajeResponse>(`${this.api.baseUrl}/auth/reset-password`, { token, newPassword }).pipe(
+      tap(() => {
+        this.limpiarSesion();
+        this.pendiente.limpiar();
+      }),
+    );
   }
 
 

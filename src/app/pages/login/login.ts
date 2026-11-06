@@ -37,6 +37,8 @@ export class LoginPage {
   });
 
 
+  registroExitoso = signal(this.router.getCurrentNavigation()?.extras.state?.['registroExitoso'] === true);
+
   cargando = signal(false);
   mostrarPassword = signal(false);
   puedeReintentar = signal(false);

@@ -136,6 +136,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login/login').then((module) => module.LoginPage),
   },
   {
+    path: 'reset-password',
+    title: 'AppointMee | Restablecer contraseña',
+    loadComponent: () => import('./pages/reset-password/reset-password').then(module => module.ResetPasswordPage),
+  },
+  {
     path: 'olvide-mi-contrasena',
     title: 'AppointMee | Recuperar contraseña',
     loadComponent: () => import('./pages/forgot-password/forgot-password').then(module => module.ForgotPasswordPage),
@@ -147,12 +152,9 @@ export const routes: Routes = [
   },
   {
     path: 'registrarme',
+    canActivate: [guestGuard],
     title: 'AppointMee | Crear cuenta',
-    data: {
-      title: 'Crear cuenta',
-      description: 'Creá tu cuenta de AppointMee para reservar y gestionar turnos.',
-    },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () => import('./pages/registrarme/registrarme').then(module => module.Registrarme),
   },
   {
     path: 'admin',

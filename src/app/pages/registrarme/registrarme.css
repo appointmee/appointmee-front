@@ -1,0 +1,75 @@
+.login__card {
+  width: min(100%, 640px);
+}
+
+.registro__datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+}
+
+.registro__ayuda {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.registro__coincidencia {
+  margin: 0;
+  color: #ff9d9d;
+  font-size: 12px;
+}
+
+.registro__coincidencia--ok {
+  color: #9dddb4;
+}
+
+.registro__recuperar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-bottom: 20px;
+}
+
+.registro__recuperar a {
+  color: var(--accent-strong);
+  text-underline-offset: 3px;
+}
+
+.registro__requisitos {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 12px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 12px;
+  list-style: none;
+}
+
+.registro__requisitos li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.registro__requisito--cumplido {
+  color: #9dddb4;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .registro__datos {
+    grid-template-columns: 1fr;
+  }
+}
