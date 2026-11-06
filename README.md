@@ -11,14 +11,13 @@
 <p align="center">
   <img alt="Angular" src="https://img.shields.io/badge/Angular-22-DD0031?logo=angular&logoColor=white" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white" />
-  <img alt="Vitest" src="https://img.shields.io/badge/Vitest-4-6E9F18?logo=vitest&logoColor=white" />
 </p>
 
 ## ¿Qué es AppointMee?
 
 AppointMee es el frontend de una plataforma de gestión de turnos que conecta a clientes con distintos establecimientos y sucursales. Desde la aplicación se pueden explorar sucursales, consultar sus servicios y reservar turnos, además de administrar la cuenta y las reservas.
 
-Es un proyecto académico desarrollado para la materia **Programación III** de la **Universidad Tecnológica Nacional (UTN)**.
+Es un proyecto académico desarrollado para la materia **Programación IV** de la **Universidad Tecnológica Nacional (UTN)**.
 
 ## Cómo iniciar el proyecto
 
