@@ -1,59 +1,64 @@
-# Appointmee
+<p align="center">
+  <img src="public/appointmee-logo.png" alt="AppointMee" width="140" />
+</p>
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.7.
+<h1 align="center">AppointMee</h1>
 
-## Development server
+<p align="center">
+  <em>Encontrá establecimientos, descubrí sus servicios y reservá tu turno de forma simple, rápida y organizada.</em>
+</p>
 
-To start a local development server, run:
+<p align="center">
+  <img alt="Angular" src="https://img.shields.io/badge/Angular-22-DD0031?logo=angular&logoColor=white" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white" />
+  <img alt="Vitest" src="https://img.shields.io/badge/Vitest-4-6E9F18?logo=vitest&logoColor=white" />
+</p>
 
-```bash
-ng serve
-```
+## ¿Qué es AppointMee?
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+AppointMee es el frontend de una plataforma de gestión de turnos que conecta a clientes con distintos establecimientos y sucursales. Desde la aplicación se pueden explorar sucursales, consultar sus servicios y reservar turnos, además de administrar la cuenta y las reservas.
 
-## Code scaffolding
+Es un proyecto académico desarrollado para la materia **Programación III** de la **Universidad Tecnológica Nacional (UTN)**.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Cómo iniciar el proyecto
 
-```bash
-ng generate component component-name
-```
+### Requisitos
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+- [Node.js](https://nodejs.org/) 22.22.3 o superior
+- npm
 
-```bash
-ng generate --help
-```
+### Pasos
 
-## Building
+1. Cloná el repositorio e ingresá a la carpeta:
 
-To build the project run:
+   ```bash
+   git clone https://github.com/appointmee/appointmee-front.git
+   cd appointmee-front
+   ```
 
-```bash
-ng build
-```
+2. Instalá las dependencias:
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+   ```bash
+   npm install
+   ```
 
-## Running unit tests
+3. Iniciá el servidor de desarrollo:
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+   ```bash
+   npm start
+   ```
 
-```bash
-ng test
-```
+4. Abrí [http://localhost:4200](http://localhost:4200) en el navegador.
 
-## Running end-to-end tests
+La aplicación se recarga automáticamente al modificar los archivos del proyecto.
 
-For end-to-end (e2e) testing, run:
+> **Backend:** el frontend consume la API desde `http://localhost:8080`. Para probar el flujo completo (inicio de sesión, sucursales y reservas) también tenés que ejecutar el [backend de AppointMee](https://github.com/appointmee/AppointMee). La URL se configura en `src/app/services/backend-service.ts`.
 
-```bash
-ng e2e
-```
+## Scripts disponibles
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+| Comando | Descripción |
+| --- | --- |
+| `npm start` | Inicia el servidor de desarrollo en `http://localhost:4200`. |
+| `npm run build` | Genera la build de producción en `dist/`. |
+| `npm test` | Ejecuta las pruebas unitarias con Vitest. |
+| `npm run watch` | Compila en modo desarrollo y queda atento a los cambios. |
