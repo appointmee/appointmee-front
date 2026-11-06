@@ -50,6 +50,13 @@ export class Servicios {
   /** La cuenta está autenticada pero no puede reservar por su rol. */
   protected readonly requiereRolCliente = signal(false);
   protected readonly reintentando = signal(false);
+  /** El navegador perdió la conexión: se avisa sin descartar lo ya cargado. */
+  protected readonly sinConexion = signal(!this.hayConexion());
+
+  protected readonly resumenServicios = computed(() => {
+    const total = this.servicios().length;
+    return total === 1 ? 'Se cargó 1 servicio.' : `Se cargaron ${total} servicios.`;
+  });
 
   protected readonly nombreSucursal = computed(
     () =>
@@ -67,8 +74,30 @@ export class Servicios {
   )}`;
 
   private readonly reintento = new Subject<void>();
+  /** El último error visible se produjo por falta de conexión. */
+  private readonly errorConexion = signal(false);
+  private readonly mensajeSinConexion =
+    'Revisá tu conexión a internet y volvé a intentar.';
+
+  private readonly onOffline = (): void => {
+    this.sinConexion.set(true);
+    if (this.errorConexion()) {
+      this.error.set(this.mensajeSinConexion);
+    }
+  };
+
+  private readonly onOnline = (): void => {
+    this.sinConexion.set(false);
+    if (this.errorConexion()) {
+      this.error.set(
+        'La conexión volvió a estar disponible. Reintentá para cargar los servicios.',
+      );
+    }
+  };
 
   constructor() {
+    this.registrarEventosDeConexion();
+
     const idSucursal = this.sucursalId;
     if (idSucursal === null) {
       return;
@@ -79,9 +108,11 @@ export class Servicios {
         startWith(undefined as void),
         tap(() => {
           // En un reintento se mantiene el error inline (y el nombre de la
-          // sucursal) hasta tener una respuesta; el skeleton es sólo la carga
-          // inicial.
-          this.cargando.set(this.error() === null);
+          // sucursal) hasta tener una respuesta. El skeleton es sólo para la
+          // primera carga, no para reintentos ni para refrescar una lista ya
+          // visible.
+          this.cargando.set(this.error() === null && this.servicios().length === 0);
+          this.sinConexion.set(!this.hayConexion());
           this.requiereLogin.set(false);
           this.requiereRolCliente.set(false);
         }),
@@ -109,7 +140,9 @@ export class Servicios {
 
         if (servicios.ok) {
           this.error.set(null);
-          this.servicios.set(servicios.servicios);
+          this.errorConexion.set(false);
+          this.sinConexion.set(false);
+          this.servicios.set(servicios.servicios ?? []);
         } else {
           this.servicios.set([]);
           this.aplicarError(servicios.error);
@@ -170,6 +203,8 @@ export class Servicios {
   }
 
   private aplicarError(error: HttpErrorResponse): void {
+    this.errorConexion.set(false);
+
     if (error.status === 401) {
       this.error.set('Necesitás iniciar sesión para ver los servicios de esta sucursal.');
       this.requiereLogin.set(true);
@@ -184,19 +219,43 @@ export class Servicios {
       return;
     }
 
-    if (error.status === 0) {
-      this.error.set(
-        'No pudimos conectar con el backend. Verificá que esté corriendo en http://localhost:8080 y que uses npm start (puerto 4200).',
-      );
-      return;
-    }
-
     if (error.status === 404) {
       this.error.set('No encontramos la sucursal solicitada.');
       return;
     }
 
+    if (error.status === 0) {
+      this.errorConexion.set(true);
+      if (!this.hayConexion()) {
+        this.sinConexion.set(true);
+        this.error.set(this.mensajeSinConexion);
+      } else {
+        this.sinConexion.set(false);
+        this.error.set(
+          'No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.',
+        );
+      }
+      return;
+    }
+
     this.error.set(`No pudimos cargar los servicios de ${this.nombreSucursal()}.`);
+  }
+
+  private registrarEventosDeConexion(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.addEventListener('offline', this.onOffline);
+    window.addEventListener('online', this.onOnline);
+    this.destroyRef.onDestroy(() => {
+      window.removeEventListener('offline', this.onOffline);
+      window.removeEventListener('online', this.onOnline);
+    });
+  }
+
+  private hayConexion(): boolean {
+    return typeof navigator === 'undefined' || navigator.onLine;
   }
 
   private parseId(value: string | null): number | null {
