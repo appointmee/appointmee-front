@@ -82,6 +82,13 @@ export class Home {
     document.body.classList.remove('nav-locked');
   }
 
+  ngOnInit(): void {
+    const qp = this.route.snapshot.queryParams;
+    if (qp['busqueda'] || qp['categoria']) {
+      void this.router.navigate(['/sucursales'], { queryParams: qp });
+    }
+  }
+
   protected scrollToSection(event: Event, sectionId: string): void {
     event.preventDefault();
     const element = document.getElementById(sectionId);

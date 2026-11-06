@@ -1,0 +1,58 @@
+.verificacion-modal {
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  margin: auto;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface, #171a22);
+  color: var(--text, #fff);
+  box-shadow: 0 24px 80px #0008;
+}
+
+.verificacion-modal::backdrop {
+  background: #000a;
+}
+
+.verificacion-modal h2 {
+  margin: 0 0 16px;
+  font-size: 22px;
+}
+
+.verificacion-modal p {
+  margin: 0;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.verificacion-modal__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.verificacion-modal button {
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.verificacion-modal__cancelar {
+  background: transparent;
+  color: var(--text, #fff);
+}
+
+.verificacion-modal__aceptar {
+  background: var(--accent-strong, #f7c65a);
+  color: #17130a;
+}
+
+.verificacion-modal button:focus-visible {
+  outline: 2px solid var(--accent-strong, #f7c65a);
+  outline-offset: 3px;
+}

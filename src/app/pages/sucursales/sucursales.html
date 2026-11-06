@@ -1,0 +1,134 @@
+<section class="listado" aria-labelledby="listado-titulo">
+  <div class="listado__inner">
+    <header class="listado__header">
+      <span class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Sucursales
+      </span>
+      <h1 id="listado-titulo">Encontrá tu sucursal</h1>
+      <p class="listado__lead">
+        Explorá los establecimientos disponibles y encontrá el más cercano a vos.
+      </p>
+    </header>
+
+    <div class="listado__controls">
+      <form class="search" role="search" aria-label="Buscar sucursales" (submit)="$event.preventDefault()">
+        <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.3-4.3" />
+        </svg>
+        <input
+          type="search"
+          class="search__input"
+          [value]="searchTerm()"
+          (input)="onSearchInput($event)"
+          placeholder="Buscar por nombre..."
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Buscar sucursales por nombre"
+        />
+        @if (searchTerm()) {
+          <button
+            type="button"
+            class="search__clear"
+            (click)="clearSearch()"
+            aria-label="Limpiar búsqueda"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </button>
+        }
+      </form>
+
+      <div class="categorias" role="group" aria-label="Filtrar por categoría">
+        <button
+          type="button"
+          class="categoria-chip"
+          [class.categoria-chip--active]="selectedCategory() === null"
+          (click)="selectCategory(null)"
+          [attr.aria-pressed]="selectedCategory() === null"
+        >
+          Todas
+        </button>
+        @for (categoria of categorias(); track categoria) {
+          <button
+            type="button"
+            class="categoria-chip"
+            [class.categoria-chip--active]="selectedCategory() === categoria"
+            (click)="selectCategory(categoria)"
+            [attr.aria-pressed]="selectedCategory() === categoria"
+          >
+            {{ humanizeCategory(categoria) }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="grid" aria-busy="true" aria-live="polite">
+        @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+          <article class="card card--skeleton" aria-hidden="true">
+            <div class="card__media skeleton"></div>
+            <div class="card__body">
+              <div class="skeleton skeleton--line"></div>
+              <div class="skeleton skeleton--line skeleton--short"></div>
+              <div class="skeleton skeleton--line skeleton--shorter"></div>
+            </div>
+          </article>
+        }
+      </div>
+    } @else if (error()) {
+      <p class="estado estado--error" role="alert">{{ error() }}</p>
+      @if (!requiereLogin()) {
+        <button class="estado__link" type="button" [disabled]="reintentando()" (click)="retry()">
+          {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+        </button>
+      }
+      @if (requiereLogin()) {
+        <p class="estado">
+          <a class="estado__link" routerLink="/login">Iniciar sesión</a>
+        </p>
+      }
+    } @else if (sucursales().length === 0) {
+      <p class="estado" role="status">No encontramos sucursales para tu búsqueda.</p>
+    } @else {
+      <div class="grid">
+        @for (sucursal of sucursales(); track trackById($index, sucursal); let i = $index) {
+          <a
+            class="card"
+            [routerLink]="['/sucursal', sucursal.id]"
+            [attr.aria-label]="cardAriaLabel(sucursal)"
+            [style.--i]="$index"
+          >
+            <div class="card__media">
+              <img
+                [src]="sucursal.fotoPerfil || placeholderImage"
+                [alt]="sucursal.nombre"
+                loading="lazy"
+                decoding="async"
+                (error)="onImageError($event)"
+              />
+            </div>
+            <div class="card__body">
+              <h2 class="card__name">{{ sucursal.nombre }}</h2>
+              <p class="card__category">{{ humanizeCategory(sucursal.categoria) }}</p>
+              <div class="card__rating">
+                @if (hasReviews(sucursal)) {
+                  <span class="bees" aria-hidden="true">{{ beeString(sucursal.puntuacion) }}</span>
+                  <span class="sr-only">Puntuación: {{ promedioFormateado(sucursal.puntuacion) }} de 5</span>
+                  <span class="rating__text">
+                    <span>{{ promedioFormateado(sucursal.puntuacion) }} de 5</span>
+                    <span class="rating__separator" aria-hidden="true">—</span>
+                    <span>{{ sucursal.cantidadPuntuaciones }} reseñas</span>
+                  </span>
+                } @else {
+                  <span class="rating__text rating__text--muted">Sin reseñas</span>
+                }
+              </div>
+            </div>
+          </a>
+        }
+      </div>
+    }
+  </div>
+</section>

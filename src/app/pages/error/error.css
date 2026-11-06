@@ -1,0 +1,20 @@
+:host { display: block; }
+.error-page { display: grid; min-height: calc(100dvh - var(--nav-h)); place-items: center; padding: clamp(24px, 6vw, 72px); }
+.error-card { width: min(100%, 620px); padding: clamp(28px, 6vw, 56px); border: 1px solid var(--line); border-radius: 24px; background: radial-gradient(460px circle at 10% 0%, rgba(247,198,90,.08), transparent 70%), var(--surface); box-shadow: 0 24px 80px rgba(0,0,0,.22); }
+.error-card__eyebrow { color: #d9c690; font: 600 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+.error-card__icon { display: grid; width: 50px; height: 50px; margin-top: 32px; place-items: center; border: 1px solid rgba(247,198,90,.2); border-radius: 15px; background: var(--accent-soft); color: var(--accent); }
+.error-card__icon svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.error-card h1 { margin: 22px 0 12px; font-size: clamp(2.2rem, 7vw, 3.5rem); line-height: 1.05; letter-spacing: -.05em; }
+.error-card h1:focus { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: 2px; }
+.error-card__description { max-width: 460px; margin: 0; color: var(--muted); font-size: 16px; line-height: 1.7; }
+.error-card__reference { margin: 24px 0 0; color: var(--muted); font-size: 13px; }
+.error-card__reference span { margin-left: 6px; color: var(--text); font-family: var(--mono); }
+.error-card__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 32px; }
+.error-button { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; padding: 0 18px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.035); color: var(--text); font: 600 14px var(--font); text-decoration: none; cursor: pointer; transition: border-color .2s ease, background .2s ease; }
+.error-button:hover:not(:disabled) { border-color: rgba(247,198,90,.45); background: rgba(247,198,90,.08); }
+.error-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.error-button:disabled { cursor: wait; opacity: .65; }
+.error-button--primary { border-color: var(--accent); background: var(--accent); color: #10131a; }
+.error-button--quiet { background: transparent; }
+@media (max-width: 480px) { .error-card__actions { align-items: stretch; flex-direction: column; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
