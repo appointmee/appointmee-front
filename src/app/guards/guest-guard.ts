@@ -12,6 +12,6 @@ export const guestGuard: CanActivateFn = (route) => {
   const router = inject(Router);
 
   return auth.autenticado()
-    ? destinoDespuesDelLogin(router, route.queryParamMap.get('returnTo'))
+    ? destinoDespuesDelLogin(router, route.queryParamMap.get('returnTo'), (typeof auth.perfil === 'function' ? auth.perfil()?.roles : []) ?? [])
     : true;
 };
