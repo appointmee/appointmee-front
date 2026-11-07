@@ -85,7 +85,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body.nav-locked {
+body.nav-locked,
+body.modal-abierto {
   overflow: hidden;
 }
 

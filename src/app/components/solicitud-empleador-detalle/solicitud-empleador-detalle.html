@@ -1,0 +1,49 @@
+<div class="detalle">
+  <div class="detalle__cabecera">
+    <div>
+      @if (modo() === 'admin') {
+        <span class="detalle__eyebrow">Detalle de la solicitud</span>
+        <h3>Solicitud #{{ detalle().id }}</h3>
+      } @else {
+        <h3>Detalles de la solicitud</h3>
+      }
+    </div>
+    <span [class]="'estado ' + claseEstado()">{{ etiqueta() }}</span>
+  </div>
+
+  <dl class="detalle__datos">
+    <div class="detalle__dato detalle__dato--motivo">
+      <dt>Comentario</dt>
+      <dd>{{ detalle().motivo }}</dd>
+    </div>
+    <div class="detalle__dato">
+      <dt>Fecha de envío</dt>
+      <dd>{{ fecha() }}</dd>
+    </div>
+    <div class="detalle__dato">
+      <dt>Solicitante</dt>
+      <dd>{{ nombreCompleto() }}</dd>
+    </div>
+    @if (email(); as correo) {
+      <div class="detalle__dato">
+        <dt>Email</dt>
+        <dd>
+          <a [href]="'mailto:' + correo">{{ correo }}</a>
+        </dd>
+      </div>
+    }
+    <div class="detalle__dato">
+      <dt>Estado actual</dt>
+      <dd>
+        <span [class]="'estado estado--compacto ' + claseEstado()">{{ etiqueta() }}</span>
+        @if (detalle().estado === 'PENDIENTE') {
+          <span class="detalle__nota">Todavía está en revisión.</span>
+        } @else if (detalle().estado === 'APROBADA') {
+          <span class="detalle__nota">La solicitud fue aprobada y no admite cambios.</span>
+        } @else {
+          <span class="detalle__nota">La solicitud fue rechazada y no admite cambios.</span>
+        }
+      </dd>
+    </div>
+  </dl>
+</div>

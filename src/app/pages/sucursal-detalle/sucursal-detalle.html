@@ -81,6 +81,9 @@
         class="detalle__hero-img"
         [src]="s.fotoPerfil || placeholderImage"
         [alt]="'Fachada de ' + s.nombre"
+        decoding="async"
+        fetchpriority="high"
+        referrerpolicy="no-referrer"
         (error)="onImageError($event)"
       />
       <div class="detalle__hero-overlay" aria-hidden="true"></div>

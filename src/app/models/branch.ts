@@ -1,20 +1,5 @@
-export const BRANCH_CATEGORIES = [
-  'PELUQUERIA',
-  'SPA',
-  'VETERINARIA',
-  'ODONTOLOGIA',
-  'PODOLOGIA',
-  'TATUAJE',
-  'MANICURA',
-  'BARBERIA',
-  'PELUQUERIA_CANINA',
-  'FOTOGRAFIA',
-  'OCULISTA',
-  'MASAJE',
-  'DEPILACION',
-] as const;
-
-export type BranchCategory = (typeof BRANCH_CATEGORIES)[number];
+// The API may add enum values before this frontend is redeployed.
+export type BranchCategory = string;
 
 export interface BranchSummary {
   readonly id: number;

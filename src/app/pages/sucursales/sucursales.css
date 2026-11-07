@@ -139,6 +139,11 @@
   gap: 10px;
 }
 
+.categorias__aviso {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .categoria-chip {
   padding: 8px 14px;
   border-radius: 999px;
@@ -395,6 +400,18 @@ button.estado__link:disabled {
 }
 
 @media (max-width: 640px) {
+  .categorias {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 5px;
+    scroll-padding-inline: 5px;
+  }
+
+  .categoria-chip {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
   .listado {
     padding: calc(var(--nav-h) + 24px) 16px 64px;
   }

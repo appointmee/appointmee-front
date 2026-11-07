@@ -3,12 +3,13 @@ import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField, form, maxLength, minLength, pattern, required } from '@angular/forms/signals';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { timer } from 'rxjs';
 
 import { ApiError } from '../../http/api-errors-service';
 import { RestablecerPasswordModel } from '../../models/restablecer-password';
 import { authService } from '../../services/auth-service';
+import { consumeResetPasswordToken } from '../../security/reset-password-token';
 
 @Component({
   selector: 'app-reset-password',
@@ -19,9 +20,8 @@ import { authService } from '../../services/auth-service';
 })
 export class ResetPasswordPage {
   private auth = inject(authService);
-  private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
-  private token = this.route.snapshot.queryParamMap.get('token') ?? '';
+  private token = consumeResetPasswordToken();
 
   enlaceInvalido = signal(!/^[A-Za-z0-9_-]{20,256}$/.test(this.token));
   cargando = signal(false);

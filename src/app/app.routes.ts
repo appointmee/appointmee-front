@@ -105,6 +105,19 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/section/section').then((module) => module.Section),
   },
   {
+    path: 'solicitudes/todas',
+    canActivate: [authGuard],
+    title: 'AppointMee | Historial de solicitudes',
+    data: {
+      title: 'Historial de solicitudes',
+      description: 'Consultá el historial completo de tus solicitudes para ser empleador.',
+    },
+    loadComponent: () =>
+      import('./pages/solicitudes-historial/solicitudes-historial').then(
+        (module) => module.SolicitudesHistorial,
+      ),
+  },
+  {
     path: 'solicitudes',
     canActivate: [authGuard],
     title: 'AppointMee | Solicitudes',
@@ -112,7 +125,8 @@ export const routes: Routes = [
       title: 'Solicitudes',
       description: 'Seguí el estado de tus solicitudes y enterate de las novedades.',
     },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () =>
+      import('./pages/solicitudes/solicitudes').then((module) => module.Solicitudes),
   },
   {
     path: 'configuracion/verificar-email',
@@ -167,7 +181,7 @@ export const routes: Routes = [
       roles: ['ADMINISTRADOR'],
       description: 'Panel interno disponible para usuarios con rol Administrador.',
     },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () => import('./pages/admin/admin').then((module) => module.Administracion),
   },
   {
     path: 'design-system',

@@ -63,6 +63,18 @@
       </div>
     </div>
 
+    @if (avisoCategorias()) {
+      <p class="categorias__aviso" role="status">{{ avisoCategorias() }}</p>
+    }
+    <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+      @if (loading()) {
+        Cargando sucursales.
+      } @else if (!error()) {
+        {{ sucursales().length }} sucursales encontradas.
+        Categoría: {{ selectedCategory() ? humanizeCategory(selectedCategory()) : 'Todas' }}.
+      }
+    </p>
+
     @if (loading()) {
       <div class="grid" aria-busy="true" aria-live="polite">
         @for (item of [1, 2, 3, 4, 5, 6]; track item) {
@@ -92,7 +104,7 @@
       <p class="estado" role="status">No encontramos sucursales para tu búsqueda.</p>
     } @else {
       <div class="grid">
-        @for (sucursal of sucursales(); track trackById($index, sucursal); let i = $index) {
+        @for (sucursal of sucursales(); track trackById($index, sucursal)) {
           <a
             class="card"
             [routerLink]="['/sucursal', sucursal.id]"
@@ -105,6 +117,7 @@
                 [alt]="sucursal.nombre"
                 loading="lazy"
                 decoding="async"
+                referrerpolicy="no-referrer"
                 (error)="onImageError($event)"
               />
             </div>
