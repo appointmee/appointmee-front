@@ -118,6 +118,19 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'solicitudes/empleo/recibidas',
+    canActivate: [authGuard],
+    title: 'AppointMee | Historial de solicitudes de empleo',
+    data: {
+      title: 'Historial de solicitudes de empleo',
+      description: 'Consultá todas las invitaciones de empleo que recibiste.',
+    },
+    loadComponent: () =>
+      import(
+        './pages/solicitudes-empleado-historial/solicitudes-empleado-historial'
+      ).then((module) => module.SolicitudesEmpleadoHistorial),
+  },
+  {
     path: 'solicitudes',
     canActivate: [authGuard],
     title: 'AppointMee | Solicitudes',

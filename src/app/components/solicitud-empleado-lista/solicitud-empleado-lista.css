@@ -1,0 +1,11 @@
+:host {
+  display: block;
+}
+
+.lista {
+  display: grid;
+  gap: 11px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
