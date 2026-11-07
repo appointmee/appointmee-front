@@ -9,7 +9,7 @@
 
     <span [class]="'estado ' + claseEstado()">{{ etiqueta() }}</span>
 
-    <button
+    <button dsButton
       class="solicitud__alternar"
       type="button"
       [attr.aria-expanded]="expandida()"
@@ -36,7 +36,7 @@
       } @else if (errorDetalle()) {
         <div class="solicitud__error" role="alert">
           <p>{{ errorDetalle() }}</p>
-          <button type="button" (click)="reintentarDetalle.emit()">Reintentar detalle</button>
+          <button dsButton type="button" (click)="reintentarDetalle.emit()">Reintentar detalle</button>
         </div>
       } @else if (detalle(); as datos) {
         <app-solicitud-empleador-detalle
@@ -47,7 +47,7 @@
 
         @if (puedeResolver()) {
           <div class="solicitud__acciones" aria-label="Resolver solicitud">
-            <button
+            <button dsButton
               class="solicitud__accion solicitud__accion--rechazar"
               type="button"
               [disabled]="resolviendo() !== null"
@@ -58,7 +58,7 @@
               }
               {{ resolviendo() === 'rechazar' ? 'Rechazando…' : 'Rechazar' }}
             </button>
-            <button
+            <button dsButton
               class="solicitud__accion solicitud__accion--aprobar"
               type="button"
               [disabled]="resolviendo() !== null"

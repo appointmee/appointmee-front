@@ -1,4 +1,17 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  input,
+  output,
+  signal
+} from '@angular/core';
+
+import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
+
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField, email, form, required } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -9,10 +22,9 @@ import { LoginModel } from '../../models/auth';
 import { ApiError } from '../../http/api-errors-service';
 import { authService } from '../../services/auth-service';
 import { destinoDespuesDelLogin } from '../../guards/login-destination';
-
 @Component({
   selector: 'app-login',
-  imports: [FormField, RouterLink, CuentaSinVerificarModal],
+  imports: [DsInputComponent, DsButtonComponent, FormField, RouterLink, CuentaSinVerificarModal],
   templateUrl: './login.html',
   styleUrl: './login.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +58,17 @@ export class LoginPage {
   registroExitoso = signal(this.router.getCurrentNavigation()?.extras.state?.['registroExitoso'] === true);
 
   cargando = signal(false);
+  erroresBackend = signal<Record<string, string>>({});
+  resumenErrores = computed(() => {
+    const lista: { id: string; label: string; message: string }[] = [];
+    if (this.loginForm.email().touched() && this.loginForm.email().invalid()) {
+      lista.push({ id: 'login-email', label: 'Email', message: this.loginForm.email().errors()[0]?.message ?? 'Revisá este campo.' });
+    }
+    if (this.loginForm.password().touched() && this.loginForm.password().invalid()) {
+      lista.push({ id: 'login-password', label: 'Contraseña', message: this.loginForm.password().errors()[0]?.message ?? 'Revisá este campo.' });
+    }
+    return lista;
+  });
   mostrarPassword = signal(false);
   puedeReintentar = signal(false);
   emailSinVerificar = signal(false);
@@ -65,6 +88,7 @@ export class LoginPage {
 
     this.loginModel.update(datos => ({ ...datos, email: datos.email.trim() }));
     this.loginForm().markAsTouched();
+    this.erroresBackend.set({});
 
     if (this.loginForm().invalid()) {
       const campo = this.loginForm.email().invalid() ? this.loginForm.email : this.loginForm.password;
@@ -115,6 +139,18 @@ export class LoginPage {
 
 
   private mostrarError(error: ApiError): void {
+    if (error.fields && Object.keys(error.fields).length) {
+      const mapeados: Record<string, string> = {};
+      for (const [campo, mensaje] of Object.entries(error.fields)) {
+        const clave = campo.toLowerCase().includes('pass') ? 'password' : campo.toLowerCase().includes('email') ? 'email' : campo;
+        mapeados[clave] = mensaje;
+      }
+      this.erroresBackend.set(mapeados);
+      if (Object.keys(mapeados).length === Object.keys(error.fields).length && !this.mensaje()) {
+        this.mensaje.set('Revisá los campos marcados e intentá nuevamente.');
+      }
+      return;
+    }
     if (error.code === 'EMAIL_NOT_VERIFIED') {
       if (!error.verificationToken) {
         this.mensaje.set('No pudimos continuar la verificación. Volvé a intentar.');

@@ -11,7 +11,37 @@ class EmptyPage {}
 
 describe('Buscador del navbar', () => {
   beforeEach(() => TestBed.resetTestingModule());
-  it('hides both search controls in the listing and restores them on other routes', async () => {
+  it('muestra iniciales si la foto falla y vuelve a intentar cuando cambia la URL', async () => {
+    const perfil = signal({ fotoPerfil: 'https://res.cloudinary.com/demo/image/upload/avatar.jpg', email: 'ana@example.com' });
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([{ path: 'sucursales', component: EmptyPage }]),
+        { provide: authService, useValue: {
+          autenticado: signal(true), visitante: signal(false), restaurando: signal(false),
+          perfil, iniciales: signal('AN'), tieneAlgunRol: () => false,
+        } },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/sucursales');
+    const fixture = TestBed.createComponent(Navbar);
+    fixture.detectChanges();
+    const photo = fixture.nativeElement.querySelector('.profile__avatar img') as HTMLImageElement;
+    expect(photo.src).toContain('avatar.jpg');
+    photo.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.profile__avatar img')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.profile__avatar').textContent).toContain('AN');
+    fixture.nativeElement.querySelector('.profile__trigger').click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.menu__avatar').textContent).toContain('AN');
+    perfil.set({ ...perfil(), fotoPerfil: 'https://res.cloudinary.com/demo/image/upload/nueva.jpg' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.profile__avatar img').src).toContain('nueva.jpg');
+    expect(fixture.nativeElement.querySelector('.menu__avatar img').src).toContain('nueva.jpg');
+  });
+  it('mantiene el navbar sin buscador en Home y en Sucursales', async () => {
     TestBed.configureTestingModule({
       imports: [Navbar],
       providers: [
@@ -28,7 +58,7 @@ describe('Buscador del navbar', () => {
     const router = TestBed.inject(Router);
     const fixture = TestBed.createComponent(Navbar);
     await router.navigateByUrl('/'); fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('#navbar-search')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
     await router.navigateByUrl('/sucursales?busqueda=pelu'); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
     expect(fixture.nativeElement.querySelector('.search-trigger')).toBeNull();
@@ -36,6 +66,6 @@ describe('Buscador del navbar', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.navbar__search-wrap')).toBeNull();
     await router.navigateByUrl('/'); fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('#navbar-search')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
   });
 });

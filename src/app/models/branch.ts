@@ -1,3 +1,4 @@
+// The API may add enum values before this frontend is redeployed.
 export const BRANCH_CATEGORIES = [
   'PELUQUERIA',
   'SPA',
@@ -14,7 +15,7 @@ export const BRANCH_CATEGORIES = [
   'DEPILACION',
 ] as const;
 
-export type BranchCategory = (typeof BRANCH_CATEGORIES)[number];
+export type BranchCategory = string;
 
 export interface BranchSummary {
   readonly id: number;

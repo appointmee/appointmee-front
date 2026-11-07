@@ -1,0 +1,20 @@
+<ul class="lista" aria-live="polite">
+  @for (solicitud of solicitudes(); track solicitud.id) {
+    <li>
+      <app-solicitud-empleado-card
+        [solicitud]="solicitud"
+        [tipo]="tipo()"
+        [detalle]="detalleDe(solicitud.id)"
+        [expandida]="estaExpandida(solicitud.id)"
+        [cargandoDetalle]="estaCargandoDetalle(solicitud.id)"
+        [errorDetalle]="errorDetalleDe(solicitud.id)"
+        [resolviendo]="resolviendoDe(solicitud.id)"
+        [errorAccion]="errorAccionDe(solicitud.id)"
+        (alternar)="alternar(solicitud.id)"
+        (reintentarDetalle)="reintentarDetalle(solicitud.id)"
+        (aprobar)="aprobar(solicitud.id)"
+        (rechazar)="rechazar(solicitud.id)"
+      />
+    </li>
+  }
+</ul>

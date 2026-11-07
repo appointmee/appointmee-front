@@ -10,8 +10,12 @@
 
     <nav class="landing-nav__links" aria-label="Navegación principal">
       <a href="#inicio" (click)="scrollToSection($event, 'inicio')">Inicio</a>
-      <a href="#quienes-somos" (click)="scrollToSection($event, 'quienes-somos')">¿Quiénes somos?</a>
-      <a href="#como-funciona" (click)="scrollToSection($event, 'como-funciona')">¿Cómo funciona?</a>
+      <a href="#quienes-somos" (click)="scrollToSection($event, 'quienes-somos')"
+        >¿Quiénes somos?</a
+      >
+      <a href="#como-funciona" (click)="scrollToSection($event, 'como-funciona')"
+        >¿Cómo funciona?</a
+      >
       <a routerLink="/sucursales">Sucursales</a>
     </nav>
 
@@ -24,7 +28,7 @@
       }
     </div>
 
-    <button
+    <button dsButton
       class="landing-burger"
       type="button"
       [class.is-open]="mobileOpen()"
@@ -44,8 +48,12 @@
   <aside class="landing-sheet" aria-label="Menú de navegación">
     <nav>
       <a href="#inicio" (click)="scrollToSection($event, 'inicio'); closeMobile()">Inicio</a>
-      <a href="#quienes-somos" (click)="scrollToSection($event, 'quienes-somos'); closeMobile()">¿Quiénes somos?</a>
-      <a href="#como-funciona" (click)="scrollToSection($event, 'como-funciona'); closeMobile()">¿Cómo funciona?</a>
+      <a href="#quienes-somos" (click)="scrollToSection($event, 'quienes-somos'); closeMobile()"
+        >¿Quiénes somos?</a
+      >
+      <a href="#como-funciona" (click)="scrollToSection($event, 'como-funciona'); closeMobile()"
+        >¿Cómo funciona?</a
+      >
       <a routerLink="/sucursales" (click)="closeMobile()">Sucursales</a>
       <div class="landing-sheet__divider"></div>
       @if (isAuthenticated()) {
@@ -76,7 +84,8 @@
           Organizar tus turnos nunca fue tan sencillo.
         </h1>
         <p class="hero__subtitle reveal" style="--delay: 0.16s">
-          AppointMee es una plataforma diseñada para conectar clientes con establecimientos y facilitar la gestión de turnos de manera simple, rápida y organizada.
+          AppointMee es una plataforma diseñada para conectar clientes con establecimientos y
+          facilitar la gestión de turnos de manera simple, rápida y organizada.
         </p>
         <div class="branch-search-wrap reveal" style="--delay: 0.2s">
           <form
@@ -89,7 +98,7 @@
               <path d="m21 21-4.4-4.4M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
             </svg>
             <label class="sr-only" for="branch-search">Buscar sucursal por nombre</label>
-            <input
+            <ds-input><input #dsNativeControl
               id="branch-search"
               type="search"
               role="combobox"
@@ -100,12 +109,13 @@
               [formControl]="search"
               [attr.aria-expanded]="suggestionsOpen()"
               [attr.aria-controls]="suggestionsOpen() ? 'branch-suggestions' : null"
-              [attr.aria-activedescendant]="activeSuggestionIndex() >= 0 ? 'branch-suggestion-' + activeSuggestionIndex() : null"
+              [attr.aria-activedescendant]="
+                activeSuggestionIndex() >= 0 ? 'branch-suggestion-' + activeSuggestionIndex() : null
+              "
               (focus)="onSearchFocus()"
-              (keydown)="onSearchKeydown($event)"
-            />
+              (keydown)="onSearchKeydown($event)" /></ds-input>
             @if (term()) {
-              <button
+              <button dsButton
                 class="branch-search__clear"
                 type="button"
                 (click)="clearSearch()"
@@ -130,10 +140,12 @@
                   {{ suggestionsError() }}
                 </p>
               } @else if (suggestions().length === 0) {
-                <p class="branch-suggestions__state" role="status">No se encontraron coincidencias.</p>
+                <p class="branch-suggestions__state" role="status">
+                  No se encontraron coincidencias.
+                </p>
               } @else {
                 @for (sucursal of suggestions(); track sucursal.id; let i = $index) {
-                  <button
+                  <button dsButton
                     id="branch-suggestion-{{ i }}"
                     class="branch-suggestion"
                     type="button"
@@ -143,7 +155,7 @@
                     (click)="selectSuggestion(sucursal)"
                   >
                     @if (sucursal.fotoPerfil) {
-                      <img [src]="sucursal.fotoPerfil" alt="" (error)="onSuggestionImageError($event)" />
+                      <img [src]="sucursal.fotoPerfil" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" (error)="onSuggestionImageError($event)" />
                     } @else {
                       <span class="branch-suggestion__placeholder" aria-hidden="true"></span>
                     }
@@ -167,8 +179,8 @@
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </a>
-          <a class="landing-btn landing-btn--ghost landing-btn--lg" href="#como-funciona" (click)="scrollToSection($event, 'como-funciona')">
-            Conocer cómo funciona
+          <a class="landing-btn landing-btn--ghost landing-btn--lg" routerLink="/sucursales">
+            Conocer sucursales
           </a>
         </div>
         <div class="hero__notes reveal" style="--delay: 0.32s">
@@ -177,11 +189,17 @@
             <span>Registro obligatorio para reservar</span>
           </div>
           <div class="hero__note">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
             <span>Rápido y organizado</span>
           </div>
           <div class="hero__note">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" /></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+              />
+            </svg>
             <span>Todo en un solo lugar</span>
           </div>
         </div>
@@ -189,9 +207,7 @@
       <div class="hero__visual reveal" style="--delay: 0.18s" aria-hidden="true">
         <div class="hero-card">
           <div class="hero-card__header">
-            <div class="hero-card__dots">
-              <span></span><span></span><span></span>
-            </div>
+            <div class="hero-card__dots"><span></span><span></span><span></span></div>
             <span class="hero-card__title">AppointMee</span>
           </div>
           <div class="hero-card__body">
@@ -226,6 +242,182 @@
     </div>
   </section>
 
+  <!-- Sucursales destacadas -->
+  <section class="sucursales-destacadas" aria-labelledby="sucursales-destacadas-titulo">
+    <div class="section__inner">
+      <header class="sucursales-destacadas__header">
+        <span class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true"></span>
+          Sucursales destacadas
+        </span>
+        <h2 id="sucursales-destacadas-titulo">Encontrá tu sucursal</h2>
+        <p class="sucursales-destacadas__lead">
+          Explorá los establecimientos disponibles y encontrá el más cercano a vos.
+        </p>
+      </header>
+
+      <div class="sucursales-destacadas__controls">
+        <form
+          class="search"
+          role="search"
+          aria-label="Filtrar sucursales"
+          (submit)="$event.preventDefault()"
+        >
+          <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.3-4.3" />
+          </svg>
+          <input
+            type="search"
+            class="search__input"
+            [value]="sucursalesTerm()"
+            (input)="onSucursalesSearchInput($event)"
+            placeholder="Buscar por nombre..."
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Buscar sucursales por nombre"
+          />
+          @if (sucursalesTerm()) {
+            <button
+              type="button"
+              class="search__clear"
+              (click)="clearSucursalesSearch()"
+              aria-label="Limpiar búsqueda"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m6 6 12 12M18 6 6 18" />
+              </svg>
+            </button>
+          }
+        </form>
+
+        <div class="categorias" role="group" aria-label="Filtrar por categoría">
+          <button
+            type="button"
+            class="categoria-chip"
+            [class.categoria-chip--active]="sucursalesCategoria() === null"
+            (click)="selectSucursalesCategoria(null)"
+            [attr.aria-pressed]="sucursalesCategoria() === null"
+          >
+            Todas
+          </button>
+          @for (categoria of sucursalesCategorias(); track categoria) {
+            <button
+              type="button"
+              class="categoria-chip"
+              [class.categoria-chip--active]="sucursalesCategoria() === categoria"
+              (click)="selectSucursalesCategoria(categoria)"
+              [attr.aria-pressed]="sucursalesCategoria() === categoria"
+            >
+              {{ categoryLabel(categoria) }}
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (!sucursalesError() && (sucursalesLoading() || sucursales().length === 0)) {
+        <p class="sucursales-destacadas__aviso" role="status" aria-live="polite">
+          {{ sucursalesAviso() }}
+        </p>
+      }
+
+      @if (sucursalesError()) {
+        <p class="estado estado--error" role="alert">{{ sucursalesError() }}</p>
+        <button
+          class="estado__link"
+          type="button"
+          [disabled]="sucursalesReintentando()"
+          [attr.aria-busy]="sucursalesReintentando()"
+          (click)="retrySucursales()"
+        >
+          {{ sucursalesReintentando() ? 'Reintentando…' : 'Reintentar' }}
+        </button>
+        <a class="estado__link" routerLink="/">Volver al inicio</a>
+      } @else if (sucursalesLoading()) {
+        <div class="grid" aria-busy="true" aria-live="polite" role="status">
+          @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+            <article class="card card--skeleton" aria-hidden="true">
+              <div class="card__media skeleton"></div>
+              <div class="card__body">
+                <div class="skeleton skeleton--line"></div>
+                <div class="skeleton skeleton--line skeleton--short"></div>
+                <div class="skeleton skeleton--line skeleton--shorter"></div>
+              </div>
+            </article>
+          }
+        </div>
+      } @else if (sucursales().length === 0) {
+        <div class="estado vacio" role="status" aria-live="polite">
+          <h3>{{ sucursalesEmptyTitle() }}</h3>
+          <p>{{ sucursalesEmptyDescription() }}</p>
+          <button
+            class="estado__link"
+            type="button"
+            [disabled]="sucursalesReintentando()"
+            [attr.aria-busy]="sucursalesReintentando()"
+            (click)="retrySucursales()"
+          >
+            {{ sucursalesReintentando() ? 'Reintentando…' : 'Reintentar' }}
+          </button>
+          @if (!!sucursalesTerm() || sucursalesCategoria() !== null) {
+            <button class="estado__link" type="button" (click)="clearSucursalesSearch()">
+              Limpiar filtros
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="grid">
+          @for (
+            sucursal of sucursales();
+            track trackBySucursalId($index, sucursal);
+            let i = $index
+          ) {
+            <a
+              class="card"
+              [routerLink]="['/sucursal', sucursal.id]"
+              [attr.aria-label]="sucursalesCardAriaLabel(sucursal)"
+              [style.--i]="$index"
+            >
+              <div class="card__media">
+                <img
+                  [src]="sucursal.fotoPerfil || placeholderImage"
+                  [alt]="sucursal.nombre"
+                  loading="lazy"
+                  decoding="async"
+                  (error)="onSucursalesImageError($event)"
+                />
+              </div>
+              <div class="card__body">
+                <h2 class="card__name">{{ sucursal.nombre }}</h2>
+                <p class="card__category">{{ categoryLabel(sucursal.categoria) }}</p>
+                <div class="card__rating">
+                  @if ((sucursal.cantidadPuntuaciones ?? 0) > 0 && sucursal.puntuacion !== null) {
+                    <span class="rating__text">
+                      <span>{{ sucursal.puntuacion.toFixed(1) }} de 5</span>
+                      <span class="rating__separator" aria-hidden="true">—</span>
+                      <span>{{ sucursal.cantidadPuntuaciones }} reseñas</span>
+                    </span>
+                  } @else {
+                    <span class="rating__text rating__text--muted">Sin reseñas</span>
+                  }
+                </div>
+              </div>
+            </a>
+          }
+        </div>
+        <a
+          class="landing-btn landing-btn--ghost"
+          routerLink="/sucursales"
+          [queryParams]="{
+            busqueda: sucursalesTerm() || null,
+            categoria: sucursalesCategoria(),
+          }"
+        >
+          Ver todas las sucursales
+        </a>
+      }
+    </div>
+  </section>
+
   <!-- ¿Quiénes somos? -->
   <section id="quienes-somos" class="section about" aria-labelledby="about-title">
     <div class="section__inner about__inner">
@@ -237,10 +429,13 @@
         <h2 id="about-title" class="section__title reveal">¿Quiénes somos?</h2>
         <p class="section__lead reveal">Simplificamos la manera de gestionar tus turnos.</p>
         <p class="about__text reveal">
-          AppointMee nace con el objetivo de facilitar la conexión entre personas y establecimientos, ofreciendo una plataforma donde encontrar servicios y gestionar reservas de manera sencilla, rápida y organizada.
+          AppointMee nace con el objetivo de facilitar la conexión entre personas y
+          establecimientos, ofreciendo una plataforma donde encontrar servicios y gestionar reservas
+          de manera sencilla, rápida y organizada.
         </p>
         <p class="about__text reveal">
-          Queremos transformar una tarea cotidiana en una experiencia más cómoda, centralizando en un solo lugar el proceso de búsqueda y reserva de turnos.
+          Queremos transformar una tarea cotidiana en una experiencia más cómoda, centralizando en
+          un solo lugar el proceso de búsqueda y reserva de turnos.
         </p>
         <div class="about__pillars">
           <article class="pillar reveal">
@@ -254,7 +449,11 @@
           </article>
           <article class="pillar reveal">
             <div class="pillar__icon">
-              <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"
+                />
+              </svg>
             </div>
             <div>
               <h3>Nuestra solución</h3>
@@ -263,7 +462,9 @@
           </article>
           <article class="pillar reveal">
             <div class="pillar__icon">
-              <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" /></svg>
+              <svg viewBox="0 0 24 24">
+                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
+              </svg>
             </div>
             <div>
               <h3>Nuestra visión</h3>
@@ -280,12 +481,18 @@
           </div>
           <div class="about-card__grid">
             <div class="about-card__item">
-              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" /></svg>
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+                />
+              </svg>
               <span>Cliente</span>
             </div>
             <div class="about-card__link"></div>
             <div class="about-card__item about-card__item--accent">
-              <svg viewBox="0 0 24 24"><path d="M3 9h18M4 9l1.5-5h13L20 9M5 9v11h14V9M9 20v-6h6v6" /></svg>
+              <svg viewBox="0 0 24 24">
+                <path d="M3 9h18M4 9l1.5-5h13L20 9M5 9v11h14V9M9 20v-6h6v6" />
+              </svg>
               <span>Establecimiento</span>
             </div>
           </div>
@@ -315,50 +522,81 @@
           <div class="step__number">01</div>
           <div class="step__content">
             <h3>Crear cuenta / Registrarse</h3>
-            <p>El cliente debe registrarse para acceder a las funcionalidades. Solo con cuenta iniciada es posible explorar establecimientos y sus sucursales, así como reservar turnos.</p>
+            <p>
+              El cliente debe registrarse para acceder a las funcionalidades. Solo con cuenta
+              iniciada es posible explorar establecimientos y sus sucursales, así como reservar
+              turnos.
+            </p>
           </div>
           <div class="step__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM20 8v6M23 11h-6" /></svg>
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM20 8v6M23 11h-6"
+              />
+            </svg>
           </div>
         </article>
         <article class="step reveal">
           <div class="step__number">02</div>
           <div class="step__content">
             <h3>Iniciar sesión</h3>
-            <p>Con la cuenta creada, el cliente accede a su sesión para poder gestionar sus turnos y realizar reservas dentro de la plataforma.</p>
+            <p>
+              Con la cuenta creada, el cliente accede a su sesión para poder gestionar sus turnos y
+              realizar reservas dentro de la plataforma.
+            </p>
           </div>
           <div class="step__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" /></svg>
+            <svg viewBox="0 0 24 24">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
+            </svg>
           </div>
         </article>
         <article class="step reveal">
           <div class="step__number">03</div>
           <div class="step__content">
             <h3>Explorar establecimientos y sucursales</h3>
-            <p>Una vez autenticado, el cliente puede explorar los establecimientos disponibles y sus sucursales para elegir dónde desea solicitar su turno.</p>
+            <p>
+              Una vez autenticado, el cliente puede explorar los establecimientos disponibles y sus
+              sucursales para elegir dónde desea solicitar su turno.
+            </p>
           </div>
           <div class="step__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M3 9h18M4 9l1.5-5h13L20 9M5 9v11h14V9M9 20v-6h6v6" /></svg>
+            <svg viewBox="0 0 24 24">
+              <path d="M3 9h18M4 9l1.5-5h13L20 9M5 9v11h14V9M9 20v-6h6v6" />
+            </svg>
           </div>
         </article>
         <article class="step reveal">
           <div class="step__number">04</div>
           <div class="step__content">
             <h3>Seleccionar servicio</h3>
-            <p>Dentro de la sucursal elegida, el cliente selecciona el servicio que desea reservar.</p>
+            <p>
+              Dentro de la sucursal elegida, el cliente selecciona el servicio que desea reservar.
+            </p>
           </div>
           <div class="step__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M9 11H1v3h8v-3ZM9 5H1v3h8V5ZM9 17H1v3h8v-3ZM19 7l-4 4-2-2-2 2 4 4 6-6-2-2Z" /></svg>
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M9 11H1v3h8v-3ZM9 5H1v3h8V5ZM9 17H1v3h8v-3ZM19 7l-4 4-2-2-2 2 4 4 6-6-2-2Z"
+              />
+            </svg>
           </div>
         </article>
         <article class="step reveal">
           <div class="step__number">05</div>
           <div class="step__content">
             <h3>Consultar disponibilidad</h3>
-            <p>El sistema muestra la disponibilidad real para el servicio seleccionado, según la sucursal y configuración vigente.</p>
+            <p>
+              El sistema muestra la disponibilidad real para el servicio seleccionado, según la
+              sucursal y configuración vigente.
+            </p>
           </div>
           <div class="step__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M7 2v4M17 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" /></svg>
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M7 2v4M17 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+              />
+            </svg>
           </div>
         </article>
         <article class="step reveal">
@@ -368,14 +606,19 @@
             <p>El cliente selecciona la fecha y el horario disponible para su turno.</p>
           </div>
           <div class="step__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+            <svg viewBox="0 0 24 24">
+              <path d="M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
           </div>
         </article>
         <article class="step reveal step--final">
           <div class="step__number">07</div>
           <div class="step__content">
             <h3>Confirmar reserva</h3>
-            <p>Tras confirmar, el turno queda registrado. Luego puede consultarlo y gestionarlo desde "Mis Turnos".</p>
+            <p>
+              Tras confirmar, el turno queda registrado. Luego puede consultarlo y gestionarlo desde
+              "Mis Turnos".
+            </p>
           </div>
           <div class="step__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></svg>
@@ -398,7 +641,8 @@
         </span>
         <h2 id="cta-title" class="section__title reveal">Formá parte de AppointMee</h2>
         <p class="section__lead reveal">
-          Organiza tus turnos de forma más simple, rápida y ordenada. Creá tu cuenta para empezar a reservar.
+          Organiza tus turnos de forma más simple, rápida y ordenada. Creá tu cuenta para empezar a
+          reservar.
         </p>
         <div class="cta__actions reveal">
           <a class="landing-btn landing-btn--primary landing-btn--lg" routerLink="/registrarme">
@@ -407,7 +651,9 @@
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </a>
-          <a class="landing-btn landing-btn--ghost landing-btn--lg" routerLink="/login">Iniciar sesión</a>
+          <a class="landing-btn landing-btn--ghost landing-btn--lg" routerLink="/login"
+            >Iniciar sesión</a
+          >
         </div>
       </div>
     </div>
@@ -422,10 +668,13 @@
           <span class="landing-footer__mark">
             <img src="appointmee-logo.png" alt="" width="36" height="36" />
           </span>
-          <span class="landing-footer__brand-text">Appoint<span class="landing-footer__accent">Mee</span></span>
+          <span class="landing-footer__brand-text"
+            >Appoint<span class="landing-footer__accent">Mee</span></span
+          >
         </div>
         <p class="landing-footer__desc">
-          Plataforma para conectar clientes con establecimientos y gestionar turnos de manera simple, rápida y organizada.
+          Plataforma para conectar clientes con establecimientos y gestionar turnos de manera
+          simple, rápida y organizada.
         </p>
       </div>
       <div class="landing-footer__nav">
@@ -433,8 +682,16 @@
           <h4>Navegación</h4>
           <ul>
             <li><a href="#inicio" (click)="scrollToSection($event, 'inicio')">Inicio</a></li>
-            <li><a href="#quienes-somos" (click)="scrollToSection($event, 'quienes-somos')">¿Quiénes somos?</a></li>
-            <li><a href="#como-funciona" (click)="scrollToSection($event, 'como-funciona')">¿Cómo funciona?</a></li>
+            <li>
+              <a href="#quienes-somos" (click)="scrollToSection($event, 'quienes-somos')"
+                >¿Quiénes somos?</a
+              >
+            </li>
+            <li>
+              <a href="#como-funciona" (click)="scrollToSection($event, 'como-funciona')"
+                >¿Cómo funciona?</a
+              >
+            </li>
           </ul>
         </div>
         <div>

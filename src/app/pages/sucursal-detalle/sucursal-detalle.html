@@ -53,7 +53,7 @@
       <h1 id="detalle-titulo">{{ tituloError() }}</h1>
       <p>{{ error() }}</p>
       <div class="detalle__estado-acciones">
-        <button
+        <button dsButton
           class="btn btn--primary detalle__reintentar"
           type="button"
           (click)="reintentar()"
@@ -83,6 +83,9 @@
         class="detalle__hero-img"
         [src]="s.fotoPerfil || placeholderImage"
         [alt]="'Fachada de ' + s.nombre"
+        decoding="async"
+        fetchpriority="high"
+        referrerpolicy="no-referrer"
         (error)="onImageError($event)"
       />
       <div class="detalle__hero-overlay" aria-hidden="true"></div>
@@ -169,13 +172,22 @@
                 {{ descripcionTexto }}
               </p>
               @if (descripcionLarga()) {
-                <button class="link-btn" type="button" (click)="alternarDescripcion()">
+                <button dsButton class="link-btn" type="button" (click)="alternarDescripcion()">
                   {{ descripcionExpandida() ? 'Ver menos' : 'Ver más' }}
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="m6 9 6 6 6-6" [attr.transform]="descripcionExpandida() ? 'rotate(180 12 12)' : null" />
                   </svg>
                 </button>
               }
+            </article>
+          } @else {
+            <article class="panel panel--descripcion">
+              <header class="panel__head">
+                <h2>Sobre esta sucursal</h2>
+              </header>
+              <p class="descripcion">
+                Esta sucursal todavía no cargó su descripción.
+              </p>
             </article>
           }
 
@@ -225,7 +237,7 @@
               <p class="panel__aviso" role="alert">{{ avisoRol() }}</p>
             }
 
-            <button
+            <button dsButton
               class="btn btn--primary btn--block"
               type="button"
               [disabled]="navegando()"
@@ -332,7 +344,7 @@
         </div>
         <div class="detalle__cta-acciones">
           <a class="btn btn--ghost" routerLink="/sucursales">Volver</a>
-          <button
+          <button dsButton
             class="btn btn--primary"
             type="button"
             [disabled]="navegando()"

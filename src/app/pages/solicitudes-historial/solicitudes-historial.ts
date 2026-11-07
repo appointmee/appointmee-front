@@ -1,3 +1,4 @@
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
@@ -26,7 +27,7 @@ type ResultadoLista =
 
 @Component({
   selector: 'app-solicitudes-historial',
-  imports: [RouterLink, SolicitudEmpleadorCard],
+  imports: [DsButtonComponent, RouterLink, SolicitudEmpleadorCard],
   templateUrl: './solicitudes-historial.html',
   styleUrl: './solicitudes-historial.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
