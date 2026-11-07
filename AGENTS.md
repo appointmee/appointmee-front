@@ -183,6 +183,21 @@ Verificar siempre contra `origin/develop` antes de atribuir esa falla a un cambi
 - Los precios se formatean con `Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' })`.
 - No agregar dependencias sin necesidad; si se agrega, actualizar `package-lock.json`.
 
+## 6. Formularios y errores (US-ERR-05)
+
+Toda pantalla con formularios debe cumplir:
+
+- Los errores de validación se muestran debajo del campo correspondiente.
+- Al enviar con varios errores, se muestra un resumen arriba con enlaces a cada campo.
+- El foco se mueve al primer campo inválido.
+- El campo inválido tiene `aria-invalid="true"` y `aria-describedby` apuntando al mensaje.
+- El error se limpia cuando el campo se corrige y vuelve a ser válido.
+- Se conservan los valores ingresados, excepto contraseñas cuando corresponda por seguridad.
+- Los errores del backend por campo se mapean al campo correcto.
+- Un error general del formulario se muestra en un banner inline, no en la vista de error.
+- No se usa `alert()`.
+- Los mensajes son claros y en español.
+
 ## 6. Metodología usada en esta sesión (replicar)
 
 Así se trabajó en `SCRUM-234-estados-de-carga-vacio-y-error-al-elegir-servicio`:

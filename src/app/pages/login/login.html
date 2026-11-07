@@ -15,11 +15,23 @@
     <h1 id="login-titulo" class="login__titulo">Iniciar sesión</h1>
     <p class="login__sub">Ingresá a tu cuenta de AppointMee.</p>
 
+    @if (resumenErrores().length) {
+      <div class="login__summary" role="alert" aria-live="assertive">
+        <p>Corregí los siguientes campos:</p>
+        <ul>
+          @for (error of resumenErrores(); track error.id) {
+            <li><a [href]="'#' + error.id">{{ error.label }}: {{ error.message }}</a></li>
+          }
+        </ul>
+      </div>
+    }
+
     <div class="login__field">
       <label for="login-email">Email</label>
       <input id="login-email" type="email" autocomplete="email"
              [formField]="loginForm.email" [readOnly]="cargando()"
              [attr.aria-invalid]="loginForm.email().touched() && loginForm.email().invalid()"
+             (input)="erroresBackend.update(v => ({ ...v, email: '' }))"
              aria-describedby="login-email-error" />
 
       <div id="login-email-error" class="login__validation" aria-live="polite">
@@ -27,6 +39,9 @@
           @for (error of loginForm.email().errors(); track error.kind) {
             <p>{{ error.message }}</p>
           }
+        }
+        @if (erroresBackend()['email']) {
+          <p>{{ erroresBackend()['email'] }}</p>
         }
       </div>
     </div>
@@ -38,6 +53,7 @@
                autocomplete="current-password"
                [formField]="loginForm.password" [readOnly]="cargando()"
                [attr.aria-invalid]="loginForm.password().touched() && loginForm.password().invalid()"
+               (input)="erroresBackend.update(v => ({ ...v, password: '' }))"
                aria-describedby="login-password-error" />
 
         <button class="login__toggle" type="button" aria-controls="login-password"
@@ -53,6 +69,9 @@
           @for (error of loginForm.password().errors(); track error.kind) {
             <p>{{ error.message }}</p>
           }
+        }
+        @if (erroresBackend()['password']) {
+          <p>{{ erroresBackend()['password'] }}</p>
         }
       </div>
     </div>
