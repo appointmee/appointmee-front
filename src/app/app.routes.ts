@@ -90,9 +90,25 @@ export const routes: Routes = [
     data: {
       title: 'Mis Sucursales',
       roles: ['EMPLEADOR'],
-      description: 'Explorá las sucursales disponibles y encontrá la más cercana.',
+      description: 'Gestioná las sucursales que te pertenecen y sus solicitudes de empleo.',
     },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () =>
+      import('./pages/mis-sucursales/mis-sucursales').then(
+        (module) => module.MisSucursales,
+      ),
+  },
+  {
+    path: 'solicitudes/empleo/enviadas/:sucursalId',
+    canActivate: [authGuard],
+    title: 'AppointMee | Solicitudes de empleo enviadas',
+    data: {
+      title: 'Solicitudes de empleo enviadas',
+      description: 'Consultá todas las invitaciones de empleo que enviaste.',
+    },
+    loadComponent: () =>
+      import(
+        './pages/solicitudes-empleado-enviadas-historial/solicitudes-empleado-enviadas-historial'
+      ).then((module) => module.SolicitudesEmpleadoEnviadasHistorial),
   },
   {
     path: 'perfil',
@@ -116,6 +132,19 @@ export const routes: Routes = [
       import('./pages/solicitudes-historial/solicitudes-historial').then(
         (module) => module.SolicitudesHistorial,
       ),
+  },
+  {
+    path: 'solicitudes/empleo/recibidas',
+    canActivate: [authGuard],
+    title: 'AppointMee | Historial de solicitudes de empleo',
+    data: {
+      title: 'Historial de solicitudes de empleo',
+      description: 'Consultá todas las invitaciones de empleo que recibiste.',
+    },
+    loadComponent: () =>
+      import(
+        './pages/solicitudes-empleado-historial/solicitudes-empleado-historial'
+      ).then((module) => module.SolicitudesEmpleadoHistorial),
   },
   {
     path: 'solicitudes',

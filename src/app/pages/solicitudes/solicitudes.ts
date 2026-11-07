@@ -13,13 +13,21 @@ import { Subject, catchError, forkJoin, map, of, startWith, switchMap } from 'rx
 
 import { SolicitudEmpleadorCard } from '../../components/solicitud-empleador-card/solicitud-empleador-card';
 import { SolicitudEmpleadorModal } from '../../components/solicitud-empleador-modal/solicitud-empleador-modal';
+import { SolicitudEmpleadoLista } from '../../components/solicitud-empleado-lista/solicitud-empleado-lista';
+import { mensajeErrorSolicitudEmpleado } from '../../http/solicitud-empleado-errors';
 import { mensajeErrorSolicitud } from '../../http/solicitud-empleador-errors';
+import {
+  ResultadoResolucionSolicitudEmpleado,
+  SolicitudEmpleadoVista,
+  vistaSolicitudRecibida,
+} from '../../models/solicitud-empleado';
 import {
   EstadoSolicitudEmpleador,
   SolicitudEmpleadorDetalleDTO,
   SolicitudEmpleadorMiniDTO,
 } from '../../models/solicitud-empleador';
 import { authService } from '../../services/auth-service';
+import { solicitudEmpleadoService } from '../../services/solicitud-empleado-service';
 import { solicitudEmpleadorService } from '../../services/solicitud-empleador-service';
 
 const SOLICITUDES_VISIBLES = 3;
@@ -28,18 +36,24 @@ type ResultadoLista =
   | { readonly ok: true; readonly solicitudes: readonly SolicitudEmpleadorMiniDTO[] }
   | { readonly ok: false; readonly error: HttpErrorResponse };
 
+type ResultadoListaEmpleo =
+  | { readonly ok: true; readonly solicitudes: readonly SolicitudEmpleadoVista[] }
+  | { readonly ok: false; readonly error: HttpErrorResponse };
+
 @Component({
   selector: 'app-solicitudes',
-  imports: [RouterLink, SolicitudEmpleadorCard, SolicitudEmpleadorModal],
+  imports: [RouterLink, SolicitudEmpleadorCard, SolicitudEmpleadorModal, SolicitudEmpleadoLista],
   templateUrl: './solicitudes.html',
   styleUrl: './solicitudes.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Solicitudes {
   private readonly api = inject(solicitudEmpleadorService);
+  private readonly apiEmpleo = inject(solicitudEmpleadoService);
   private readonly auth = inject(authService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly recargar = new Subject<void>();
+  private readonly recargarEmpleo = new Subject<void>();
 
   private revision = 0;
 
@@ -52,6 +66,12 @@ export class Solicitudes {
   protected readonly cargandoDetalle = signal<ReadonlySet<number>>(new Set());
   protected readonly erroresDetalle = signal<ReadonlyMap<number, string>>(new Map());
 
+  protected readonly solicitudesEmpleo = signal<readonly SolicitudEmpleadoVista[]>([]);
+  protected readonly cargandoEmpleo = signal(true);
+  protected readonly errorEmpleo = signal<string | null>(null);
+  protected readonly reintentandoEmpleo = signal(false);
+  protected readonly exitoEmpleo = signal<string | null>(null);
+
   protected readonly modalAbierto = signal(false);
   protected readonly enviando = signal(false);
   protected readonly errorEnvio = signal<string | null>(null);
@@ -62,9 +82,17 @@ export class Solicitudes {
   );
   protected readonly hayMas = computed(() => this.solicitudes().length > SOLICITUDES_VISIBLES);
   protected readonly total = computed(() => this.solicitudes().length);
+  protected readonly visiblesEmpleo = computed(() =>
+    this.solicitudesEmpleo().slice(0, SOLICITUDES_VISIBLES),
+  );
+  protected readonly hayMasEmpleo = computed(
+    () => this.solicitudesEmpleo().length > SOLICITUDES_VISIBLES,
+  );
+  protected readonly totalEmpleo = computed(() => this.solicitudesEmpleo().length);
   protected readonly rolSinPermiso = computed(() =>
     this.auth.tieneAlgunRol('ADMINISTRADOR', 'EMPLEADOR'),
   );
+  protected readonly puedeVerRecibidas = computed(() => this.auth.tieneAlgunRol('CLIENTE'));
   protected readonly tienePendiente = computed(() =>
     [...this.detalles().values()].some((detalle) => detalle.estado === 'PENDIENTE'),
   );
@@ -86,6 +114,31 @@ export class Solicitudes {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((resultado) => this.aplicarLista(resultado));
+
+    if (this.puedeVerRecibidas()) {
+      this.recargarEmpleo
+        .pipe(
+          startWith(undefined as void),
+          switchMap(() => {
+            this.cargandoEmpleo.set(this.solicitudesEmpleo().length === 0);
+            return this.apiEmpleo.listarRecibidas().pipe(
+              map(
+                (solicitudes): ResultadoListaEmpleo => ({
+                  ok: true,
+                  solicitudes: solicitudes.map(vistaSolicitudRecibida),
+                }),
+              ),
+              catchError((error: HttpErrorResponse) =>
+                of<ResultadoListaEmpleo>({ ok: false, error }),
+              ),
+            );
+          }),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe((resultado) => this.aplicarListaEmpleo(resultado));
+    } else {
+      this.cargandoEmpleo.set(false);
+    }
   }
 
   protected detalleDe(id: number): SolicitudEmpleadorDetalleDTO | null {
@@ -133,6 +186,22 @@ export class Solicitudes {
     if (this.reintentando()) return;
     this.reintentando.set(true);
     this.recargar.next();
+  }
+
+  protected reintentarEmpleo(): void {
+    if (this.reintentandoEmpleo()) return;
+    this.reintentandoEmpleo.set(true);
+    this.recargarEmpleo.next();
+  }
+
+  protected onSolicitudEmpleoResuelta(
+    resultado: ResultadoResolucionSolicitudEmpleado,
+  ): void {
+    this.exitoEmpleo.set(
+      resultado.accion === 'aprobar'
+        ? 'Aceptaste la invitación de empleo. Ya formás parte del equipo de la sucursal.'
+        : 'Rechazaste la invitación de empleo. La sucursal va a poder ver tu respuesta.',
+    );
   }
 
   protected abrirModal(): void {
@@ -200,6 +269,27 @@ export class Solicitudes {
     this.cargando.set(false);
     this.reintentando.set(false);
     this.precargarDetalles(this.visibles());
+  }
+
+  private aplicarListaEmpleo(resultado: ResultadoListaEmpleo): void {
+    if (!resultado.ok) {
+      this.errorEmpleo.set(
+        mensajeErrorSolicitudEmpleado(resultado.error, 'carga'),
+      );
+      this.cargandoEmpleo.set(false);
+      this.reintentandoEmpleo.set(false);
+
+      if (this.solicitudesEmpleo().length === 0) {
+        this.solicitudesEmpleo.set([]);
+      }
+      return;
+    }
+
+    this.errorEmpleo.set(null);
+    this.exitoEmpleo.set(null);
+    this.solicitudesEmpleo.set(resultado.solicitudes);
+    this.cargandoEmpleo.set(false);
+    this.reintentandoEmpleo.set(false);
   }
 
   /** Solo se consultan los detalles de las tres solicitudes visibles. */
