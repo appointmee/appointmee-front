@@ -46,7 +46,9 @@ export class LoginPage {
   mensaje = signal(
     this.route.snapshot.queryParamMap.get('expired') === '1'
       ? 'Tu sesión expiró. Iniciá sesión para continuar.'
-      : '',
+      : /servicio|turno|reserva/i.test(this.route.snapshot.queryParamMap.get('returnTo') ?? '')
+        ? 'Iniciá sesión para reservar tu turno.'
+        : '',
   );
 
 
@@ -76,8 +78,8 @@ export class LoginPage {
       next: () => {
         this.cargando.set(false);
 
-        const destino = destinoDespuesDelLogin(this.router, this.route.snapshot.queryParamMap.get('returnTo'));
-        void this.router.navigateByUrl(destino);
+        const destino = destinoDespuesDelLogin(this.router, this.route.snapshot.queryParamMap.get('returnTo'), (typeof this.auth.perfil === 'function' ? this.auth.perfil()?.roles : []) ?? []);
+        void this.router.navigateByUrl(destino, { replaceUrl: true });
       },
 
       error: (error: ApiError) => {
