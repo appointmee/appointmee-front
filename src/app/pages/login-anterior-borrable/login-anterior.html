@@ -5,27 +5,25 @@
 
     <label class="login__field">
       <span>Email</span>
-      <input
+      <ds-input><input #dsNativeControl
         type="email"
         name="email"
         autocomplete="email"
         required
         [value]="email()"
-        (input)="actualizarEmail($event)"
-      />
+        (input)="actualizarEmail($event)" /></ds-input>
     </label>
     @if (fieldErrors()['email']; as message) { <p class="login__error" role="alert">{{ message }}</p> }
 
     <label class="login__field">
       <span>Contraseña</span>
-      <input
+      <ds-input><input #dsNativeControl
         type="password"
         name="pass"
         autocomplete="current-password"
         required
         [value]="contrasenia()"
-        (input)="actualizarContrasenia($event)"
-      />
+        (input)="actualizarContrasenia($event)" /></ds-input>
     </label>
     @if (fieldErrors()['pass'] ?? fieldErrors()['contrasenia']; as message) { <p class="login__error" role="alert">{{ message }}</p> }
 
@@ -33,9 +31,9 @@
       <p class="login__error" role="alert">{{ error() }}</p>
     }
 
-    <button class="login__submit" type="submit" [disabled]="enviando()">
+    <ds-button class="login__submit" type="submit" [disabled]="enviando()">
       {{ enviando() ? 'Ingresando…' : 'Iniciar sesión' }}
-    </button>
+    </ds-button>
 
     <p class="login__alt">¿No tenés cuenta? <a routerLink="/registrarme">Crear cuenta</a></p>
   </form>

@@ -1,3 +1,4 @@
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -22,7 +23,7 @@ import { Reporte404 } from './reporte-404';
  */
 @Component({
   selector: 'app-not-found',
-  imports: [RouterLink],
+  imports: [DsButtonComponent, RouterLink],
   templateUrl: './no-encontrada.html',
   styleUrl: './no-encontrada.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

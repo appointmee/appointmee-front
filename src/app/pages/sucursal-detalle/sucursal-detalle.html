@@ -53,7 +53,7 @@
       <h1 id="detalle-titulo">{{ tituloError() }}</h1>
       <p>{{ error() }}</p>
       <div class="detalle__estado-acciones">
-        <button
+        <ds-button
           class="btn btn--primary detalle__reintentar"
           type="button"
           (click)="reintentar()"
@@ -66,7 +66,7 @@
           } @else {
             Reintentar
           }
-        </button>
+        </ds-button>
         <a class="btn btn--ghost" routerLink="/sucursales">Volver al listado</a>
       </div>
       <span class="sr-only" role="status" aria-live="polite">
@@ -166,12 +166,12 @@
               {{ descripcion() || 'Esta sucursal todavía no cargó su descripción.' }}
             </p>
             @if (descripcionLarga()) {
-              <button class="link-btn" type="button" (click)="alternarDescripcion()">
+              <ds-button class="link-btn" type="button" (click)="alternarDescripcion()">
                 {{ descripcionExpandida() ? 'Ver menos' : 'Ver más' }}
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="m6 9 6 6 6-6" [attr.transform]="descripcionExpandida() ? 'rotate(180 12 12)' : null" />
                 </svg>
-              </button>
+              </ds-button>
             }
           </article>
 
@@ -221,17 +221,17 @@
               <p class="panel__aviso" role="alert">{{ avisoRol() }}</p>
             }
 
-            <button
+            <ds-button
               class="btn btn--primary btn--block"
               type="button"
               [disabled]="navegando()"
               [attr.aria-busy]="navegando()"
-              [attr.aria-label]="'Reservar turno en ' + s.nombre"
+              [aria-label]="'Reservar turno en ' + s.nombre"
               aria-describedby="reserva-ayuda"
               (click)="iniciarReserva()"
             >
               {{ navegando() ? 'Abriendo…' : 'Reservar turno' }}
-            </button>
+            </ds-button>
           </article>
         </aside>
 
@@ -328,17 +328,17 @@
         </div>
         <div class="detalle__cta-acciones">
           <a class="btn btn--ghost" routerLink="/sucursales">Volver</a>
-          <button
+          <ds-button
             class="btn btn--primary"
             type="button"
             [disabled]="navegando()"
             [attr.aria-busy]="navegando()"
-            [attr.aria-label]="'Reservar turno en ' + s.nombre"
+            [aria-label]="'Reservar turno en ' + s.nombre"
             aria-describedby="reserva-ayuda"
             (click)="iniciarReserva()"
           >
             {{ navegando() ? 'Abriendo…' : 'Reservar turno' }}
-          </button>
+          </ds-button>
         </div>
       </div>
   }

@@ -4,7 +4,7 @@
       <strong>Registro exitoso</strong>
       <p>Tu cuenta fue creada. Iniciá sesión para continuar con la verificación de tu email.</p>
     </div>
-    <button type="button" aria-label="Cerrar notificación de registro" (click)="registroExitoso.set(false)">✕</button>
+    <ds-button type="button" aria-label="Cerrar notificación de registro" (click)="registroExitoso.set(false)">✕</ds-button>
   </aside>
 }
 
@@ -17,10 +17,10 @@
 
     <div class="login__field">
       <label for="login-email">Email</label>
-      <input id="login-email" type="email" autocomplete="email"
+      <ds-input><input #dsNativeControl id="login-email" type="email" autocomplete="email"
              [formField]="loginForm.email" [readOnly]="cargando()"
              [attr.aria-invalid]="loginForm.email().touched() && loginForm.email().invalid()"
-             aria-describedby="login-email-error" />
+             aria-describedby="login-email-error" /></ds-input>
 
       <div id="login-email-error" class="login__validation" aria-live="polite">
         @if (loginForm.email().touched()) {
@@ -34,18 +34,18 @@
     <div class="login__field">
       <label for="login-password">Contraseña</label>
       <div class="login__password">
-        <input id="login-password" [type]="mostrarPassword() ? 'text' : 'password'"
+        <ds-input><input #dsNativeControl id="login-password" [type]="mostrarPassword() ? 'text' : 'password'"
                autocomplete="current-password"
                [formField]="loginForm.password" [readOnly]="cargando()"
                [attr.aria-invalid]="loginForm.password().touched() && loginForm.password().invalid()"
-               aria-describedby="login-password-error" />
+               aria-describedby="login-password-error" /></ds-input>
 
-        <button class="login__toggle" type="button" aria-controls="login-password"
-                [attr.aria-pressed]="mostrarPassword()"
-                [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+        <ds-button class="login__toggle" type="button" aria-controls="login-password"
+                [aria-pressed]="mostrarPassword()"
+                [aria-label]="mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
                 (click)="mostrarPassword.set(!mostrarPassword())">
           {{ mostrarPassword() ? 'Ocultar' : 'Mostrar' }}
-        </button>
+        </ds-button>
       </div>
 
       <div id="login-password-error" class="login__validation" aria-live="polite">
@@ -62,16 +62,16 @@
     </div>
 
     @if (emailSinVerificar()) {
-      <button class="login__link" type="button" (click)="irAVerificar()">Verificar mi email</button>
+      <ds-button class="login__link" type="button" (click)="irAVerificar()">Verificar mi email</ds-button>
     }
 
-    <button class="login__submit" type="submit" [disabled]="cargando()">
+    <ds-button class="login__submit" type="submit" [disabled]="cargando()">
       @if (cargando()) { <span class="login__spinner" aria-hidden="true"></span> }
       {{ cargando() ? 'Ingresando…' : 'Iniciar sesión' }}
-    </button>
+    </ds-button>
 
     @if (puedeReintentar()) {
-      <button class="login__retry" type="submit" [disabled]="cargando()">Reintentar</button>
+      <ds-button class="login__retry" type="submit" [disabled]="cargando()">Reintentar</ds-button>
     }
 
     <a class="login__forgot" routerLink="/olvide-mi-contrasena">Olvidé mi contraseña</a>

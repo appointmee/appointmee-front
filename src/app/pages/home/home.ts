@@ -1,3 +1,5 @@
+import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -30,7 +32,7 @@ function comparisonKey(value: string): string {
 
 @Component({
   selector: 'app-home',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [DsInputComponent, DsButtonComponent, ReactiveFormsModule, RouterLink],
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

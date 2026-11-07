@@ -1,3 +1,5 @@
+import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField, form, maxLength, minLength, pattern, required } from '@angular/forms/signals';
@@ -10,7 +12,7 @@ import { authService } from '../../services/auth-service';
 
 @Component({
   selector: 'app-reset-password',
-  imports: [FormField, RouterLink],
+  imports: [DsInputComponent, DsButtonComponent, FormField, RouterLink],
   templateUrl: './reset-password.html',
   styleUrls: ['../login/login.css', './reset-password.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

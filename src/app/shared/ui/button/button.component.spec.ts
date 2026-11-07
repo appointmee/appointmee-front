@@ -31,4 +31,14 @@ describe('DsButtonComponent', () => {
       'Guardar cambios',
     );
   });
+
+  it('aplica variantes y clases del host al botón interno', async () => {
+    await TestBed.configureTestingModule({ imports: [DsButtonComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(DsButtonComponent);
+    fixture.componentInstance.variant = 'primary';
+    fixture.detectChanges();
+    const btn = fixture.nativeElement.querySelector('button');
+    expect(btn.classList.contains('ds-btn--primary')).toBe(true);
+    expect(btn.classList.contains('ds-btn')).toBe(true);
+  });
 });

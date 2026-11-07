@@ -27,6 +27,12 @@
   --accent-strong: #ffd77a;
   --accent-soft: rgba(247, 198, 90, 0.12);
   --danger: #ff7a7a;
+  --success: #2ecc71;
+  --info: #5aa0f7;
+  --on-accent: #07090d;
+  --on-danger: #07090d;
+  --success-soft: rgba(46, 204, 113, 0.15);
+  --info-soft: rgba(90, 160, 247, 0.15);
   /* Tipografía */
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
@@ -101,6 +107,20 @@ textarea {
   font: inherit;
   accent-color: var(--accent);
 }
+input:not(:disabled):hover,
+select:not(:disabled):hover,
+textarea:not(:disabled):hover { border-color: var(--muted); }
+input:not(:disabled):active,
+select:not(:disabled):active,
+textarea:not(:disabled):active { border-color: var(--accent); }
+
+/* Defaults shared by native controls throughout the application. */
+button:not(:disabled) { cursor: pointer; }
+button:active:not(:disabled) { transform: translateY(1px); }
+input, select, textarea {
+  color: var(--text);
+}
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 
 button:focus-visible,
 input:focus-visible,
@@ -110,6 +130,8 @@ a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+:where(button, input, select, textarea):disabled { opacity: .6; }
 
 input:disabled,
 select:disabled,

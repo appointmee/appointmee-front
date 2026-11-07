@@ -1,5 +1,6 @@
 import {
   AfterViewChecked,
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -24,7 +25,7 @@ let nextSelectId = 0;
     ><ng-content></ng-content
   ></span>`,
   styles: [
-    `.ds-badge{display:inline-block;padding:2px 8px;border-radius:var(--radius-full);font-size:var(--font-size-xs);background:var(--accent-soft);color:var(--accent)}.ds-badge--success{background:rgba(46,204,113,.15);color:#2ecc71}.ds-badge--danger{background:rgba(255,122,122,.15);color:var(--danger)}.ds-badge--info{background:rgba(90,160,247,.15);color:#5aa0f7}`,
+    `.ds-badge{display:inline-block;padding:2px 8px;border-radius:var(--radius-full);font-size:var(--font-size-xs);background:var(--accent-soft);color:var(--accent)}.ds-badge--success{background:var(--success-soft);color:var(--success)}.ds-badge--danger{background:rgba(255,122,122,.15);color:var(--danger)}.ds-badge--info{background:var(--info-soft);color:var(--info)}`,
   ],
 })
 export class DsBadgeComponent {
@@ -86,7 +87,7 @@ export class DsEmptyStateComponent {
         class="ds-modal"
         role="dialog"
         aria-modal="true"
-        [attr.aria-label]="ariaLabel || null"
+        [attr.aria-label]="ariaLabel || (ariaLabelledby ? null : 'Diálogo')"
         [attr.aria-labelledby]="ariaLabelledby || null"
         tabindex="-1"
         (click)="$event.stopPropagation()"
@@ -101,12 +102,26 @@ export class DsEmptyStateComponent {
   ],
 })
 export class DsModalComponent implements AfterViewChecked {
-  @Input() open = false;
+  private isOpen = false;
+  @Input() set open(value: boolean) {
+    if (value && !this.isOpen) {
+      this.previouslyFocused = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    } else if (!value && this.isOpen) {
+      this.previouslyFocused?.focus();
+      this.previouslyFocused = null;
+      this.focused = false;
+    }
+    this.isOpen = value;
+  }
+  get open(): boolean { return this.isOpen; }
   @Input() ariaLabel = '';
   @Input() ariaLabelledby = '';
   @Output() close = new EventEmitter<void>();
   @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
   private focused = false;
+  private previouslyFocused: HTMLElement | null = null;
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
@@ -118,7 +133,6 @@ export class DsModalComponent implements AfterViewChecked {
       this.dialog.nativeElement.focus();
       this.focused = true;
     }
-    if (!this.open) this.focused = false;
   }
 
   onKeydown(event: KeyboardEvent): void {
@@ -194,31 +208,44 @@ export class DsToastComponent {}
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<label class="ds-field" [attr.for]="id">
     @if (label) { <span class="ds-label">{{ label }}</span> }
-    <select class="ds-select" [id]="id" [disabled]="disabled">
+    <select class="ds-select" [id]="id" [value]="value" [disabled]="disabled" [attr.aria-invalid]="error ? 'true' : null" [attr.aria-describedby]="error ? id + '-error' : null" (change)="onChange($event)">
       <ng-content></ng-content>
     </select>
+    @if (error) { <span class="ds-error" [id]="id + '-error'" role="alert">{{ error }}</span> }
   </label>`,
   styles: [
-    `.ds-field{display:flex;flex-direction:column;gap:var(--space-1)}.ds-label{font-size:var(--font-size-sm);color:var(--muted)}.ds-select{padding:var(--space-2);border-radius:var(--radius-md);border:1px solid var(--line);background:var(--surface);color:var(--text)}`,
+    `.ds-field{display:flex;flex-direction:column;gap:var(--space-1)}.ds-label{font-size:var(--font-size-sm);color:var(--muted)}.ds-select{padding:var(--space-2);border-radius:var(--radius-md);border:1px solid var(--line);background:var(--surface);color:var(--text)}.ds-select:hover:not(:disabled){border-color:var(--muted)}.ds-select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.ds-select:active:not(:disabled){border-color:var(--accent)}.ds-select:disabled{opacity:.6;cursor:not-allowed}.ds-select[aria-invalid=true]{border-color:var(--danger)}.ds-error{color:var(--danger);font-size:var(--font-size-xs)}`,
   ],
 })
-export class DsSelectComponent {
-  readonly id = `ds-select-${++nextSelectId}`;
+export class DsSelectComponent implements AfterViewInit {
+  @Input() id = `ds-select-${++nextSelectId}`;
   @Input() label = '';
   @Input() disabled = false;
+  @Input() error = '';
+  @Input() value: string | number = '';
+  @Output() change = new EventEmitter<Event>();
+  constructor(private readonly host: ElementRef<HTMLElement>) {}
+  ngAfterViewInit(): void {
+    // The public id belongs to the native select, not the custom-element host.
+    this.host.nativeElement.removeAttribute('id');
+  }
+  onChange(event: Event): void {
+    event.stopPropagation();
+    this.change.emit(event);
+  }
 }
 
 @Component({
   selector: 'ds-checkbox',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<label class="ds-checkbox"
-    ><input type="checkbox" [disabled]="disabled" /><ng-content></ng-content
-  ></label>`,
-  styles: [`.ds-checkbox{display:inline-flex;gap:var(--space-2);align-items:center}`],
+  template: `<label class="ds-checkbox" [attr.for]="id"><input [id]="id" type="checkbox" [disabled]="disabled" [attr.aria-invalid]="error ? 'true' : null" [attr.aria-describedby]="error ? id + '-error' : null" /><span><ng-content></ng-content></span></label>@if(error){<span class="ds-error" [id]="id + '-error'" role="alert">{{error}}</span>}`,
+  styles: [`.ds-checkbox{display:inline-flex;gap:var(--space-2);align-items:center;cursor:pointer}.ds-checkbox:has(input:disabled){opacity:.6;cursor:not-allowed}.ds-checkbox input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}`],
 })
 export class DsCheckboxComponent {
+  readonly id = `ds-checkbox-${++nextSelectId}`;
   @Input() disabled = false;
+  @Input() error = '';
 }
 
 @Component({
@@ -226,11 +253,13 @@ export class DsCheckboxComponent {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<label class="ds-radio"
-    ><input type="radio" [disabled]="disabled" [name]="name" /><ng-content></ng-content
-  ></label>`,
-  styles: [`.ds-radio{display:inline-flex;gap:var(--space-2);align-items:center}`],
+    ><input type="radio" [disabled]="disabled" [name]="name" [attr.aria-invalid]="error ? 'true' : null" [attr.aria-describedby]="error ? id + '-error' : null" /><span><ng-content></ng-content></span
+  ></label>@if(error){<span class="ds-error" [id]="id + '-error'" role="alert">{{error}}</span>}`,
+  styles: [`.ds-radio{display:inline-flex;gap:var(--space-2);align-items:center;cursor:pointer}.ds-radio:hover input:not(:disabled){accent-color:var(--accent-strong)}.ds-radio:has(input:disabled){opacity:.6;cursor:not-allowed}.ds-radio input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.ds-radio input:active:not(:disabled){transform:scale(.96)}.ds-error{color:var(--danger);font-size:var(--font-size-xs)}`],
 })
 export class DsRadioComponent {
+  readonly id = `ds-radio-${++nextSelectId}`;
   @Input() disabled = false;
   @Input() name = 'ds-radio-group';
+  @Input() error = '';
 }

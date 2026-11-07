@@ -1,14 +1,52 @@
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   DsAlertComponent,
   DsBadgeComponent,
+  DsCheckboxComponent,
   DsEmptyStateComponent,
   DsModalComponent,
   DsPaginationComponent,
   DsSkeletonComponent,
+  DsSelectComponent,
+  DsRadioComponent,
 } from './misc.component';
 
 describe('componentes de sistema de diseño', () => {
+  it('select asocia el error y permite personalizar la etiqueta', async () => {
+    await TestBed.configureTestingModule({ imports: [DsSelectComponent] }).compileComponents();
+    const f = TestBed.createComponent(DsSelectComponent);
+    f.componentInstance.label = 'Servicio';
+    f.componentInstance.error = 'Elegí un servicio';
+    f.detectChanges();
+    const select = f.nativeElement.querySelector('select');
+    expect(f.nativeElement.textContent).toContain('Servicio');
+    expect(select.getAttribute('aria-invalid')).toBe('true');
+    expect(f.nativeElement.querySelector('[role="alert"]').id).toBe(select.getAttribute('aria-describedby'));
+  });
+
+  it('checkbox y radio exponen el estado disabled al control nativo', async () => {
+    await TestBed.configureTestingModule({ imports: [DsCheckboxComponent, DsRadioComponent] }).compileComponents();
+    const checkbox = TestBed.createComponent(DsCheckboxComponent);
+    const radio = TestBed.createComponent(DsRadioComponent);
+    checkbox.componentInstance.disabled = true;
+    radio.componentInstance.disabled = true;
+    checkbox.detectChanges();
+    radio.detectChanges();
+    expect(checkbox.nativeElement.querySelector('input').disabled).toBe(true);
+    expect(radio.nativeElement.querySelector('input').disabled).toBe(true);
+  });
+
+  it('radio asocia el error con aria-describedby', async () => {
+    await TestBed.configureTestingModule({ imports: [DsRadioComponent] }).compileComponents();
+    const f = TestBed.createComponent(DsRadioComponent);
+    f.componentInstance.error = 'Elegí una opción';
+    f.detectChanges();
+    const radio = f.nativeElement.querySelector('input');
+    expect(radio.getAttribute('aria-invalid')).toBe('true');
+    expect(radio.getAttribute('aria-describedby')).toBe(f.nativeElement.querySelector('[role="alert"]').id);
+  });
+
   it('badge aplica variante success', async () => {
     await TestBed.configureTestingModule({ imports: [DsBadgeComponent] }).compileComponents();
     const f = TestBed.createComponent(DsBadgeComponent);
@@ -83,5 +121,40 @@ describe('componentes de sistema de diseño', () => {
     f.componentInstance.close.subscribe(() => (cerrado = true));
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     expect(cerrado).toBe(true);
+  });
+
+  it('modal devuelve el foco al elemento que lo abrió', async () => {
+    await TestBed.configureTestingModule({ imports: [DsModalComponent] }).compileComponents();
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+    const f = TestBed.createComponent(DsModalComponent);
+    f.componentInstance.open = true;
+    f.detectChanges();
+    f.detectChanges();
+    f.componentInstance.open = false;
+    f.detectChanges();
+    expect(document.activeElement).toBe(opener);
+    opener.remove();
+  });
+
+  it('modal mantiene Tab dentro del diálogo en ambos sentidos', async () => {
+    @Component({
+      standalone: true,
+      imports: [DsModalComponent],
+      template: `<ds-modal [open]="true"><button id="primero">Primero</button><button id="ultimo">Último</button></ds-modal>`,
+    })
+    class ModalHost {}
+    await TestBed.configureTestingModule({ imports: [ModalHost] }).compileComponents();
+    const f = TestBed.createComponent(ModalHost);
+    f.detectChanges();
+    const first = f.nativeElement.querySelector('#primero') as HTMLButtonElement;
+    const last = f.nativeElement.querySelector('#ultimo') as HTMLButtonElement;
+    last.focus();
+    last.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(first);
+    first.focus();
+    first.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+    expect(document.activeElement).toBe(last);
   });
 });

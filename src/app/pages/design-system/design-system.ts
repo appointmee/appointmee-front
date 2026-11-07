@@ -47,15 +47,21 @@ import {
           <ds-button variant="danger">Peligro</ds-button>
           <ds-button [disabled]="true">Deshabilitado</ds-button>
           <ds-button [loading]="true">Cargando</ds-button>
+          <ds-button ariaLabel="Guardar cambios">Estado activo al pulsar</ds-button>
         </div>
       </section>
 
       <section aria-labelledby="inputs">
         <h2 id="inputs">Inputs</h2>
         <div class="fila">
-          <ds-input label="Nombre" placeholder="Escribí tu nombre"></ds-input>
-          <ds-input label="Email" type="email" error="Ingresá un email válido"></ds-input>
-          <ds-input label="Deshabilitado" [disabled]="true"></ds-input>
+          <ds-input label="Nombre"
+            ><input placeholder="Escribí tu nombre" autocomplete="name"
+          /></ds-input>
+          <ds-input label="Email" error="Ingresá un email válido"
+            ><input type="email" autocomplete="email" aria-invalid="true"
+          /></ds-input>
+          <ds-input label="Deshabilitado"><input [disabled]="true" /></ds-input>
+          <ds-input label="Buscando" [loading]="true" placeholder="Cargando…"></ds-input>
         </div>
       </section>
 
@@ -66,15 +72,23 @@ import {
             <option>Consulta</option>
             <option>Kinesiología</option>
           </ds-select>
+          <ds-select label="Servicio requerido" error="Elegí una opción">
+            <option value="">Seleccioná</option><option>Consulta</option>
+          </ds-select>
+          <ds-select label="Solo lectura" [disabled]="true"><option>Consulta</option></ds-select>
           <ds-checkbox>Acepto los términos</ds-checkbox>
+          <ds-checkbox [disabled]="true">Opción deshabilitada</ds-checkbox>
+          <ds-checkbox error="Confirmá esta opción">Opción con error</ds-checkbox>
           <ds-radio name="demo">Opción A</ds-radio>
           <ds-radio name="demo">Opción B</ds-radio>
+          <ds-radio name="demo-disabled" [disabled]="true">Radio deshabilitado</ds-radio>
         </div>
       </section>
 
       <section aria-labelledby="feedback">
         <h2 id="feedback">Feedback</h2>
         <div class="fila">
+          <ds-card><h3>Card base</h3><p>Contenido configurable mediante proyección.</p></ds-card>
           <ds-badge>Default</ds-badge>
           <ds-badge variant="info">Info</ds-badge>
           <ds-badge variant="success">Éxito</ds-badge>
