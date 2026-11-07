@@ -41,6 +41,7 @@
       } @else if (detalle(); as datos) {
         <app-solicitud-empleador-detalle
           [detalle]="datos"
+          [modo]="modo()"
           [solicitante]="solicitante()"
         />
 

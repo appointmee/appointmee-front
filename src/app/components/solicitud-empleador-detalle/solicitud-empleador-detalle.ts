@@ -22,6 +22,8 @@ export interface SolicitanteSolicitudEmpleador {
 })
 export class SolicitudEmpleadorDetalle {
   readonly detalle = input.required<SolicitudEmpleadorDetalleDTO>();
+  /** En la vista del usuario el título es genérico; el admin conserva el número. */
+  readonly modo = input<'usuario' | 'admin'>('usuario');
   /**
    * El detalle del backend expone el usuario de la sesión que consulta. En el
    * panel administrador el solicitante se toma del listado mini para no mostrar
