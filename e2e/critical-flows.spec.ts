@@ -1,4 +1,66 @@
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import { expect, test as baseTest, type Page, type Route } from '@playwright/test';
+
+const sensitiveValues = [
+  'Clave123!', 'NuevaClave123!', '123456',
+  'access-e2e-only', 'refresh-e2e-only', 'verification-ticket-e2e',
+  'fragment_token_1234567890123',
+];
+
+function containsSensitiveValue(value: string): boolean {
+  let decoded = value;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (sensitiveValues.some(secret => decoded.includes(secret))) return true;
+    try {
+      const next = decodeURIComponent(decoded);
+      if (next === decoded) break;
+      decoded = next;
+    } catch { break; }
+  }
+  return false;
+}
+
+function watchSensitiveData(page: Page) {
+  const leaks: string[] = [];
+  const pending: Promise<void>[] = [];
+  const check = (surface: string, value: string) => {
+    // El reporte indica el destino, nunca vuelve a imprimir la credencial.
+    if (containsSensitiveValue(value)) leaks.push(surface);
+  };
+  page.on('console', message => {
+    check('consola', message.text());
+    pending.push(Promise.all(message.args().map(async arg => {
+      try { check('argumento de consola', JSON.stringify(await arg.jsonValue()) ?? ''); }
+      catch { /* Un objeto de una página cerrada ya no puede inspeccionarse. */ }
+    })).then(() => undefined));
+  });
+  page.on('pageerror', error => check('excepción del navegador', error.message));
+  page.on('request', request => {
+    check('URL de solicitud', request.url());
+    // Los cuerpos y headers de autenticación pueden contener credenciales.
+    // En analytics y otros destinos externos no deben aparecer.
+    const url = new URL(request.url());
+    const analytics = /\/(?:_vercel\/insights|analytics)(?:\/|$)/.test(url.pathname)
+      || url.hostname === 'vitals.vercel-insights.com';
+    if (analytics || (url.origin !== api && url.origin !== 'http://127.0.0.1:4200')) {
+      check('cuerpo de analytics o tercero', request.postData() ?? '');
+      check('headers de analytics o tercero', JSON.stringify(request.headers()));
+    }
+  });
+  return async () => {
+    await Promise.all(pending);
+    check('URL final', page.url());
+    expect(leaks, 'Se detectaron datos sensibles fuera de los endpoints de autenticación').toEqual([]);
+  };
+}
+
+const test = baseTest.extend({
+  page: async ({ page }, use) => {
+    const assertNoLeaks = watchSensitiveData(page);
+    await use(page);
+    await assertNoLeaks();
+  },
+});
 
 const api = 'http://localhost:8080';
 const usuario = { id: 4, roles: ['CLIENTE'], fotoPerfil: null };
@@ -233,4 +295,44 @@ test('detalle permite elegir un servicio y consultar horarios sin errores de con
   await expect(page.getByRole('button', { name: 'Elegir 09:00 del 2030-12-20' })).toBeVisible();
   expect(unexpected).toEqual([]);
   expect(consoleErrors).toEqual([]);
+});
+
+test('analytics elimina parámetros y fragmentos sensibles antes de enviarlos', async ({ page }) => {
+  const bootstrap = await readFile('public/analytics-bootstrap.js', 'utf8');
+  // Activa el bootstrap de producción solo en este test local.
+  await page.route('**/analytics-bootstrap.js', route => route.fulfill({
+    contentType: 'application/javascript',
+    body: bootstrap.replace("if (['localhost', '127.0.0.1'].includes(window.location.hostname)) return;", ''),
+  }));
+  await page.route('**/_vercel/insights/script.js', route => route.fulfill({
+    contentType: 'application/javascript',
+    // Simula el consumidor de beforeSend; se prueba el filtro real del proyecto.
+    body: `
+      const hook = window.vaq.find(entry => entry[0] === 'beforeSend')[1];
+      const event = hook({url: location.origin + '/login?password=Clave123!&otp=123456&token=access-e2e-only#refresh-e2e-only'});
+      fetch('/_vercel/insights/view', {method: 'POST', body: JSON.stringify(event)});
+    `,
+  }));
+  await page.route('**/_vercel/insights/view', route => route.fulfill({ status: 204 }));
+  await mockApi(page);
+  const sent = page.waitForRequest('**/_vercel/insights/view');
+  await page.goto('/login');
+  expect((await sent).postDataJSON()).toEqual({ url: 'http://127.0.0.1:4200/login' });
+});
+
+baseTest('el detector reconoce filtraciones en objetos de consola y analytics', async ({ page }) => {
+  await mockApi(page);
+  await page.route('**/_vercel/insights/view', route => route.fulfill({ status: 204 }));
+  await page.goto('/login');
+  const assertNoLeaks = watchSensitiveData(page);
+  await page.evaluate(async () => {
+    console.log({ password: 'Clave123!' });
+    await fetch('/_vercel/insights/view', {
+      method: 'POST', body: JSON.stringify({ otp: '123456', token: 'access-e2e-only' }),
+    });
+  });
+  await expect(assertNoLeaks()).rejects.toThrow(/argumento de consola/);
+  await expect(assertNoLeaks()).rejects.toThrow(/cuerpo de analytics o tercero/);
+  expect(containsSensitiveValue('Clave123%2521')).toBe(true);
+  expect(containsSensitiveValue('registro completado')).toBe(false);
 });
