@@ -1,0 +1,103 @@
+<section class="historial" aria-labelledby="historial-titulo">
+  <div class="historial__inner">
+    <nav class="migas" aria-label="Navegación de solicitudes">
+      <a class="volver" routerLink="/solicitudes">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M11 18l-6-6 6-6" />
+        </svg>
+        Volver a Solicitudes
+      </a>
+    </nav>
+
+    <header class="historial__header">
+      <span class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Historial completo
+      </span>
+      <h1 id="historial-titulo">Todas mis solicitudes</h1>
+      <p>
+        Consultá el historial completo de tus pedidos para ser empleador. El estado y el
+        detalle se cargan al abrir cada solicitud.
+      </p>
+    </header>
+
+    <section class="panel" aria-labelledby="historial-lista-titulo">
+      <header class="panel__cabecera">
+        <div>
+          <span class="panel__eyebrow">Empleador</span>
+          <h2 id="historial-lista-titulo">Solicitudes enviadas</h2>
+        </div>
+        @if (total() > 0) {
+          <span class="panel__contador" [attr.aria-label]="total() + ' solicitudes registradas'">
+            {{ total() }}
+          </span>
+        }
+      </header>
+
+      @if (cargando()) {
+        <div class="lista" aria-busy="true" aria-live="polite">
+          <span class="sr-only">Cargando el historial de solicitudes…</span>
+          @for (item of [1, 2, 3, 4]; track item) {
+            <div class="solicitud-skeleton" aria-hidden="true">
+              <span class="skeleton skeleton--avatar"></span>
+              <span class="skeleton skeleton--line"></span>
+              <span class="skeleton skeleton--line skeleton--short"></span>
+            </div>
+          }
+        </div>
+      } @else if (error() && solicitudes().length === 0) {
+        <div class="estado estado--error" role="alert">
+          <span class="estado__icono" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </span>
+          <h3>No pudimos cargar tus solicitudes</h3>
+          <p>{{ error() }}</p>
+          <button class="boton" type="button" [disabled]="reintentando()" (click)="reintentar()">
+            {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+          </button>
+        </div>
+      } @else {
+        @if (error()) {
+          <div class="aviso aviso--error" role="alert">
+            <p>{{ error() }}</p>
+            <button type="button" [disabled]="reintentando()" (click)="reintentar()">
+              {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+            </button>
+          </div>
+        }
+
+        @if (solicitudes().length === 0) {
+          <div class="estado estado--vacio" role="status">
+            <span class="estado__icono" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 5h16v14H4zM8 9h8M8 13h5" />
+              </svg>
+            </span>
+            <h3>Todavía no enviaste solicitudes</h3>
+            <p>Volvé a Solicitudes para enviar tu primer pedido para ser empleador.</p>
+            <a class="boton" routerLink="/solicitudes">Volver a Solicitudes</a>
+          </div>
+        } @else {
+          <ul class="lista" aria-live="polite">
+            @for (solicitud of solicitudes(); track solicitud.id) {
+              <li>
+                <app-solicitud-empleador-card
+                  [solicitud]="solicitud"
+                  [detalle]="detalleDe(solicitud.id)"
+                  [estadoResumen]="estadoDe(solicitud.id)"
+                  [expandida]="estaExpandida(solicitud.id)"
+                  [cargandoDetalle]="estaCargandoDetalle(solicitud.id)"
+                  [errorDetalle]="errorDetalleDe(solicitud.id)"
+                  (alternar)="alternar(solicitud.id)"
+                  (reintentarDetalle)="reintentarDetalle(solicitud.id)"
+                />
+              </li>
+            }
+          </ul>
+        }
+      }
+    </section>
+  </div>
+</section>
