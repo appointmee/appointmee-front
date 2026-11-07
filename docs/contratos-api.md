@@ -24,6 +24,7 @@ El interceptor envía Bearer en rutas privadas y omite las rutas que reconoce co
 | `GET /sucursales/categorias` | Lectura pública | — | `string[]` |
 | `GET /sucursales/{id}` | Lectura pública | ID numérico | `SucursalDetalleDTO` |
 | `GET /servicios/listar/sucursal/{id}` | La ruta de selección exige sesión en UI | ID numérico | `ServicioDTO[]` |
+| `POST /observabilidad/error` | Público, sin credenciales; registro técnico mínimo | `{ screen: 'error', code, status, reference }` | `202 Accepted`, sin cuerpo |
 
 `/auth/register`, `/auth/reset-password`, `/usuarios/inicio-sesion` y `/usuarios/crear` aparecen únicamente en la lista de omisión del interceptor. No se halló llamada que confirme que estos endpoints formen parte de una funcionalidad operativa; confirmar o retirar la discrepancia.
 
@@ -68,6 +69,8 @@ Los modelos completos están en `src/app/models/{auth,sucursal,servicio}.ts`. El
 - Fallos 0/500/502/503: mensajes seguros, reintento o pantalla inline según endpoint/contexto.
 
 Formato recomendado a acordar con backend: `{ code, message, fields?, timestamp?, traceId? }`, con códigos estables y errores de validación en `fields`. El frontend no requiere actualmente un `traceId`; crea una referencia local aleatoria.
+
+El formato común de error del frontend es `FrontendError = { code: string, message: string, status: number }`. Los mensajes son normalizados y seguros para UI; nunca se conserva el texto crudo del backend. El evento `POST /observabilidad/error` acepta únicamente `screen`, `code`, `status` y `reference`, se registra en logs estructurados y no incluye rutas, identidad, tokens ni stack trace. Los fallos del registro se descartan para no interrumpir la recuperación del usuario.
 
 ## Requisitos de compatibilidad
 

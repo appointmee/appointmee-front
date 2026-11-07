@@ -12,6 +12,7 @@ import { NotFoundPage } from './pages/no-encontrada/no-encontrada';
 import { Sucursales } from './pages/sucursales/sucursales';
 import { NavigationHistory } from './navigation-history';
 import { Reporte404 } from './pages/no-encontrada/reporte-404';
+import { ReporteError } from './pages/error/reporte-error';
 
 @Component({
   standalone: true,
@@ -42,6 +43,7 @@ describe('US-ERR-03 recovery flows', () => {
         provideHttpClient(withInterceptors([apiErrorInterceptor])),
         provideHttpClientTesting(),
         { provide: Reporte404, useValue: { registrar: () => undefined } },
+        { provide: ReporteError, useValue: { registrar: () => undefined } },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(TestShell);

@@ -74,8 +74,9 @@ describe('Autenticación e interceptor', () => {
       `${API_URL}/sucursales/listar/filtrar`,
       `${API_URL}/servicios/listar/sucursal/7`,
       `${API_URL}/turnos/disponibilidad/empleado/9/servicio/3`,
+      `${API_URL}/observabilidad/error`,
     ]) {
-      http.get(url).subscribe();
+      (url.endsWith('/observabilidad/error') ? http.post(url, { screen: 'error' }) : http.get(url)).subscribe();
       const request = backend.expectOne(url);
       expect(request.request.headers.has('Authorization')).toBe(false);
       request.flush({});

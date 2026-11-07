@@ -18,6 +18,9 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   // Los endpoints públicos no necesitan access token.
 
   const path = new URL(request.url).pathname;
+  const observabilityEvent = request.method === 'POST' && path === '/observabilidad/error';
+  if (observabilityEvent) return next(request);
+
   const lecturaPublica = request.method === 'GET' && (
     /^\/sucursales\/(listar(?:\/filtrar)?|categorias|\d+(?:\/(elegir-empleado|resenias))?)$/.test(path)
     || /^\/servicios\/(?:listar\/sucursal\/\d+|\d+)$/.test(path)

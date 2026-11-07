@@ -69,3 +69,50 @@ describe('Buscador del navbar', () => {
     expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
   });
 });
+
+describe('Navbar en la vista de error', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('muestra una versión mínima con acceso a login para visitantes', async () => {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([{ path: 'error', component: EmptyPage }]),
+        { provide: authService, useValue: {
+          autenticado: signal(false), visitante: signal(true), restaurando: signal(false),
+        } },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/error');
+    fixture.detectChanges();
+
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('.nav')).toBeNull();
+    expect(html.querySelector('.burger')).toBeNull();
+    expect(html.querySelector('a[href="/login"]')?.textContent).toContain('Iniciar sesión');
+    expect(html.querySelector('a[href="/registrarme"]')).toBeNull();
+  });
+
+  it('conserva la navegación completa para usuarios con sesión', async () => {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([{ path: 'error', component: EmptyPage }]),
+        { provide: authService, useValue: {
+          autenticado: signal(true), visitante: signal(false), restaurando: signal(false),
+          perfil: signal(null), iniciales: signal('AM'), tieneAlgunRol: () => false,
+        } },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/error');
+    fixture.detectChanges();
+
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('.nav')).not.toBeNull();
+    expect(html.querySelector('.profile__trigger')).not.toBeNull();
+  });
+});
