@@ -1,3 +1,4 @@
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, signal, viewChild } from '@angular/core';
 import { Meta } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -10,7 +11,7 @@ export type ErrorPageVariant = 'default' | 'sucursal-no-encontrada';
 
 @Component({
   selector: 'app-error-page',
-  imports: [RouterLink],
+  imports: [DsButtonComponent, RouterLink],
   templateUrl: './error.html',
   styleUrl: './error.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

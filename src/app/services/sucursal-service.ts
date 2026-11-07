@@ -55,6 +55,21 @@ export class sucursalService {
    * Detalle de una sucursal. `silenciarErroresGlobales` permite que la pantalla
    * que lo consume muestre su propio estado de error sin navegar a /error.
    */
+  listarPropias(): Observable<SucursalMiniDTO[]> {
+    return this.http.get<SucursalMiniDTO[]>(
+      `${this.api.baseUrl}/sucursales/listar/propias`,
+      { context: this.contextoSinAvisoGlobal() },
+    );
+  }
+
+  agregarEmpleado(sucursalId: number, email: string): Observable<string> {
+    return this.http.post(
+      `${this.api.baseUrl}/sucursales/${sucursalId}/empleados/agregar`,
+      { email },
+      { context: this.contextoSinAvisoGlobal(), responseType: 'text' },
+    );
+  }
+
   obtenerPorId(
     idSucursal: number,
     silenciarErroresGlobales = false,
@@ -66,5 +81,9 @@ export class sucursalService {
     return this.http.get<SucursalDetalleDTO>(url, {
       context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
     });
+  }
+
+  private contextoSinAvisoGlobal(): HttpContext {
+    return new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true);
   }
 }

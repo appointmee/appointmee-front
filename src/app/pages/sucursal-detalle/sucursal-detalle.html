@@ -53,12 +53,13 @@
       <h1 id="detalle-titulo">{{ tituloError() }}</h1>
       <p>{{ error() }}</p>
       <div class="detalle__estado-acciones">
-        <button
+        <button dsButton
           class="btn btn--primary detalle__reintentar"
           type="button"
           (click)="reintentar()"
           [disabled]="reintentando()"
           [attr.aria-busy]="reintentando()"
+          aria-label="Reintentar carga de la sucursal"
         >
           @if (reintentando()) {
             <span class="detalle__spinner" aria-hidden="true"></span>
@@ -67,6 +68,7 @@
             Reintentar
           }
         </button>
+        <a class="btn btn--ghost" routerLink="/">Volver al Home</a>
         <a class="btn btn--ghost" routerLink="/sucursales">Volver al listado</a>
       </div>
       <span class="sr-only" role="status" aria-live="polite">
@@ -161,22 +163,33 @@
     <div class="detalle__inner">
       <div class="detalle__grid">
         <div class="detalle__main">
-          <article class="panel panel--descripcion">
-            <header class="panel__head">
-              <h2>Sobre esta sucursal</h2>
-            </header>
-            <p class="descripcion" [class.descripcion--colgada]="descripcionLarga() && !descripcionExpandida()">
-              {{ descripcion() || 'Esta sucursal todavía no cargó su descripción.' }}
-            </p>
-            @if (descripcionLarga()) {
-              <button class="link-btn" type="button" (click)="alternarDescripcion()">
-                {{ descripcionExpandida() ? 'Ver menos' : 'Ver más' }}
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m6 9 6 6 6-6" [attr.transform]="descripcionExpandida() ? 'rotate(180 12 12)' : null" />
-                </svg>
-              </button>
-            }
-          </article>
+          @if (descripcion(); as descripcionTexto) {
+            <article class="panel panel--descripcion">
+              <header class="panel__head">
+                <h2>Sobre esta sucursal</h2>
+              </header>
+              <p class="descripcion" [class.descripcion--colgada]="descripcionLarga() && !descripcionExpandida()">
+                {{ descripcionTexto }}
+              </p>
+              @if (descripcionLarga()) {
+                <button dsButton class="link-btn" type="button" (click)="alternarDescripcion()">
+                  {{ descripcionExpandida() ? 'Ver menos' : 'Ver más' }}
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" [attr.transform]="descripcionExpandida() ? 'rotate(180 12 12)' : null" />
+                  </svg>
+                </button>
+              }
+            </article>
+          } @else {
+            <article class="panel panel--descripcion">
+              <header class="panel__head">
+                <h2>Sobre esta sucursal</h2>
+              </header>
+              <p class="descripcion">
+                Esta sucursal todavía no cargó su descripción.
+              </p>
+            </article>
+          }
 
           <div class="datos">
             @if (s.direccion?.trim()) {
@@ -224,7 +237,7 @@
               <p class="panel__aviso" role="alert">{{ avisoRol() }}</p>
             }
 
-            <button
+            <button dsButton
               class="btn btn--primary btn--block"
               type="button"
               [disabled]="navegando()"
@@ -331,7 +344,7 @@
         </div>
         <div class="detalle__cta-acciones">
           <a class="btn btn--ghost" routerLink="/sucursales">Volver</a>
-          <button
+          <button dsButton
             class="btn btn--primary"
             type="button"
             [disabled]="navegando()"

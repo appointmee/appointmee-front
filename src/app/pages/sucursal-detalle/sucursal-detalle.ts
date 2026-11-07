@@ -1,3 +1,4 @@
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -40,7 +41,7 @@ const LARGO_DESCRIPCION_COLGADA = 280;
 
 @Component({
   selector: 'app-sucursal-detalle',
-  imports: [ErrorPage, EquipoSucursal, ReseniasSucursal, RouterLink],
+  imports: [DsButtonComponent, ErrorPage, EquipoSucursal, ReseniasSucursal, RouterLink],
   templateUrl: './sucursal-detalle.html',
   styleUrl: './sucursal-detalle.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -199,9 +200,8 @@ export class SucursalDetalle {
 
   protected onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    if (img.src !== this.placeholderImage) {
-      img.src = this.placeholderImage;
-    }
+    img.onerror = null;
+    img.src = this.placeholderImage;
   }
 
   private cargar(idParam: string | null): Observable<CargaResultado> {

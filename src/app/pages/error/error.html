@@ -17,12 +17,12 @@
         <a class="error-button error-button--quiet" routerLink="/">Ir al inicio</a>
       } @else {
         @if (canRetry) {
-          <button class="error-button error-button--primary" type="button" [disabled]="retrying()" (click)="retry()">
+          <button dsButton class="error-button error-button--primary" type="button" [disabled]="retrying()" (click)="retry()">
             {{ retrying() ? 'Reintentando…' : 'Reintentar' }}
           </button>
         }
         @if (hasInternalHistory()) {
-          <button class="error-button" type="button" (click)="goBack()">Volver</button>
+          <button dsButton class="error-button" type="button" (click)="goBack()">Volver</button>
         } @else {
           <a class="error-button" routerLink="/sucursales">Ver sucursales</a>
         }

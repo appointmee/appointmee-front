@@ -37,7 +37,7 @@
       } @else {
       @if (auth.restaurando()) {
         <!-- Placeholder durante la restauración de sesión (criterio 11). -->
-        <button
+        <button dsButton
           class="profile profile--placeholder"
           type="button"
           disabled
@@ -56,7 +56,7 @@
         </a>
       } @else {
         <div class="profile">
-          <button
+          <button dsButton
             class="profile__trigger"
             type="button"
             (click)="toggleProfile($event)"
@@ -66,8 +66,8 @@
             aria-label="Abrir menú de cuenta"
           >
             <!-- Foto del usuario o iniciales como fallback (criterio 5). -->
-            @if (auth.perfil()?.fotoPerfil; as foto) {
-              <span class="profile__avatar"><img [src]="foto" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></span>
+            @if (fotoPerfil(); as foto) {
+              <span class="profile__avatar"><img [src]="foto" (error)="onFotoError(foto)" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></span>
             } @else {
               <span class="profile__avatar" aria-hidden="true">{{ auth.iniciales() }}</span>
             }
@@ -88,8 +88,8 @@
           @if (profileOpen()) {
             <div class="menu" id="profile-menu" role="menu" aria-label="Cuenta">
               <div class="menu__head">
-                @if (auth.perfil()?.fotoPerfil; as foto) {
-                  <span class="menu__avatar"><img [src]="foto" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></span>
+                @if (fotoPerfil(); as foto) {
+                  <span class="menu__avatar"><img [src]="foto" (error)="onFotoError(foto)" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></span>
                 } @else {
                   <span class="menu__avatar" aria-hidden="true">{{ auth.iniciales() }}</span>
                 }
@@ -108,7 +108,7 @@
                 </a>
               }
               <div class="menu__divider"></div>
-              <button
+              <button dsButton
                 class="menu__link menu__link--danger"
                 type="button"
                 role="menuitem"
@@ -124,7 +124,7 @@
         </div>
       }
 
-      <button
+      <button dsButton
         #burger
         class="burger"
         type="button"
@@ -233,7 +233,7 @@
           }
         </ul>
 
-        <button class="sheet__logout" type="button" (click)="logout()">
+        <button dsButton class="sheet__logout" type="button" (click)="logout()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path [attr.d]="icons.logout" />
           </svg>

@@ -6,10 +6,10 @@
     <div class="registro__datos">
     <div class="login__field">
       <label for="registro-nombre">Nombre</label>
-      <input id="registro-nombre" type="text" autocomplete="given-name"
+      <ds-input><input #dsNativeControl id="registro-nombre" type="text" autocomplete="given-name"
              [formField]="registroForm.nombre" [readOnly]="cargando()"
              [attr.aria-invalid]="registroForm.nombre().touched() && (registroForm.nombre().invalid())"
-             aria-describedby="registro-nombre-error" />
+             aria-describedby="registro-nombre-error" /></ds-input>
       <div id="registro-nombre-error" class="login__validation" aria-live="polite">
         @if (registroForm.nombre().touched()) {
           @for (error of registroForm.nombre().errors(); track error.kind) {
@@ -20,10 +20,10 @@
     </div>
     <div class="login__field">
       <label for="registro-apellido">Apellido</label>
-      <input id="registro-apellido" type="text" autocomplete="family-name"
+      <ds-input><input #dsNativeControl id="registro-apellido" type="text" autocomplete="family-name"
              [formField]="registroForm.apellido" [readOnly]="cargando()"
              [attr.aria-invalid]="registroForm.apellido().touched() && (registroForm.apellido().invalid())"
-             aria-describedby="registro-apellido-error" />
+             aria-describedby="registro-apellido-error" /></ds-input>
       <div id="registro-apellido-error" class="login__validation" aria-live="polite">
         @if (registroForm.apellido().touched()) {
           @for (error of registroForm.apellido().errors(); track error.kind) {
@@ -34,10 +34,10 @@
     </div>
     <div class="login__field">
       <label for="registro-email">Email</label>
-      <input id="registro-email" type="email" autocomplete="email"
+      <ds-input><input #dsNativeControl id="registro-email" type="email" autocomplete="email"
              [formField]="registroForm.email" [readOnly]="cargando()"
              [attr.aria-invalid]="registroForm.email().touched() && (registroForm.email().invalid())"
-             aria-describedby="registro-email-error" />
+             aria-describedby="registro-email-error" /></ds-input>
       <div id="registro-email-error" class="login__validation" aria-live="polite">
         @if (registroForm.email().touched()) {
           @for (error of registroForm.email().errors(); track error.kind) {
@@ -48,10 +48,10 @@
     </div>
     <div class="login__field">
       <label for="registro-confirmarEmail">Confirmar email</label>
-      <input id="registro-confirmarEmail" type="email" autocomplete="off"
+      <ds-input><input #dsNativeControl id="registro-confirmarEmail" type="email" autocomplete="off"
              [formField]="registroForm.confirmarEmail" [readOnly]="cargando()" (paste)="impedirPegado($event)" (drop)="impedirPegado($event)"
              [attr.aria-invalid]="registroForm.confirmarEmail().touched() && (registroForm.confirmarEmail().invalid() || !emailsCoinciden())"
-             aria-describedby="registro-confirmarEmail-error" />
+             aria-describedby="registro-confirmarEmail-error" /></ds-input>
       <div id="registro-confirmarEmail-error" class="login__validation" aria-live="polite">
         @if (registroForm.confirmarEmail().touched()) {
           @for (error of registroForm.confirmarEmail().errors(); track error.kind) {
@@ -68,11 +68,11 @@
     <div class="login__field">
       <label for="registro-password">Contraseña</label>
       <div class="login__password">
-      <input id="registro-password" [type]="mostrarPassword() ? 'text' : 'password'" autocomplete="new-password"
+      <ds-input><input #dsNativeControl id="registro-password" [type]="mostrarPassword() ? 'text' : 'password'" autocomplete="new-password"
              [formField]="registroForm.password" [readOnly]="cargando()"
              [attr.aria-invalid]="registroForm.password().touched() && (registroForm.password().invalid())"
-             aria-describedby="registro-password-error registro-password-ayuda" />
-        <button class="login__toggle" type="button" aria-controls="registro-password registro-confirmarPassword"
+             aria-describedby="registro-password-error registro-password-ayuda" /></ds-input>
+        <button dsButton class="login__toggle" type="button" aria-controls="registro-password registro-confirmarPassword"
                 [attr.aria-pressed]="mostrarPassword()"
                 [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseñas' : 'Mostrar contraseñas'"
                 (click)="mostrarPassword.set(!mostrarPassword())">
@@ -98,10 +98,10 @@
     </div>
     <div class="login__field">
       <label for="registro-confirmarPassword">Confirmar contraseña</label>
-      <input id="registro-confirmarPassword" [type]="mostrarPassword() ? 'text' : 'password'" autocomplete="off"
+      <ds-input><input #dsNativeControl id="registro-confirmarPassword" [type]="mostrarPassword() ? 'text' : 'password'" autocomplete="off"
              [formField]="registroForm.confirmarPassword" [readOnly]="cargando()" (paste)="impedirPegado($event)" (drop)="impedirPegado($event)"
              [attr.aria-invalid]="registroForm.confirmarPassword().touched() && (registroForm.confirmarPassword().invalid() || !passwordsCoinciden())"
-             aria-describedby="registro-confirmarPassword-error" />
+             aria-describedby="registro-confirmarPassword-error" /></ds-input>
       <div id="registro-confirmarPassword-error" class="login__validation" aria-live="polite">
         @if (registroForm.confirmarPassword().touched()) {
           @for (error of registroForm.confirmarPassword().errors(); track error.kind) {
@@ -126,7 +126,7 @@
         <a routerLink="/olvide-mi-contrasena">Restablecer contraseña</a>
       </div>
     }
-    <button class="login__submit" type="submit" [disabled]="cargando()">
+    <button dsButton class="login__submit" type="submit" [disabled]="cargando()">
       @if (cargando()) { <span class="login__spinner" aria-hidden="true"></span> }
       {{ cargando() ? 'Creando cuenta…' : puedeReintentar() ? 'Reintentar' : 'Crear cuenta' }}
     </button>
