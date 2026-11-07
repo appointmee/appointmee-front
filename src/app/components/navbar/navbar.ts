@@ -1,3 +1,4 @@
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -40,7 +41,7 @@ const ICONS = {
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [DsButtonComponent, RouterLink, RouterLinkActive],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,7 +61,7 @@ export class Navbar {
     this.fotoFallida.set(foto);
   }
 
-  private readonly burger = viewChild<ElementRef<HTMLButtonElement>>('burger');
+  private readonly burger = viewChild('burger', { read: ElementRef<HTMLButtonElement> });
   private readonly sheet = viewChild<ElementRef<HTMLElement>>('sheet');
 
   private readonly rutaActual = signal(this.router.url);

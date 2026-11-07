@@ -102,7 +102,7 @@
 }
 
 .search__input::placeholder {
-  color: #6b7485;
+  color: var(--muted);
 }
 
 .search__clear {

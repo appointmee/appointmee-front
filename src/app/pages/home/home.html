@@ -28,7 +28,7 @@
       }
     </div>
 
-    <button
+    <button dsButton
       class="landing-burger"
       type="button"
       [class.is-open]="mobileOpen()"
@@ -98,7 +98,7 @@
               <path d="m21 21-4.4-4.4M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
             </svg>
             <label class="sr-only" for="branch-search">Buscar sucursal por nombre</label>
-            <input
+            <ds-input><input #dsNativeControl
               id="branch-search"
               type="search"
               role="combobox"
@@ -113,10 +113,9 @@
                 activeSuggestionIndex() >= 0 ? 'branch-suggestion-' + activeSuggestionIndex() : null
               "
               (focus)="onSearchFocus()"
-              (keydown)="onSearchKeydown($event)"
-            />
+              (keydown)="onSearchKeydown($event)" /></ds-input>
             @if (term()) {
-              <button
+              <button dsButton
                 class="branch-search__clear"
                 type="button"
                 (click)="clearSearch()"
@@ -146,7 +145,7 @@
                 </p>
               } @else {
                 @for (sucursal of suggestions(); track sucursal.id; let i = $index) {
-                  <button
+                  <button dsButton
                     id="branch-suggestion-{{ i }}"
                     class="branch-suggestion"
                     type="button"

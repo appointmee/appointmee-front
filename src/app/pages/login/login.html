@@ -4,14 +4,18 @@
       <strong>Registro exitoso</strong>
       <p>Tu cuenta fue creada. Iniciá sesión para continuar con la verificación de tu email.</p>
     </div>
-    <button type="button" aria-label="Cerrar notificación de registro" (click)="registroExitoso.set(false)">✕</button>
+    <button dsButton type="button" aria-label="Cerrar notificación de registro" (click)="registroExitoso.set(false)">✕</button>
   </aside>
 }
 
 <section class="login" [class.login--modal]="modoModal()">
-  <form class="login__card" (submit)="onSubmit($event)" novalidate
-        aria-labelledby="login-titulo" [attr.aria-busy]="cargando()">
-
+  <form
+    class="login__card"
+    (submit)="onSubmit($event)"
+    novalidate
+    aria-labelledby="login-titulo"
+    [attr.aria-busy]="cargando()"
+  >
     <h1 id="login-titulo" class="login__titulo">Iniciar sesión</h1>
     <p class="login__sub">Ingresá a tu cuenta de AppointMee.</p>
 
@@ -28,11 +32,19 @@
 
     <div class="login__field">
       <label for="login-email">Email</label>
-      <input id="login-email" type="email" autocomplete="email"
-             [formField]="loginForm.email" [readOnly]="cargando()"
-             [attr.aria-invalid]="loginForm.email().touched() && loginForm.email().invalid()"
-             (input)="erroresBackend.update(v => ({ ...v, email: '' }))"
-             aria-describedby="login-email-error" />
+      <ds-input>
+        <input
+          #dsNativeControl
+          id="login-email"
+          type="email"
+          autocomplete="email"
+          [formField]="loginForm.email"
+          [readOnly]="cargando()"
+          [attr.aria-invalid]="loginForm.email().touched() && loginForm.email().invalid()"
+          (input)="erroresBackend.update(v => ({ ...v, email: '' }))"
+          aria-describedby="login-email-error"
+        />
+      </ds-input>
 
       <div id="login-email-error" class="login__validation" aria-live="polite">
         @if (loginForm.email().touched()) {
@@ -49,17 +61,29 @@
     <div class="login__field">
       <label for="login-password">Contraseña</label>
       <div class="login__password">
-        <input id="login-password" [type]="mostrarPassword() ? 'text' : 'password'"
-               autocomplete="current-password"
-               [formField]="loginForm.password" [readOnly]="cargando()"
-               [attr.aria-invalid]="loginForm.password().touched() && loginForm.password().invalid()"
-               (input)="erroresBackend.update(v => ({ ...v, password: '' }))"
-               aria-describedby="login-password-error" />
+        <ds-input>
+          <input
+            #dsNativeControl
+            id="login-password"
+            [type]="mostrarPassword() ? 'text' : 'password'"
+            autocomplete="current-password"
+            [formField]="loginForm.password"
+            [readOnly]="cargando()"
+            [attr.aria-invalid]="loginForm.password().touched() && loginForm.password().invalid()"
+            (input)="erroresBackend.update(v => ({ ...v, password: '' }))"
+            aria-describedby="login-password-error"
+          />
+        </ds-input>
 
-        <button class="login__toggle" type="button" aria-controls="login-password"
-                [attr.aria-pressed]="mostrarPassword()"
-                [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-                (click)="mostrarPassword.set(!mostrarPassword())">
+        <button
+          dsButton
+          class="login__toggle"
+          type="button"
+          aria-controls="login-password"
+          [attr.aria-pressed]="mostrarPassword()"
+          [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          (click)="mostrarPassword.set(!mostrarPassword())"
+        >
           {{ mostrarPassword() ? 'Ocultar' : 'Mostrar' }}
         </button>
       </div>
@@ -77,26 +101,43 @@
     </div>
 
     <div class="login__feedback" aria-live="polite" aria-atomic="true">
-      @if (mensaje()) { <p class="login__error">{{ mensaje() }}</p> }
+      @if (mensaje()) {
+        <p class="login__error">{{ mensaje() }}</p>
+      }
     </div>
 
     @if (emailSinVerificar()) {
-      <button class="login__link" type="button" (click)="irAVerificar()">Verificar mi email</button>
+      <button dsButton class="login__link" type="button" (click)="irAVerificar()">
+        Verificar mi email
+      </button>
     }
 
-    <button class="login__submit" type="submit" [disabled]="cargando()">
-      @if (cargando()) { <span class="login__spinner" aria-hidden="true"></span> }
+    <button dsButton class="login__submit" type="submit" [disabled]="cargando()">
+      @if (cargando()) {
+        <span class="login__spinner" aria-hidden="true"></span>
+      }
       {{ cargando() ? 'Ingresando…' : 'Iniciar sesión' }}
     </button>
 
     @if (puedeReintentar()) {
-      <button class="login__retry" type="submit" [disabled]="cargando()">Reintentar</button>
+      <button dsButton class="login__retry" type="submit" [disabled]="cargando()">
+        Reintentar
+      </button>
     }
 
-    <a class="login__forgot" routerLink="/olvide-mi-contrasena">Olvidé mi contraseña</a>
+    <a class="login__forgot" routerLink="/olvide-mi-contrasena">
+      Olvidé mi contraseña
+    </a>
 
-    <p class="login__alt">¿No tenés cuenta? <a routerLink="/registrarme"
-      [queryParams]="modoModal() ? { returnTo: destinoRetorno() } : {}">Crear cuenta</a></p>
+    <p class="login__alt">
+      ¿No tenés cuenta?
+      <a
+        routerLink="/registrarme"
+        [queryParams]="modoModal() ? { returnTo: destinoRetorno() } : {}"
+      >
+        Crear cuenta
+      </a>
+    </p>
   </form>
 </section>
 
@@ -104,5 +145,6 @@
   <app-cuenta-sin-verificar-modal
     [email]="loginModel().email"
     (aceptar)="irAVerificar()"
-    (cancelar)="cancelarVerificacion()" />
+    (cancelar)="cancelarVerificacion()"
+  />
 }

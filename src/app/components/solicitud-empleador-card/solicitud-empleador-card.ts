@@ -1,3 +1,4 @@
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import {
@@ -19,7 +20,7 @@ export type AccionSolicitudEmpleador = 'aprobar' | 'rechazar';
 
 @Component({
   selector: 'app-solicitud-empleador-card',
-  imports: [SolicitudEmpleadorDetalle],
+  imports: [DsButtonComponent, SolicitudEmpleadorDetalle],
   templateUrl: './solicitud-empleador-card.html',
   styleUrl: './solicitud-empleador-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

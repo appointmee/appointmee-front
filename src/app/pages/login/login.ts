@@ -1,5 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  input,
+  output,
+  signal
+} from '@angular/core';
+
+import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
+
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField, email, form, required } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -10,10 +22,9 @@ import { LoginModel } from '../../models/auth';
 import { ApiError } from '../../http/api-errors-service';
 import { authService } from '../../services/auth-service';
 import { destinoDespuesDelLogin } from '../../guards/login-destination';
-
 @Component({
   selector: 'app-login',
-  imports: [FormField, RouterLink, CuentaSinVerificarModal],
+  imports: [DsInputComponent, DsButtonComponent, FormField, RouterLink, CuentaSinVerificarModal],
   templateUrl: './login.html',
   styleUrl: './login.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

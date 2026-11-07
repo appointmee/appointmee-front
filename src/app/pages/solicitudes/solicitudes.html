@@ -48,7 +48,7 @@
               enviar esta solicitud.
             </p>
           } @else {
-            <button
+            <button dsButton
               class="boton boton--principal"
               type="button"
               [disabled]="!puedeSolicitar()"
@@ -94,7 +94,7 @@
             </span>
             <h3>No pudimos cargar tus solicitudes</h3>
             <p>{{ error() }}</p>
-            <button class="boton boton--ghost" type="button" [disabled]="reintentando()" (click)="reintentar()">
+            <button dsButton class="boton boton--ghost" type="button" [disabled]="reintentando()" (click)="reintentar()">
               {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
             </button>
           </div>
@@ -102,7 +102,7 @@
           @if (error()) {
             <div class="aviso aviso--error" role="alert">
               <p>{{ error() }}</p>
-              <button type="button" [disabled]="reintentando()" (click)="reintentar()">
+              <button dsButton type="button" [disabled]="reintentando()" (click)="reintentar()">
                 {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
               </button>
             </div>

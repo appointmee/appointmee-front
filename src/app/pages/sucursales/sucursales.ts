@@ -1,3 +1,5 @@
+import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -32,7 +34,7 @@ interface SolicitudBusqueda {
 
 @Component({
   selector: 'app-sucursales',
-  imports: [RouterLink],
+  imports: [DsInputComponent, DsButtonComponent, RouterLink],
   templateUrl: './sucursales.html',
   styleUrl: './sucursales.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

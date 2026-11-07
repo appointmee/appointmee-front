@@ -1,3 +1,5 @@
+import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField, email, form, maxLength, minLength, pattern, required } from '@angular/forms/signals';
@@ -9,7 +11,7 @@ import { authService } from '../../services/auth-service';
 
 @Component({
   selector: 'app-registrarme',
-  imports: [FormField, RouterLink],
+  imports: [DsInputComponent, DsButtonComponent, FormField, RouterLink],
   templateUrl: './registrarme.html',
   styleUrls: ['../login/login.css', './registrarme.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

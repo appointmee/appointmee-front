@@ -213,6 +213,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/admin/admin').then((module) => module.Administracion),
   },
   {
+    path: 'design-system',
+    title: 'AppointMee | Sistema de diseño',
+    loadComponent: () => import('./pages/design-system/design-system').then((m) => m.DesignSystemPage),
+  },
+  {
     path: '**',
     title: 'AppointMee | Página no encontrada',
     loadComponent: () =>

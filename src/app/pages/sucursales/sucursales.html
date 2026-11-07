@@ -17,9 +17,11 @@
         <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.3-4.3" />
         </svg>
-        <input
-          #searchInput
-          id="busqueda-sucursales"
+<ds-input>
+  <input
+    #dsNativeControl
+    #searchInput
+    id="busqueda-sucursales"
           type="search"
           class="search__input"
           [value]="searchTerm()"
@@ -27,10 +29,12 @@
           placeholder="Buscar por nombre..."
           autocomplete="off"
           spellcheck="false"
-          aria-describedby="busqueda-sucursales-ayuda"
-        />
+    aria-label="Buscar sucursales por nombre"
+    aria-describedby="busqueda-sucursales-ayuda"
+  />
+</ds-input>
         @if (searchTerm()) {
-          <button
+          <button dsButton
             type="button"
             class="search__clear"
             (click)="clearSearch()"
@@ -56,7 +60,7 @@
       </p>
 
       <div class="categorias" role="group" aria-label="Filtrar por categoría">
-        <button
+        <button dsButton
           type="button"
           class="categoria-chip"
           [class.categoria-chip--active]="selectedCategory() === null"
@@ -66,7 +70,7 @@
           Todas
         </button>
         @for (categoria of categorias(); track categoria) {
-          <button
+          <button dsButton
             type="button"
             class="categoria-chip"
             [class.categoria-chip--active]="selectedCategory() === categoria"
@@ -107,7 +111,7 @@
     } @else if (error()) {
       <p class="estado estado--error" role="alert">{{ error() }}</p>
       @if (!requiereLogin()) {
-        <button class="estado__link" type="button" [disabled]="reintentando()" (click)="retry()">
+        <button dsButton class="estado__link" type="button" [disabled]="reintentando()" (click)="retry()">
           {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
         </button>
       }

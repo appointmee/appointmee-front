@@ -1,3 +1,5 @@
+import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, signal, viewChildren } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { email, form, maxLength, pattern, required } from '@angular/forms/signals';
@@ -11,6 +13,7 @@ import { verificacionPendienteService } from '../../services/verificacion-pendie
 import { authService } from '../../services/auth-service';
 
 @Component({
+  imports: [DsInputComponent, DsButtonComponent],
   selector: 'app-configuracion',
   templateUrl: './configuracion.html',
   styleUrl: './configuracion.css',

@@ -1,9 +1,10 @@
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, input, output, viewChild } from '@angular/core';
 import { LoginPage } from '../../pages/login/login';
 
 @Component({
   selector: 'app-login-modal',
-  imports: [LoginPage],
+  imports: [DsButtonComponent, LoginPage],
   templateUrl: './login-modal.html',
   styleUrl: './login-modal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
