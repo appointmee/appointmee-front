@@ -143,7 +143,7 @@
                     (click)="selectSuggestion(sucursal)"
                   >
                     @if (sucursal.fotoPerfil) {
-                      <img [src]="sucursal.fotoPerfil" alt="" (error)="onSuggestionImageError($event)" />
+                      <img [src]="sucursal.fotoPerfil" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" (error)="onSuggestionImageError($event)" />
                     } @else {
                       <span class="branch-suggestion__placeholder" aria-hidden="true"></span>
                     }

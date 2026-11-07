@@ -67,7 +67,7 @@
           >
             <!-- Foto del usuario o iniciales como fallback (criterio 5). -->
             @if (auth.perfil()?.fotoPerfil; as foto) {
-              <span class="profile__avatar"><img [src]="foto" alt="" /></span>
+              <span class="profile__avatar"><img [src]="foto" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></span>
             } @else {
               <span class="profile__avatar" aria-hidden="true">{{ auth.iniciales() }}</span>
             }
@@ -89,7 +89,7 @@
             <div class="menu" id="profile-menu" role="menu" aria-label="Cuenta">
               <div class="menu__head">
                 @if (auth.perfil()?.fotoPerfil; as foto) {
-                  <span class="menu__avatar"><img [src]="foto" alt="" /></span>
+                  <span class="menu__avatar"><img [src]="foto" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></span>
                 } @else {
                   <span class="menu__avatar" aria-hidden="true">{{ auth.iniciales() }}</span>
                 }

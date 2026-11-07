@@ -218,3 +218,61 @@ Una tarea está terminada solo cuando:
 - Los commits están separados por funcionalidad.
 - El PR apunta a `develop` y su descripción incluye qué cambió, cómo se probó y riesgos.
 - El working tree queda limpio o se informa exactamente qué quedó pendiente y por qué.
+
+## 8. Requisitos transversales de aceptación (US-GEN-01 y US-GEN-04)
+
+### Diseño (US-GEN-01)
+
+- Tokens centralizados en `src/styles.css`; sin valores hardcodeados en componentes nuevos.
+- Contraste WCAG AA documentado (4,5:1 texto normal / 3:1 texto grande).
+- Componentes en `src/app/shared/ui/` con estados default/hover/focus/active/disabled/loading/error
+  solo cuando aplica.
+- Accesibilidad: labels, foco visible, semántica, `aria-live`, foco en diálogos, Escape.
+- Sin selectores por ID únicos ni estructuras frágiles.
+- Textos personalizables por pantalla.
+- Demo en `/design-system`; documentación en `docs/design-system.md`.
+- Las pantallas activas deben usar el sistema; si una no lo usa, documentar la razón.
+
+### Seguridad y calidad (US-GEN-04)
+
+Checklist de aceptación de la historia (US-GEN-04 · Seguridad y calidad del frontend):
+
+- [ ] Todo dato dinámico se escapa antes de insertarse en el DOM.
+- [ ] No se usa `innerHTML` con datos de usuario sin sanitización.
+- [ ] No se guardan tokens, contraseñas ni códigos OTP en URLs, logs o analytics.
+- [ ] El `returnTo` se valida contra una lista de rutas internas.
+- [ ] Los formularios validan en cliente y en servidor; el cliente no es la única defensa.
+- [ ] No hay secretos ni claves en el código del frontend.
+- [ ] Las dependencias se mantienen actualizadas y sin vulnerabilidades críticas conocidas.
+- [ ] Se definen políticas de CSP y cabeceras de seguridad si el despliegue lo permite.
+- [ ] No hay errores en consola en los flujos principales.
+- [ ] Los flujos críticos tienen pruebas E2E: login, registro + verificación, recuperación, búsqueda, detalle y selección de servicio, sin errores en consola.
+- [ ] Los errores de red se manejan sin exponer detalles internos.
+- [ ] Se revisa que las imágenes externas no rompan la privacidad ni el rendimiento.
+
+Estado en la rama `SCRUM-243-seguridad-y-calidad-del-frontend`: criterios cubiertos con
+`returnTo` validado y tests de guards, endurecimiento de tokens/OTP y CSP básica definida;
+flujos E2E críticos en curso (Playwright).
+
+### Integraciones nuevas
+
+Toda integración nueva (backend, proveedor externo o servicio) debe cumplir el checklist de
+seguridad y calidad de la US-GEN-04 antes de abrir su PR:
+
+- Todo dato dinámico se escapa antes de insertarse en el DOM; prohibido `innerHTML` con datos
+  de usuario sin sanitización.
+- Tokens/OTP/password fuera de URLs/logs/analytics; `beforeSend` limpia query/hash.
+- `returnTo` validado contra la lista de rutas internas antes de redirigir.
+- Formularios validados en cliente y servidor; errores de red sin detalles internos.
+- Sin secretos en el frontend; dependencias actualizadas y sin vulnerabilidades críticas.
+- CSP y cabeceras de seguridad definidas; errores sin datos sensibles; imágenes con política de privacidad.
+
+Antes de cerrar cualquier PR de integración nueva: checklist de seguridad US-GEN-04
+completado o con limitación concreta documentada.
+
+### Criterios transversales
+
+- Antes de cerrar una historia: checklist de diseño/seguridad completado o con limitación concreta.
+- Tests nuevos para cada criterio nuevo; build + suite completa en verde.
+- PR contra `develop`; descripción con qué cambió, cómo se probó y riesgos.
+
