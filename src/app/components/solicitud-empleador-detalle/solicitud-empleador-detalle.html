@@ -1,8 +1,12 @@
 <div class="detalle">
   <div class="detalle__cabecera">
     <div>
-      <span class="detalle__eyebrow">Detalle de la solicitud</span>
-      <h3>Solicitud #{{ detalle().id }}</h3>
+      @if (modo() === 'admin') {
+        <span class="detalle__eyebrow">Detalle de la solicitud</span>
+        <h3>Solicitud #{{ detalle().id }}</h3>
+      } @else {
+        <h3>Detalles de la solicitud</h3>
+      }
     </div>
     <span [class]="'estado ' + claseEstado()">{{ etiqueta() }}</span>
   </div>
