@@ -170,6 +170,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/section/section').then((module) => module.Section),
   },
   {
+    path: 'design-system',
+    title: 'AppointMee | Sistema de diseño',
+    loadComponent: () => import('./pages/design-system/design-system').then((m) => m.DesignSystemPage),
+  },
+  {
     path: '**',
     title: 'AppointMee | Página no encontrada',
     loadComponent: () =>
