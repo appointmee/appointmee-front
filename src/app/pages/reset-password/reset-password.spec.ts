@@ -1,9 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { ResetPasswordPage } from './reset-password';
 import { authService } from '../../services/auth-service';
 import { MensajeResponse } from '../../models/auth';
+import { captureResetPasswordToken } from '../../security/reset-password-token';
 
 describe('Restablecer contraseña', () => {
   let fixture: ComponentFixture<ResetPasswordPage>;
@@ -12,8 +13,16 @@ describe('Restablecer contraseña', () => {
   const auth = { restablecerPassword: vi.fn(), validarEnlaceRecuperacion: vi.fn() };
   const token = 'token-de-prueba-para-restablecer';
 
+  function capturarToken(): void {
+    captureResetPasswordToken(
+      { href: `https://appointmee.example/reset-password?token=${encodeURIComponent(token)}` } as Location,
+      { state: null, replaceState: vi.fn() } as unknown as History,
+    );
+  }
+
   beforeEach(async () => {
     vi.resetAllMocks();
+    capturarToken();
     respuesta = new Subject<MensajeResponse>();
     auth.restablecerPassword.mockReturnValue(respuesta);
     auth.validarEnlaceRecuperacion.mockReturnValue(of({ valido: true, expiresInSeconds: 900 }));
@@ -22,7 +31,6 @@ describe('Restablecer contraseña', () => {
       providers: [
         provideRouter([]),
         { provide: authService, useValue: auth },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({ token }) } } },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(ResetPasswordPage);
@@ -77,8 +85,6 @@ describe('Restablecer contraseña', () => {
 
   it('no muestra el formulario si falta el token', () => {
     fixture.destroy();
-    const route = TestBed.inject(ActivatedRoute);
-    Object.defineProperty(route.snapshot, 'queryParamMap', { value: convertToParamMap({}), configurable: true });
     fixture = TestBed.createComponent(ResetPasswordPage);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('form')).toBeNull();
@@ -89,6 +95,7 @@ describe('Restablecer contraseña', () => {
     fixture.destroy();
     const validacion = new Subject<{ valido: boolean; expiresInSeconds: number }>();
     auth.validarEnlaceRecuperacion.mockReturnValue(validacion);
+    capturarToken();
     fixture = TestBed.createComponent(ResetPasswordPage);
     page = fixture.componentInstance;
     fixture.detectChanges();
@@ -104,6 +111,7 @@ describe('Restablecer contraseña', () => {
   it('si falla la validación por red permite reintentar sin habilitar el formulario', () => {
     fixture.destroy();
     auth.validarEnlaceRecuperacion.mockReturnValueOnce(throwError(() => ({ status: 0 })));
+    capturarToken();
     fixture = TestBed.createComponent(ResetPasswordPage); fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('No pudimos comprobar el enlace');
     expect(fixture.nativeElement.querySelector('input')).toBeNull();
@@ -116,6 +124,7 @@ describe('Restablecer contraseña', () => {
     vi.useFakeTimers();
     try {
       auth.validarEnlaceRecuperacion.mockReturnValue(of({ valido: true, expiresInSeconds: 1 }));
+      capturarToken();
       fixture = TestBed.createComponent(ResetPasswordPage); fixture.detectChanges();
       expect(fixture.nativeElement.querySelector('input')).not.toBeNull();
       await vi.advanceTimersByTimeAsync(1000); fixture.detectChanges();
