@@ -1,3 +1,5 @@
+import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField, email, form, required } from '@angular/forms/signals';
@@ -12,7 +14,7 @@ import { destinoDespuesDelLogin } from '../../guards/login-destination';
 
 @Component({
   selector: 'app-login',
-  imports: [FormField, RouterLink, CuentaSinVerificarModal],
+  imports: [DsInputComponent, DsButtonComponent, FormField, RouterLink, CuentaSinVerificarModal],
   templateUrl: './login.html',
   styleUrl: './login.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

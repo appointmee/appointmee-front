@@ -16,7 +16,7 @@
         <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.3-4.3" />
         </svg>
-        <input
+        <ds-input><input #dsNativeControl
           type="search"
           class="search__input"
           [value]="searchTerm()"
@@ -24,10 +24,9 @@
           placeholder="Buscar por nombre..."
           autocomplete="off"
           spellcheck="false"
-          aria-label="Buscar sucursales por nombre"
-        />
+          aria-label="Buscar sucursales por nombre" /></ds-input>
         @if (searchTerm()) {
-          <button
+          <ds-button
             type="button"
             class="search__clear"
             (click)="clearSearch()"
@@ -36,30 +35,30 @@
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m6 6 12 12M18 6 6 18" />
             </svg>
-          </button>
+          </ds-button>
         }
       </form>
 
       <div class="categorias" role="group" aria-label="Filtrar por categoría">
-        <button
+        <ds-button
           type="button"
           class="categoria-chip"
           [class.categoria-chip--active]="selectedCategory() === null"
           (click)="selectCategory(null)"
-          [attr.aria-pressed]="selectedCategory() === null"
+          [aria-pressed]="selectedCategory() === null"
         >
           Todas
-        </button>
+        </ds-button>
         @for (categoria of categorias(); track categoria) {
-          <button
+          <ds-button
             type="button"
             class="categoria-chip"
             [class.categoria-chip--active]="selectedCategory() === categoria"
             (click)="selectCategory(categoria)"
-            [attr.aria-pressed]="selectedCategory() === categoria"
+            [aria-pressed]="selectedCategory() === categoria"
           >
             {{ humanizeCategory(categoria) }}
-          </button>
+          </ds-button>
         }
       </div>
     </div>
@@ -80,9 +79,9 @@
     } @else if (error()) {
       <p class="estado estado--error" role="alert">{{ error() }}</p>
       @if (!requiereLogin()) {
-        <button class="estado__link" type="button" [disabled]="reintentando()" (click)="retry()">
+        <ds-button class="estado__link" type="button" [disabled]="reintentando()" (click)="retry()">
           {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
-        </button>
+        </ds-button>
       }
       @if (requiereLogin()) {
         <p class="estado">

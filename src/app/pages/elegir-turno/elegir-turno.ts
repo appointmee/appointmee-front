@@ -1,3 +1,5 @@
+import { DsSelectComponent } from '../../shared/ui/misc/misc.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -13,7 +15,7 @@ import { turnoService } from '../../services/turno-service';
 
 @Component({
   selector: 'app-elegir-turno',
-  imports: [RouterLink, LoginModal],
+  imports: [DsSelectComponent, DsButtonComponent, RouterLink, LoginModal],
   templateUrl: './elegir-turno.html',
   styleUrl: './elegir-turno.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

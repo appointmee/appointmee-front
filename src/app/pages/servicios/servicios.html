@@ -72,9 +72,9 @@
           @if (requiereLogin()) {
             <a class="boton" routerLink="/login">Iniciar sesión</a>
           } @else if (!requiereRolCliente()) {
-            <button class="boton" type="button" [disabled]="reintentando()" (click)="reintentar()">
+            <ds-button class="boton" type="button" [disabled]="reintentando()" (click)="reintentar()">
               {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
-            </button>
+            </ds-button>
           }
           <a class="boton boton--ghost" [routerLink]="detalleUrl()">Volver al detalle</a>
         </div>

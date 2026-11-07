@@ -1,3 +1,4 @@
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
@@ -23,7 +24,7 @@ type ResultadoServicios =
 
 @Component({
   selector: 'app-servicios',
-  imports: [RouterLink],
+  imports: [DsButtonComponent, RouterLink],
   templateUrl: './servicios.html',
   styleUrl: './servicios.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

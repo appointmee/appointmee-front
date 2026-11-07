@@ -8,7 +8,7 @@
   } @else if (error()) {
     <div role="alert">
       <p>{{ error() }}</p>
-      <button type="button" (click)="reintentar()">Reintentar</button>
+      <ds-button type="button" (click)="reintentar()">Reintentar</ds-button>
     </div>
   } @else if (servicio(); as servicio) {
     <h2>{{ servicio.nombre }}</h2>
@@ -18,18 +18,18 @@
       <p role="status">No hay profesionales disponibles para esta sucursal.</p>
     } @else {
       <label for="turnos-profesional">Profesional</label>
-      <select id="turnos-profesional" [value]="empleadoId()" (change)="cambiarProfesional($event)">
+      <ds-select id="turnos-profesional" [value]="empleadoId()" (change)="cambiarProfesional($event)">
         @for (empleado of empleados(); track empleado.id) {
           <option [value]="empleado.id">{{ empleado.nombre }} {{ empleado.apellido }}</option>
         }
-      </select>
+      </ds-select>
 
       @if (cargandoHorarios()) {
         <p role="status">Consultando horarios disponibles…</p>
       } @else if (errorHorarios()) {
         <div role="alert">
           <p>{{ errorHorarios() }}</p>
-          <button type="button" (click)="reintentarHorarios()">Reintentar horarios</button>
+          <ds-button type="button" (click)="reintentarHorarios()">Reintentar horarios</ds-button>
         </div>
       } @else {
         @for (dia of disponibilidad(); track dia.fecha) {
@@ -37,11 +37,11 @@
             <h3>{{ dia.fecha }}</h3>
             <div class="turnos__horarios">
               @for (hora of dia.horarios; track hora) {
-                <button type="button" [attr.aria-label]="'Elegir ' + hora.slice(0, 5) + ' del ' + dia.fecha"
-                        [attr.aria-pressed]="seleccionado()?.fecha === dia.fecha && seleccionado()?.hora === hora && seleccionado()?.empleadoId === empleadoId()"
+                <ds-button type="button" [aria-label]="'Elegir ' + hora.slice(0, 5) + ' del ' + dia.fecha"
+                        [aria-pressed]="seleccionado()?.fecha === dia.fecha && seleccionado()?.hora === hora && seleccionado()?.empleadoId === empleadoId()"
                         (click)="elegirHorario(dia.fecha, hora, $event)">
                   {{ hora.slice(0, 5) }}
-                </button>
+                </ds-button>
               } @empty {
                 <p>Sin horarios disponibles este día.</p>
               }

@@ -205,7 +205,44 @@ Para documentación:
 3. Commitear los documentos con `docs: ...`.
 4. Pushear y, si corresponde, abrir PR contra `develop`.
 
-## 7. Definición de terminado
+## 7. Sistema de diseño (US-GEN-01)
+
+El frontend debe usar el sistema de diseño reutilizable. Es obligatorio para pantallas nuevas
+y para refactors de pantallas existentes.
+
+- **Tokens:** viven en `:root` de `src/styles.css` (color, tipografía, espaciado, radios,
+  sombras y breakpoints). No hardcodear colores, tamaños ni sombras si existe un token.
+- **Componentes:** viven en `src/app/shared/ui/` y son standalone + `OnPush`:
+  `ds-button`, `ds-input`, `ds-select`, `ds-checkbox`, `ds-radio`, `ds-card`, `ds-badge`,
+  `ds-alert`, `ds-toast`, `ds-modal`, `ds-skeleton`, `ds-empty-state`, `ds-pagination`.
+- **Demo/documentación:** `/design-system` y `docs/design-system.md`. Todo componente nuevo
+  debe sumar su ejemplo y sus estados a la demo.
+- **Contraste:** toda combinación texto/fondo debe cumplir WCAG AA (4,5:1 normal, 3:1 grande).
+  Si se agrega un color, actualizar la tabla de contraste en `docs/design-system.md`.
+- **Estados:** definir solo los que aplican al componente (default, hover, focus, active,
+  disabled, loading, error) y documentar por qué se omite el resto.
+- **Accesibilidad:** labels asociados, foco visible, semántica/roles, `aria-live`/`role=alert`,
+  gestión de foco y Escape en diálogos, navegación completa por teclado.
+- **Textos:** todo texto visible debe poder personalizarse por pantalla (inputs, `ng-content`
+  o API equivalente). No hardcodear textos de producto dentro de los componentes.
+- **CSS:** no usar selectores por ID único ni estructuras frágiles; preferir clases y tokens.
+- **Aplicación:** las pantallas activas (`home`, `sucursales`, detalle, `servicios`, `login`,
+  `registrarme`, `configuracion`, `error`, 404 y modales) deben usar los componentes/tokens,
+  no una biblioteca aislada. Al tocar una pantalla, migrar sus controles al sistema.
+- **Tests:** cubrir estados e interacciones accesibles (teclado, foco, `aria-*`) de cada
+  componente nuevo o modificado. Build y suite completa deben pasar antes del PR.
+
+Checklist para dar por terminada una tarea del sistema de diseño:
+
+- [ ] Tokens usados; sin valores repetidos hardcodeados.
+- [ ] Componente con estados aplicables y textos configurables.
+- [ ] Accesibilidad por teclado y lector verificada o documentada.
+- [ ] Contraste AA documentado.
+- [ ] Demo y documentación actualizadas.
+- [ ] Pantallas activas migradas (o limitación concreta documentada en el PR).
+- [ ] Tests, build y suite completa en verde.
+
+## 8. Definición de terminado
 
 Una tarea está terminada solo cuando:
 
