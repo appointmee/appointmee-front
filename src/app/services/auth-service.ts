@@ -129,6 +129,9 @@ export class authService {
 
 
 
+
+
+
   // Verificación de la cuenta (endpoints públicos)
 
   estadoVerificacion(): Observable<EstadoVerificacion> {

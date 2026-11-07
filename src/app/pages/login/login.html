@@ -1,7 +1,10 @@
 @if (registroExitoso()) {
-  <aside class="registro-notificacion" role="status">
-    <div><strong>Registro exitoso</strong><p>Iniciá sesión para continuar y verificar tu email.</p></div>
-    <button type="button" aria-label="Cerrar notificación" (click)="registroExitoso.set(false)">✕</button>
+  <aside class="registro-notificacion" role="status" aria-live="polite">
+    <div>
+      <strong>Registro exitoso</strong>
+      <p>Tu cuenta fue creada. Iniciá sesión para continuar con la verificación de tu email.</p>
+    </div>
+    <button type="button" aria-label="Cerrar notificación de registro" (click)="registroExitoso.set(false)">✕</button>
   </aside>
 }
 

@@ -72,8 +72,8 @@
 
     <div class="navbar__actions">
       @if (navbarSimple()) {
-        <a class="navbar__cta navbar__cta--solid navbar__cta--auth" routerLink="/registrarme">
-          Crear cuenta
+        <a class="navbar__cta navbar__cta--solid navbar__cta--auth" [routerLink]="enRegistro() ? '/login' : '/registrarme'">
+          {{ enRegistro() ? 'Iniciar sesión' : 'Crear cuenta' }}
         </a>
       } @else {
       @if (mostrarBuscador()) {

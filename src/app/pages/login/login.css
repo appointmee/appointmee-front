@@ -223,6 +223,7 @@ button.login__link {
   right: 20px;
   z-index: 1100;
   display: flex;
+  align-items: flex-start;
   gap: 16px;
   width: min(380px, calc(100vw - 40px));
   padding: 18px;
@@ -230,12 +231,23 @@ button.login__link {
   border-radius: 14px;
   background: var(--surface);
   color: var(--text);
+  box-shadow: 0 12px 36px #0005;
 }
+
+.registro-notificacion p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .registro-notificacion button {
-  align-self: start;
-  padding: 8px;
+  padding: 4px 8px;
   border: 0;
   background: transparent;
   color: inherit;
   cursor: pointer;
+}
+
+.registro-notificacion button:focus-visible {
+  outline: 2px solid var(--accent);
 }

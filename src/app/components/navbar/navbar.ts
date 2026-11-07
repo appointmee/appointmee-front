@@ -76,6 +76,7 @@ export class Navbar {
     const ruta = this.rutaActual().split(/[?#]/)[0].replace(/\/+$/, '');
     return !this.navbarSimple() && ruta !== '/sucursales' && ruta !== '/listado-sucursales';
   });
+  protected readonly enRegistro = computed(() => this.rutaActual().split(/[?#]/)[0] === '/registrarme');
 
   protected readonly mobileOpen = signal(false);
   protected readonly profileOpen = signal(false);
