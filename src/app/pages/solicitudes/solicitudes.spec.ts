@@ -254,19 +254,58 @@ describe('Solicitudes · empleador', () => {
     expect(host.textContent).toContain('Ya tenés una solicitud pendiente de revisión');
   });
 
-  it('explica que un administrador o empleador no necesita enviar la solicitud', () => {
+  it.each([['ADMINISTRADOR'], ['ADMINISTRADOR', 'EMPLEADOR']])('el administrador %j solo ve el aviso y no consulta solicitudes propias', (...roles: string[]) => {
     responderLista([]);
     fixture.destroy();
 
-    auth.tieneAlgunRol.mockReturnValue(true);
+    auth.tieneAlgunRol.mockImplementation((...consultados: string[]) => consultados.some(rol => roles.includes(rol)));
     fixture = TestBed.createComponent(Solicitudes);
     fixture.detectChanges();
 
-    listar().flush([]);
-    fixture.detectChanges();
+    backend.expectNone(request => request.url.includes('/solicitudes-empleador/'));
 
     const host = fixture.nativeElement as HTMLElement;
-    expect(host.textContent).toContain('permisos de administrador o empleador');
+    expect(host.textContent).toContain('permisos de administrador');
+    expect(host.textContent).not.toContain('No pudimos cargar tus solicitudes');
+    expect(host.textContent).not.toContain('Todavía no enviaste solicitudes');
+    expect(host.textContent).not.toContain('Reintentar');
     expect(host.querySelector('.boton--principal')).toBeNull();
+  });
+
+  it('el empleador confirma antes de abrir el formulario y puede cancelar sin enviar', () => {
+    responderLista([]); fixture.destroy();
+    auth.tieneAlgunRol.mockImplementation((...roles: string[]) => roles.includes('EMPLEADOR'));
+    fixture = TestBed.createComponent(Solicitudes); fixture.detectChanges();
+    responderLista([]);
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent).not.toContain('permisos de administrador');
+    host.querySelector<HTMLButtonElement>('.boton--principal')!.click(); fixture.detectChanges();
+    expect(host.textContent).toContain('¿Querés solicitar otro negocio?');
+    expect(host.querySelector('textarea')).toBeNull();
+    backend.expectNone(request => request.method === 'POST');
+    host.querySelector<HTMLButtonElement>('.solicitud-modal__cancelar')!.click(); fixture.detectChanges();
+    expect(host.querySelector('dialog')).toBeNull();
+    backend.expectNone(request => request.method === 'POST');
+  });
+
+  it('el empleador continúa al formulario y la confirmación sola no envía la solicitud', () => {
+    responderLista([]); fixture.destroy();
+    auth.tieneAlgunRol.mockImplementation((...roles: string[]) => roles.includes('EMPLEADOR'));
+    fixture = TestBed.createComponent(Solicitudes); fixture.detectChanges();
+    responderLista([]);
+    const host = fixture.nativeElement as HTMLElement;
+    host.querySelector<HTMLButtonElement>('.boton--principal')!.click(); fixture.detectChanges();
+    host.querySelector<HTMLButtonElement>('.solicitud-modal__confirmar')!.click(); fixture.detectChanges();
+    expect(host.querySelector('textarea')).not.toBeNull();
+    backend.expectNone(request => request.method === 'POST');
+    const textarea = host.querySelector('textarea')!;
+    textarea.value = 'Quiero solicitar otro negocio para gestionar sus turnos.';
+    textarea.dispatchEvent(new Event('input', { bubbles: true })); fixture.detectChanges();
+    host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    const solicitud = backend.expectOne(request => request.url.endsWith('/solicitar'));
+    expect(solicitud.request.body).toEqual({ motivo: textarea.value });
+    solicitud.flush('Se registró tu solicitud'); fixture.detectChanges();
+    responderLista([]);
+    expect(host.querySelector('dialog')).toBeNull();
   });
 });

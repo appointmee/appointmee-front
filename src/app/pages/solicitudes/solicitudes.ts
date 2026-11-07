@@ -63,8 +63,9 @@ export class Solicitudes {
   protected readonly hayMas = computed(() => this.solicitudes().length > SOLICITUDES_VISIBLES);
   protected readonly total = computed(() => this.solicitudes().length);
   protected readonly rolSinPermiso = computed(() =>
-    this.auth.tieneAlgunRol('ADMINISTRADOR', 'EMPLEADOR'),
+    this.auth.tieneAlgunRol('ADMINISTRADOR'),
   );
+  protected readonly esEmpleador = computed(() => this.auth.tieneAlgunRol('EMPLEADOR'));
   protected readonly tienePendiente = computed(() =>
     [...this.detalles().values()].some((detalle) => detalle.estado === 'PENDIENTE'),
   );
@@ -73,6 +74,11 @@ export class Solicitudes {
   );
 
   constructor() {
+    if (this.rolSinPermiso()) {
+      this.cargando.set(false);
+      return;
+    }
+
     this.recargar
       .pipe(
         startWith(undefined as void),
@@ -130,7 +136,7 @@ export class Solicitudes {
   }
 
   protected reintentar(): void {
-    if (this.reintentando()) return;
+    if (this.reintentando() || this.rolSinPermiso()) return;
     this.reintentando.set(true);
     this.recargar.next();
   }

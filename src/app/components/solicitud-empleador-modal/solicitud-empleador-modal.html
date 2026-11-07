@@ -6,11 +6,27 @@
   (cancel)="cancelar($event)"
   (click)="clickEnFondo($event)"
 >
+  @if (requiereConfirmacion()) {
+    <div class="solicitud-modal__form">
+      <header class="solicitud-modal__cabecera">
+        <span class="solicitud-modal__marca">AppointMee · Empleadores</span>
+        <h2 id="solicitud-modal-titulo">¿Querés solicitar otro negocio?</h2>
+        <p id="solicitud-modal-descripcion">
+          Tu cuenta ya es empleadora. ¿Estás seguro de que querés enviar otra solicitud para otro negocio?
+          Un administrador va a revisarla.
+        </p>
+      </header>
+      <footer class="solicitud-modal__acciones">
+        <button class="solicitud-modal__cancelar" type="button" (click)="cerrarModal()">Cancelar</button>
+        <button class="solicitud-modal__confirmar" type="button" (click)="confirmarOtroNegocio()">Sí, continuar</button>
+      </footer>
+    </div>
+  } @else {
   <form class="solicitud-modal__form" (submit)="enviar($event)" novalidate
         [attr.aria-busy]="enviando()">
     <header class="solicitud-modal__cabecera">
       <span class="solicitud-modal__marca">AppointMee · Empleadores</span>
-      <h2 id="solicitud-modal-titulo">Solicitud para convertirse en empleador</h2>
+      <h2 id="solicitud-modal-titulo">{{ otroNegocio() ? 'Solicitud para otro negocio' : 'Solicitud para convertirse en empleador' }}</h2>
       <p id="solicitud-modal-descripcion">
         Contanos qué querés ofrecer y por qué te gustaría sumarte como empleador.
         Un administrador va a revisar tu solicitud.
@@ -75,4 +91,5 @@
       </button>
     </footer>
   </form>
+  }
 </dialog>
