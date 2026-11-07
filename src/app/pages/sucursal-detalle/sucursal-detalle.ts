@@ -200,9 +200,8 @@ export class SucursalDetalle {
 
   protected onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    if (img.src !== this.placeholderImage) {
-      img.src = this.placeholderImage;
-    }
+    img.onerror = null;
+    img.src = this.placeholderImage;
   }
 
   private cargar(idParam: string | null): Observable<CargaResultado> {

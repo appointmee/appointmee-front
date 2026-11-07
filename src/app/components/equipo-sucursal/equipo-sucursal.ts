@@ -136,9 +136,8 @@ export class EquipoSucursal {
 
   protected onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    if (img.src !== this.placeholderAvatar) {
-      img.src = this.placeholderAvatar;
-    }
+    img.onerror = null;
+    img.src = this.placeholderAvatar;
   }
 
   private cargar(id: number): Observable<readonly EmpleadoDTO[]> {
