@@ -58,6 +58,7 @@ describe('US-ERR-03 recovery flows', () => {
     await router.navigateByUrl(origin);
     fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);
+    fixture.detectChanges();
 
     const failedList = backend.expectOne((request) =>
       request.url.endsWith('/sucursales/listar/filtrar'),
@@ -82,9 +83,8 @@ describe('US-ERR-03 recovery flows', () => {
     fixture.detectChanges();
     expect(router.url).toBe(origin);
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);
-    const retriedList = backend.expectOne((request) =>
-      request.url.endsWith('/sucursales/listar/filtrar'),
-    );
+    fixture.detectChanges();
+    const retriedList = backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'));
     expect(retriedList.request.params.get('nombre')).toBe('Flores');
     expect(retriedList.request.params.get('categoria')).toBe('CAFE');
     retriedList.flush([]);
@@ -103,8 +103,8 @@ describe('US-ERR-03 recovery flows', () => {
     await router.navigateByUrl('/sucursales');
     fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush([]);
-    backend
-      .expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'))
+    fixture.detectChanges();
+    backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'))
       .flush({}, { status: 500, statusText: 'Server Error' });
     await fixture.whenStable();
     fixture.detectChanges();
@@ -127,8 +127,8 @@ describe('US-ERR-03 recovery flows', () => {
     await router.navigateByUrl(origin);
     fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);
-    backend
-      .expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'))
+    fixture.detectChanges();
+    backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'))
       .flush({}, { status: 401, statusText: 'Unauthorized' });
     await fixture.whenStable();
     fixture.detectChanges();
@@ -162,9 +162,8 @@ describe('US-ERR-03 recovery flows', () => {
 
     expect(router.url).toBe(origin);
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);
-    const restoredList = backend.expectOne((request) =>
-      request.url.endsWith('/sucursales/listar/filtrar'),
-    );
+    fixture.detectChanges();
+    const restoredList = backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'));
     expect(restoredList.request.params.get('nombre')).toBe('Flores');
     expect(restoredList.request.params.get('categoria')).toBe('CAFE');
     restoredList.flush([]);

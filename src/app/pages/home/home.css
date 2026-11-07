@@ -832,12 +832,6 @@
   border: 0;
 }
 
-@keyframes branch-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .about__inner {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

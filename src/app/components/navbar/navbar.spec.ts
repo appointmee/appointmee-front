@@ -11,7 +11,7 @@ class EmptyPage {}
 
 describe('Buscador del navbar', () => {
   beforeEach(() => TestBed.resetTestingModule());
-  it('hides both search controls in the listing and restores them on other routes', async () => {
+  it('mantiene el navbar sin buscador en Home y en Sucursales', async () => {
     TestBed.configureTestingModule({
       imports: [Navbar],
       providers: [
@@ -28,7 +28,7 @@ describe('Buscador del navbar', () => {
     const router = TestBed.inject(Router);
     const fixture = TestBed.createComponent(Navbar);
     await router.navigateByUrl('/'); fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('#navbar-search')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
     await router.navigateByUrl('/sucursales?busqueda=pelu'); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
     expect(fixture.nativeElement.querySelector('.search-trigger')).toBeNull();
@@ -36,6 +36,6 @@ describe('Buscador del navbar', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.navbar__search-wrap')).toBeNull();
     await router.navigateByUrl('/'); fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('#navbar-search')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
   });
 });

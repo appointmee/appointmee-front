@@ -45,9 +45,9 @@ export class sucursalService {
     });
   }
 
-  categorias(silenciarErroresGlobales = false): Observable<string[]> {
+  categorias(): Observable<string[]> {
     return this.http.get<string[]>(`${this.api.baseUrl}/sucursales/categorias`, {
-      context: contextoSilenciado(silenciarErroresGlobales),
+      context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
     });
   }
 
