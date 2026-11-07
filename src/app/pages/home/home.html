@@ -335,6 +335,7 @@
           class="estado__link"
           type="button"
           [disabled]="sucursalesReintentando()"
+          [attr.aria-busy]="sucursalesReintentando()"
           (click)="retrySucursales()"
         >
           {{ sucursalesReintentando() ? 'Reintentando…' : 'Reintentar' }}
@@ -357,7 +358,15 @@
         <div class="estado vacio" role="status" aria-live="polite">
           <h3>{{ sucursalesEmptyTitle() }}</h3>
           <p>{{ sucursalesEmptyDescription() }}</p>
-          <button class="estado__link" type="button" (click)="retrySucursales()">Reintentar</button>
+          <button
+            class="estado__link"
+            type="button"
+            [disabled]="sucursalesReintentando()"
+            [attr.aria-busy]="sucursalesReintentando()"
+            (click)="retrySucursales()"
+          >
+            {{ sucursalesReintentando() ? 'Reintentando…' : 'Reintentar' }}
+          </button>
           @if (!!sucursalesTerm() || sucursalesCategoria() !== null) {
             <button class="estado__link" type="button" (click)="clearSucursalesSearch()">
               Limpiar filtros

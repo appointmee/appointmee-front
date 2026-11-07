@@ -247,6 +247,27 @@ describe('Home branch autocomplete', () => {
       expect(fixture.nativeElement.textContent).toContain('Reintentar');
     });
 
+    it('anuncia y bloquea el reintento desde el estado vacío mientras vuelve a cargar', () => {
+      const listado$ = new Subject<SucursalMiniDTO[]>();
+      listar.mockReturnValueOnce(of([])).mockReturnValue(listado$);
+
+      const fixture = TestBed.createComponent(Home);
+      fixture.detectChanges();
+      const retry = fixture.nativeElement.querySelector(
+        '.vacio button.estado__link',
+      ) as HTMLButtonElement;
+      retry.click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.grid[aria-busy="true"]')).not.toBeNull();
+      expect(fixture.nativeElement.querySelector('.sucursales-destacadas__aviso').textContent)
+        .toContain('Cargando');
+      expect(listar).toHaveBeenCalledTimes(2);
+      listado$.next([]);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.vacio')).not.toBeNull();
+    });
+
     it('muestra estado vacío diferenciado "no hay resultados para tu búsqueda" con filtros', () => {
       listar.mockReturnValue(of([]));
       filtrar.mockReturnValue(of([]));
