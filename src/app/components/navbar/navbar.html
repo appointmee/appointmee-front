@@ -29,7 +29,7 @@
       </nav>
     }
 
-    @if (!navbarSimple()) {
+    @if (mostrarBuscador()) {
     <div class="navbar__search-wrap" [class.is-open]="searchOpen()">
       <form
         class="search"
@@ -45,15 +45,13 @@
           #searchInput
           class="search__input"
           type="search"
-          placeholder="Buscá tu próximo turno..."
+          placeholder="Buscar sucursal por nombre..."
           autocomplete="off"
           spellcheck="false"
-          [value]="searchTerm()"
-          (input)="updateSearch($event)"
-          (keydown.enter)="submitSearch($event)"
-          aria-label="Buscar turnos"
+          [formControl]="branchSearch.search"
+          aria-label="Buscar sucursales por nombre"
         />
-        @if (searchTerm()) {
+        @if (branchSearch.term()) {
           <button
             class="search__clear"
             type="button"
@@ -74,10 +72,11 @@
 
     <div class="navbar__actions">
       @if (navbarSimple()) {
-        <a class="navbar__cta navbar__cta--solid navbar__cta--auth" routerLink="/registrarme">
-          Crear cuenta
+        <a class="navbar__cta navbar__cta--solid navbar__cta--auth" [routerLink]="enRegistro() ? '/login' : '/registrarme'">
+          {{ enRegistro() ? 'Iniciar sesión' : 'Crear cuenta' }}
         </a>
       } @else {
+      @if (mostrarBuscador()) {
       <button
         class="icon-btn search-trigger"
         type="button"
@@ -90,6 +89,7 @@
           <path [attr.d]="icons.search" />
         </svg>
       </button>
+      }
 
       @if (auth.restaurando()) {
         <!-- Placeholder durante la restauración de sesión (criterio 11). -->

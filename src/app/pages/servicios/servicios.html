@@ -157,7 +157,7 @@
                   (error)="onImageError($event)"
                 />
               </div>
-              <div class="card__body">
+                <div class="card__body">
                 <h2 class="card__name">{{ servicio.nombre }}</h2>
                 @if (servicio.descripcion) {
                   <p class="card__descripcion">{{ servicio.descripcion }}</p>
@@ -171,6 +171,13 @@
                   </span>
                   <span class="card__precio">{{ formatPrecio(servicio.precio) }}</span>
                 </div>
+                <a
+                  class="boton"
+                  [routerLink]="['/sucursal', sucursalId, 'servicios', servicio.id, 'turnos']"
+                  [attr.aria-label]="'Elegir horario para ' + servicio.nombre"
+                >
+                  Elegir turno
+                </a>
               </div>
             </article>
           }

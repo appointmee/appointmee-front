@@ -24,8 +24,12 @@ export const routes: Routes = [
     redirectTo: 'sucursales',
   },
   {
+    path: 'sucursal/:sucursalId/servicios/:servicioId/turnos',
+    title: 'AppointMee | Elegir turno · Temporal',
+    loadComponent: () => import('./pages/elegir-turno/elegir-turno').then(module => module.ElegirTurno),
+  },
+  {
     path: 'sucursal/:sucursalId/servicios',
-    canActivate: [authGuard],
     title: 'AppointMee | Elegir servicio',
     data: {
       title: 'Elegir servicio',
@@ -46,7 +50,6 @@ export const routes: Routes = [
   },
   {
     path: 'sucursal/:id/resenias',
-    canActivate: [authGuard],
     title: 'AppointMee | Reseñas',
     loadComponent: () =>
       import('./pages/sucursal-resenias/sucursal-resenias').then(
@@ -55,7 +58,6 @@ export const routes: Routes = [
   },
   {
     path: 'sucursal/:id/equipo',
-    canActivate: [authGuard],
     title: 'AppointMee | Equipo',
     loadComponent: () =>
       import('./pages/sucursal-equipo/sucursal-equipo').then(
@@ -136,6 +138,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login/login').then((module) => module.LoginPage),
   },
   {
+    path: 'reset-password',
+    title: 'AppointMee | Restablecer contraseña',
+    loadComponent: () => import('./pages/reset-password/reset-password').then(module => module.ResetPasswordPage),
+  },
+  {
     path: 'olvide-mi-contrasena',
     title: 'AppointMee | Recuperar contraseña',
     loadComponent: () => import('./pages/forgot-password/forgot-password').then(module => module.ForgotPasswordPage),
@@ -147,12 +154,9 @@ export const routes: Routes = [
   },
   {
     path: 'registrarme',
+    canActivate: [guestGuard],
     title: 'AppointMee | Crear cuenta',
-    data: {
-      title: 'Crear cuenta',
-      description: 'Creá tu cuenta de AppointMee para reservar y gestionar turnos.',
-    },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () => import('./pages/registrarme/registrarme').then(module => module.Registrarme),
   },
   {
     path: 'admin',
