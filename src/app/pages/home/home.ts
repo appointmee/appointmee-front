@@ -61,6 +61,7 @@ export class Home implements OnInit {
   private readonly mobileOpen = signal(false);
   private readonly scrolled = signal(false);
   private readonly currentYear = signal(new Date().getFullYear());
+  private busquedaTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected readonly isAuthenticated = this.auth.autenticado;
   protected readonly search = new FormControl('', { nonNullable: true });
