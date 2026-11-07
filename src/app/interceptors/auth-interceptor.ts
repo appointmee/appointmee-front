@@ -18,6 +18,13 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   // Los endpoints públicos no necesitan access token.
 
   const path = new URL(request.url).pathname;
+  const lecturaPublica = request.method === 'GET' && (
+    /^\/sucursales\/(listar(?:\/filtrar)?|categorias|\d+(?:\/(elegir-empleado|resenias))?)$/.test(path)
+    || /^\/servicios\/(?:listar\/sucursal\/\d+|\d+)$/.test(path)
+    || /^\/turnos\/disponibilidad\/empleado\/\d+\/servicio\/\d+$/.test(path)
+  );
+  if (lecturaPublica) return next(request);
+
   if (
     [
       '/auth/login',
@@ -25,6 +32,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
       '/auth/refresh',
       '/auth/forgot-password',
       '/auth/reset-password',
+      '/auth/reset-password/validate',
       '/auth/send-verification',
       '/auth/verify-email',
       '/auth/verification-status',

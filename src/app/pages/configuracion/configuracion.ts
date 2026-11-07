@@ -1,7 +1,10 @@
+import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, signal, viewChildren } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { email, form, maxLength, pattern, required } from '@angular/forms/signals';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { destinoDespuesDelLogin } from '../../guards/login-destination';
 import { timer } from 'rxjs';
 
 import { VerificacionEmailModel } from '../../models/auth';
@@ -10,6 +13,7 @@ import { verificacionPendienteService } from '../../services/verificacion-pendie
 import { authService } from '../../services/auth-service';
 
 @Component({
+  imports: [DsInputComponent, DsButtonComponent],
   selector: 'app-configuracion',
   templateUrl: './configuracion.html',
   styleUrl: './configuracion.css',
@@ -19,6 +23,7 @@ export class Configuracion implements OnInit {
 
   auth = inject(authService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private pendiente = inject(verificacionPendienteService);
   private destroyRef = inject(DestroyRef);
   private ultimoCodigoIntentado: string | null = null;
@@ -117,6 +122,11 @@ export class Configuracion implements OnInit {
 
 
   irASucursales(): void {
+    const returnTo = this.route.snapshot.queryParamMap.get('returnTo');
+    if (returnTo) {
+      void this.router.navigateByUrl(destinoDespuesDelLogin(this.router, returnTo));
+      return;
+    }
     void this.router.navigate(['/sucursales']);
   }
 

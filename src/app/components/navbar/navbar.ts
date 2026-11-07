@@ -1,3 +1,4 @@
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,7 +13,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
-import { authService } from '../services/auth-service';
+import { authService } from '../../services/auth-service';
 
 interface NavItem {
   readonly label: string;
@@ -35,13 +36,12 @@ const ICONS = {
   shield: 'M12 3 19 6v5c0 4.4-3 8.2-7 9-4-.8-7-4.6-7-9V6l7-3Z',
   plus: 'M12 5v14M5 12h14',
   logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
-  search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.3-4.3',
   chevron: 'm9 18 6-6-6-6',
 };
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [DsButtonComponent, RouterLink, RouterLinkActive],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,9 +51,17 @@ export class Navbar {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(authService);
+  private readonly fotoFallida = signal<string | null>(null);
+  protected readonly fotoPerfil = computed(() => {
+    const foto = this.auth.perfil()?.fotoPerfil?.trim();
+    return foto && foto !== this.fotoFallida() ? foto : null;
+  });
 
-  private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
-  private readonly burger = viewChild<ElementRef<HTMLButtonElement>>('burger');
+  protected onFotoError(foto: string): void {
+    this.fotoFallida.set(foto);
+  }
+
+  private readonly burger = viewChild('burger', { read: ElementRef<HTMLButtonElement> });
   private readonly sheet = viewChild<ElementRef<HTMLElement>>('sheet');
 
   private readonly rutaActual = signal(this.router.url);
@@ -62,15 +70,18 @@ export class Navbar {
     const ruta = this.rutaActual().split(/[?#]/)[0];
 
     return ruta === '/login'
+      || ruta === '/registrarme'
+      || ruta === '/reset-password'
+      || ruta === '/olvide-mi-contrasena'
       || ruta === '/configuracion/verificar-email'
       || ruta === '/verificar-email';
   });
 
+  protected readonly enRegistro = computed(() => this.rutaActual().split(/[?#]/)[0] === '/registrarme');
+
   protected readonly mobileOpen = signal(false);
   protected readonly profileOpen = signal(false);
-  protected readonly searchOpen = signal(false);
   protected readonly scrolled = signal(false);
-  protected readonly searchTerm = signal('');
   protected readonly icons = ICONS;
 
   /** Siempre visibles para cualquier usuario autenticado (criterio 2). */
@@ -116,17 +127,9 @@ export class Navbar {
     });
   }
 
-  @HostListener('document:click', ['$event'])
-  protected onDocumentClick(event: MouseEvent): void {
+  @HostListener('document:click')
+  protected onDocumentClick(): void {
     this.profileOpen.set(false);
-
-    const target = event.target;
-
-    if (target instanceof Element && target.closest('.navbar__search-wrap, .search-trigger')) {
-      return;
-    }
-
-    this.searchOpen.set(false);
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -135,11 +138,6 @@ export class Navbar {
       // Al cerrar con Escape se devuelve el foco al botón hamburguesa.
       this.closeAll(true);
       return;
-    }
-
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-      event.preventDefault();
-      this.openSearch();
     }
   }
 
@@ -164,7 +162,6 @@ export class Navbar {
 
     this.mobileOpen.set(open);
     this.profileOpen.set(false);
-    this.searchOpen.set(false);
     document.body.classList.toggle('nav-locked', open);
 
     if (open) {
@@ -226,42 +223,6 @@ export class Navbar {
   protected toggleProfile(event: MouseEvent): void {
     event.stopPropagation();
     this.profileOpen.update((open) => !open);
-    this.searchOpen.set(false);
-  }
-
-  protected openSearch(): void {
-    if (this.navbarSimple()) {
-      return;
-    }
-
-    this.searchOpen.set(true);
-    this.profileOpen.set(false);
-    this.closeMobile();
-    setTimeout(() => this.searchInput()?.nativeElement.focus());
-  }
-
-  protected closeSearch(): void {
-    this.searchOpen.set(false);
-  }
-
-  protected updateSearch(event: Event): void {
-    this.searchTerm.set((event.target as HTMLInputElement).value);
-  }
-
-  protected clearSearch(): void {
-    this.searchTerm.set('');
-    this.searchInput()?.nativeElement.focus();
-  }
-
-  protected submitSearch(event: Event): void {
-    event.preventDefault();
-
-    const term = this.searchTerm().trim();
-
-    this.closeSearch();
-    this.closeMobile();
-
-    void this.router.navigate(['/sucursales'], term ? { queryParams: { busqueda: term } } : {});
   }
 
   protected logout(): void {
@@ -272,7 +233,6 @@ export class Navbar {
 
   protected closeAll(devolverFoco: boolean = false): void {
     this.profileOpen.set(false);
-    this.searchOpen.set(false);
     this.closeMobile(devolverFoco);
   }
 }

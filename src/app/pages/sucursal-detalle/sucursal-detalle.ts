@@ -1,3 +1,4 @@
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -17,7 +18,6 @@ import { EquipoSucursal } from '../../components/equipo-sucursal/equipo-sucursal
 import { ReseniasSucursal } from '../../components/resenias-sucursal/resenias-sucursal';
 import { apiErrorsService } from '../../http/api-errors-service';
 import { SucursalDetalleDTO } from '../../models/sucursal';
-import { authService } from '../../services/auth-service';
 import { sucursalService } from '../../services/sucursal-service';
 
 type CargaResultado =
@@ -41,7 +41,7 @@ const LARGO_DESCRIPCION_COLGADA = 280;
 
 @Component({
   selector: 'app-sucursal-detalle',
-  imports: [ErrorPage, EquipoSucursal, ReseniasSucursal, RouterLink],
+  imports: [DsButtonComponent, ErrorPage, EquipoSucursal, ReseniasSucursal, RouterLink],
   templateUrl: './sucursal-detalle.html',
   styleUrl: './sucursal-detalle.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,7 +50,6 @@ export class SucursalDetalle {
   private readonly service = inject(sucursalService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly auth = inject(authService);
   private readonly title = inject(Title);
   private readonly apiErrors = inject(apiErrorsService);
   private readonly destroyRef = inject(DestroyRef);
@@ -184,19 +183,9 @@ export class SucursalDetalle {
 
     this.avisoRol.set(null);
 
-    if (this.auth.autenticado() && !this.auth.tieneAlgunRol('CLIENTE')) {
-      this.avisoRol.set(
-        'Tu cuenta no tiene el rol Cliente, necesario para reservar. Ingresá con una cuenta de cliente para continuar.',
-      );
-      return;
-    }
-
     const destino = `/sucursal/${sucursal.id}/servicios`;
     this.navegando.set(true);
-
-    const navegacion = this.auth.autenticado()
-      ? this.router.navigateByUrl(destino)
-      : this.router.navigate(['/login'], { queryParams: { returnTo: destino } });
+    const navegacion = this.router.navigateByUrl(destino);
 
     void navegacion.then((navego) => {
       if (!navego) {
@@ -211,9 +200,8 @@ export class SucursalDetalle {
 
   protected onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    if (img.src !== this.placeholderImage) {
-      img.src = this.placeholderImage;
-    }
+    img.onerror = null;
+    img.src = this.placeholderImage;
   }
 
   private cargar(idParam: string | null): Observable<CargaResultado> {
