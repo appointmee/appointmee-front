@@ -235,12 +235,40 @@ Una tarea está terminada solo cuando:
 
 ### Seguridad y calidad (US-GEN-04)
 
-- Escape de datos dinámicos; prohibido `innerHTML` con datos de usuario.
+Checklist de aceptación de la historia (US-GEN-04 · Seguridad y calidad del frontend):
+
+- [ ] Todo dato dinámico se escapa antes de insertarse en el DOM.
+- [ ] No se usa `innerHTML` con datos de usuario sin sanitización.
+- [ ] No se guardan tokens, contraseñas ni códigos OTP en URLs, logs o analytics.
+- [ ] El `returnTo` se valida contra una lista de rutas internas.
+- [ ] Los formularios validan en cliente y en servidor; el cliente no es la única defensa.
+- [ ] No hay secretos ni claves en el código del frontend.
+- [ ] Las dependencias se mantienen actualizadas y sin vulnerabilidades críticas conocidas.
+- [ ] Se definen políticas de CSP y cabeceras de seguridad si el despliegue lo permite.
+- [ ] No hay errores en consola en los flujos principales.
+- [ ] Los flujos críticos tienen pruebas E2E: login, registro + verificación, recuperación, búsqueda, detalle y selección de servicio, sin errores en consola.
+- [ ] Los errores de red se manejan sin exponer detalles internos.
+- [ ] Se revisa que las imágenes externas no rompan la privacidad ni el rendimiento.
+
+Estado en la rama `SCRUM-243-seguridad-y-calidad-del-frontend`: criterios cubiertos con
+`returnTo` validado y tests de guards, endurecimiento de tokens/OTP y CSP básica definida;
+flujos E2E críticos en curso (Playwright).
+
+### Integraciones nuevas
+
+Toda integración nueva (backend, proveedor externo o servicio) debe cumplir el checklist de
+seguridad y calidad de la US-GEN-04 antes de abrir su PR:
+
+- Todo dato dinámico se escapa antes de insertarse en el DOM; prohibido `innerHTML` con datos
+  de usuario sin sanitización.
 - Tokens/OTP/password fuera de URLs/logs/analytics; `beforeSend` limpia query/hash.
-- `returnTo` validado contra rutas internas.
-- Formularios validación cliente + servidor; errores de red sin detalles internos.
-- Sin secretos en frontend; dependencias sin vulnerabilidades críticas.
-- CSP definida y en endurecimiento; errores sin datos sensibles; imágenes con política de privacidad.
+- `returnTo` validado contra la lista de rutas internas antes de redirigir.
+- Formularios validados en cliente y servidor; errores de red sin detalles internos.
+- Sin secretos en el frontend; dependencias actualizadas y sin vulnerabilidades críticas.
+- CSP y cabeceras de seguridad definidas; errores sin datos sensibles; imágenes con política de privacidad.
+
+Antes de cerrar cualquier PR de integración nueva: checklist de seguridad US-GEN-04
+completado o con limitación concreta documentada.
 
 ### Criterios transversales
 
