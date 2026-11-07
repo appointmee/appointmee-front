@@ -218,3 +218,33 @@ Una tarea está terminada solo cuando:
 - Los commits están separados por funcionalidad.
 - El PR apunta a `develop` y su descripción incluye qué cambió, cómo se probó y riesgos.
 - El working tree queda limpio o se informa exactamente qué quedó pendiente y por qué.
+
+## 8. Requisitos transversales de aceptación (US-GEN-01 y US-GEN-04)
+
+### Diseño (US-GEN-01)
+
+- Tokens centralizados en `src/styles.css`; sin valores hardcodeados en componentes nuevos.
+- Contraste WCAG AA documentado (4,5:1 texto normal / 3:1 texto grande).
+- Componentes en `src/app/shared/ui/` con estados default/hover/focus/active/disabled/loading/error
+  solo cuando aplica.
+- Accesibilidad: labels, foco visible, semántica, `aria-live`, foco en diálogos, Escape.
+- Sin selectores por ID únicos ni estructuras frágiles.
+- Textos personalizables por pantalla.
+- Demo en `/design-system`; documentación en `docs/design-system.md`.
+- Las pantallas activas deben usar el sistema; si una no lo usa, documentar la razón.
+
+### Seguridad y calidad (US-GEN-04)
+
+- Escape de datos dinámicos; prohibido `innerHTML` con datos de usuario.
+- Tokens/OTP/password fuera de URLs/logs/analytics; `beforeSend` limpia query/hash.
+- `returnTo` validado contra rutas internas.
+- Formularios validación cliente + servidor; errores de red sin detalles internos.
+- Sin secretos en frontend; dependencias sin vulnerabilidades críticas.
+- CSP definida y en endurecimiento; errores sin datos sensibles; imágenes con política de privacidad.
+
+### Criterios transversales
+
+- Antes de cerrar una historia: checklist de diseño/seguridad completado o con limitación concreta.
+- Tests nuevos para cada criterio nuevo; build + suite completa en verde.
+- PR contra `develop`; descripción con qué cambió, cómo se probó y riesgos.
+
