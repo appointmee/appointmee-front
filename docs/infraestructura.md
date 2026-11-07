@@ -6,7 +6,7 @@
 |---|---|---|
 | Build | Angular CLI 22, builder `@angular/build:application` | Salida estática SPA |
 | Runtime local | `npm start` ejecuta `ng serve --host localhost --port 4200` | Desarrollo local en `http://localhost:4200` |
-| API local | URL fija `http://localhost:8080` | Requiere backend disponible en ese origen |
+| API | `http://localhost:8080` en local; `https://appointmee-vcs2.onrender.com` en otros hosts | Requiere CORS habilitado para el host del frontend |
 | Hosting | `vercel.json` reescribe cualquier ruta a `/index.html` | Habilita deep links de Angular Router |
 | Assets | `public/` se copia al build; fuentes Geist y logo | Assets estáticos del cliente |
 | CI/CD, backend, datos | No hay workflows, Dockerfile, compose, Terraform, Helm, manifiestos de cloud ni migraciones en este checkout | Topología, escalado, secretos y persistencia no pueden documentarse aquí |

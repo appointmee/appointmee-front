@@ -2,8 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  ElementRef,
-  computed,
   inject,
   signal,
   viewChild,
@@ -11,7 +9,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Observable, Subject, catchError, map, of, switchMap, tap } from 'rxjs';
+import { combineLatest, Observable, of, Subject } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators';
 
 import { sucursalService } from '../../services/sucursal-service';
 import { SucursalMiniDTO } from '../../models/sucursal';
@@ -58,6 +57,8 @@ export class Sucursales {
   protected readonly terminoAplicado = signal(terminoDeBusqueda(this.initialSearch));
   protected readonly sucursales = signal<SucursalMiniDTO[]>([]);
   protected readonly categorias = signal<string[]>([]);
+  protected readonly avisoCategorias = signal<string | null>(null);
+  private readonly categoriasCargadas = signal(false);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly requiereLogin = signal(false);
@@ -69,17 +70,21 @@ export class Sucursales {
     return termino.length > 0 && termino.length < MIN_CARACTERES_BUSQUEDA;
   });
 
-  protected readonly resumenResultados = computed(() => {
-    const total = this.sucursales().length;
-    const termino = this.terminoAplicado();
-    const categoria = this.selectedCategory();
-    const sufijoCategoria = categoria ? ` en ${this.humanizeCategory(categoria)}` : '';
-    const sustantivo = total === 1 ? 'sucursal' : 'sucursales';
-
-    if (termino) {
-      const resultados = total === 1 ? 'resultado' : 'resultados';
-      return `${total} ${resultados} para «${termino}»${sufijoCategoria}`;
-    }
+  constructor() {
+    const search$ = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      startWith(this.searchTerm()),
+    );
+    const category$ = combineLatest([
+      toObservable(this.selectedCategory),
+      toObservable(this.categoriasCargadas),
+    ]).pipe(
+      filter(([, cargadas]) => cargadas),
+      map(([categoria]) => categoria),
+      distinctUntilChanged(),
+    );
+    const reintento$ = this.reintento.pipe(startWith(undefined as void));
 
     if (categoria) {
       return `${total} ${sustantivo}${sufijoCategoria}`;
@@ -136,32 +141,29 @@ export class Sucursales {
       .categorias()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (cats) => this.categorias.set(cats ?? []),
-        error: (err: HttpErrorResponse) => {
-          if (err.status === 401) {
-            this.error.set('Necesitás iniciar sesión para ver las sucursales.');
-            this.requiereLogin.set(true);
-            this.loading.set(false);
-          }
+        next: (cats) => {
+          this.categorias.set(cats ?? []);
+          this.selectedCategory.set(this.validarCategoria(this.route.snapshot.queryParamMap.get('categoria')));
+          this.categoriasCargadas.set(true);
+        },
+        error: () => {
+          this.avisoCategorias.set('No pudimos cargar las categorías. Podés ver todas las sucursales.');
+          this.selectedCategory.set(null);
+          this.categoriasCargadas.set(true);
         },
       });
 
     this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((qp) => {
-      const busqueda = normalizarTerminoBusqueda(qp['busqueda'] ?? '');
-      const categoria = qp['categoria'] ?? null;
-      const termino = terminoDeBusqueda(busqueda);
-      const clave = this.claveSolicitud(termino, categoria);
-
-      this.selectedCategory.set(categoria);
-      this.terminoAplicado.set(termino);
-
-      if (this.ultimaSolicitud?.clave === clave) {
-        // La URL cambió por una búsqueda propia: si la persona siguió
-        // escribiendo, no se pisa el texto que todavía no se aplicó.
-        if (claveComparacionBusqueda(this.searchTerm()) === claveComparacionBusqueda(busqueda)) {
-          this.searchTerm.set(busqueda);
-        }
-        return;
+      const busqueda = qp['busqueda'] ?? '';
+      if (busqueda !== this.searchTerm()) {
+        this.searchTerm.set(busqueda);
+        this.searchSubject.next(busqueda);
+      }
+      const categoria = this.categoriasCargadas()
+        ? this.validarCategoria(qp['categoria'] ?? null)
+        : null;
+      if (categoria !== this.selectedCategory()) {
+        this.selectedCategory.set(categoria);
       }
 
       // Al volver atrás o recargar, la URL manda: se aplica sin volver a escribirla.
@@ -169,7 +171,26 @@ export class Sucursales {
       this.ejecutarBusqueda({ actualizarUrl: false, forzar: true });
     });
 
-    this.destroyRef.onDestroy(() => this.cancelarDebounce());
+  private validarCategoria(categoria: string | null): string | null {
+    return categoria && this.categorias().includes(categoria) ? categoria : null;
+  }
+
+  private buscarSucursales(
+    categoria: string | null,
+    nombre: string | null,
+  ): Observable<SucursalMiniDTO[]> {
+    const termino = nombre?.trim() ?? '';
+    if (/^\d+$/.test(termino)) {
+      return this.service.listar().pipe(
+        map((lista) =>
+          (lista ?? []).filter(
+            (sucursal) =>
+              String(sucursal.id) === termino &&
+              (!categoria || sucursal.categoria === categoria),
+          ),
+        ),
+      );
+    }
 
     if (!this.ultimaSolicitud) {
       this.ejecutarBusqueda({ actualizarUrl: false, forzar: true });
@@ -272,13 +293,6 @@ export class Sucursales {
   protected beeString(puntuacion: number | null): string {
     const score = Math.max(0, Math.min(5, Math.round(puntuacion ?? 0)));
     return '🐝'.repeat(score);
-  }
-
-  protected ratingLabel(sucursal: SucursalMiniDTO): string {
-    if (!this.hasReviews(sucursal)) {
-      return 'Sin reseñas';
-    }
-    return `${this.promedioFormateado(sucursal.puntuacion)} de 5, ${sucursal.cantidadPuntuaciones} reseñas`;
   }
 
   protected cardAriaLabel(sucursal: SucursalMiniDTO): string {

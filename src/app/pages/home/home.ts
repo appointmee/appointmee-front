@@ -8,15 +8,28 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
-import { catchError, distinctUntilChanged, map, of, switchMap, tap, timer } from 'rxjs';
+import {
+  catchError,
+  combineLatest,
+  distinctUntilChanged,
+  map,
+  of,
+  startWith,
+  Subject,
+  switchMap,
+  tap,
+  timer,
+} from 'rxjs';
 
 import { authService } from '../../services/auth-service';
 import { SucursalMiniDTO } from '../../models/sucursal';
 import { sucursalService } from '../../services/sucursal-service';
+import { BRANCH_CATEGORIES } from '../../models/branch';
 
 interface SuggestionResult {
   readonly term: string;
@@ -27,6 +40,8 @@ interface SuggestionResult {
 function comparisonKey(value: string): string {
   return value.trim().toLocaleLowerCase('es');
 }
+
+const SUCURSALES_DESTACADAS_MAX = 6;
 
 @Component({
   selector: 'app-home',
@@ -58,13 +73,33 @@ export class Home implements OnInit {
   protected readonly term = signal('');
   protected readonly termTooShort = computed(() => this.term().trim().length === 1);
 
+  // Listado de sucursales destacado en la home (US-HOME-05).
+  protected readonly sucursales = signal<SucursalMiniDTO[]>([]);
+  protected readonly sucursalesLoading = signal(true);
+  protected readonly sucursalesError = signal<string | null>(null);
+  /** Bloquea múltiples clics en "Reintentar" mientras hay una petición en vuelo. */
+  protected readonly sucursalesReintentando = signal(false);
+  protected readonly sucursalesTerm = signal('');
+  protected readonly sucursalesCategoria = signal<string | null>(null);
+  protected readonly sucursalesCategorias = signal(BRANCH_CATEGORIES);
+
+  protected readonly placeholderImage = `data:image/svg+xml;utf8,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="#1a1f2b"/><g fill="none" stroke="#98a2b3" stroke-width="2"><rect x="120" y="80" width="160" height="120" rx="12"/><circle cx="160" cy="120" r="18"/><path d="M120 180l45-40 35 30 30-25 70 60"/></g><text x="200" y="235" text-anchor="middle" fill="#98a2b3" font-size="14" font-family="sans-serif">Sin imagen</text></svg>',
+  )}`;
+
+  private readonly reloadSucursales = new Subject<void>();
+  /** Último [término, categoría] consultado: distingue una consulta nueva de un reintento. */
+  private readonly ultimoFiltros = signal<[string, string | null] | null>(null);
+  /** Marca si la consulta en vuelo falló, para decidir si se conserva el mensaje de error. */
+  private ultimoFallo = false;
+
   constructor() {
     this.search.valueChanges
       .pipe(
         map((value) => value.trim()),
         tap(() => this.term.set(this.search.value)),
-        distinctUntilChanged((previous, current) =>
-          comparisonKey(previous) === comparisonKey(current),
+        distinctUntilChanged(
+          (previous, current) => comparisonKey(previous) === comparisonKey(current),
         ),
         tap(() => {
           this.suggestions.set([]);
@@ -107,6 +142,70 @@ export class Home implements OnInit {
         this.lastSuggestionTerm.set(result.term);
         this.suggestionsOpen.set(this.searchFocused && result.term.length >= 2);
       });
+
+    this.inicializarListadoSucursales();
+  }
+
+  private inicializarListadoSucursales(): void {
+    const term$ = toObservable(this.sucursalesTerm).pipe(
+      map((value) => (value ?? '').trim()),
+      distinctUntilChanged(),
+    );
+    const categoria$ = toObservable(this.sucursalesCategoria).pipe(distinctUntilChanged());
+
+    combineLatest<[string, string | null, void]>([
+      term$,
+      categoria$,
+      this.reloadSucursales.pipe(startWith(undefined as void)),
+    ])
+      .pipe(
+        tap(([nombre, categoria]) => {
+          const previo = this.ultimoFiltros();
+          const esConsultaNueva =
+            previo === null || previo[0] !== nombre || previo[1] !== categoria;
+          if (esConsultaNueva) {
+            // Una búsqueda/filtro nuevo limpia el error previo y muestra esqueleto.
+            this.sucursalesError.set(null);
+            this.ultimoFiltros.set([nombre, categoria]);
+          }
+          this.sucursalesLoading.set(true);
+          this.ultimoFallo = false;
+        }),
+        switchMap(([nombre, categoria]) => {
+          const fuente = nombre
+            ? this.sucursalesService.filtrar(categoria, nombre, true)
+            : this.sucursalesService.listar(true);
+          return fuente.pipe(
+            catchError((err: HttpErrorResponse) => {
+              // El contexto SIN_MANEJO_GLOBAL_DE_ERRORES evita que el interceptor
+              // navegue a /error: la falla se presenta solo como estado inline aquí.
+              this.ultimoFallo = true;
+              if (err.status === 0) {
+                this.sucursalesError.set(
+                  'No hay conexión a Internet. Revisá tu red e intentá de nuevo.',
+                );
+              } else if (err.status === 401) {
+                this.sucursalesError.set('Necesitás iniciar sesión para ver las sucursales.');
+              } else {
+                this.sucursalesError.set('No pudimos cargar las sucursales. Intentá de nuevo.');
+              }
+              return of<SucursalMiniDTO[]>([]);
+            }),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((lista) => {
+        // Home muestra seis sucursales destacadas: coincide con las seis tarjetas
+        // del skeleton y deja el listado completo disponible en /sucursales.
+        this.sucursales.set((lista ?? []).slice(0, SUCURSALES_DESTACADAS_MAX));
+        this.sucursalesLoading.set(false);
+        this.sucursalesReintentando.set(false);
+        // Sólo se limpia el error cuando la consulta se resolvió con éxito.
+        if (!this.ultimoFallo) {
+          this.sucursalesError.set(null);
+        }
+      });
   }
 
   protected submitSearch(event: Event): void {
@@ -117,8 +216,10 @@ export class Home implements OnInit {
     }
 
     const suggestions = this.suggestions();
-    const resultadosActuales = !this.suggestionsLoading() && !this.suggestionsError()
-      && comparisonKey(this.lastSuggestionTerm() ?? '') === comparisonKey(term);
+    const resultadosActuales =
+      !this.suggestionsLoading() &&
+      !this.suggestionsError() &&
+      comparisonKey(this.lastSuggestionTerm() ?? '') === comparisonKey(term);
 
     if (resultadosActuales && suggestions.length === 1) {
       this.selectSuggestion(suggestions[0]);
@@ -133,6 +234,73 @@ export class Home implements OnInit {
 
   protected clearSearch(): void {
     this.search.setValue('');
+  }
+
+  // ---------- Listado de sucursales destacado (US-HOME-05) ----------
+
+  protected retrySucursales(): void {
+    if (this.sucursalesReintentando()) return;
+    this.sucursalesReintentando.set(true);
+    this.reloadSucursales.next();
+  }
+
+  protected onSucursalesSearchInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.sucursalesTerm.set(value);
+  }
+
+  protected clearSucursalesSearch(): void {
+    this.sucursalesTerm.set('');
+  }
+
+  protected selectSucursalesCategoria(categoria: string | null): void {
+    this.sucursalesCategoria.set(categoria);
+  }
+
+  protected sucursalesEmptyTitle(): string {
+    const tieneFiltro = !!this.sucursalesTerm() || this.sucursalesCategoria() !== null;
+    return tieneFiltro
+      ? 'No hay resultados para tu búsqueda'
+      : 'No hay sucursales en la plataforma';
+  }
+
+  protected sucursalesEmptyDescription(): string {
+    const tieneFiltro = !!this.sucursalesTerm() || this.sucursalesCategoria() !== null;
+    if (tieneFiltro) {
+      return 'Probá con otro término o categoria.';
+    }
+    return 'Pronto tendremos más establecimientos disponibles.';
+  }
+
+  /** Mensaje anunciado por lectores de pantalla según el estado del listado. */
+  protected readonly sucursalesAviso = computed(() => {
+    if (this.sucursalesLoading()) {
+      return 'Cargando sucursales';
+    }
+    if (this.sucursalesError()) {
+      return this.sucursalesError();
+    }
+    if (this.sucursales().length === 0) {
+      return this.sucursalesEmptyTitle();
+    }
+    return null;
+  });
+
+  protected sucursalesCardAriaLabel(sucursal: SucursalMiniDTO): string {
+    const base = sucursal.nombre;
+    const tiene = (sucursal.cantidadPuntuaciones ?? 0) > 0 && sucursal.puntuacion !== null;
+    if (!tiene) {
+      return `${base}, sin reseñas. Ver detalle`;
+    }
+    return `${base}, ${sucursal.puntuacion.toFixed(1)} de 5, ${sucursal.cantidadPuntuaciones} reseñas. Ver detalle`;
+  }
+
+  protected trackBySucursalId(_index: number, sucursal: SucursalMiniDTO): number {
+    return sucursal.id;
+  }
+
+  protected onSucursalesImageError(event: Event): void {
+    (event.target as HTMLImageElement).src = this.placeholderImage;
   }
 
   protected onSearchFocus(): void {
