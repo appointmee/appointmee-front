@@ -62,6 +62,30 @@ describe('Sucursales', () => {
     expect(filtrar).toHaveBeenCalledWith('SPA', 'Centro');
   });
 
+  it('ignora una categoría inválida sin enviarla al backend', async () => {
+    const fixture = await create('/sucursales?categoria=INEXISTENTE');
+    expect(filtrar).toHaveBeenCalledWith(null, '');
+    expect(fixture.nativeElement.querySelector('.categoria-chip').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('mantiene el listado y Todas si falla la API de categorías', async () => {
+    categorias.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+    const fixture = await create('/sucursales?categoria=SPA');
+    fixture.detectChanges();
+    expect(filtrar).toHaveBeenCalledWith(null, '');
+    expect(fixture.nativeElement.querySelectorAll('.categoria-chip')).toHaveLength(1);
+    expect(fixture.nativeElement.querySelector('.categorias__aviso').textContent).toContain('No pudimos cargar las categorías');
+    expect(fixture.nativeElement.querySelector('.card')).toBeTruthy();
+  });
+
+  it('anuncia los resultados y la categoría seleccionada', async () => {
+    const fixture = await create('/sucursales?categoria=SPA');
+    fixture.detectChanges();
+    const anuncio = fixture.nativeElement.querySelector('[aria-live="polite"][aria-atomic="true"]');
+    expect(anuncio.textContent).toContain('1 sucursales encontradas');
+    expect(anuncio.textContent).toContain('Spa');
+  });
+
   it('sincroniza el texto buscado con la URL y conserva la categoria', async () => {
     const fixture = await create('/sucursales?categoria=SPA');
     vi.useFakeTimers();

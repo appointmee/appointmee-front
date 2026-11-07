@@ -20,7 +20,7 @@
         <a class="landing-btn landing-btn--ghost" routerLink="/mis-turnos">Mi cuenta</a>
       } @else {
         <a class="landing-btn landing-btn--ghost" routerLink="/login">Iniciar sesión</a>
-        <a class="landing-btn landing-btn--primary" routerLink="/login">Crear cuenta</a>
+        <a class="landing-btn landing-btn--primary" routerLink="/registrarme">Crear cuenta</a>
       }
     </div>
 
@@ -52,7 +52,7 @@
         <a routerLink="/mis-turnos" (click)="closeMobile()">Mi cuenta</a>
       } @else {
         <a routerLink="/login" (click)="closeMobile()">Iniciar sesión</a>
-        <a routerLink="/login" (click)="closeMobile()">Crear cuenta</a>
+        <a routerLink="/registrarme" (click)="closeMobile()">Crear cuenta</a>
       }
     </nav>
   </aside>
@@ -78,43 +78,90 @@
         <p class="hero__subtitle reveal" style="--delay: 0.16s">
           AppointMee es una plataforma diseñada para conectar clientes con establecimientos y facilitar la gestión de turnos de manera simple, rápida y organizada.
         </p>
-        <form
-          class="branch-search reveal"
-          role="search"
-          aria-label="Buscar sucursales"
-          style="--delay: 0.2s"
-          (submit)="submitSearch($event)"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m21 21-4.4-4.4M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
-          </svg>
-          <label class="sr-only" for="branch-search">Buscar sucursal por nombre</label>
-          <input
-            id="branch-search"
-            type="search"
-            autocomplete="off"
-            spellcheck="false"
-            placeholder="Nombre de la sucursal..."
-            [formControl]="branchSearch.search"
-          />
-          @if (branchSearch.term()) {
-            <button
-              class="branch-search__clear"
-              type="button"
-              (click)="branchSearch.clear()"
-              aria-label="Limpiar búsqueda"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m6 6 12 12M18 6 6 18" />
-              </svg>
-            </button>
+        <div class="branch-search-wrap reveal" style="--delay: 0.2s">
+          <form
+            class="branch-search"
+            role="search"
+            aria-label="Buscar sucursales"
+            (submit)="submitSearch($event)"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m21 21-4.4-4.4M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
+            </svg>
+            <label class="sr-only" for="branch-search">Buscar sucursal por nombre</label>
+            <input
+              id="branch-search"
+              type="search"
+              role="combobox"
+              aria-autocomplete="list"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Nombre de la sucursal..."
+              [formControl]="search"
+              [attr.aria-expanded]="suggestionsOpen()"
+              [attr.aria-controls]="suggestionsOpen() ? 'branch-suggestions' : null"
+              [attr.aria-activedescendant]="activeSuggestionIndex() >= 0 ? 'branch-suggestion-' + activeSuggestionIndex() : null"
+              (focus)="onSearchFocus()"
+              (keydown)="onSearchKeydown($event)"
+            />
+            @if (term()) {
+              <button
+                class="branch-search__clear"
+                type="button"
+                (click)="clearSearch()"
+                aria-label="Limpiar búsqueda"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m6 6 12 12M18 6 6 18" />
+                </svg>
+              </button>
+            }
+          </form>
+
+          @if (suggestionsOpen()) {
+            <div id="branch-suggestions" class="branch-suggestions" role="listbox">
+              @if (suggestionsLoading()) {
+                <div class="branch-suggestions__state" role="status">
+                  <span class="branch-suggestions__loader" aria-hidden="true"></span>
+                  Buscando sucursales...
+                </div>
+              } @else if (suggestionsError()) {
+                <p class="branch-suggestions__state branch-suggestions__state--error" role="alert">
+                  {{ suggestionsError() }}
+                </p>
+              } @else if (suggestions().length === 0) {
+                <p class="branch-suggestions__state" role="status">No se encontraron coincidencias.</p>
+              } @else {
+                @for (sucursal of suggestions(); track sucursal.id; let i = $index) {
+                  <button
+                    id="branch-suggestion-{{ i }}"
+                    class="branch-suggestion"
+                    type="button"
+                    role="option"
+                    [class.branch-suggestion--active]="activeSuggestionIndex() === i"
+                    [attr.aria-selected]="activeSuggestionIndex() === i"
+                    (click)="selectSuggestion(sucursal)"
+                  >
+                    @if (sucursal.fotoPerfil) {
+                      <img [src]="sucursal.fotoPerfil" alt="" (error)="onSuggestionImageError($event)" />
+                    } @else {
+                      <span class="branch-suggestion__placeholder" aria-hidden="true"></span>
+                    }
+                    <span>
+                      <strong>{{ sucursal.nombre }}</strong>
+                      <small>{{ categoryLabel(sucursal.categoria) }}</small>
+                    </span>
+                  </button>
+                }
+              }
+            </div>
           }
-        </form>
-        @if (branchSearch.termTooShort()) {
+        </div>
+        @if (termTooShort()) {
           <p class="branch-search__hint">Ingresá al menos 2 caracteres para buscar.</p>
         }
         <div class="hero__actions reveal" style="--delay: 0.24s">
-          <a class="landing-btn landing-btn--primary landing-btn--lg" routerLink="/login">
+          <a class="landing-btn landing-btn--primary landing-btn--lg" routerLink="/registrarme">
             Crear cuenta
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 12h14M13 6l6 6-6 6" />
@@ -354,7 +401,7 @@
           Organiza tus turnos de forma más simple, rápida y ordenada. Creá tu cuenta para empezar a reservar.
         </p>
         <div class="cta__actions reveal">
-          <a class="landing-btn landing-btn--primary landing-btn--lg" routerLink="/login">
+          <a class="landing-btn landing-btn--primary landing-btn--lg" routerLink="/registrarme">
             Crear cuenta
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 12h14M13 6l6 6-6 6" />
@@ -397,7 +444,7 @@
               <li><a routerLink="/mis-turnos">Mi cuenta</a></li>
             } @else {
               <li><a routerLink="/login">Iniciar sesión</a></li>
-              <li><a routerLink="/login">Crear cuenta</a></li>
+              <li><a routerLink="/registrarme">Crear cuenta</a></li>
             }
           </ul>
         </div>

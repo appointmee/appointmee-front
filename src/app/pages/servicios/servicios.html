@@ -117,6 +117,8 @@
                 </span>
                 <span class="card__precio">{{ formatPrecio(servicio.precio) }}</span>
               </div>
+              <a class="boton" [routerLink]="['/sucursal', sucursalId, 'servicios', servicio.id, 'turnos']"
+                 [attr.aria-label]="'Elegir horario para ' + servicio.nombre">Elegir turno</a>
             </div>
           </article>
         }

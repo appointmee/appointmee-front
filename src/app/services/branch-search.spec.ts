@@ -6,6 +6,7 @@ import { Navbar } from '../components/navbar/navbar';
 import { Home } from '../pages/home/home';
 import { authService } from './auth-service';
 import { BranchSearch } from './branch-search';
+import { sucursalService } from './sucursal-service';
 
 @Component({ template: '' })
 class EmptyPage {}
@@ -18,6 +19,7 @@ describe('Navegación de sucursales desde Home', () => {
     TestBed.configureTestingModule({
       imports: [Home, Navbar],
       providers: [
+        { provide: sucursalService, useValue: { filtrar: () => of([]) } },
         provideRouter([
           { path: '', component: EmptyPage },
           { path: 'sucursales', component: EmptyPage },

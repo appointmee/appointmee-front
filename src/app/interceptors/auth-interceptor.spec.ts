@@ -71,6 +71,9 @@ describe('Autenticación e interceptor', () => {
       'https://example.com/data',
       `${API_URL}.example.com/data`,
       `${API_URL}/auth/login`,
+      `${API_URL}/sucursales/listar/filtrar`,
+      `${API_URL}/servicios/listar/sucursal/7`,
+      `${API_URL}/turnos/disponibilidad/empleado/9/servicio/3`,
     ]) {
       http.get(url).subscribe();
       const request = backend.expectOne(url);

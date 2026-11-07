@@ -60,9 +60,14 @@ export class Navbar {
     const ruta = this.rutaActual().split(/[?#]/)[0];
 
     return ruta === '/login'
+      || ruta === '/registrarme'
+      || ruta === '/reset-password'
+      || ruta === '/olvide-mi-contrasena'
       || ruta === '/configuracion/verificar-email'
       || ruta === '/verificar-email';
   });
+
+  protected readonly enRegistro = computed(() => this.rutaActual().split(/[?#]/)[0] === '/registrarme');
 
   protected readonly mobileOpen = signal(false);
   protected readonly profileOpen = signal(false);
