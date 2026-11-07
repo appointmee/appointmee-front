@@ -8,7 +8,7 @@
   } @else if (error()) {
     <div role="alert">
       <p>{{ error() }}</p>
-      <ds-button type="button" (click)="reintentar()">Reintentar</ds-button>
+      <button dsButton type="button" (click)="reintentar()">Reintentar</button>
     </div>
   } @else if (servicio(); as servicio) {
     <h2>{{ servicio.nombre }}</h2>
@@ -29,7 +29,7 @@
       } @else if (errorHorarios()) {
         <div role="alert">
           <p>{{ errorHorarios() }}</p>
-          <ds-button type="button" (click)="reintentarHorarios()">Reintentar horarios</ds-button>
+          <button dsButton type="button" (click)="reintentarHorarios()">Reintentar horarios</button>
         </div>
       } @else {
         @for (dia of disponibilidad(); track dia.fecha) {
@@ -37,11 +37,11 @@
             <h3>{{ dia.fecha }}</h3>
             <div class="turnos__horarios">
               @for (hora of dia.horarios; track hora) {
-                <ds-button type="button" [aria-label]="'Elegir ' + hora.slice(0, 5) + ' del ' + dia.fecha"
-                        [aria-pressed]="seleccionado()?.fecha === dia.fecha && seleccionado()?.hora === hora && seleccionado()?.empleadoId === empleadoId()"
+                <button dsButton type="button" [attr.aria-label]="'Elegir ' + hora.slice(0, 5) + ' del ' + dia.fecha"
+                        [attr.aria-pressed]="seleccionado()?.fecha === dia.fecha && seleccionado()?.hora === hora && seleccionado()?.empleadoId === empleadoId()"
                         (click)="elegirHorario(dia.fecha, hora, $event)">
                   {{ hora.slice(0, 5) }}
-                </ds-button>
+                </button>
               } @empty {
                 <p>Sin horarios disponibles este día.</p>
               }

@@ -195,6 +195,8 @@
 }
 
 .landing-burger {
+  flex-shrink: 0;
+  padding: 0;
   display: none;
   flex-direction: column;
   gap: 5px;
@@ -890,7 +892,7 @@
 
 .about-orb {
   position: absolute;
-  width: 360px;
+  width: min(360px, 100%);
   height: 360px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(247, 198, 90, 0.18), transparent 72%);
@@ -1082,7 +1084,7 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 520px;
+  width: min(520px, 100%);
   height: 520px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
@@ -1252,12 +1254,12 @@
   }
 
   .landing-nav__actions {
-    display: none;
+    display: flex;
   }
 
   .landing-burger {
     display: flex;
-    margin-left: auto;
+    margin-left: 0;
   }
 
   .hero__inner,
@@ -1280,6 +1282,16 @@
 }
 
 @media (max-width: 720px) {
+  .landing-nav__inner { gap: 8px; }
+  .landing-brand { gap: 6px; }
+  .landing-nav__actions .landing-btn {
+    padding: 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .landing-brand__text { font-size: 16px; }
+  .landing-nav__actions { gap: 6px; }
   .landing-nav__inner {
     width: calc(100% - 28px);
   }
@@ -1317,6 +1329,10 @@
     width: calc(100% - 32px);
   }
 
+}
+
+@media (max-width: 480px) {
+  .landing-brand__text { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

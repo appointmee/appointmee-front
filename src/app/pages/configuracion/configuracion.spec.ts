@@ -282,8 +282,8 @@ describe('Ajustes · Verificar cuenta', () => {
 
   it('deja un solo Volver al lado de Verificar, sin accesos duplicados', () => {
     const fila = fixture.nativeElement.querySelector('.verificacion__acciones-verificar');
-    expect(fila.querySelector('ds-button:first-child button').classList.contains('verificacion__principal')).toBe(true);
-    expect(fila.querySelector('ds-button:last-child button').textContent).toBe('Volver');
+    expect(fila.querySelector('button:first-child').classList.contains('verificacion__principal')).toBe(true);
+    expect(fila.querySelector('button:last-child').textContent).toBe('Volver');
     expect(fixture.nativeElement.querySelectorAll('.verificacion__salir')).toHaveLength(1);
     expect(fixture.nativeElement.textContent).not.toContain('¿El email no es correcto?');
   });

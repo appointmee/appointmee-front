@@ -13,7 +13,7 @@ import { DsButtonComponent } from './shared/ui/button/button.component';
 Y usar en template:
 
 ```html
-<ds-button variant="primary" size="md">Guardar</ds-button>
+<button dsButton variant="primary" size="md">Guardar</button>
 ```
 
 ## Tokens
@@ -47,7 +47,7 @@ Estados relevantes: hover usa `--accent-soft` manteniendo el color de texto; foc
 | Componente | Default | Hover | Focus | Active | Disabled | Loading | Error |
 |---|---|---|---|---|---|---|---|
 | Botón | Sí | Sí | Sí | Sí | Sí | Sí | No aplica: el error se comunica con `ds-alert`/`ds-toast` |
-| Input | Sí | Sí | Sí | Sí | Sí | No aplica | Sí |
+| Input | Sí | Sí | Sí | Sí | Sí | Sí | Sí |
 | Select | Sí | Sí | Sí | Sí | Sí | No aplica | Sí |
 | Checkbox / radio | Sí | Sí | Sí | Sí | Sí | No aplica | Sí |
 | Card / badge | Sí | No aplica | No aplica | No aplica | No aplica | No aplica | No aplica |
@@ -64,4 +64,21 @@ Ruta `/design-system` con ejemplos de botón, input, card, badge, alert, skeleto
 
 ### Alcance de aplicación
 
-Los botones, campos de entrada y selectores de las pantallas están integrados con los componentes `ds-button`, `ds-input` y `ds-select`; `ds-input` proyecta el control nativo para conservar los bindings reactivos, atributos y validaciones existentes. Los tokens y el foco visible son globales. Inicio, sucursales/detalle, servicios, autenticación/registro, configuración, errores/404 y diálogos usan estos componentes o controles nativos ya integrados en `ds-input`. Los demás componentes (`ds-card`, badge, alert, toast, modal, skeleton, empty state, paginación, checkbox y radio) están disponibles como piezas reutilizables y tienen ejemplos en la demo.
+Los botones de las pantallas y diálogos usan `button[dsButton]`. El componente vive en el botón nativo: conserva estilos de la pantalla, clases dinámicas, atributos ARIA y el envío nativo de formularios. No se deben crear botones anidados ni copiar clases o atributos mediante manipulación del DOM.
+
+Los campos de autenticación, búsqueda y configuración usan `ds-input`, que proyecta el control nativo para conservar los bindings y validaciones existentes. Si se proporciona `label`, asocia una etiqueta al control; si la pantalla ya tiene una etiqueta, se omite. Los errores y la carga pueden cambiar dinámicamente. La descripción del error se agrega sin perder los textos de ayuda existentes.
+
+Los tokens y el foco visible son globales. Las tarjetas, avisos y diálogos específicos conservan sus composiciones; las piezas `ds-card`, badge, alert, toast, modal, skeleton, empty state y paginación están disponibles en la demo para nuevas pantallas. No se considera completada una migración de esas composiciones solo por importar un componente.
+
+### Contratos de interacción
+
+- Botón: variantes `primary`, `secondary` y `danger`; tamaños `sm`, `md` y `lg`; `disabled` y `loading` bloquean la activación. Usar `(click)` o `(clicked)`, nunca ambos para la misma acción. `type="submit"` funciona con Enter y con el botón.
+- Checkbox: `[checked]`, `[value]` y `(checkedChange)`; admite `[(checked)]`.
+- Radio: indicar siempre `name` por grupo y un `value` por opción. Vincular `[checked]` y `(valueChange)` al estado de la pantalla. Usar nombres diferentes para grupos independientes y un `fieldset` con `legend`.
+- Card interactiva: `interactive` agrega rol y foco; `(activated)` funciona con clic, Enter y Espacio. Para navegación, preferir un enlace nativo y evitar controles anidados dentro de una card que actúe como botón.
+- Modal: proporcionar `ariaLabel` o `ariaLabelledby`, controlar `[open]` y responder a `(close)`. El foco queda dentro; Escape solicita el cierre. El fondo se vuelve `inert` y se restaura al cerrar o destruir el modal.
+- Breakpoints: `--bp-*` documenta los valores comunes. Las variables CSS no se sustituyen directamente en condiciones `@media`; usar los valores documentados.
+
+### Verificación
+
+`npm run e2e` incluye `e2e/design-system.spec.ts`: accesos del Home a 320, 390 y 1280 px, diseño y atributos del toggle de contraseña, foco del modal y contraste AA de las combinaciones de texto de los tokens sobre las superficies base. Esto no sustituye una revisión manual con lector de pantalla ni certifica cualquier combinación de colores creada por una pantalla.

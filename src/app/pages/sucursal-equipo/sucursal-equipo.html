@@ -34,7 +34,7 @@
         <h1>No pudimos mostrar al equipo</h1>
         <p>{{ error() }}</p>
         <div class="estado__acciones">
-          <ds-button class="btn btn--primary" type="button" (click)="reintentar()">Reintentar</ds-button>
+          <button dsButton class="btn btn--primary" type="button" (click)="reintentar()">Reintentar</button>
           <a class="btn btn--ghost" [routerLink]="volverLink()">Volver</a>
         </div>
       </div>

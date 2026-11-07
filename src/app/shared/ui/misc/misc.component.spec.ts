@@ -13,6 +13,45 @@ import {
 } from './misc.component';
 
 describe('componentes de sistema de diseño', () => {
+  it('checkbox emite el estado elegido y radio emite su valor', () => {
+    const checkbox = TestBed.createComponent(DsCheckboxComponent);
+    checkbox.detectChanges();
+    const checkedChange = vi.fn();
+    checkbox.componentInstance.checkedChange.subscribe(checkedChange);
+    checkbox.nativeElement.querySelector('input').click();
+    expect(checkedChange).toHaveBeenCalledWith(true);
+    const radio = TestBed.createComponent(DsRadioComponent);
+    radio.componentRef.setInput('name', 'servicio');
+    radio.componentRef.setInput('value', 'corte');
+    radio.detectChanges();
+    const valueChange = vi.fn();
+    radio.componentInstance.valueChange.subscribe(valueChange);
+    radio.nativeElement.querySelector('input').click();
+    expect(valueChange).toHaveBeenCalledWith('corte');
+  });
+
+  it('modal bloquea Shift+Tab inicial y vuelve accesible el fondo al cerrar', () => {
+    @Component({
+      imports: [DsModalComponent],
+      template: `<button class="fondo">Fondo</button><ds-modal [open]="open">
+        <button>Último</button>
+      </ds-modal>`,
+    })
+    class Host { open = true; }
+    const fixture = TestBed.createComponent(Host);
+    fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('[role="dialog"]');
+    const background = fixture.nativeElement.querySelector('.fondo');
+    expect(background.hasAttribute('inert')).toBe(true);
+    const tab = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+    dialog.dispatchEvent(tab);
+    expect(tab.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(dialog.querySelector('button'));
+    fixture.componentInstance.open = false;
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    expect(background.hasAttribute('inert')).toBe(false);
+  });
   it('select asocia el error y permite personalizar la etiqueta', async () => {
     await TestBed.configureTestingModule({ imports: [DsSelectComponent] }).compileComponents();
     const f = TestBed.createComponent(DsSelectComponent);

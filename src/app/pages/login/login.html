@@ -4,7 +4,7 @@
       <strong>Registro exitoso</strong>
       <p>Tu cuenta fue creada. Iniciá sesión para continuar con la verificación de tu email.</p>
     </div>
-    <ds-button type="button" aria-label="Cerrar notificación de registro" (click)="registroExitoso.set(false)">✕</ds-button>
+    <button dsButton type="button" aria-label="Cerrar notificación de registro" (click)="registroExitoso.set(false)">✕</button>
   </aside>
 }
 
@@ -40,12 +40,12 @@
                [attr.aria-invalid]="loginForm.password().touched() && loginForm.password().invalid()"
                aria-describedby="login-password-error" /></ds-input>
 
-        <ds-button class="login__toggle" type="button" aria-controls="login-password"
-                [aria-pressed]="mostrarPassword()"
-                [aria-label]="mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+        <button dsButton class="login__toggle" type="button" aria-controls="login-password"
+                [attr.aria-pressed]="mostrarPassword()"
+                [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
                 (click)="mostrarPassword.set(!mostrarPassword())">
           {{ mostrarPassword() ? 'Ocultar' : 'Mostrar' }}
-        </ds-button>
+        </button>
       </div>
 
       <div id="login-password-error" class="login__validation" aria-live="polite">
@@ -62,16 +62,16 @@
     </div>
 
     @if (emailSinVerificar()) {
-      <ds-button class="login__link" type="button" (click)="irAVerificar()">Verificar mi email</ds-button>
+      <button dsButton class="login__link" type="button" (click)="irAVerificar()">Verificar mi email</button>
     }
 
-    <ds-button class="login__submit" type="submit" [disabled]="cargando()">
+    <button dsButton class="login__submit" type="submit" [disabled]="cargando()">
       @if (cargando()) { <span class="login__spinner" aria-hidden="true"></span> }
       {{ cargando() ? 'Ingresando…' : 'Iniciar sesión' }}
-    </ds-button>
+    </button>
 
     @if (puedeReintentar()) {
-      <ds-button class="login__retry" type="submit" [disabled]="cargando()">Reintentar</ds-button>
+      <button dsButton class="login__retry" type="submit" [disabled]="cargando()">Reintentar</button>
     }
 
     <a class="login__forgot" routerLink="/olvide-mi-contrasena">Olvidé mi contraseña</a>

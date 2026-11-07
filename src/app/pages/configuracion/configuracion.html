@@ -26,9 +26,9 @@
 
       @if (redirigiendo()) {
         <p class="verificacion__aviso">En un momento te llevamos a Sucursales…</p>
-        <ds-button class="verificacion__principal" type="button" (click)="irASucursales()">Ir a Sucursales</ds-button>
+        <button dsButton class="verificacion__principal" type="button" (click)="irASucursales()">Ir a Sucursales</button>
       } @else if (!auth.autenticado()) {
-        <ds-button class="verificacion__principal" type="button" (click)="volverAlLogin()">Volver al inicio de sesión</ds-button>
+        <button dsButton class="verificacion__principal" type="button" (click)="volverAlLogin()">Volver al inicio de sesión</button>
       }
     } @else if (contextoValido()) {
       <div class="verificacion__destinatario">
@@ -63,10 +63,10 @@
                      [readOnly]="enviando() || confirmando() || bloqueada()" /></ds-input>
             }
           </div>
-        <ds-button class="verificacion__secundario" type="button" (click)="enviarCodigo()"
+        <button dsButton class="verificacion__secundario" type="button" (click)="enviarCodigo()"
                 [disabled]="enviando() || confirmando() || segundosReenvio() > 0">
           {{ enviando() ? 'Enviando…' : segundosReenvio() > 0 ? 'Reenviar en ' + segundosReenvio() + ' s' : reenvioSugerido() || bloqueada() ? 'Pedir un código nuevo' : codigoEnviado() ? 'Reenviar código' : 'Enviar código' }}
-        </ds-button>
+        </button>
           </div>
 
           <div id="verificacion-codigo-error" class="verificacion__validacion" aria-live="polite">
@@ -85,15 +85,15 @@
         </div>
 
         <div class="verificacion__acciones-verificar">
-          <ds-button class="verificacion__principal" type="submit" [disabled]="!puedeVerificar()">
+          <button dsButton class="verificacion__principal" type="submit" [disabled]="!puedeVerificar()">
             {{ confirmando() ? 'Verificando…' : 'Verificar' }}
-          </ds-button>
-          <ds-button class="verificacion__salir" type="button" aria-label="Volver al inicio de sesión" (click)="volverAlLogin()">Volver</ds-button>
+          </button>
+          <button dsButton class="verificacion__salir" type="button" aria-label="Volver al inicio de sesión" (click)="volverAlLogin()">Volver</button>
         </div>
       </form>
     } @else {
       <p class="verificacion__aviso">Volvé a iniciar sesión para continuar con la verificación de tu cuenta.</p>
-      <ds-button class="verificacion__salir" type="button" (click)="volverAlLogin()">Volver al inicio de sesión</ds-button>
+      <button dsButton class="verificacion__salir" type="button" (click)="volverAlLogin()">Volver al inicio de sesión</button>
     }
   </section>
 </section>

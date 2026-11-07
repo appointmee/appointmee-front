@@ -7,10 +7,10 @@ describe('DesignSystemPage', () => {
     const f = TestBed.createComponent(DesignSystemPage);
     f.detectChanges();
     expect(f.nativeElement.querySelector('h1').textContent).toContain('Sistema de diseño');
-    expect(f.nativeElement.querySelectorAll('ds-button').length).toBeGreaterThan(0);
+    expect(f.nativeElement.querySelectorAll('button[dsButton]').length).toBeGreaterThan(0);
 
     const abrir = Array.from(
-      f.nativeElement.querySelectorAll('ds-button button') as NodeListOf<HTMLButtonElement>,
+      f.nativeElement.querySelectorAll('button[dsButton]') as NodeListOf<HTMLButtonElement>,
     ).find((b) => b.textContent?.includes('Abrir modal')) as HTMLButtonElement;
     abrir.click();
     f.detectChanges();

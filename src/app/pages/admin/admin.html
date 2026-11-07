@@ -32,7 +32,7 @@
           <span class="panel__contador" [attr.aria-label]="pendientes() + ' solicitudes pendientes'">
             {{ pendientes() }} {{ pendientes() === 1 ? 'pendiente' : 'pendientes' }}
           </span>
-          <button
+          <button dsButton
             class="actualizar"
             type="button"
             [disabled]="reintentando()"
@@ -68,7 +68,7 @@
           </span>
           <h3>No pudimos cargar las solicitudes</h3>
           <p>{{ error() }}</p>
-          <button class="boton" type="button" [disabled]="reintentando()" (click)="reintentar()">
+          <button dsButton class="boton" type="button" [disabled]="reintentando()" (click)="reintentar()">
             {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
           </button>
         </div>
@@ -76,7 +76,7 @@
         @if (error()) {
           <div class="aviso aviso--error" role="alert">
             <p>{{ error() }}</p>
-            <button type="button" [disabled]="reintentando()" (click)="reintentar()">
+            <button dsButton type="button" [disabled]="reintentando()" (click)="reintentar()">
               {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
             </button>
           </div>

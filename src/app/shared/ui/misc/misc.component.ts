@@ -8,6 +8,7 @@ import {
   HostListener,
   Input,
   Output,
+  OnDestroy,
   ViewChild,
 } from '@angular/core';
 
@@ -101,7 +102,9 @@ export class DsEmptyStateComponent {
     `.ds-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000}.ds-modal{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:var(--space-4);max-width:500px;width:90%;max-height:90dvh;overflow:auto}.ds-modal:focus-visible{outline:2px solid var(--accent);outline-offset:2px}`,
   ],
 })
-export class DsModalComponent implements AfterViewChecked {
+export class DsModalComponent implements AfterViewChecked, OnDestroy {
+  private readonly background: HTMLElement[] = [];
+  constructor(private readonly host: ElementRef<HTMLElement>) {}
   private isOpen = false;
   @Input() set open(value: boolean) {
     if (value && !this.isOpen) {
@@ -109,6 +112,7 @@ export class DsModalComponent implements AfterViewChecked {
         ? document.activeElement
         : null;
     } else if (!value && this.isOpen) {
+      this.restoreBackground();
       this.previouslyFocused?.focus();
       this.previouslyFocused = null;
       this.focused = false;
@@ -130,6 +134,17 @@ export class DsModalComponent implements AfterViewChecked {
 
   ngAfterViewChecked(): void {
     if (this.open && !this.focused && this.dialog) {
+      let current: HTMLElement | null = this.host.nativeElement;
+      while (current?.parentElement) {
+        for (const sibling of Array.from(current.parentElement.children)) {
+          if (sibling !== current && sibling instanceof HTMLElement && !sibling.hasAttribute('inert')) {
+            sibling.setAttribute('inert', '');
+            this.background.push(sibling);
+          }
+        }
+        if (current.parentElement === document.body) break;
+        current = current.parentElement;
+      }
       this.dialog.nativeElement.focus();
       this.focused = true;
     }
@@ -140,10 +155,14 @@ export class DsModalComponent implements AfterViewChecked {
     const focusables = this.dialog.nativeElement.querySelectorAll<HTMLElement>(
       'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
     );
-    if (!focusables.length) return;
+    if (!focusables.length) {
+      event.preventDefault();
+      this.dialog.nativeElement.focus();
+      return;
+    }
     const first = focusables[0];
     const last = focusables[focusables.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === this.dialog.nativeElement)) {
       event.preventDefault();
       last.focus();
     } else if (!event.shiftKey && document.activeElement === last) {
@@ -154,6 +173,16 @@ export class DsModalComponent implements AfterViewChecked {
 
   requestClose(): void {
     this.close.emit();
+  }
+
+  private restoreBackground(): void {
+    for (const element of this.background) element.removeAttribute('inert');
+    this.background.length = 0;
+  }
+
+  ngOnDestroy(): void {
+    this.restoreBackground();
+    if (this.open) this.previouslyFocused?.focus();
   }
 }
 
@@ -239,13 +268,20 @@ export class DsSelectComponent implements AfterViewInit {
   selector: 'ds-checkbox',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<label class="ds-checkbox" [attr.for]="id"><input [id]="id" type="checkbox" [disabled]="disabled" [attr.aria-invalid]="error ? 'true' : null" [attr.aria-describedby]="error ? id + '-error' : null" /><span><ng-content></ng-content></span></label>@if(error){<span class="ds-error" [id]="id + '-error'" role="alert">{{error}}</span>}`,
+  template: `<label class="ds-checkbox" [attr.for]="id"><input [id]="id" type="checkbox" [disabled]="disabled" [checked]="checked" [value]="value" (change)="onChange($event)" [attr.aria-invalid]="error ? 'true' : null" [attr.aria-describedby]="error ? id + '-error' : null" /><span><ng-content></ng-content></span></label>@if(error){<span class="ds-error" [id]="id + '-error'" role="alert">{{error}}</span>}`,
   styles: [`.ds-checkbox{display:inline-flex;gap:var(--space-2);align-items:center;cursor:pointer}.ds-checkbox:has(input:disabled){opacity:.6;cursor:not-allowed}.ds-checkbox input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}`],
 })
 export class DsCheckboxComponent {
   readonly id = `ds-checkbox-${++nextSelectId}`;
   @Input() disabled = false;
   @Input() error = '';
+  @Input() checked = false;
+  @Input() value = 'on';
+  @Output() checkedChange = new EventEmitter<boolean>();
+  onChange(event: Event): void {
+    this.checked = (event.target as HTMLInputElement).checked;
+    this.checkedChange.emit(this.checked);
+  }
 }
 
 @Component({
@@ -253,13 +289,20 @@ export class DsCheckboxComponent {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<label class="ds-radio"
-    ><input type="radio" [disabled]="disabled" [name]="name" [attr.aria-invalid]="error ? 'true' : null" [attr.aria-describedby]="error ? id + '-error' : null" /><span><ng-content></ng-content></span
+    ><input type="radio" [disabled]="disabled" [name]="name" [checked]="checked" [value]="value" (change)="onChange($event)" [attr.aria-invalid]="error ? 'true' : null" [attr.aria-describedby]="error ? id + '-error' : null" /><span><ng-content></ng-content></span
   ></label>@if(error){<span class="ds-error" [id]="id + '-error'" role="alert">{{error}}</span>}`,
   styles: [`.ds-radio{display:inline-flex;gap:var(--space-2);align-items:center;cursor:pointer}.ds-radio:hover input:not(:disabled){accent-color:var(--accent-strong)}.ds-radio:has(input:disabled){opacity:.6;cursor:not-allowed}.ds-radio input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.ds-radio input:active:not(:disabled){transform:scale(.96)}.ds-error{color:var(--danger);font-size:var(--font-size-xs)}`],
 })
 export class DsRadioComponent {
   readonly id = `ds-radio-${++nextSelectId}`;
   @Input() disabled = false;
-  @Input() name = 'ds-radio-group';
+  @Input({ required: true }) name = '';
   @Input() error = '';
+  @Input() checked = false;
+  @Input() value = '';
+  @Output() valueChange = new EventEmitter<string>();
+  onChange(event: Event): void {
+    this.checked = (event.target as HTMLInputElement).checked;
+    if (this.checked) this.valueChange.emit(this.value);
+  }
 }

@@ -44,7 +44,7 @@
   } @else if (error()) {
     <div class="resenias__estado resenias__estado--error" role="alert">
       <p class="resenias__estado-texto">{{ error() }}</p>
-      <button class="resenias__reintentar" type="button" (click)="reintentar()">Reintentar</button>
+      <button dsButton class="resenias__reintentar" type="button" (click)="reintentar()">Reintentar</button>
     </div>
   } @else if (!hayResenias()) {
     <div class="resenias__vacio">

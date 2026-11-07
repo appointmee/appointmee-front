@@ -26,7 +26,7 @@
           spellcheck="false"
           aria-label="Buscar sucursales por nombre" /></ds-input>
         @if (searchTerm()) {
-          <ds-button
+          <button dsButton
             type="button"
             class="search__clear"
             (click)="clearSearch()"
@@ -35,30 +35,30 @@
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m6 6 12 12M18 6 6 18" />
             </svg>
-          </ds-button>
+          </button>
         }
       </form>
 
       <div class="categorias" role="group" aria-label="Filtrar por categoría">
-        <ds-button
+        <button dsButton
           type="button"
           class="categoria-chip"
           [class.categoria-chip--active]="selectedCategory() === null"
           (click)="selectCategory(null)"
-          [aria-pressed]="selectedCategory() === null"
+          [attr.aria-pressed]="selectedCategory() === null"
         >
           Todas
-        </ds-button>
+        </button>
         @for (categoria of categorias(); track categoria) {
-          <ds-button
+          <button dsButton
             type="button"
             class="categoria-chip"
             [class.categoria-chip--active]="selectedCategory() === categoria"
             (click)="selectCategory(categoria)"
-            [aria-pressed]="selectedCategory() === categoria"
+            [attr.aria-pressed]="selectedCategory() === categoria"
           >
             {{ humanizeCategory(categoria) }}
-          </ds-button>
+          </button>
         }
       </div>
     </div>
@@ -91,9 +91,9 @@
     } @else if (error()) {
       <p class="estado estado--error" role="alert">{{ error() }}</p>
       @if (!requiereLogin()) {
-        <ds-button class="estado__link" type="button" [disabled]="reintentando()" (click)="retry()">
+        <button dsButton class="estado__link" type="button" [disabled]="reintentando()" (click)="retry()">
           {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
-        </ds-button>
+        </button>
       }
       @if (requiereLogin()) {
         <p class="estado">

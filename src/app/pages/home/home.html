@@ -24,18 +24,18 @@
       }
     </div>
 
-    <ds-button
+    <button dsButton
       class="landing-burger"
       type="button"
       [class.is-open]="mobileOpen()"
       (click)="toggleMobile()"
-      [aria-expanded]="mobileOpen()"
+      [attr.aria-expanded]="mobileOpen()"
       aria-label="Abrir menú"
     >
       <span></span>
       <span></span>
       <span></span>
-    </ds-button>
+    </button>
   </div>
 </header>
 
@@ -104,7 +104,7 @@
               (focus)="onSearchFocus()"
               (keydown)="onSearchKeydown($event)" /></ds-input>
             @if (term()) {
-              <ds-button
+              <button dsButton
                 class="branch-search__clear"
                 type="button"
                 (click)="clearSearch()"
@@ -113,7 +113,7 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="m6 6 12 12M18 6 6 18" />
                 </svg>
-              </ds-button>
+              </button>
             }
           </form>
 
@@ -132,13 +132,13 @@
                 <p class="branch-suggestions__state" role="status">No se encontraron coincidencias.</p>
               } @else {
                 @for (sucursal of suggestions(); track sucursal.id; let i = $index) {
-                  <ds-button
+                  <button dsButton
                     id="branch-suggestion-{{ i }}"
                     class="branch-suggestion"
                     type="button"
                     role="option"
                     [class.branch-suggestion--active]="activeSuggestionIndex() === i"
-                    [aria-selected]="activeSuggestionIndex() === i"
+                    [attr.aria-selected]="activeSuggestionIndex() === i"
                     (click)="selectSuggestion(sucursal)"
                   >
                     @if (sucursal.fotoPerfil) {
@@ -150,7 +150,7 @@
                       <strong>{{ sucursal.nombre }}</strong>
                       <small>{{ categoryLabel(sucursal.categoria) }}</small>
                     </span>
-                  </ds-button>
+                  </button>
                 }
               }
             </div>

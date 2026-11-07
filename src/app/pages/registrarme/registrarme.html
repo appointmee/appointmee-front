@@ -72,12 +72,12 @@
              [formField]="registroForm.password" [readOnly]="cargando()"
              [attr.aria-invalid]="registroForm.password().touched() && (registroForm.password().invalid())"
              aria-describedby="registro-password-error registro-password-ayuda" /></ds-input>
-        <ds-button class="login__toggle" type="button" aria-controls="registro-password registro-confirmarPassword"
-                [aria-pressed]="mostrarPassword()"
-                [aria-label]="mostrarPassword() ? 'Ocultar contraseñas' : 'Mostrar contraseñas'"
+        <button dsButton class="login__toggle" type="button" aria-controls="registro-password registro-confirmarPassword"
+                [attr.aria-pressed]="mostrarPassword()"
+                [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseñas' : 'Mostrar contraseñas'"
                 (click)="mostrarPassword.set(!mostrarPassword())">
           {{ mostrarPassword() ? 'Ocultar' : 'Mostrar' }}
-        </ds-button>
+        </button>
       </div>
       <ul id="registro-password-ayuda" class="registro__requisitos" aria-label="Requisitos de contraseña">
         @for (requisito of requisitosPassword(); track requisito.texto) {
@@ -126,10 +126,10 @@
         <a routerLink="/olvide-mi-contrasena">Restablecer contraseña</a>
       </div>
     }
-    <ds-button class="login__submit" type="submit" [disabled]="cargando()">
+    <button dsButton class="login__submit" type="submit" [disabled]="cargando()">
       @if (cargando()) { <span class="login__spinner" aria-hidden="true"></span> }
       {{ cargando() ? 'Creando cuenta…' : puedeReintentar() ? 'Reintentar' : 'Crear cuenta' }}
-    </ds-button>
+    </button>
     <p class="login__alt">¿Ya tenés cuenta? <a routerLink="/login">Iniciar sesión</a></p>
   </form>
 </section>

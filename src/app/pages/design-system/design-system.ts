@@ -42,12 +42,12 @@ import {
       <section aria-labelledby="botones">
         <h2 id="botones">Botones</h2>
         <div class="fila">
-          <ds-button variant="primary">Primario</ds-button>
-          <ds-button>Secundario</ds-button>
-          <ds-button variant="danger">Peligro</ds-button>
-          <ds-button [disabled]="true">Deshabilitado</ds-button>
-          <ds-button [loading]="true">Cargando</ds-button>
-          <ds-button ariaLabel="Guardar cambios">Estado activo al pulsar</ds-button>
+          <button dsButton variant="primary">Primario</button>
+          <button dsButton>Secundario</button>
+          <button dsButton variant="danger">Peligro</button>
+          <button dsButton [disabled]="true">Deshabilitado</button>
+          <button dsButton [loading]="true">Cargando</button>
+          <button dsButton aria-label="Guardar cambios">Estado activo al pulsar</button>
         </div>
       </section>
 
@@ -107,7 +107,7 @@ import {
 
       <section aria-labelledby="modal">
         <h2 id="modal">Modal</h2>
-        <ds-button variant="primary" (clicked)="abrirModal.set(true)">Abrir modal</ds-button>
+        <button dsButton variant="primary" (clicked)="abrirModal.set(true)">Abrir modal</button>
         @if (modalAbierto()) {
           <ds-modal
             [open]="modalAbierto()"
@@ -116,7 +116,7 @@ import {
           >
             <h3 id="demo-modal-title">Título del modal</h3>
             <p>El foco se mueve al diálogo y Escape lo cierra.</p>
-            <ds-button (clicked)="abrirModal.set(false)">Cerrar</ds-button>
+            <button dsButton (clicked)="abrirModal.set(false)">Cerrar</button>
           </ds-modal>
         }
       </section>
