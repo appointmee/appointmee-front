@@ -224,17 +224,41 @@ describe('Home branch autocomplete', () => {
     it('reemplaza el skeleton por la misma cantidad de tarjetas del layout sin saltos', () => {
       const listado$ = new Subject<SucursalMiniDTO[]>();
       listar.mockReturnValue(listado$);
+      const seisSucursales = Array.from({ length: 6 }, (_, index) => ({
+        ...PELUQUERIA,
+        id: PELUQUERIA.id + index,
+        nombre: `${PELUQUERIA.nombre} ${index + 1}`,
+      }));
 
       const fixture = TestBed.createComponent(Home);
       fixture.detectChanges();
       expect(fixture.nativeElement.querySelectorAll('.card--skeleton').length).toBe(6);
 
-      listado$.next([PELUQUERIA, { ...PELUQUERIA, id: 18, nombre: 'Peluquería Norte' }]);
+      listado$.next(seisSucursales);
       fixture.detectChanges();
 
       expect(fixture.nativeElement.querySelector('.card--skeleton')).toBeNull();
-      expect(fixture.nativeElement.querySelectorAll('.card:not(.card--skeleton)').length).toBe(2);
+      expect(fixture.nativeElement.querySelectorAll('.card:not(.card--skeleton)').length).toBe(6);
       expect(fixture.nativeElement.textContent).toContain(PELUQUERIA.nombre);
+    });
+
+    it('limita Home a seis sucursales destacadas y ofrece abrir el listado completo', () => {
+      const listado = Array.from({ length: 8 }, (_, index) => ({
+        ...PELUQUERIA,
+        id: PELUQUERIA.id + index,
+        nombre: `${PELUQUERIA.nombre} ${index + 1}`,
+      }));
+      listar.mockReturnValue(of(listado));
+
+      const fixture = TestBed.createComponent(Home);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelectorAll('.grid .card').length).toBe(6);
+      const enlacesSucursales = Array.from(
+        fixture.nativeElement.querySelectorAll('a[href^="/sucursales"]'),
+      ) as HTMLAnchorElement[];
+      expect(enlacesSucursales.some((enlace) => enlace.textContent?.includes('Ver todas')))
+        .toBe(true);
     });
 
     it('muestra estado vacío "no hay sucursales en la plataforma" sin filtros', () => {

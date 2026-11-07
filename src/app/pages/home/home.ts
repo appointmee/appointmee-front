@@ -41,6 +41,8 @@ function comparisonKey(value: string): string {
   return value.trim().toLocaleLowerCase('es');
 }
 
+const SUCURSALES_DESTACADAS_MAX = 6;
+
 @Component({
   selector: 'app-home',
   imports: [ReactiveFormsModule, RouterLink],
@@ -193,7 +195,9 @@ export class Home implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((lista) => {
-        this.sucursales.set(lista ?? []);
+        // Home muestra seis sucursales destacadas: coincide con las seis tarjetas
+        // del skeleton y deja el listado completo disponible en /sucursales.
+        this.sucursales.set((lista ?? []).slice(0, SUCURSALES_DESTACADAS_MAX));
         this.sucursalesLoading.set(false);
         this.sucursalesReintentando.set(false);
         // Sólo se limpia el error cuando la consulta se resolvió con éxito.

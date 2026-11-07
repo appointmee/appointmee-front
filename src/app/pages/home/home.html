@@ -413,6 +413,16 @@
             </a>
           }
         </div>
+        <a
+          class="landing-btn landing-btn--ghost"
+          routerLink="/sucursales"
+          [queryParams]="{
+            busqueda: sucursalesTerm() || null,
+            categoria: sucursalesCategoria(),
+          }"
+        >
+          Ver todas las sucursales
+        </a>
       }
     </div>
   </section>
