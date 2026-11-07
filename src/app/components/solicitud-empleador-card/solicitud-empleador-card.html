@@ -1,0 +1,85 @@
+<article class="solicitud" [class.solicitud--expandida]="expandida()">
+  <div class="solicitud__resumen">
+    <span class="solicitud__avatar" aria-hidden="true">{{ iniciales() }}</span>
+
+    <div class="solicitud__identidad">
+      <h3>{{ nombre() }}</h3>
+      <p>Enviada el {{ fecha() }}</p>
+    </div>
+
+    <span [class]="'estado ' + claseEstado()">{{ etiqueta() }}</span>
+
+    <button
+      class="solicitud__alternar"
+      type="button"
+      [attr.aria-expanded]="expandida()"
+      [attr.aria-controls]="idDetalle()"
+      [attr.aria-label]="etiquetaAlternarAccesible()"
+      (click)="alternar.emit()"
+    >
+      <span>{{ etiquetaAlternar() }}</span>
+      <svg [class.is-open]="expandida()" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </button>
+  </div>
+
+  @if (expandida()) {
+    <div class="solicitud__detalle" [id]="idDetalle()">
+      @if (cargandoDetalle()) {
+        <div class="solicitud__cargando" role="status" aria-live="polite">
+          <span class="sr-only">Cargando el detalle de la solicitud…</span>
+          <span class="skeleton skeleton--line" aria-hidden="true"></span>
+          <span class="skeleton skeleton--line skeleton--short" aria-hidden="true"></span>
+          <span class="skeleton skeleton--line skeleton--shorter" aria-hidden="true"></span>
+        </div>
+      } @else if (errorDetalle()) {
+        <div class="solicitud__error" role="alert">
+          <p>{{ errorDetalle() }}</p>
+          <button type="button" (click)="reintentarDetalle.emit()">Reintentar detalle</button>
+        </div>
+      } @else if (detalle(); as datos) {
+        <app-solicitud-empleador-detalle
+          [detalle]="datos"
+          [modo]="modo()"
+          [solicitante]="solicitante()"
+        />
+
+        @if (puedeResolver()) {
+          <div class="solicitud__acciones" aria-label="Resolver solicitud">
+            <button
+              class="solicitud__accion solicitud__accion--rechazar"
+              type="button"
+              [disabled]="resolviendo() !== null"
+              (click)="rechazar.emit()"
+            >
+              @if (resolviendo() === 'rechazar') {
+                <span class="solicitud__spinner" aria-hidden="true"></span>
+              }
+              {{ resolviendo() === 'rechazar' ? 'Rechazando…' : 'Rechazar' }}
+            </button>
+            <button
+              class="solicitud__accion solicitud__accion--aprobar"
+              type="button"
+              [disabled]="resolviendo() !== null"
+              (click)="aprobar.emit()"
+            >
+              @if (resolviendo() === 'aprobar') {
+                <span class="solicitud__spinner" aria-hidden="true"></span>
+              }
+              {{ resolviendo() === 'aprobar' ? 'Aprobando…' : 'Aprobar solicitud' }}
+            </button>
+          </div>
+        } @else if (modo() === 'admin' && datos.estado !== 'PENDIENTE') {
+          <p class="solicitud__resuelta" role="status">
+            Esta solicitud ya está resuelta y no admite acciones.
+          </p>
+        }
+      }
+    </div>
+
+    @if (errorAccion()) {
+      <p class="solicitud__error-accion" role="alert">{{ errorAccion() }}</p>
+    }
+  }
+</article>

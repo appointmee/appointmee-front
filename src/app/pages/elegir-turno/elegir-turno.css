@@ -1,0 +1,60 @@
+.turnos {
+  width: min(900px, calc(100% - 32px));
+  margin: 24px auto 64px;
+  line-height: 1.6;
+}
+
+.turnos h1 {
+  font-size: clamp(22px, 4vw, 30px);
+}
+
+.turnos a {
+  color: var(--accent);
+}
+
+.turnos select,
+.turnos button {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.turnos select {
+  display: block;
+  max-width: 100%;
+  margin: 8px 0 24px;
+  font-size: 16px;
+}
+
+.turnos button {
+  cursor: pointer;
+}
+
+.turnos button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.turnos__horarios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.turnos__dia {
+  margin-bottom: 24px;
+}
+
+.turnos__aviso {
+  padding: 16px;
+  border: 1px solid var(--accent);
+}
+
+.turnos :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}

@@ -31,7 +31,7 @@
     </header>
 
     @if (sinContexto) {
-      <div class="estado estado--contexto" role="alert">
+      <div class="estado estado--contexto" role="alert" aria-live="assertive" aria-atomic="true">
         <span class="estado__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M12 9v4M12 17h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
@@ -44,41 +44,47 @@
         </p>
         <a class="boton" routerLink="/">Volver al Home</a>
       </div>
-    } @else if (cargando()) {
-      <div class="grid" aria-busy="true" aria-live="polite">
-        <span class="sr-only">Cargando servicios…</span>
-        @for (item of [1, 2, 3, 4, 5, 6]; track item) {
-          <article class="card card--skeleton" aria-hidden="true">
-            <div class="card__media skeleton"></div>
-            <div class="card__body">
-              <div class="skeleton skeleton--line"></div>
-              <div class="skeleton skeleton--line skeleton--short"></div>
-              <div class="skeleton skeleton--line skeleton--shorter"></div>
-              <div class="skeleton skeleton--meta"></div>
-            </div>
-          </article>
-        }
-      </div>
-    } @else if (error()) {
-      <div class="estado estado--error" role="alert">
-        <span class="estado__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-          </svg>
-        </span>
-        <h2>No pudimos cargar los servicios</h2>
-        <p>{{ error() }}</p>
-        <div class="estado__acciones">
-          @if (requiereLogin()) {
-            <a class="boton" routerLink="/login">Iniciar sesión</a>
-          } @else if (!requiereRolCliente()) {
-            <button class="boton" type="button" [disabled]="reintentando()" (click)="reintentar()">
-              {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
-            </button>
-          }
-          <a class="boton boton--ghost" [routerLink]="detalleUrl()">Volver al detalle</a>
+    } @else {
+      @if (sinConexion() && !cargando() && !error()) {
+        <div class="aviso-conexion" role="alert" aria-live="assertive" aria-atomic="true">
+          <span class="aviso-conexion__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M2 2 22 22M8.5 8.5A10.9 10.9 0 0 1 12 8c4 0 7.4 2 9 5M5 13c1-1.4 2.4-2.4 4-3M8.5 16.5a4.5 4.5 0 0 1 7 0M12 20h.01" />
+            </svg>
+          </span>
+          <div class="aviso-conexion__texto">
+            <strong>Sin conexión a internet</strong>
+            <p>Revisá tu conexión y reintentá. Podés seguir viendo lo que ya está cargado.</p>
+          </div>
+          <button
+            class="boton boton--compacto"
+            type="button"
+            [disabled]="reintentando()"
+            [attr.aria-busy]="reintentando()"
+            (click)="reintentar()"
+          >
+            {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+          </button>
         </div>
-      </div>
+      }
+
+      @if (cargando()) {
+        <div class="grid" aria-busy="true">
+          <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            Cargando servicios…
+          </span>
+          @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+            <article class="card card--skeleton" aria-hidden="true">
+              <div class="card__media skeleton"></div>
+              <div class="card__body">
+                <div class="skeleton skeleton--line"></div>
+                <div class="skeleton skeleton--line skeleton--short"></div>
+                <div class="skeleton skeleton--line skeleton--shorter"></div>
+                <div class="skeleton skeleton--meta"></div>
+              </div>
+            </article>
+          }
+        </div>
     } @else if (servicios().length === 0) {
       <div class="estado estado--vacio" role="status">
         <span class="estado__icon" aria-hidden="true">
@@ -100,6 +106,7 @@
                 [alt]="servicio.nombre"
                 loading="lazy"
                 decoding="async"
+                referrerpolicy="no-referrer"
                 (error)="onImageError($event)"
               />
             </div>
@@ -117,10 +124,18 @@
                 </span>
                 <span class="card__precio">{{ formatPrecio(servicio.precio) }}</span>
               </div>
-            </div>
-          </article>
-        }
-      </div>
+                <a
+                  class="boton"
+                  [routerLink]="['/sucursal', sucursalId, 'servicios', servicio.id, 'turnos']"
+                  [attr.aria-label]="'Elegir horario para ' + servicio.nombre"
+                >
+                  Elegir turno
+                </a>
+              </div>
+            </article>
+          }
+        </div>
+      }
     }
   </div>
 </section>

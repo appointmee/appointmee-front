@@ -80,6 +80,7 @@ describe('US-SERV-01 · Elegir servicio', () => {
   afterEach(() => {
     fixture.destroy();
     backend.verify();
+    vi.restoreAllMocks();
   });
 
   async function abrir(url: string): Promise<HTMLElement> {
@@ -122,6 +123,27 @@ describe('US-SERV-01 · Elegir servicio', () => {
     expect(imagenes[1]?.getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
   });
 
+  it('US-SERV-06 · muestra tarjetas skeleton mientras cargan los servicios', async () => {
+    await router.navigateByUrl('/sucursal/7/servicios');
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelectorAll('.card--skeleton')).toHaveLength(6);
+    expect(host.querySelector('.grid')?.getAttribute('aria-busy')).toBe('true');
+    expect(texto(host)).toContain('Cargando servicios');
+    expect(host.querySelector('[aria-live="polite"]')).not.toBeNull();
+
+    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush(SUCURSAL);
+    backend
+      .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
+      .flush(SERVICIOS);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(host.querySelectorAll('.card--skeleton')).toHaveLength(0);
+    expect(texto(host)).toContain('Se cargaron 2 servicios');
+  });
+
   it('sin sucursalId muestra el error de contexto y el enlace al Home sin pedir datos', async () => {
     const host = await abrir('/servicios');
 
@@ -144,6 +166,9 @@ describe('US-SERV-01 · Elegir servicio', () => {
 
     const host = fixture.nativeElement as HTMLElement;
     expect(texto(host)).toContain('Esta sucursal todavía no tiene servicios disponibles');
+    const vacio = host.querySelector('.estado--vacio');
+    expect(vacio?.getAttribute('role')).toBe('status');
+    expect(vacio?.getAttribute('aria-live')).toBe('polite');
     const detalle = host.querySelector<HTMLAnchorElement>('.estado--vacio .boton');
     expect(detalle?.textContent?.trim()).toBe('Volver al detalle');
     expect(detalle?.getAttribute('href')).toBe('/sucursal/7');
@@ -169,6 +194,7 @@ describe('US-SERV-01 · Elegir servicio', () => {
   });
 
   it('ante una falla muestra el error inline y el reintento conserva la sucursal', async () => {
+    const alerta = vi.spyOn(window, 'alert').mockImplementation(() => {});
     await router.navigateByUrl('/sucursal/7/servicios');
     fixture.detectChanges();
 
@@ -183,23 +209,104 @@ describe('US-SERV-01 · Elegir servicio', () => {
     expect(texto(host)).toContain('No pudimos cargar los servicios');
     expect(texto(host)).toContain('Sucursal Flores');
     expect(router.url).toBe('/sucursal/7/servicios');
+    expect(alerta).not.toHaveBeenCalled();
+
+    const estadoError = host.querySelector('.estado--error');
+    expect(estadoError?.getAttribute('role')).toBe('alert');
+    expect(estadoError?.getAttribute('aria-live')).toBe('assertive');
 
     const reintentar = host.querySelector<HTMLButtonElement>('.estado--error .boton');
     expect(reintentar?.textContent?.trim()).toBe('Reintentar');
     reintentar?.click();
+    reintentar?.click();
     fixture.detectChanges();
     expect(reintentar?.disabled).toBe(true);
+    expect(reintentar?.getAttribute('aria-busy')).toBe('true');
     expect(reintentar?.textContent).toContain('Reintentando');
+    expect(texto(host)).toContain('Reintentando la carga de servicios');
 
-    backend
-      .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
-      .flush(SERVICIOS);
+    // El segundo clic no debe disparar otra petición mientras la primera sigue en vuelo.
+    const solicitudes = backend.match(
+      (request) => request.url.endsWith('/servicios/listar/sucursal/7'),
+    );
+    expect(solicitudes).toHaveLength(1);
+    solicitudes[0].flush(SERVICIOS);
     await fixture.whenStable();
     fixture.detectChanges();
 
     expect(texto(host)).toContain('Corte de pelo');
     expect(texto(host)).toContain('Sucursal Flores');
     expect(host.querySelector('.estado--error')).toBeNull();
+  });
+
+  it('US-SERV-06 · sin conexión muestra un mensaje específico y permite reintentar', async () => {
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+    await router.navigateByUrl('/sucursal/7/servicios');
+    fixture.detectChanges();
+
+    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush(SUCURSAL);
+    backend
+      .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
+      .flush({}, { status: 0, statusText: 'Unknown Error' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(texto(host)).toContain('Sin conexión a internet');
+    expect(texto(host)).toContain('Revisá tu conexión');
+    expect(texto(host)).toContain('Sucursal Flores');
+
+    const reintentar = host.querySelector<HTMLButtonElement>('.estado--error button.boton');
+    expect(reintentar?.textContent?.trim()).toBe('Reintentar');
+    reintentar?.click();
+    fixture.detectChanges();
+    expect(reintentar?.disabled).toBe(true);
+
+    const solicitud = backend.expectOne((request) =>
+      request.url.endsWith('/servicios/listar/sucursal/7'),
+    );
+    onLine.mockReturnValue(true);
+    window.dispatchEvent(new Event('online'));
+    fixture.detectChanges();
+    expect(texto(host)).toContain('La conexión volvió');
+
+    solicitud.flush(SERVICIOS);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(host)).toContain('Corte de pelo');
+    expect(host.querySelector('.estado--error')).toBeNull();
+  });
+
+  it('US-SERV-06 · al perder la conexión conserva los servicios y ofrece reintentar', async () => {
+    await router.navigateByUrl('/sucursal/7/servicios');
+    fixture.detectChanges();
+
+    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush(SUCURSAL);
+    backend
+      .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
+      .flush(SERVICIOS);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    window.dispatchEvent(new Event('offline'));
+    fixture.detectChanges();
+
+    const aviso = host.querySelector('.aviso-conexion');
+    expect(aviso).not.toBeNull();
+    expect(aviso?.getAttribute('role')).toBe('alert');
+    expect(aviso?.getAttribute('aria-live')).toBe('assertive');
+    expect(texto(host)).toContain('Sin conexión a internet');
+    expect(texto(host)).toContain('Corte de pelo');
+    expect(aviso?.querySelector('button')?.textContent?.trim()).toBe('Reintentar');
+
+    onLine.mockReturnValue(true);
+    window.dispatchEvent(new Event('online'));
+    fixture.detectChanges();
+    expect(host.querySelector('.aviso-conexion')).toBeNull();
   });
 
   it('usa el fallback cuando una imagen no se puede cargar', async () => {

@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
-import { NavigationEnd, NavigationError, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Navbar } from './navbar/navbar';
+import { NavigationEnd, NavigationError, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { Navbar } from './components/navbar/navbar';
 import { ApiErrors } from './http/api-errors';
 import { NavigationHistory } from './navigation-history';
 

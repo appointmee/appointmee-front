@@ -1,0 +1,7 @@
+<dialog #dialogo class="login-modal" aria-label="Iniciá sesión para continuar con el turno"
+        (cancel)="cerrar.emit()">
+  <button class="login-modal__cerrar" type="button" aria-label="Cerrar inicio de sesión"
+          (click)="cerrar.emit()">✕</button>
+  <app-login [modoModal]="true" [destinoRetorno]="destinoRetorno()"
+             (sesionIniciada)="sesionIniciada.emit()" />
+</dialog>
