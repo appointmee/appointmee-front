@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField, email, form, maxLength, minLength, pattern, required } from '@angular/forms/signals';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { ApiError } from '../../http/api-errors-service';
 import { RegistroModel } from '../../models/registro';
@@ -17,6 +17,7 @@ import { authService } from '../../services/auth-service';
 export class Registrarme {
   private auth = inject(authService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
 
   registroModel = signal<RegistroModel>({
@@ -128,7 +129,10 @@ export class Registrarme {
       .subscribe({
         next: () => {
           this.registroModel.update(datos => ({ ...datos, password: '', confirmarPassword: '' }));
-          void this.router.navigate(['/login'], { state: { registroExitoso: true } });
+          void this.router.navigate(['/login'], {
+            queryParams: { returnTo: this.route.snapshot.queryParamMap.get('returnTo') },
+            state: { registroExitoso: true },
+          });
         },
         error: (error: ApiError) => {
           this.cargando.set(false);

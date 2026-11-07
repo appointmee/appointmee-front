@@ -64,7 +64,7 @@ describe('Registro de cliente', () => {
     });
     expect(fixture.nativeElement.querySelector('[type="submit"]').disabled).toBe(true);
     respuesta.next({ message: 'Creado' });
-    expect(navegar).toHaveBeenCalledWith(['/login'], { state: { registroExitoso: true } });
+    expect(navegar).toHaveBeenCalledWith(['/login'], { queryParams: { returnTo: null }, state: { registroExitoso: true } });
     expect(auth.login).not.toHaveBeenCalled();
     expect(page.registroModel().password).toBe('');
   });

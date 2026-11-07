@@ -24,8 +24,12 @@ export const routes: Routes = [
     redirectTo: 'sucursales',
   },
   {
+    path: 'sucursal/:sucursalId/servicios/:servicioId/turnos',
+    title: 'AppointMee | Elegir turno · Temporal',
+    loadComponent: () => import('./pages/elegir-turno/elegir-turno').then(module => module.ElegirTurno),
+  },
+  {
     path: 'sucursal/:sucursalId/servicios',
-    canActivate: [authGuard],
     title: 'AppointMee | Elegir servicio',
     data: {
       title: 'Elegir servicio',
@@ -46,7 +50,6 @@ export const routes: Routes = [
   },
   {
     path: 'sucursal/:id/resenias',
-    canActivate: [authGuard],
     title: 'AppointMee | Reseñas',
     loadComponent: () =>
       import('./pages/sucursal-resenias/sucursal-resenias').then(
@@ -55,7 +58,6 @@ export const routes: Routes = [
   },
   {
     path: 'sucursal/:id/equipo',
-    canActivate: [authGuard],
     title: 'AppointMee | Equipo',
     loadComponent: () =>
       import('./pages/sucursal-equipo/sucursal-equipo').then(

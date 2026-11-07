@@ -5,6 +5,18 @@
   padding: 48px 16px;
 }
 
+.login--modal {
+  min-height: 0;
+  padding: 0;
+}
+
+.login--modal .login__card {
+  width: 100%;
+  padding-top: 44px;
+  border: 0;
+  box-shadow: none;
+}
+
 .login__card {
   width: min(100%, 420px);
   padding: 32px 28px;

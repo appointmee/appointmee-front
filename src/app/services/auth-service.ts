@@ -16,6 +16,7 @@ import {
 import type { Tokens, UsuarioSesion, PerfilResponse, MensajeResponse, VerificacionEmailResponse, EstadoVerificacion } from '../models/auth';
 import { verificacionPendienteService } from './verificacion-pendiente-service';
 import type { RegistroRequest } from '../models/registro';
+import type { EstadoRecuperacion } from '../models/restablecer-password';
 import { backendService } from './backend-service';
 
 @Injectable({ providedIn: 'root' })
@@ -113,7 +114,6 @@ export class authService {
     return this.http.post<{ message: string }>(`${this.api.baseUrl}/auth/forgot-password`, { email });
   }
 
-
   restablecerPassword(token: string, newPassword: string): Observable<MensajeResponse> {
     return this.http.post<MensajeResponse>(`${this.api.baseUrl}/auth/reset-password`, { token, newPassword }).pipe(
       tap(() => {
@@ -122,6 +122,14 @@ export class authService {
       }),
     );
   }
+
+  validarEnlaceRecuperacion(token: string): Observable<EstadoRecuperacion> {
+    return this.http.post<EstadoRecuperacion>(`${this.api.baseUrl}/auth/reset-password/validate`, { token });
+  }
+
+
+
+
 
 
   // Verificación de la cuenta (endpoints públicos)

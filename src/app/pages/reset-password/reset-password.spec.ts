@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { Subject } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { ResetPasswordPage } from './reset-password';
 import { authService } from '../../services/auth-service';
 import { MensajeResponse } from '../../models/auth';
@@ -9,13 +9,14 @@ describe('Restablecer contraseña', () => {
   let fixture: ComponentFixture<ResetPasswordPage>;
   let page: ResetPasswordPage;
   let respuesta: Subject<MensajeResponse>;
-  const auth = { restablecerPassword: vi.fn() };
+  const auth = { restablecerPassword: vi.fn(), validarEnlaceRecuperacion: vi.fn() };
   const token = 'token-de-prueba-para-restablecer';
 
   beforeEach(async () => {
     vi.resetAllMocks();
     respuesta = new Subject<MensajeResponse>();
     auth.restablecerPassword.mockReturnValue(respuesta);
+    auth.validarEnlaceRecuperacion.mockReturnValue(of({ valido: true, expiresInSeconds: 900 }));
     await TestBed.configureTestingModule({
       imports: [ResetPasswordPage],
       providers: [
@@ -82,5 +83,47 @@ describe('Restablecer contraseña', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('form')).toBeNull();
     expect(auth.restablecerPassword).not.toHaveBeenCalled();
+  });
+
+  it('oculta los campos mientras comprueba el enlace y si ya estaba vencido', () => {
+    fixture.destroy();
+    const validacion = new Subject<{ valido: boolean; expiresInSeconds: number }>();
+    auth.validarEnlaceRecuperacion.mockReturnValue(validacion);
+    fixture = TestBed.createComponent(ResetPasswordPage);
+    page = fixture.componentInstance;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Comprobando enlace');
+    expect(fixture.nativeElement.querySelector('input')).toBeNull();
+    completar(); enviar();
+    expect(auth.restablecerPassword).not.toHaveBeenCalled();
+    validacion.next({ valido: false, expiresInSeconds: 0 }); fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('El enlace no es válido o venció');
+    expect(fixture.nativeElement.querySelector('input')).toBeNull();
+  });
+
+  it('si falla la validación por red permite reintentar sin habilitar el formulario', () => {
+    fixture.destroy();
+    auth.validarEnlaceRecuperacion.mockReturnValueOnce(throwError(() => ({ status: 0 })));
+    fixture = TestBed.createComponent(ResetPasswordPage); fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No pudimos comprobar el enlace');
+    expect(fixture.nativeElement.querySelector('input')).toBeNull();
+    fixture.nativeElement.querySelector('button').click(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#reset-password')).not.toBeNull();
+  });
+
+  it('retira los campos si el enlace vence mientras está abierto', async () => {
+    fixture.destroy();
+    vi.useFakeTimers();
+    try {
+      auth.validarEnlaceRecuperacion.mockReturnValue(of({ valido: true, expiresInSeconds: 1 }));
+      fixture = TestBed.createComponent(ResetPasswordPage); fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('input')).not.toBeNull();
+      await vi.advanceTimersByTimeAsync(1000); fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('input')).toBeNull();
+      expect(fixture.nativeElement.textContent).toContain('El enlace no es válido o venció');
+    } finally {
+      fixture.destroy();
+      vi.useRealTimers();
+    }
   });
 });

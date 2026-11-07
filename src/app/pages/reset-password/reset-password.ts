@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signa
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField, form, maxLength, minLength, pattern, required } from '@angular/forms/signals';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { timer } from 'rxjs';
 
 import { ApiError } from '../../http/api-errors-service';
 import { RestablecerPasswordModel } from '../../models/restablecer-password';
@@ -26,6 +27,9 @@ export class ResetPasswordPage {
   mostrarPassword = signal(false);
   mensaje = signal('');
   puedeReintentar = signal(false);
+  verificandoEnlace = signal(false);
+  enlaceValidado = signal(false);
+  errorValidacion = signal(false);
 
   passwordModel = signal<RestablecerPasswordModel>({ password: '', confirmarPassword: '' });
 
@@ -52,9 +56,50 @@ export class ResetPasswordPage {
     ];
   });
 
+  constructor() {
+    this.validarEnlace();
+  }
+
+  validarEnlace(): void {
+    if (this.enlaceInvalido() || this.verificandoEnlace()) return;
+    this.verificandoEnlace.set(true);
+    this.enlaceValidado.set(false);
+    this.errorValidacion.set(false);
+
+    this.auth.validarEnlaceRecuperacion(this.token)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: estado => {
+          this.verificandoEnlace.set(false);
+          if (!estado.valido || !Number.isFinite(estado.expiresInSeconds) || estado.expiresInSeconds <= 0) {
+            this.invalidarEnlace();
+            return;
+          }
+          this.enlaceValidado.set(true);
+          timer(estado.expiresInSeconds * 1000).pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => { if (!this.completado()) this.invalidarEnlace(); });
+        },
+        error: (error: ApiError) => {
+          this.verificandoEnlace.set(false);
+          if ([400, 401, 403, 410].includes(error.status)) {
+            this.invalidarEnlace();
+          } else {
+            this.errorValidacion.set(true);
+          }
+        },
+      });
+  }
+
+  private invalidarEnlace(): void {
+    this.enlaceInvalido.set(true);
+    this.enlaceValidado.set(false);
+    this.token = '';
+    this.passwordModel.set({ password: '', confirmarPassword: '' });
+  }
+
   onSubmit(event: Event): void {
     event.preventDefault();
-    if (this.cargando() || this.completado() || this.enlaceInvalido()) return;
+    if (this.cargando() || this.completado() || !this.enlaceValidado() || this.enlaceInvalido()) return;
     this.passwordForm().markAsTouched();
 
     if (this.passwordForm().invalid() || !this.coinciden()) {

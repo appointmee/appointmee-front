@@ -10,9 +10,11 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ReactiveFormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
-import { authService } from '../services/auth-service';
+import { authService } from '../../services/auth-service';
+import { BranchSearch } from '../../services/branch-search';
 
 interface NavItem {
   readonly label: string;
@@ -41,7 +43,7 @@ const ICONS = {
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [ReactiveFormsModule, RouterLink, RouterLinkActive],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,6 +53,7 @@ export class Navbar {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(authService);
+  protected readonly branchSearch = inject(BranchSearch);
 
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
   private readonly burger = viewChild<ElementRef<HTMLButtonElement>>('burger');
@@ -69,13 +72,16 @@ export class Navbar {
       || ruta === '/verificar-email';
   });
 
+  protected readonly mostrarBuscador = computed(() => {
+    const ruta = this.rutaActual().split(/[?#]/)[0].replace(/\/+$/, '');
+    return !this.navbarSimple() && ruta !== '/sucursales' && ruta !== '/listado-sucursales';
+  });
   protected readonly enRegistro = computed(() => this.rutaActual().split(/[?#]/)[0] === '/registrarme');
 
   protected readonly mobileOpen = signal(false);
   protected readonly profileOpen = signal(false);
   protected readonly searchOpen = signal(false);
   protected readonly scrolled = signal(false);
-  protected readonly searchTerm = signal('');
   protected readonly icons = ICONS;
 
   /** Siempre visibles para cualquier usuario autenticado (criterio 2). */
@@ -235,7 +241,7 @@ export class Navbar {
   }
 
   protected openSearch(): void {
-    if (this.navbarSimple()) {
+    if (!this.mostrarBuscador()) {
       return;
     }
 
@@ -249,24 +255,17 @@ export class Navbar {
     this.searchOpen.set(false);
   }
 
-  protected updateSearch(event: Event): void {
-    this.searchTerm.set((event.target as HTMLInputElement).value);
-  }
-
   protected clearSearch(): void {
-    this.searchTerm.set('');
+    this.branchSearch.clear();
     this.searchInput()?.nativeElement.focus();
   }
 
   protected submitSearch(event: Event): void {
     event.preventDefault();
 
-    const term = this.searchTerm().trim();
-
+    this.branchSearch.submit();
     this.closeSearch();
     this.closeMobile();
-
-    void this.router.navigate(['/sucursales'], term ? { queryParams: { busqueda: term } } : {});
   }
 
   protected logout(): void {
