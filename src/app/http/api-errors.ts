@@ -4,12 +4,15 @@ import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { authService } from '../services/auth-service';
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from './error-handling-context';
+import type { FrontendError } from '../models/frontend-error';
 
-export interface ApiError {
-  readonly status: number;
-  readonly message: string;
+export interface ApiError extends FrontendError {
   readonly fields: Readonly<Record<string, string>>;
   readonly reference: string;
+}
+
+function codeForStatus(status: number): string {
+  return status === 0 ? 'NETWORK_ERROR' : `HTTP_${status}`;
 }
 
 const SAFE_MESSAGES: Readonly<Record<number, string>> = {
@@ -44,7 +47,7 @@ export class ApiErrors {
       ? this.safeConflictMessage(response.error)
       : SAFE_MESSAGES[response.status] ?? 'Ocurrió un error inesperado. Volvé al inicio e intentá nuevamente.';
 
-    return { status: response.status, message, fields, reference };
+    return { code: codeForStatus(response.status), status: response.status, message, fields, reference };
   }
 
   dismiss(): void { this.notice.set(null); }

@@ -2,16 +2,27 @@ import { TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 import { ErrorPage } from './error';
+import { NavigationHistory } from '../../navigation-history';
+import { ReporteError } from './reporte-error';
 
 @Component({ standalone: true, template: '' })
 class TestRoute {}
+
+const backTarget = vi.fn(() => null as string | null);
+const registrarError = vi.fn();
 
 describe('ErrorPage', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ErrorPage],
-      providers: [provideRouter([{ path: 'private', component: TestRoute }])],
+      providers: [
+        provideRouter([{ path: 'private', component: TestRoute }]),
+        { provide: NavigationHistory, useValue: { backTarget } },
+        { provide: ReporteError, useValue: { registrar: registrarError } },
+      ],
     }).compileComponents();
+    backTarget.mockReset().mockReturnValue(null);
+    registrarError.mockReset();
   });
 
   it('shows a safe public error message and always offers a way home', async () => {
@@ -94,7 +105,7 @@ describe('ErrorPage', () => {
   });
 
   it('always offers at least two actions as a way out', async () => {
-    // Sin returnTo (sin historial): solo 'Volver' + 'Ir al inicio' = 2 acciones.
+    // Sin historial hay dos destinos útiles: sucursales e inicio.
     const fixture = TestBed.createComponent(ErrorPage);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -103,6 +114,8 @@ describe('ErrorPage', () => {
     const actions = html.querySelector('.error-card__actions');
     const buttons = actions?.querySelectorAll('button, a') ?? [];
     expect(buttons.length).toBeGreaterThanOrEqual(2);
+    expect(actions?.textContent).toContain('Ver sucursales');
+    expect(actions?.textContent).not.toContain('Volver');
 
     // Con returnTo seguro y estado recuperable: 'Reintentar' + 'Volver' + 'Ir al inicio' = 3.
     history.replaceState({ status: 503, returnTo: '/private' }, '');
@@ -114,6 +127,26 @@ describe('ErrorPage', () => {
     const actions2 = html2.querySelector('.error-card__actions');
     const buttons2 = actions2?.querySelectorAll('button, a') ?? [];
     expect(buttons2.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('offers Volver only when there is an internal history target', async () => {
+    backTarget.mockReturnValue('/sucursales');
+    const fixture = TestBed.createComponent(ErrorPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const actions = (fixture.nativeElement as HTMLElement).querySelector('.error-card__actions');
+    expect(actions?.textContent).toContain('Volver');
+    expect(actions?.textContent).not.toContain('Ver sucursales');
+  });
+
+  it('sends only allow-listed error context to observability', async () => {
+    history.replaceState({ status: 503, code: 'HTTP_503', errorReference: 'ref-123', rawMessage: 'SQL token' }, '');
+    const fixture = TestBed.createComponent(ErrorPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(registrarError).toHaveBeenCalledWith({ code: 'HTTP_503', status: 503 }, 'ref-123');
   });
 
   it('is public and does not require authentication', () => {

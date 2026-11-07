@@ -31,8 +31,8 @@
 
     <div class="navbar__actions">
       @if (navbarSimple()) {
-        <a class="navbar__cta navbar__cta--solid navbar__cta--auth" [routerLink]="enRegistro() ? '/login' : '/registrarme'">
-          {{ enRegistro() ? 'Iniciar sesión' : 'Crear cuenta' }}
+        <a class="navbar__cta navbar__cta--solid navbar__cta--auth" [routerLink]="enErrorComoInvitado() || enRegistro() ? '/login' : '/registrarme'">
+          {{ enErrorComoInvitado() || enRegistro() ? 'Iniciar sesión' : 'Crear cuenta' }}
         </a>
       } @else {
       @if (auth.restaurando()) {

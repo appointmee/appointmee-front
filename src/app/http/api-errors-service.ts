@@ -4,14 +4,12 @@ import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { authService } from '../services/auth-service';
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from './error-handling-context';
+import type { FrontendError } from '../models/frontend-error';
 
-export interface ApiError {
-  readonly status: number;
-  readonly message: string;
+export interface ApiError extends FrontendError {
   readonly fields: Readonly<Record<string, string>>;
   readonly reference: string;
-  readonly code?: 'REGISTRATION_PENDING_VERIFICATION' | 'EMAIL_NOT_VERIFIED' | 'EMAIL_ALREADY_VERIFIED' | 'VERIFICATION_CODE_INVALID'
-    | 'VERIFICATION_CODE_EXPIRED' | 'VERIFICATION_ATTEMPTS_EXCEEDED' | 'VERIFICATION_SESSION_FAILED';
+  readonly code: string;
   readonly verificationToken?: string;
   readonly verificationExpiresIn?: number;
   readonly attemptsRemaining?: number;
@@ -28,6 +26,16 @@ const SAFE_MESSAGES: Readonly<Record<number, string>> = {
   503: 'Tuvimos un problema. Probá de nuevo en unos segundos.',
   0: 'No pudimos conectarnos. Revisá tu conexión.',
 };
+
+const BACKEND_CODES = new Set([
+  'REGISTRATION_PENDING_VERIFICATION', 'EMAIL_NOT_VERIFIED', 'EMAIL_ALREADY_VERIFIED',
+  'VERIFICATION_CODE_INVALID', 'VERIFICATION_CODE_EXPIRED', 'VERIFICATION_ATTEMPTS_EXCEEDED',
+  'VERIFICATION_SESSION_FAILED',
+]);
+
+function codeForStatus(status: number): string {
+  return status === 0 ? 'NETWORK_ERROR' : `HTTP_${status}`;
+}
 
 @Injectable({ providedIn: 'root' })
 export class apiErrorsService {
@@ -57,9 +65,9 @@ export class apiErrorsService {
         : (SAFE_MESSAGES[response.status] ??
           'Ocurrió un error inesperado. Volvé al inicio e intentá nuevamente.');
 
-    const permitidos = ['REGISTRATION_PENDING_VERIFICATION', 'EMAIL_NOT_VERIFIED', 'EMAIL_ALREADY_VERIFIED', 'VERIFICATION_CODE_INVALID',
-      'VERIFICATION_CODE_EXPIRED', 'VERIFICATION_ATTEMPTS_EXCEEDED'];
-    const code = permitidos.includes(String(conflictCode)) ? conflictCode as ApiError['code'] : undefined;
+    const code = typeof conflictCode === 'string' && BACKEND_CODES.has(conflictCode)
+      ? conflictCode
+      : codeForStatus(response.status);
     const verificationToken = code === 'EMAIL_NOT_VERIFIED' && response.status === 403
       && typeof response.error?.verificationToken === 'string' ? response.error.verificationToken : undefined;
     const verificationExpiresIn = Number.isFinite(response.error?.verificationExpiresIn)

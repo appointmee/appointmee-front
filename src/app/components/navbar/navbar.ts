@@ -59,13 +59,18 @@ export class Navbar {
   protected readonly navbarSimple = computed(() => {
     const ruta = this.rutaActual().split(/[?#]/)[0];
 
-    return ruta === '/login'
+    const accesoDeInvitado = ruta === '/error' && this.auth.visitante();
+    return accesoDeInvitado || ruta === '/login'
       || ruta === '/registrarme'
       || ruta === '/reset-password'
       || ruta === '/olvide-mi-contrasena'
       || ruta === '/configuracion/verificar-email'
       || ruta === '/verificar-email';
   });
+
+  protected readonly enErrorComoInvitado = computed(() =>
+    this.rutaActual().split(/[?#]/)[0] === '/error' && this.auth.visitante(),
+  );
 
   protected readonly enRegistro = computed(() => this.rutaActual().split(/[?#]/)[0] === '/registrarme');
 

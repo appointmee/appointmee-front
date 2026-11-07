@@ -21,7 +21,11 @@
             {{ retrying() ? 'Reintentando…' : 'Reintentar' }}
           </button>
         }
-        <button class="error-button" type="button" (click)="goBack()">Volver</button>
+        @if (hasInternalHistory()) {
+          <button class="error-button" type="button" (click)="goBack()">Volver</button>
+        } @else {
+          <a class="error-button" routerLink="/sucursales">Ver sucursales</a>
+        }
         <a class="error-button error-button--quiet" routerLink="/">Ir al inicio</a>
       }
     </div>
