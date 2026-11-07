@@ -40,4 +40,12 @@ describe('BranchService', () => {
     expect(request.request.params.get('categoria')).toBe('SPA');
     request.flush([]);
   });
+
+  it('loads categories from the public categories endpoint', () => {
+    service.getCategories().subscribe((categories) => expect(categories).toEqual(['SPA']));
+
+    const request = http.expectOne(`${apiUrl}/sucursales/categorias`);
+    expect(request.request.method).toBe('GET');
+    request.flush(['SPA']);
+  });
 });

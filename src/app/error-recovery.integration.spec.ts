@@ -58,6 +58,7 @@ describe('US-ERR-03 recovery flows', () => {
     await router.navigateByUrl(origin);
     fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);
+    fixture.detectChanges();
 
     const failedList = backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'));
     expect(failedList.request.params.get('nombre')).toBe('Flores');
@@ -80,6 +81,7 @@ describe('US-ERR-03 recovery flows', () => {
     fixture.detectChanges();
     expect(router.url).toBe(origin);
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);
+    fixture.detectChanges();
     const retriedList = backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'));
     expect(retriedList.request.params.get('nombre')).toBe('Flores');
     expect(retriedList.request.params.get('categoria')).toBe('CAFE');
@@ -96,6 +98,7 @@ describe('US-ERR-03 recovery flows', () => {
     await router.navigateByUrl('/sucursales');
     fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush([]);
+    fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'))
       .flush({}, { status: 500, statusText: 'Server Error' });
     await fixture.whenStable();
@@ -115,6 +118,7 @@ describe('US-ERR-03 recovery flows', () => {
     await router.navigateByUrl(origin);
     fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);
+    fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'))
       .flush({}, { status: 401, statusText: 'Unauthorized' });
     await fixture.whenStable();
@@ -138,6 +142,7 @@ describe('US-ERR-03 recovery flows', () => {
 
     expect(router.url).toBe(origin);
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);
+    fixture.detectChanges();
     const restoredList = backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'));
     expect(restoredList.request.params.get('nombre')).toBe('Flores');
     expect(restoredList.request.params.get('categoria')).toBe('CAFE');

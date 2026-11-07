@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -11,7 +10,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { combineLatest, Observable, of, Subject } from 'rxjs';
-import { catchError, debounceTime, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators';
+import { catchError, debounceTime, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators';
 
 import { sucursalService } from '../../services/sucursal-service';
 import { SucursalMiniDTO } from '../../models/sucursal';
@@ -42,6 +41,8 @@ export class Sucursales {
   protected readonly selectedCategory = signal<string | null>(this.initialCategory);
   protected readonly sucursales = signal<SucursalMiniDTO[]>([]);
   protected readonly categorias = signal<string[]>([]);
+  protected readonly avisoCategorias = signal<string | null>(null);
+  private readonly categoriasCargadas = signal(false);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly requiereLogin = signal(false);
@@ -58,7 +59,14 @@ export class Sucursales {
       distinctUntilChanged(),
       startWith(this.searchTerm()),
     );
-    const category$ = toObservable(this.selectedCategory);
+    const category$ = combineLatest([
+      toObservable(this.selectedCategory),
+      toObservable(this.categoriasCargadas),
+    ]).pipe(
+      filter(([, cargadas]) => cargadas),
+      map(([categoria]) => categoria),
+      distinctUntilChanged(),
+    );
     const reintento$ = this.reintento.pipe(startWith(undefined as void));
 
     combineLatest([search$, category$, reintento$])
@@ -102,13 +110,15 @@ export class Sucursales {
       .categorias()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (cats) => this.categorias.set(cats ?? []),
-        error: (err: HttpErrorResponse) => {
-          if (err.status === 401) {
-            this.error.set('Necesitás iniciar sesión para ver las sucursales.');
-            this.requiereLogin.set(true);
-            this.loading.set(false);
-          }
+        next: (cats) => {
+          this.categorias.set(cats ?? []);
+          this.selectedCategory.set(this.validarCategoria(this.route.snapshot.queryParamMap.get('categoria')));
+          this.categoriasCargadas.set(true);
+        },
+        error: () => {
+          this.avisoCategorias.set('No pudimos cargar las categorías. Podés ver todas las sucursales.');
+          this.selectedCategory.set(null);
+          this.categoriasCargadas.set(true);
         },
       });
 
@@ -118,11 +128,17 @@ export class Sucursales {
         this.searchTerm.set(busqueda);
         this.searchSubject.next(busqueda);
       }
-      const categoria = qp['categoria'] ?? null;
+      const categoria = this.categoriasCargadas()
+        ? this.validarCategoria(qp['categoria'] ?? null)
+        : null;
       if (categoria !== this.selectedCategory()) {
         this.selectedCategory.set(categoria);
       }
     });
+  }
+
+  private validarCategoria(categoria: string | null): string | null {
+    return categoria && this.categorias().includes(categoria) ? categoria : null;
   }
 
   private buscarSucursales(
@@ -218,13 +234,6 @@ export class Sucursales {
   protected beeString(puntuacion: number | null): string {
     const score = Math.max(0, Math.min(5, Math.round(puntuacion ?? 0)));
     return '🐝'.repeat(score);
-  }
-
-  protected ratingLabel(sucursal: SucursalMiniDTO): string {
-    if (!this.hasReviews(sucursal)) {
-      return 'Sin reseñas';
-    }
-    return `${this.promedioFormateado(sucursal.puntuacion)} de 5, ${sucursal.cantidadPuntuaciones} reseñas`;
   }
 
   protected cardAriaLabel(sucursal: SucursalMiniDTO): string {

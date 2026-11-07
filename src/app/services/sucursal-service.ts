@@ -30,7 +30,9 @@ export class sucursalService {
   }
 
   categorias(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.api.baseUrl}/sucursales/categorias`);
+    return this.http.get<string[]>(`${this.api.baseUrl}/sucursales/categorias`, {
+      context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+    });
   }
 
   /**
