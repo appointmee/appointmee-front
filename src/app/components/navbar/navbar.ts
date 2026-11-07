@@ -51,6 +51,15 @@ export class Navbar {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(authService);
+  private readonly fotoFallida = signal<string | null>(null);
+  protected readonly fotoPerfil = computed(() => {
+    const foto = this.auth.perfil()?.fotoPerfil?.trim();
+    return foto && foto !== this.fotoFallida() ? foto : null;
+  });
+
+  protected onFotoError(foto: string): void {
+    this.fotoFallida.set(foto);
+  }
 
   private readonly burger = viewChild('burger', { read: ElementRef<HTMLButtonElement> });
   private readonly sheet = viewChild<ElementRef<HTMLElement>>('sheet');

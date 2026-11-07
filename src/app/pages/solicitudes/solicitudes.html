@@ -7,12 +7,8 @@
       </span>
       <h1 id="solicitudes-titulo">Solicitudes</h1>
       <p>
-        @if (esEmpleador() && !rolSinPermiso()) {
-          Enviá una solicitud para otro negocio y seguí el estado de tus pedidos.
-        } @else {
-        Gestioná tu pedido para convertirte en empleador y seguí el estado de tus
-        solicitudes desde un solo lugar.
-        }
+        Gestioná tu pedido para convertirte en empleador y seguí las invitaciones de
+        empleo que recibís desde un solo lugar.
       </p>
     </header>
 
@@ -30,7 +26,7 @@
         <header class="panel__cabecera">
           <div>
             <span class="panel__eyebrow">Empleador</span>
-            <h2 id="solicitudes-empleador-titulo">{{ esEmpleador() && !rolSinPermiso() ? 'Mis solicitudes para otros negocios' : 'Mis solicitudes para ser empleador' }}</h2>
+            <h2 id="solicitudes-empleador-titulo">Mis solicitudes para ser empleador</h2>
           </div>
           @if (total() > 0) {
             <span class="panel__contador" [attr.aria-label]="total() + ' solicitudes registradas'">
@@ -48,7 +44,7 @@
               </svg>
             </span>
             <p class="cta-empleador__nota" role="status">
-              Tu cuenta ya tiene permisos de administrador, por lo que no necesita
+              Tu cuenta ya tiene permisos de administrador o empleador, por lo que no necesita
               enviar esta solicitud.
             </p>
           } @else {
@@ -61,7 +57,7 @@
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 5v14M5 12h14" />
               </svg>
-              {{ esEmpleador() ? 'Solicitar otro negocio' : 'Convertirme en empleador' }}
+              Convertirme en empleador
             </button>
 
             @if (tienePendiente()) {
@@ -78,7 +74,6 @@
           }
         </div>
 
-        @if (!rolSinPermiso()) {
         @if (cargando()) {
           <div class="lista" aria-busy="true" aria-live="polite">
             <span class="sr-only">Cargando tus solicitudes…</span>
@@ -154,34 +149,121 @@
             }
           }
         }
-        }
       </section>
 
-      <section class="panel panel--proximamente" aria-labelledby="solicitudes-empleo-titulo">
+      <section class="panel" aria-labelledby="solicitudes-empleo-titulo">
         <header class="panel__cabecera">
           <div>
             <span class="panel__eyebrow">Empleo</span>
             <h2 id="solicitudes-empleo-titulo">Mis solicitudes de empleo</h2>
           </div>
-          <span class="panel__badge">Próximamente</span>
+          @if (totalEmpleo() > 0) {
+            <span
+              class="panel__contador"
+              [attr.aria-label]="totalEmpleo() + ' invitaciones de empleo recibidas'"
+            >
+              {{ totalEmpleo() }}
+            </span>
+          }
         </header>
 
-        <div class="proximamente">
-          <span class="proximamente__icono" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M4 7h16v12H4zM4 12h16M10 12v2h4v-2" />
-            </svg>
-          </span>
-          <span class="proximamente__etiqueta">En construcción</span>
-          <h3>Postulaciones a empleos</h3>
-          <p>
-            Muy pronto vas a poder postularte a búsquedas de empleo y seguir el estado de cada
-            postulación desde este mismo lugar.
-          </p>
-          <p class="proximamente__nota">
-            Esta sección todavía no está disponible. No hay acciones para realizar por ahora.
-          </p>
-        </div>
+        @if (!puedeVerRecibidas()) {
+          <div class="estado estado--vacio" role="status">
+            <span class="estado__icono" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M4 7h16v12H4zM4 12h16M10 12v2h4v-2" />
+              </svg>
+            </span>
+            <h3>Invitaciones de empleo</h3>
+            <p>
+              Esta sección está disponible para cuentas de cliente. Cuando una sucursal te
+              invite a sumarte a su equipo, vas a poder responder desde acá.
+            </p>
+          </div>
+        } @else {
+          @if (exitoEmpleo()) {
+            <div class="aviso aviso--exito" role="status" aria-live="polite">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m5 12 4 4L19 6" />
+              </svg>
+              <p>{{ exitoEmpleo() }}</p>
+            </div>
+          }
+
+          @if (cargandoEmpleo()) {
+            <div class="lista" aria-busy="true" aria-live="polite">
+              <span class="sr-only">Cargando tus solicitudes de empleo…</span>
+              @for (item of [1, 2, 3]; track item) {
+                <div class="solicitud-skeleton" aria-hidden="true">
+                  <span class="skeleton skeleton--avatar"></span>
+                  <span class="skeleton skeleton--line"></span>
+                  <span class="skeleton skeleton--line skeleton--short"></span>
+                </div>
+              }
+            </div>
+          } @else if (errorEmpleo() && solicitudesEmpleo().length === 0) {
+            <div class="estado estado--error" role="alert">
+              <span class="estado__icono" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              </span>
+              <h3>No pudimos cargar tus solicitudes de empleo</h3>
+              <p>{{ errorEmpleo() }}</p>
+              <button
+                class="boton boton--ghost"
+                type="button"
+                [disabled]="reintentandoEmpleo()"
+                (click)="reintentarEmpleo()"
+              >
+                {{ reintentandoEmpleo() ? 'Reintentando…' : 'Reintentar' }}
+              </button>
+            </div>
+          } @else {
+            @if (errorEmpleo()) {
+              <div class="aviso aviso--error" role="alert">
+                <p>{{ errorEmpleo() }}</p>
+                <button
+                  type="button"
+                  [disabled]="reintentandoEmpleo()"
+                  (click)="reintentarEmpleo()"
+                >
+                  {{ reintentandoEmpleo() ? 'Reintentando…' : 'Reintentar' }}
+                </button>
+              </div>
+            }
+
+            @if (solicitudesEmpleo().length === 0) {
+              <div class="estado estado--vacio" role="status">
+                <span class="estado__icono" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M4 5h16v14H4zM8 9h8M8 13h5" />
+                  </svg>
+                </span>
+                <h3>Todavía no recibiste invitaciones</h3>
+                <p>
+                  Cuando una sucursal te invite a sumarte a su equipo, vas a poder aceptar o
+                  rechazar la invitación desde acá.
+                </p>
+              </div>
+            } @else {
+              <app-solicitud-empleado-lista
+                [solicitudes]="visiblesEmpleo()"
+                tipo="recibida"
+                (solicitudResuelta)="onSolicitudEmpleoResuelta($event)"
+              />
+
+              @if (hayMasEmpleo()) {
+                <a class="ver-mas" routerLink="/solicitudes/empleo/recibidas">
+                  <span>Ver más solicitudes</span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </a>
+              }
+            }
+          }
+        }
       </section>
     </div>
   </div>
@@ -189,7 +271,6 @@
 
 @if (modalAbierto()) {
   <app-solicitud-empleador-modal
-    [otroNegocio]="esEmpleador()"
     [enviando]="enviando()"
     [error]="errorEnvio()"
     (cerrar)="cerrarModal()"

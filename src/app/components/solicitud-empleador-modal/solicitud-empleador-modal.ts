@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  Injector,
   afterNextRender,
   computed,
   inject,
@@ -25,9 +24,6 @@ const MAXIMO_CARACTERES = 300;
 export class SolicitudEmpleadorModal {
   readonly enviando = input(false);
   readonly error = input<string | null>(null);
-  readonly otroNegocio = input(false);
-  private readonly confirmacionAceptada = signal(false);
-  protected readonly requiereConfirmacion = computed(() => this.otroNegocio() && !this.confirmacionAceptada());
 
   readonly cerrar = output<void>();
   readonly confirmar = output<string>();
@@ -42,13 +38,12 @@ export class SolicitudEmpleadorModal {
   protected readonly valido = computed(
     () => this.caracteres() >= MINIMO_CARACTERES && this.caracteres() <= MAXIMO_CARACTERES,
   );
-  protected readonly puedeEnviar = computed(() => this.valido() && !this.enviando() && !this.requiereConfirmacion());
+  protected readonly puedeEnviar = computed(() => this.valido() && !this.enviando());
   protected readonly mostrarAyudaValidacion = computed(
     () => this.tocado() && !this.valido(),
   );
 
   private readonly destroyRef = inject(DestroyRef);
-  private readonly injector = inject(Injector);
   private readonly dialogo = viewChild.required<ElementRef<HTMLDialogElement>>('dialogo');
   private readonly textarea = viewChild<ElementRef<HTMLTextAreaElement>>('textarea');
 
@@ -57,15 +52,9 @@ export class SolicitudEmpleadorModal {
       document.body.classList.add('modal-abierto');
       this.dialogo().nativeElement.showModal();
       this.textarea()?.nativeElement.focus();
-      if (this.requiereConfirmacion()) this.dialogo().nativeElement.querySelector<HTMLButtonElement>('button')?.focus();
     });
 
     this.destroyRef.onDestroy(() => document.body.classList.remove('modal-abierto'));
-  }
-
-  protected confirmarOtroNegocio(): void {
-    this.confirmacionAceptada.set(true);
-    afterNextRender(() => this.textarea()?.nativeElement.focus(), { injector: this.injector });
   }
 
   protected actualizarMotivo(event: Event): void {
