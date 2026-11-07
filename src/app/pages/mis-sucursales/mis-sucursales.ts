@@ -20,10 +20,8 @@ import {
   humanizarCategoria,
 } from '../../models/solicitud-empleado';
 import { SucursalMiniDTO } from '../../models/sucursal';
-import { UsuarioResponseDTO } from '../../models/usuario';
 import { solicitudEmpleadoService } from '../../services/solicitud-empleado-service';
 import { sucursalService } from '../../services/sucursal-service';
-import { usuarioService } from '../../services/usuario-service';
 
 const SOLICITUDES_VISIBLES = 3;
 
@@ -37,7 +35,6 @@ const SOLICITUDES_VISIBLES = 3;
 export class MisSucursales {
   private readonly sucursalesApi = inject(sucursalService);
   private readonly solicitudesApi = inject(solicitudEmpleadoService);
-  private readonly usuariosApi = inject(usuarioService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly recargar = new Subject<void>();
 
@@ -49,10 +46,6 @@ export class MisSucursales {
   protected readonly sucursalSeleccionadaId = signal<number | null>(null);
 
   protected readonly email = signal('');
-  protected readonly buscandoUsuario = signal(false);
-  protected readonly errorBusqueda = signal<string | null>(null);
-  protected readonly usuarioEncontrado = signal<UsuarioResponseDTO | null>(null);
-  protected readonly destinatarioSeleccionado = signal<UsuarioResponseDTO | null>(null);
 
   protected readonly enviando = signal(false);
   protected readonly errorEnvio = signal<string | null>(null);
@@ -125,46 +118,17 @@ export class MisSucursales {
     this.limpiarFormulario();
   }
 
-  protected buscarUsuario(): void {
-    const correo = this.email().trim();
-    if (!correo || this.buscandoUsuario()) return;
-
-    this.buscandoUsuario.set(true);
-    this.errorBusqueda.set(null);
-    this.usuarioEncontrado.set(null);
-    this.destinatarioSeleccionado.set(null);
-
-    this.usuariosApi
-      .buscarPorEmail(correo)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (usuario) => {
-          this.buscandoUsuario.set(false);
-          this.usuarioEncontrado.set(usuario);
-        },
-        error: (error: HttpErrorResponse) => {
-          this.buscandoUsuario.set(false);
-          this.errorBusqueda.set(mensajeErrorSolicitudEmpleado(error, 'busqueda'));
-        },
-      });
-  }
-
-  protected seleccionarDestinatario(usuario: UsuarioResponseDTO): void {
-    this.destinatarioSeleccionado.set(usuario);
-    this.email.set(usuario.email);
-  }
-
   protected enviarSolicitud(): void {
     const sucursalId = this.sucursalSeleccionadaId();
-    const destinatario = this.destinatarioSeleccionado();
-    if (!sucursalId || !destinatario || this.enviando()) return;
+    const correo = this.email().trim();
+    if (!sucursalId || !correo || this.enviando()) return;
 
     this.enviando.set(true);
     this.errorEnvio.set(null);
     this.exitoEnvio.set(null);
 
     this.sucursalesApi
-      .agregarEmpleado(sucursalId, destinatario.email)
+      .agregarEmpleado(sucursalId, correo)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -212,9 +176,6 @@ export class MisSucursales {
 
   private limpiarFormulario(): void {
     this.email.set('');
-    this.usuarioEncontrado.set(null);
-    this.destinatarioSeleccionado.set(null);
-    this.errorBusqueda.set(null);
     this.errorEnvio.set(null);
     this.exitoEnvio.set(null);
   }

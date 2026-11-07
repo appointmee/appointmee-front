@@ -98,45 +98,11 @@
                 placeholder="nombre@ejemplo.com"
                 [disabled]="enviando()"
               />
-              <button
-                class="boton boton--ghost"
-                type="button"
-                [disabled]="buscandoUsuario() || email().trim().length === 0"
-                (click)="buscarUsuario()"
-              >
-                {{ buscandoUsuario() ? 'Consultando…' : 'Consultar' }}
-              </button>
             </div>
-
-            @if (errorBusqueda()) {
-              <p class="busqueda__error" role="alert">{{ errorBusqueda() }}</p>
-            }
-
-            @if (usuarioEncontrado(); as usuario) {
-              <article class="destinatario" [class.destinatario--seleccionado]="destinatarioSeleccionado()?.id === usuario.id">
-                <span class="destinatario__avatar" aria-hidden="true">
-                  {{ (usuario.nombre.charAt(0) + usuario.apellido.charAt(0)).toUpperCase() }}
-                </span>
-                <div class="destinatario__datos">
-                  <strong>{{ usuario.nombre }} {{ usuario.apellido }}</strong>
-                  <a class="destinatario__email" [href]="'mailto:' + usuario.email">{{ usuario.email }}</a>
-                </div>
-                <button
-                  class="boton boton--ghost"
-                  type="button"
-                  (click)="seleccionarDestinatario(usuario)"
-                >
-                  {{ destinatarioSeleccionado()?.id === usuario.id ? 'Seleccionado' : 'Seleccionar' }}
-                </button>
-              </article>
-            }
-
-            @if (destinatarioSeleccionado(); as seleccionado) {
-              <p class="busqueda__seleccionado" role="status">
-                Destinatario seleccionado: {{ seleccionado.nombre }} {{ seleccionado.apellido }}
-                ({{ seleccionado.email }}).
-              </p>
-            }
+            <p class="busqueda__ayuda">
+              Ingresá el correo de la persona que querés invitar. El sistema va a validar los
+              datos al enviar la solicitud.
+            </p>
           </div>
 
           @if (errorEnvio()) {
@@ -146,7 +112,7 @@
           <button
             class="boton boton--principal"
             type="button"
-            [disabled]="enviando() || destinatarioSeleccionado() === null"
+            [disabled]="enviando() || email().trim().length === 0"
             (click)="enviarSolicitud()"
           >
             @if (enviando()) {
