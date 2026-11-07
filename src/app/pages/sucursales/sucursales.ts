@@ -2,11 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  computed,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { combineLatest, Observable, of, Subject } from 'rxjs';
@@ -68,29 +70,6 @@ export class Sucursales {
   protected readonly terminoMuyCorto = computed(() => {
     const termino = normalizarTerminoBusqueda(this.searchTerm());
     return termino.length > 0 && termino.length < MIN_CARACTERES_BUSQUEDA;
-  });
-
-  constructor() {
-    const search$ = this.searchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      startWith(this.searchTerm()),
-    );
-    const category$ = combineLatest([
-      toObservable(this.selectedCategory),
-      toObservable(this.categoriasCargadas),
-    ]).pipe(
-      filter(([, cargadas]) => cargadas),
-      map(([categoria]) => categoria),
-      distinctUntilChanged(),
-    );
-    const reintento$ = this.reintento.pipe(startWith(undefined as void));
-
-    if (categoria) {
-      return `${total} ${sustantivo}${sufijoCategoria}`;
-    }
-
-    return `${total} ${sustantivo} disponibles`;
   });
 
   private readonly busqueda$ = new Subject<SolicitudBusqueda>();
@@ -157,7 +136,6 @@ export class Sucursales {
       const busqueda = qp['busqueda'] ?? '';
       if (busqueda !== this.searchTerm()) {
         this.searchTerm.set(busqueda);
-        this.searchSubject.next(busqueda);
       }
       const categoria = this.categoriasCargadas()
         ? this.validarCategoria(qp['categoria'] ?? null)
@@ -171,30 +149,11 @@ export class Sucursales {
       this.ejecutarBusqueda({ actualizarUrl: false, forzar: true });
     });
 
-  private validarCategoria(categoria: string | null): string | null {
-    return categoria && this.categorias().includes(categoria) ? categoria : null;
+    this.destroyRef.onDestroy(() => this.cancelarDebounce());
   }
 
-  private buscarSucursales(
-    categoria: string | null,
-    nombre: string | null,
-  ): Observable<SucursalMiniDTO[]> {
-    const termino = nombre?.trim() ?? '';
-    if (/^\d+$/.test(termino)) {
-      return this.service.listar().pipe(
-        map((lista) =>
-          (lista ?? []).filter(
-            (sucursal) =>
-              String(sucursal.id) === termino &&
-              (!categoria || sucursal.categoria === categoria),
-          ),
-        ),
-      );
-    }
-
-    if (!this.ultimaSolicitud) {
-      this.ejecutarBusqueda({ actualizarUrl: false, forzar: true });
-    }
+  private validarCategoria(categoria: string | null): string | null {
+    return categoria && this.categorias().includes(categoria) ? categoria : null;
   }
 
   protected onSearchInput(event: Event): void {
