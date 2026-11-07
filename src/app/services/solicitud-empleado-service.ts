@@ -6,6 +6,7 @@ import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import {
   SolicitudEmpleadoDetalleDTO,
   SolicitudEmpleadoMiniPropiaDTO,
+  SolicitudEmpleadoMiniSucursalDTO,
 } from '../models/solicitud-empleado';
 import { backendService } from './backend-service';
 
@@ -21,6 +22,13 @@ export class solicitudEmpleadoService {
   listarRecibidas(): Observable<SolicitudEmpleadoMiniPropiaDTO[]> {
     return this.http.get<SolicitudEmpleadoMiniPropiaDTO[]>(
       `${this.api.baseUrl}/solicitudes-empleado/recibidas`,
+      { context: this.contextoSinAvisoGlobal() },
+    );
+  }
+
+  listarEnviadas(sucursalId: number): Observable<SolicitudEmpleadoMiniSucursalDTO[]> {
+    return this.http.get<SolicitudEmpleadoMiniSucursalDTO[]>(
+      `${this.api.baseUrl}/solicitudes-empleado/enviadas/sucursal/${sucursalId}`,
       { context: this.contextoSinAvisoGlobal() },
     );
   }
