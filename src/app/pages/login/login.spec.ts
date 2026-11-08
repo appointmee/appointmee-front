@@ -11,6 +11,7 @@ describe('Login con Signal Forms', () => {
   const auth = { login: vi.fn() };
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     vi.resetAllMocks();
     sessionStorage.clear();
     // JSDOM does not implement native dialog methods; browser supplies focus trapping.
@@ -31,11 +32,30 @@ describe('Login con Signal Forms', () => {
     page = fixture.componentInstance;
     fixture.detectChanges();
   });
+  afterEach(() => TestBed.resetTestingModule());
 
   function completar() {
     page.loginModel.set({ email: 'ana@example.com', password: 'clave sin complejidad' });
     fixture.detectChanges();
   }
+
+  it('anuncia el cambio de contraseña recibido por estado de navegación', () => {
+    fixture.destroy();
+    vi.spyOn(TestBed.inject(Router), 'getCurrentNavigation').mockReturnValue({ extras: { state: { passwordActualizada: true } } } as any);
+    fixture = TestBed.createComponent(LoginPage);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain('Tu contraseña se actualizó. Ya podés iniciar sesión');
+  });
+
+  it('explica por seguridad el nuevo inicio de sesión tras cambiarla en Ajustes', () => {
+    fixture.destroy();
+    vi.spyOn(TestBed.inject(Router), 'getCurrentNavigation').mockReturnValue({ extras: { state: {
+      passwordActualizada: true, passwordDesdeAjustes: true,
+    } } } as any);
+    fixture = TestBed.createComponent(LoginPage);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain('Tu contraseña se actualizó. Iniciá sesión nuevamente por seguridad');
+  });
 
   function enviar() {
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
@@ -45,6 +65,8 @@ describe('Login con Signal Forms', () => {
   it('valida campos vacíos y email sin exigir complejidad de contraseña', () => {
     enviar(); expect(auth.login).not.toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Ingresá tu email.');
+    expect(fixture.nativeElement.querySelector('.login__summary a')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.login__summary').textContent).toContain('Contraseña: Ingresá tu contraseña.');
     page.loginModel.set({ email: 'invalido', password: 'x' });
     fixture.detectChanges(); enviar(); expect(auth.login).not.toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Ingresá un email válido.');

@@ -4,9 +4,17 @@
   <p class="ajustes__descripcion">Personalizá tus preferencias y la forma en que usás AppointMee.</p>
 
   <nav class="ajustes__pestanas" aria-label="Secciones de ajustes">
-    <span class="ajustes__pestana ajustes__pestana--activa" aria-current="page">Verificar cuenta</span>
+    <button dsButton type="button" class="ajustes__pestana" [class.ajustes__pestana--activa]="seccion() === 'verificacion'"
+      [attr.aria-pressed]="seccion() === 'verificacion'" (click)="seccion.set('verificacion')">Verificar cuenta</button>
+    @if (auth.autenticado()) {
+      <button dsButton type="button" class="ajustes__pestana" [class.ajustes__pestana--activa]="seccion() === 'password'"
+        [attr.aria-pressed]="seccion() === 'password'" (click)="seccion.set('password')">Cambiar contraseña</button>
+    }
   </nav>
 
+  @if (seccion() === 'password' && auth.autenticado()) {
+    <app-cambiar-password />
+  } @else {
   <section class="verificacion" aria-labelledby="verificacion-titulo">
     <div class="verificacion__cabecera">
       <div>
@@ -96,4 +104,5 @@
       <button dsButton class="verificacion__salir" type="button" (click)="volverAlLogin()">Volver al inicio de sesión</button>
     }
   </section>
+  }
 </section>

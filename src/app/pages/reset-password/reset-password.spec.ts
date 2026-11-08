@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { ResetPasswordPage } from './reset-password';
 import { authService } from '../../services/auth-service';
@@ -21,6 +21,7 @@ describe('Restablecer contraseña', () => {
   }
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     vi.resetAllMocks();
     capturarToken();
     respuesta = new Subject<MensajeResponse>();
@@ -37,6 +38,7 @@ describe('Restablecer contraseña', () => {
     page = fixture.componentInstance;
     fixture.detectChanges();
   });
+  afterEach(() => TestBed.resetTestingModule());
 
   function enviar() {
     page.onSubmit(new Event('submit', { cancelable: true }));
@@ -56,7 +58,8 @@ describe('Restablecer contraseña', () => {
     expect(auth.restablecerPassword).not.toHaveBeenCalled();
   });
 
-  it('envía el token y la nueva contraseña una sola vez y muestra éxito', () => {
+  it('envía una sola vez y redirige al login con confirmación sin conservar contraseñas', () => {
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     completar(); enviar(); enviar();
     expect(auth.restablecerPassword).toHaveBeenCalledExactlyOnceWith(token, 'NuevaClave123!');
     respuesta.next({ message: 'Contraseña restablecida' }); fixture.detectChanges();
@@ -64,12 +67,13 @@ describe('Restablecer contraseña', () => {
     expect(fixture.nativeElement.querySelector('a[href="/login"]')).not.toBeNull();
     expect(page.passwordModel()).toEqual({ password: '', confirmarPassword: '' });
     expect(fixture.nativeElement.textContent).not.toContain(token);
+    expect(navigate).toHaveBeenCalledWith(['/login'], { replaceUrl: true, state: { passwordActualizada: true } });
   });
 
-  it('ofrece un nuevo enlace si el token venció o ya fue utilizado', () => {
+  it('avisa si el enlace venció o ya se usó sin ofrecer otro', () => {
     completar(); enviar(); respuesta.error({ status: 400 }); fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('El enlace no es válido o venció');
-    expect(fixture.nativeElement.querySelector('a[href="/olvide-mi-contrasena"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/olvide-mi-contrasena"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('form')).toBeNull();
   });
 
