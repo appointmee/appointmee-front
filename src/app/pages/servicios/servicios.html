@@ -1,3 +1,49 @@
+<section class="servicios" aria-labelledby="servicios-titulo">
+  <div class="servicios__inner">
+    <nav class="migas" aria-label="Navegaci+¦n de la reserva">
+      <a class="volver" [routerLink]="detalleUrl()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M11 18l-6-6 6-6" />
+        </svg>
+        {{ sinContexto ? 'Volver al Home' : 'Volver al detalle' }}
+      </a>
+    </nav>
+
+    <header class="servicios__header">
+      <span class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Reserva de turno
+      </span>
+      <h1 id="servicios-titulo">Eleg+¡ tu servicio</h1>
+
+      @if (!sinContexto) {
+        <p class="servicios__sucursal">
+          <span class="servicios__sucursal-label">Sucursal</span>
+          <strong>{{ nombreSucursal() }}</strong>
+        </p>
+
+        <p class="paso" aria-label="Paso 1 de 3: elegir servicio">
+          <span class="paso__numero" aria-hidden="true">1</span>
+          <span class="paso__texto">Paso 1 de 3 ÔÇö Servicio</span>
+          <span class="paso__track" aria-hidden="true"><span class="paso__progress"></span></span>
+        </p>
+      }
+    </header>
+
+    @if (sinContexto) {
+      <div class="estado estado--contexto" role="alert" aria-live="assertive" aria-atomic="true">
+        <span class="estado__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 9v4M12 17h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+          </svg>
+        </span>
+        <h2>No pudimos identificar la sucursal</h2>
+        <p>
+          Falta el dato de la sucursal en la URL. Volv+® a elegir una sucursal para ver sus
+          servicios disponibles.
+        </p>
+        <a class="boton" routerLink="/">Volver al Home</a>
+      </div>
     } @else {
       @if (sinConexion() && !cargando() && !error()) {
         <div class="aviso-conexion" role="alert" aria-live="assertive" aria-atomic="true">
