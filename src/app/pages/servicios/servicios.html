@@ -198,16 +198,16 @@
 
                 @if (servicio.descripcion) {
                   <p
+                    #descripcionServicio
                     class="card__descripcion"
-                    [class.card__descripcion--colapsada]="
-                      descripcionLarga(servicio) && !estaDescripcionExpandida(servicio.id)
-                    "
+                    [class.card__descripcion--colapsada]="!estaDescripcionExpandida(servicio.id)"
+                    [attr.data-descripcion-id]="servicio.id"
                     [id]="'servicio-descripcion-' + servicio.id"
                   >
                     {{ servicio.descripcion }}
                   </p>
 
-                  @if (descripcionLarga(servicio)) {
+                  @if (descripcionDesbordada(servicio)) {
                     <button
                       class="card__toggle"
                       type="button"

@@ -173,12 +173,14 @@
           <p class="branch-search__hint">Ingresá al menos 2 caracteres para buscar.</p>
         }
         <div class="hero__actions reveal" style="--delay: 0.24s">
-          <a class="landing-btn landing-btn--primary landing-btn--lg" routerLink="/registrarme">
-            Crear cuenta
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-          </a>
+          @if (!isAuthenticated()) {
+            <a class="landing-btn landing-btn--primary landing-btn--lg" routerLink="/registrarme">
+              Crear cuenta
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </a>
+          }
           <a class="landing-btn landing-btn--ghost landing-btn--lg" routerLink="/sucursales">
             Conocer sucursales
           </a>
@@ -239,182 +241,6 @@
           </div>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- Sucursales destacadas -->
-  <section class="sucursales-destacadas" aria-labelledby="sucursales-destacadas-titulo">
-    <div class="section__inner">
-      <header class="sucursales-destacadas__header">
-        <span class="eyebrow">
-          <span class="eyebrow__dot" aria-hidden="true"></span>
-          Sucursales destacadas
-        </span>
-        <h2 id="sucursales-destacadas-titulo">Encontrá tu sucursal</h2>
-        <p class="sucursales-destacadas__lead">
-          Explorá los establecimientos disponibles y encontrá el más cercano a vos.
-        </p>
-      </header>
-
-      <div class="sucursales-destacadas__controls">
-        <form
-          class="search"
-          role="search"
-          aria-label="Filtrar sucursales"
-          (submit)="$event.preventDefault()"
-        >
-          <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.3-4.3" />
-          </svg>
-          <input
-            type="search"
-            class="search__input"
-            [value]="sucursalesTerm()"
-            (input)="onSucursalesSearchInput($event)"
-            placeholder="Buscar por nombre..."
-            autocomplete="off"
-            spellcheck="false"
-            aria-label="Buscar sucursales por nombre"
-          />
-          @if (sucursalesTerm()) {
-            <button
-              type="button"
-              class="search__clear"
-              (click)="clearSucursalesSearch()"
-              aria-label="Limpiar búsqueda"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m6 6 12 12M18 6 6 18" />
-              </svg>
-            </button>
-          }
-        </form>
-
-        <div class="categorias" role="group" aria-label="Filtrar por categoría">
-          <button
-            type="button"
-            class="categoria-chip"
-            [class.categoria-chip--active]="sucursalesCategoria() === null"
-            (click)="selectSucursalesCategoria(null)"
-            [attr.aria-pressed]="sucursalesCategoria() === null"
-          >
-            Todas
-          </button>
-          @for (categoria of sucursalesCategorias(); track categoria) {
-            <button
-              type="button"
-              class="categoria-chip"
-              [class.categoria-chip--active]="sucursalesCategoria() === categoria"
-              (click)="selectSucursalesCategoria(categoria)"
-              [attr.aria-pressed]="sucursalesCategoria() === categoria"
-            >
-              {{ categoryLabel(categoria) }}
-            </button>
-          }
-        </div>
-      </div>
-
-      @if (!sucursalesError() && (sucursalesLoading() || sucursales().length === 0)) {
-        <p class="sucursales-destacadas__aviso" role="status" aria-live="polite">
-          {{ sucursalesAviso() }}
-        </p>
-      }
-
-      @if (sucursalesError()) {
-        <p class="estado estado--error" role="alert">{{ sucursalesError() }}</p>
-        <button
-          class="estado__link"
-          type="button"
-          [disabled]="sucursalesReintentando()"
-          [attr.aria-busy]="sucursalesReintentando()"
-          (click)="retrySucursales()"
-        >
-          {{ sucursalesReintentando() ? 'Reintentando…' : 'Reintentar' }}
-        </button>
-        <a class="estado__link" routerLink="/">Volver al inicio</a>
-      } @else if (sucursalesLoading()) {
-        <div class="grid" aria-busy="true" aria-live="polite" role="status">
-          @for (item of [1, 2, 3, 4, 5, 6]; track item) {
-            <article class="card card--skeleton" aria-hidden="true">
-              <div class="card__media skeleton"></div>
-              <div class="card__body">
-                <div class="skeleton skeleton--line"></div>
-                <div class="skeleton skeleton--line skeleton--short"></div>
-                <div class="skeleton skeleton--line skeleton--shorter"></div>
-              </div>
-            </article>
-          }
-        </div>
-      } @else if (sucursales().length === 0) {
-        <div class="estado vacio" role="status" aria-live="polite">
-          <h3>{{ sucursalesEmptyTitle() }}</h3>
-          <p>{{ sucursalesEmptyDescription() }}</p>
-          <button
-            class="estado__link"
-            type="button"
-            [disabled]="sucursalesReintentando()"
-            [attr.aria-busy]="sucursalesReintentando()"
-            (click)="retrySucursales()"
-          >
-            {{ sucursalesReintentando() ? 'Reintentando…' : 'Reintentar' }}
-          </button>
-          @if (!!sucursalesTerm() || sucursalesCategoria() !== null) {
-            <button class="estado__link" type="button" (click)="clearSucursalesSearch()">
-              Limpiar filtros
-            </button>
-          }
-        </div>
-      } @else {
-        <div class="grid">
-          @for (
-            sucursal of sucursales();
-            track trackBySucursalId($index, sucursal);
-            let i = $index
-          ) {
-            <a
-              class="card"
-              [routerLink]="['/sucursal', sucursal.id]"
-              [attr.aria-label]="sucursalesCardAriaLabel(sucursal)"
-              [style.--i]="$index"
-            >
-              <div class="card__media">
-                <img
-                  [src]="sucursal.fotoPerfil || placeholderImage"
-                  [alt]="sucursal.nombre"
-                  loading="lazy"
-                  decoding="async"
-                  (error)="onSucursalesImageError($event)"
-                />
-              </div>
-              <div class="card__body">
-                <h2 class="card__name">{{ sucursal.nombre }}</h2>
-                <p class="card__category">{{ categoryLabel(sucursal.categoria) }}</p>
-                <div class="card__rating">
-                  @if ((sucursal.cantidadPuntuaciones ?? 0) > 0 && sucursal.puntuacion !== null) {
-                    <span class="rating__text">
-                      <span>{{ sucursal.puntuacion.toFixed(1) }} de 5</span>
-                      <span class="rating__separator" aria-hidden="true">—</span>
-                      <span>{{ sucursal.cantidadPuntuaciones }} reseñas</span>
-                    </span>
-                  } @else {
-                    <span class="rating__text rating__text--muted">Sin reseñas</span>
-                  }
-                </div>
-              </div>
-            </a>
-          }
-        </div>
-        <a
-          class="landing-btn landing-btn--ghost"
-          routerLink="/sucursales"
-          [queryParams]="{
-            busqueda: sucursalesTerm() || null,
-            categoria: sucursalesCategoria(),
-          }"
-        >
-          Ver todas las sucursales
-        </a>
-      }
     </div>
   </section>
 
@@ -645,15 +471,19 @@
           reservar.
         </p>
         <div class="cta__actions reveal">
-          <a class="landing-btn landing-btn--primary landing-btn--lg" routerLink="/registrarme">
-            Crear cuenta
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-          </a>
-          <a class="landing-btn landing-btn--ghost landing-btn--lg" routerLink="/login"
-            >Iniciar sesión</a
-          >
+          @if (!isAuthenticated()) {
+            <a class="landing-btn landing-btn--primary landing-btn--lg" routerLink="/registrarme">
+              Crear cuenta
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </a>
+          }
+          @if (!isAuthenticated()) {
+            <a class="landing-btn landing-btn--ghost landing-btn--lg" routerLink="/login"
+              >Iniciar sesión</a
+            >
+          }
         </div>
       </div>
     </div>

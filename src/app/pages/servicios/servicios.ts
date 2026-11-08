@@ -5,9 +5,12 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  HostListener,
+  afterEveryRender,
   computed,
   inject,
   signal,
+  viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -23,7 +26,11 @@ type ResultadoServicios =
   | { readonly ok: true; readonly servicios: readonly ServicioDTO[] }
   | { readonly ok: false; readonly error: HttpErrorResponse };
 
-const LARGO_DESCRIPCION_COLGADA = 160;
+/**
+ * Sólo se usa cuando el navegador no expone medidas de layout (por ejemplo,
+ * jsdom en los tests). En un navegador real manda la medición del desborde.
+ */
+const LARGO_DESCRIPCION_ESTIMADO = 160;
 
 const FORMATO_PRECIO = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -84,6 +91,9 @@ export class Servicios {
   protected readonly seleccionadoId = signal<number | null>(null);
   /** Descripciones que el usuario expandió para leerlas completas. */
   protected readonly descripcionesExpandidas = signal<ReadonlySet<number>>(new Set());
+  /** Descripciones que realmente no entran en la tarjeta sin expandir. */
+  protected readonly descripcionesDesbordadas = signal<ReadonlySet<number>>(new Set());
+  private readonly descripcionRefs = viewChildren<ElementRef<HTMLElement>>('descripcionServicio');
 
   protected readonly seleccionado = computed(
     () =>
@@ -197,6 +207,9 @@ export class Servicios {
 
   constructor() {
     this.registrarEventosDeConexion();
+    // La decisión de mostrar «Ver más» depende del espacio real de la tarjeta,
+    // no de una cantidad fija de caracteres.
+    afterEveryRender(() => this.medirDescripciones());
 
     const idSucursal = this.sucursalId;
     if (idSucursal === null) {
@@ -365,12 +378,62 @@ export class Servicios {
       .catch(() => this.navegando.set(false));
   }
 
-  protected descripcionLarga(servicio: ServicioDTO): boolean {
-    return (servicio.descripcion?.trim().length ?? 0) > LARGO_DESCRIPCION_COLGADA;
+  protected descripcionDesbordada(servicio: ServicioDTO): boolean {
+    return this.descripcionesDesbordadas().has(servicio.id);
   }
 
   protected estaDescripcionExpandida(idServicio: number): boolean {
     return this.descripcionesExpandidas().has(idServicio);
+  }
+
+  /**
+   * Mide cada descripción mientras está colapsada. Si el texto completo supera
+   * el alto de la tarjeta, se habilita «Ver más» para esa descripción.
+   * Cuando la descripción ya está expandida se conserva la decisión tomada
+   * antes de abrirla, para que el botón «Ver menos» siga visible.
+   */
+  private medirDescripciones(): void {
+    const expandidas = this.descripcionesExpandidas();
+    const anteriores = this.descripcionesDesbordadas();
+    const siguiente = new Set<number>();
+
+    for (const ref of this.descripcionRefs()) {
+      const elemento = ref.nativeElement;
+      const id = Number(elemento.dataset['descripcionId']);
+      if (!Number.isInteger(id) || id <= 0) {
+        continue;
+      }
+
+      if (expandidas.has(id) || this.desborda(elemento)) {
+        siguiente.add(id);
+      }
+    }
+
+    if (!this.mismosIds(siguiente, anteriores)) {
+      this.descripcionesDesbordadas.set(siguiente);
+    }
+  }
+
+  private desborda(elemento: HTMLElement): boolean {
+    const altoVisible = elemento.clientHeight;
+    const altoCompleto = elemento.scrollHeight;
+
+    // En navegadores reales estas medidas existen aunque la tarjeta recién se
+    // haya pintado. Si no hay layout (tests) se usa una estimación conservadora.
+    if (altoVisible > 0 || altoCompleto > 0) {
+      return altoCompleto > altoVisible + 1;
+    }
+
+    return (elemento.textContent?.trim().length ?? 0) > LARGO_DESCRIPCION_ESTIMADO;
+  }
+
+  private mismosIds(a: ReadonlySet<number>, b: ReadonlySet<number>): boolean {
+    return a.size === b.size && [...a].every((id) => b.has(id));
+  }
+
+  @HostListener('window:resize')
+  protected onResize(): void {
+    this.medirDescripciones();
   }
 
   protected alternarDescripcion(idServicio: number): void {
