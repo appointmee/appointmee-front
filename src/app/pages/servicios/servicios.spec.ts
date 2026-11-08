@@ -24,6 +24,8 @@ const SUCURSAL = {
   nombre: 'Sucursal Flores',
   direccion: 'Av. Rivadavia 123',
   categoria: 'CAFE',
+  puntuacion: 4,
+  cantidadPuntuaciones: 12,
 };
 
 const SERVICIOS = [
@@ -100,11 +102,12 @@ describe('US-SERV-02 · Seleccionar servicio', () => {
   async function abrirConServicios(
     servicios: readonly Record<string, unknown>[] = SERVICIOS,
     url = '/sucursal/7/servicios',
+    sucursal: Record<string, unknown> = SUCURSAL,
   ): Promise<HTMLElement> {
     await router.navigateByUrl(url);
     fixture.detectChanges();
 
-    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush(SUCURSAL);
+    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush(sucursal);
     backend
       .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
       .flush(servicios);
@@ -144,6 +147,36 @@ describe('US-SERV-02 · Seleccionar servicio', () => {
     expect(imagenes[0]?.getAttribute('alt')).toBe('Corte de pelo');
     expect(imagenes[0]?.getAttribute('loading')).toBe('lazy');
     expect(imagenes[1]?.getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
+  });
+
+  it('muestra el resumen de la sucursal con abejas, puntuación y cantidad de reseñas', async () => {
+    const host = await abrirConServicios();
+    const resumen = host.querySelector<HTMLElement>('.sucursal-resumen');
+
+    expect(resumen).not.toBeNull();
+    expect(resumen?.querySelector('.sucursal-resumen__nombre')?.textContent?.trim()).toBe(
+      'Sucursal Flores',
+    );
+    expect(resumen?.querySelectorAll('.sucursal-resumen__abeja')).toHaveLength(4);
+    expect(texto(resumen!)).toContain('4/5');
+    expect(texto(resumen!)).toContain('(12 reseñas)');
+    expect(resumen?.querySelector('.sucursal-resumen__rating .sr-only')?.textContent).toContain(
+      'Puntuación promedio 4/5',
+    );
+  });
+
+  it('sin reseñas no muestra abejas ni una puntuación ficticia', async () => {
+    const host = await abrirConServicios(SERVICIOS, '/sucursal/7/servicios', {
+      ...SUCURSAL,
+      puntuacion: null,
+      cantidadPuntuaciones: 0,
+    });
+    const resumen = host.querySelector<HTMLElement>('.sucursal-resumen');
+
+    expect(resumen).not.toBeNull();
+    expect(resumen?.querySelectorAll('.sucursal-resumen__abeja')).toHaveLength(0);
+    expect(texto(resumen!)).toContain('Sin reseñas todavía');
+    expect(texto(resumen!)).not.toContain('/5');
   });
 
   it('formatea 30, 60 y 90 minutos con el criterio de la historia', async () => {

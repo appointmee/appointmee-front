@@ -29,6 +29,12 @@ const FORMATO_PRECIO = new Intl.NumberFormat('es-AR', {
   currency: 'ARS',
 });
 
+const FORMATO_PUNTUACION = new Intl.NumberFormat('es-AR', {
+  maximumFractionDigits: 1,
+});
+
+const MAXIMO_ABEJAS = 5;
+
 @Component({
   selector: 'app-servicios',
   imports: [DsButtonComponent, RouterLink],
@@ -91,6 +97,44 @@ export class Servicios {
       this.servicios()[0]?.nombreSucursal ??
       (this.sucursalId !== null ? `Sucursal #${this.sucursalId}` : ''),
   );
+
+  /** Resumen de la sucursal que acompaña al título de la pantalla. */
+  protected readonly resumenSucursal = computed(() => {
+    const sucursal = this.sucursal();
+    const cantidadCruda = sucursal?.cantidadPuntuaciones;
+    const cantidad =
+      typeof cantidadCruda === 'number' &&
+      Number.isFinite(cantidadCruda) &&
+      cantidadCruda > 0
+        ? Math.floor(cantidadCruda)
+        : 0;
+    const puntuacionCruda = sucursal?.puntuacion;
+    const puntuacion =
+      typeof puntuacionCruda === 'number' &&
+      Number.isFinite(puntuacionCruda) &&
+      puntuacionCruda >= 0
+        ? puntuacionCruda
+        : null;
+    const tieneResenas = sucursal !== null && cantidad > 0 && puntuacion !== null;
+    const abejas =
+      cantidad > 0 && puntuacion !== null
+        ? Array.from({
+            length: Math.min(MAXIMO_ABEJAS, Math.max(0, Math.round(puntuacion))),
+          })
+        : [];
+
+    return {
+      nombre: this.nombreSucursal(),
+      hayDatosSucursal: sucursal !== null,
+      tieneResenas,
+      abejas,
+      puntuacion:
+        puntuacion !== null
+          ? `${FORMATO_PUNTUACION.format(puntuacion)}/${MAXIMO_ABEJAS}`
+          : '',
+      resenas: cantidad === 1 ? '1 reseña' : `${cantidad} reseñas`,
+    };
+  });
 
   protected readonly detalleUrl = computed<readonly (string | number)[]>(() =>
     this.sucursalId !== null ? ['/sucursal', this.sucursalId] : ['/'],

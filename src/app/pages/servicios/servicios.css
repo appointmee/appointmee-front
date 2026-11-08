@@ -50,10 +50,19 @@
 }
 
 .servicios__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 22px 32px;
+}
+
+.servicios__intro {
   display: grid;
+  flex: 1 1 420px;
   gap: 14px;
   justify-items: start;
-  max-width: 760px;
+  min-width: 0;
 }
 
 .eyebrow {
@@ -86,24 +95,68 @@
   color: #f6f8fb;
 }
 
-.servicios__sucursal {
+.sucursal-resumen {
+  display: grid;
+  flex: 0 1 340px;
+  gap: 8px;
+  min-width: min(100%, 250px);
+  padding: 16px 20px;
+  border: 1px solid rgba(247, 198, 90, 0.24);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(247, 198, 90, 0.08), rgba(255, 255, 255, 0.025));
+  text-align: right;
+}
+
+.sucursal-resumen__nombre {
+  margin: 0;
+  color: #f6f8fb;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.sucursal-resumen__rating {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
   margin: 0;
-  color: var(--text);
-  font-size: clamp(1rem, 1.6vw, 1.1rem);
+  line-height: 1.3;
 }
 
-.servicios__sucursal-label {
+.sucursal-resumen__abejas {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.sucursal-resumen__abeja {
+  font-size: inherit;
+}
+
+.sucursal-resumen__puntos {
+  color: var(--accent);
+  font-size: 0.95rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.sucursal-resumen__resenas,
+.sucursal-resumen__sin-resenas {
+  margin: 0;
   color: var(--muted);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.84rem;
+  line-height: 1.4;
 }
 
-.servicios__sucursal strong {
-  font-weight: 600;
+.sucursal-resumen__sin-resenas {
+  font-style: italic;
 }
 
 .paso {
@@ -747,6 +800,25 @@
   .servicios__inner {
     width: calc(100% - 32px);
     gap: 24px;
+  }
+
+  .servicios__header {
+    align-items: stretch;
+  }
+
+  .servicios__intro {
+    flex-basis: 100%;
+  }
+
+  .sucursal-resumen {
+    flex-basis: 100%;
+    min-width: 0;
+    padding: 14px 16px;
+    text-align: left;
+  }
+
+  .sucursal-resumen__rating {
+    justify-content: flex-start;
   }
 
   .paso {

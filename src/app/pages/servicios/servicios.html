@@ -10,23 +10,52 @@
     </nav>
 
     <header class="servicios__header">
-      <span class="eyebrow">
-        <span class="eyebrow__dot" aria-hidden="true"></span>
-        Reserva de turno
-      </span>
-      <h1 id="servicios-titulo">Seleccionar servicio</h1>
+      <div class="servicios__intro">
+        <span class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true"></span>
+          Reserva de turno
+        </span>
+        <h1 id="servicios-titulo">Seleccionar servicio</h1>
+
+        @if (!sinContexto) {
+          <p class="paso" aria-label="Paso 1 de 3: elegir servicio">
+            <span class="paso__numero" aria-hidden="true">1</span>
+            <span class="paso__texto">Paso 1 de 3 · Servicio</span>
+            <span class="paso__track" aria-hidden="true"><span class="paso__progress"></span></span>
+          </p>
+        }
+      </div>
 
       @if (!sinContexto) {
-        <p class="servicios__sucursal">
-          <span class="servicios__sucursal-label">Sucursal</span>
-          <strong>{{ nombreSucursal() }}</strong>
-        </p>
+        @if (resumenSucursal(); as resumen) {
+          <aside class="sucursal-resumen" aria-label="Resumen de la sucursal">
+            <p class="sucursal-resumen__nombre">{{ resumen.nombre }}</p>
 
-        <p class="paso" aria-label="Paso 1 de 3: elegir servicio">
-          <span class="paso__numero" aria-hidden="true">1</span>
-          <span class="paso__texto">Paso 1 de 3 · Servicio</span>
-          <span class="paso__track" aria-hidden="true"><span class="paso__progress"></span></span>
-        </p>
+            @if (resumen.tieneResenas) {
+              <p class="sucursal-resumen__rating">
+                <span class="sr-only">
+                  Puntuación promedio {{ resumen.puntuacion }}, basada en
+                  {{ resumen.resenas }}.
+                </span>
+                <span class="sucursal-resumen__abejas" aria-hidden="true">
+                  @for (abeja of resumen.abejas; track $index) {
+                    <span class="sucursal-resumen__abeja">🐝</span>
+                  }
+                </span>
+                <span class="sucursal-resumen__puntos" aria-hidden="true">
+                  {{ resumen.puntuacion }}
+                </span>
+                <span class="sucursal-resumen__resenas" aria-hidden="true">
+                  ({{ resumen.resenas }})
+                </span>
+              </p>
+            } @else {
+              <p class="sucursal-resumen__sin-resenas">
+                {{ resumen.hayDatosSucursal ? 'Sin reseñas todavía' : 'Sin datos de reseñas' }}
+              </p>
+            }
+          </aside>
+        }
       }
     </header>
 
