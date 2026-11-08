@@ -1,4 +1,4 @@
-import { HttpBackend, HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpBackend, HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import {
   Observable,
@@ -18,6 +18,7 @@ import { verificacionPendienteService } from './verificacion-pendiente-service';
 import type { RegistroRequest } from '../models/registro';
 import type { EstadoRecuperacion } from '../models/restablecer-password';
 import { backendService } from './backend-service';
+import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 
 @Injectable({ providedIn: 'root' })
 export class authService {
@@ -125,6 +126,16 @@ export class authService {
 
   validarEnlaceRecuperacion(token: string): Observable<EstadoRecuperacion> {
     return this.http.post<EstadoRecuperacion>(`${this.api.baseUrl}/auth/reset-password/validate`, { token });
+  }
+
+  cambiarPassword(currentPassword: string, newPassword: string): Observable<MensajeResponse> {
+    return this.http.post<MensajeResponse>(`${this.api.baseUrl}/auth/change-password`,
+      { currentPassword, newPassword },
+      { context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true) },
+    ).pipe(tap(() => {
+      this.limpiarSesion();
+      this.pendiente.limpiar();
+    }));
   }
 
 

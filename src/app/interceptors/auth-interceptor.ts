@@ -5,6 +5,7 @@ import { catchError, switchMap, throwError } from 'rxjs';
 
 import { authService } from '../services/auth-service';
 import { backendService } from '../services/backend-service';
+import { esPasswordActualIncorrecta } from '../http/password-change-error';
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
@@ -56,6 +57,9 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const withToken = (value: string) =>
     request.clone({ setHeaders: { Authorization: `Bearer ${value}` } });
 
+  const errorDePasswordActual = (error: unknown) => request.method === 'POST'
+    && path === '/auth/change-password' && esPasswordActualIncorrecta(error);
+
 
   // Volver al login cuando la sesión fue rechazada
 
@@ -78,6 +82,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     catchError((error: unknown) => {
       if (
         !(error instanceof HttpErrorResponse) ||
+        errorDePasswordActual(error) ||
         error.status !== 401 ||
         (!token && !auth.getRefreshToken())
       ) {
@@ -94,7 +99,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
       return retry.pipe(
         catchError((cause: unknown) => {
-          if (cause instanceof HttpErrorResponse && cause.status === 401) expire();
+          if (cause instanceof HttpErrorResponse && cause.status === 401 && !errorDePasswordActual(cause)) expire();
           return throwError(() => cause);
         }),
       );
