@@ -22,6 +22,13 @@ type ResultadoServicios =
   | { readonly ok: true; readonly servicios: readonly ServicioDTO[] }
   | { readonly ok: false; readonly error: HttpErrorResponse };
 
+const LARGO_DESCRIPCION_COLGADA = 160;
+
+const FORMATO_PRECIO = new Intl.NumberFormat('es-AR', {
+  style: 'currency',
+  currency: 'ARS',
+});
+
 @Component({
   selector: 'app-servicios',
   imports: [DsButtonComponent, RouterLink],
@@ -53,6 +60,25 @@ export class Servicios {
   protected readonly reintentando = signal(false);
   /** El navegador perdió la conexión: se avisa sin descartar lo ya cargado. */
   protected readonly sinConexion = signal(!this.hayConexion());
+
+  /** Id del único servicio seleccionado en la pantalla. */
+  protected readonly seleccionadoId = signal<number | null>(null);
+  /** Descripciones que el usuario expandió para leerlas completas. */
+  protected readonly descripcionesExpandidas = signal<ReadonlySet<number>>(new Set());
+
+  protected readonly seleccionado = computed(
+    () =>
+      this.servicios().find((servicio) => servicio.id === this.seleccionadoId()) ??
+      null,
+  );
+
+  /** El botón de empleado sólo se habilita cuando hay una tarjeta seleccionada. */
+  protected readonly puedeContinuar = computed(() => this.seleccionado() !== null);
+
+  /** Durante una recarga se evita cambiar la selección con datos desactualizados. */
+  protected readonly seleccionDeshabilitada = computed(
+    () => this.cargando() || this.reintentando(),
+  );
 
   protected readonly resumenServicios = computed(() => {
     const total = this.servicios().length;
@@ -143,9 +169,21 @@ export class Servicios {
           this.error.set(null);
           this.errorConexion.set(false);
           this.sinConexion.set(false);
-          this.servicios.set(servicios.servicios ?? []);
+
+          const lista = servicios.servicios ?? [];
+          this.servicios.set(lista);
+
+          // Si la recarga ya no incluye el servicio elegido, se limpia la
+          // selección para que el botón no quede habilitado con datos viejos.
+          if (
+            this.seleccionadoId() !== null &&
+            !lista.some((servicio) => servicio.id === this.seleccionadoId())
+          ) {
+            this.seleccionadoId.set(null);
+          }
         } else {
           this.servicios.set([]);
+          this.seleccionadoId.set(null);
           this.aplicarError(servicios.error);
         }
 
@@ -160,6 +198,38 @@ export class Servicios {
     }
     this.reintentando.set(true);
     this.reintento.next();
+  }
+
+  protected seleccionar(servicio: ServicioDTO): void {
+    if (this.seleccionDeshabilitada()) {
+      return;
+    }
+
+    this.seleccionadoId.set(servicio.id);
+  }
+
+  protected estaSeleccionado(servicio: ServicioDTO): boolean {
+    return this.seleccionadoId() === servicio.id;
+  }
+
+  protected descripcionLarga(servicio: ServicioDTO): boolean {
+    return (servicio.descripcion?.trim().length ?? 0) > LARGO_DESCRIPCION_COLGADA;
+  }
+
+  protected estaDescripcionExpandida(idServicio: number): boolean {
+    return this.descripcionesExpandidas().has(idServicio);
+  }
+
+  protected alternarDescripcion(idServicio: number): void {
+    this.descripcionesExpandidas.update((actuales) => {
+      const siguiente = new Set(actuales);
+      if (siguiente.has(idServicio)) {
+        siguiente.delete(idServicio);
+      } else {
+        siguiente.add(idServicio);
+      }
+      return siguiente;
+    });
   }
 
   protected foto(servicio: ServicioDTO): string {
@@ -187,16 +257,16 @@ export class Servicios {
   }
 
   protected formatPrecio(precio: ServicioDTO['precio']): string {
-    const valor = typeof precio === 'string' ? Number(precio) : precio;
-    if (valor === null || valor === undefined || !Number.isFinite(valor)) {
-      return 'Precio a confirmar';
+    if (typeof precio === 'string' && !precio.trim()) {
+      return 'Precio a consultar';
     }
 
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      maximumFractionDigits: 0,
-    }).format(valor);
+    const valor = typeof precio === 'string' ? Number(precio) : precio;
+    if (valor === null || valor === undefined || !Number.isFinite(valor)) {
+      return 'Precio a consultar';
+    }
+
+    return FORMATO_PRECIO.format(valor);
   }
 
   protected trackById(_index: number, servicio: ServicioDTO): number {
