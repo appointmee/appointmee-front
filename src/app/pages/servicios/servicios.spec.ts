@@ -69,6 +69,7 @@ describe('US-SERV-02 · Seleccionar servicio', () => {
       imports: [TestShell],
       providers: [
         provideRouter([
+          { path: 'sucursal/:sucursalId/servicios/:servicioId/turnos', component: Dummy },
           { path: 'sucursal/:sucursalId/servicios', component: Servicios },
           { path: 'servicios', component: Servicios },
           { path: 'sucursal/:id', component: Dummy },
@@ -242,59 +243,278 @@ describe('US-SERV-02 · Seleccionar servicio', () => {
     expect(tarjetas(host)[0]?.getAttribute('aria-label')).toBe(`Seleccionar ${nombreLargo}`);
   });
 
-  it('selecciona un único servicio y actualiza el estado visual y accesible', async () => {
+  it('selecciona un único servicio y sincroniza aria-checked con el estado visual', async () => {
     const host = await abrirConServicios();
+    const grupo = host.querySelector<HTMLElement>('.lista');
     let botones = tarjetas(host);
 
+    expect(grupo?.getAttribute('role')).toBe('radiogroup');
+    expect(grupo?.getAttribute('aria-labelledby')).toBe('servicios-titulo');
     expect(botones).toHaveLength(2);
-    expect(botones[0]?.getAttribute('aria-pressed')).toBe('false');
+    expect(botones[0]?.getAttribute('role')).toBe('radio');
+    expect(botones[0]?.getAttribute('aria-checked')).toBe('false');
+    expect(botones[1]?.getAttribute('aria-checked')).toBe('false');
     expect(botones[0]?.tagName).toBe('BUTTON');
     expect(botones[0]?.tabIndex).toBe(0);
+    expect(botones[1]?.tabIndex).toBe(-1);
     expect(botones[0]?.getAttribute('aria-label')).toBe('Seleccionar Corte de pelo');
 
     botones[0]?.click();
     fixture.detectChanges();
 
     botones = tarjetas(host);
-    expect(botones[0]?.getAttribute('aria-pressed')).toBe('true');
-    expect(botones[1]?.getAttribute('aria-pressed')).toBe('false');
+    expect(botones[0]?.getAttribute('aria-checked')).toBe('true');
+    expect(botones[1]?.getAttribute('aria-checked')).toBe('false');
+    expect(botones[0]?.tabIndex).toBe(0);
+    expect(botones[1]?.tabIndex).toBe(-1);
     expect(host.querySelectorAll('.card--seleccionada')).toHaveLength(1);
     expect(host.querySelectorAll('.card__check')).toHaveLength(1);
-    expect(texto(host)).toContain('Servicio seleccionado: Corte de pelo');
+    expect(texto(host)).toContain('Servicio seleccionado:');
+    expect(texto(host)).toContain('Corte de pelo');
 
     botones[1]?.click();
     fixture.detectChanges();
 
     botones = tarjetas(host);
-    expect(botones[0]?.getAttribute('aria-pressed')).toBe('false');
-    expect(botones[1]?.getAttribute('aria-pressed')).toBe('true');
+    expect(botones[0]?.getAttribute('aria-checked')).toBe('false');
+    expect(botones[1]?.getAttribute('aria-checked')).toBe('true');
+    expect(botones[0]?.tabIndex).toBe(-1);
+    expect(botones[1]?.tabIndex).toBe(0);
     expect(host.querySelectorAll('.card--seleccionada')).toHaveLength(1);
     expect(host.querySelectorAll('.card__check')).toHaveLength(1);
-    expect(texto(host)).toContain('Servicio seleccionado: Color');
+    expect(texto(host)).toContain('Color');
   });
 
-  it('mantiene «Seleccionar empleado» deshabilitado hasta elegir y no navega al usarlo', async () => {
+  it('actualiza el resumen con nombre, duración y precio al cambiar de servicio', async () => {
     const host = await abrirConServicios();
-    const botonEmpleado = () =>
-      host.querySelector<HTMLButtonElement>('.boton--empleado')!;
+    const resumen = () => host.querySelector<HTMLElement>('.acciones__resumen')!;
 
-    expect(botonEmpleado().textContent?.trim()).toBe('Seleccionar empleado');
-    expect(botonEmpleado().disabled).toBe(true);
-    expect(texto(host)).toContain('Elegí un servicio para continuar.');
+    expect(resumen().getAttribute('role')).toBe('status');
+    expect(resumen().getAttribute('aria-live')).toBe('polite');
+    expect(texto(resumen())).toContain('Elegí un servicio para continuar.');
 
     tarjetas(host)[0]?.click();
     fixture.detectChanges();
-    expect(botonEmpleado().disabled).toBe(false);
+
+    expect(texto(resumen())).toContain('Servicio seleccionado:');
+    expect(texto(resumen())).toContain('Corte de pelo');
+    expect(texto(resumen())).toContain('45 min');
+    expect(texto(resumen())).toContain('$ 12.500,00');
 
     tarjetas(host)[1]?.click();
     fixture.detectChanges();
-    expect(botonEmpleado().disabled).toBe(false);
 
-    botonEmpleado().click();
+    expect(texto(resumen())).toContain('Color');
+    expect(texto(resumen())).toContain('1 h 30 min');
+    expect(texto(resumen())).toContain('$ 18.000,50');
+    expect(texto(resumen())).not.toContain('Corte de pelo');
+  });
+
+  it('selecciona con Enter y con barra espaciadora', async () => {
+    const host = await abrirConServicios();
+    let botones = tarjetas(host);
+
+    const enter = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      bubbles: true,
+      cancelable: true,
+    });
+    botones[0]?.dispatchEvent(enter);
     fixture.detectChanges();
 
+    expect(enter.defaultPrevented).toBe(true);
+    botones = tarjetas(host);
+    expect(botones[0]?.getAttribute('aria-checked')).toBe('true');
+    expect(texto(host.querySelector('.acciones__resumen')!)).toContain('Corte de pelo');
+
+    const espacio = new KeyboardEvent('keydown', {
+      key: ' ',
+      bubbles: true,
+      cancelable: true,
+    });
+    botones[1]?.dispatchEvent(espacio);
+    fixture.detectChanges();
+
+    expect(espacio.defaultPrevented).toBe(true);
+    botones = tarjetas(host);
+    expect(botones[0]?.getAttribute('aria-checked')).toBe('false');
+    expect(botones[1]?.getAttribute('aria-checked')).toBe('true');
+    expect(texto(host.querySelector('.acciones__resumen')!)).toContain('Color');
+  });
+
+  it('navega con las flechas del grupo radio y acompaña la selección con el foco', async () => {
+    const host = await abrirConServicios();
+    let botones = tarjetas(host);
+
+    botones[0]?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }),
+    );
+    fixture.detectChanges();
+
+    botones = tarjetas(host);
+    expect(botones[1]?.getAttribute('aria-checked')).toBe('true');
+    expect(botones[1]?.tabIndex).toBe(0);
+    expect(botones[0]?.tabIndex).toBe(-1);
+    expect(document.activeElement).toBe(botones[1]);
+
+    botones[1]?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }),
+    );
+    fixture.detectChanges();
+
+    botones = tarjetas(host);
+    expect(botones[0]?.getAttribute('aria-checked')).toBe('true');
+    expect(document.activeElement).toBe(botones[0]);
+
+    botones[0]?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }),
+    );
+    fixture.detectChanges();
+
+    botones = tarjetas(host);
+    expect(botones[1]?.getAttribute('aria-checked')).toBe('true');
+    expect(document.activeElement).toBe(botones[1]);
+
+    botones[1]?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Home', bubbles: true, cancelable: true }),
+    );
+    fixture.detectChanges();
+
+    expect(tarjetas(host)[0]?.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('mantiene «Siguiente» deshabilitado sin selección y navega al paso 2 con el servicio', async () => {
+    const host = await abrirConServicios();
+    const botonSiguiente = () => host.querySelector<HTMLButtonElement>('.boton--empleado')!;
+
+    expect(botonSiguiente().textContent?.trim()).toBe('Siguiente');
+    expect(botonSiguiente().disabled).toBe(true);
+    expect(texto(host)).toContain('Elegí un servicio para continuar.');
+
+    botonSiguiente().click();
+    await fixture.whenStable();
     expect(router.url).toBe('/sucursal/7/servicios');
-    expect(botonEmpleado().disabled).toBe(false);
+
+    tarjetas(host)[0]?.click();
+    fixture.detectChanges();
+    expect(botonSiguiente().disabled).toBe(false);
+
+    botonSiguiente().click();
+    await fixture.whenStable();
+
+    expect(router.url).toBe('/sucursal/7/servicios/1/turnos');
+  });
+
+  it('bloquea navegaciones duplicadas mientras se procesa el paso 2', async () => {
+    const host = await abrirConServicios();
+
+    tarjetas(host)[0]?.click();
+    fixture.detectChanges();
+
+    const navegar = vi.spyOn(router, 'navigate').mockReturnValue(Promise.resolve(true));
+    const botonSiguiente = host.querySelector<HTMLButtonElement>('.boton--empleado')!;
+
+    botonSiguiente.click();
+    botonSiguiente.click();
+    fixture.detectChanges();
+
+    expect(navegar).toHaveBeenCalledTimes(1);
+    expect(navegar).toHaveBeenCalledWith(['/sucursal', 7, 'servicios', 1, 'turnos']);
+    expect(botonSiguiente.disabled).toBe(true);
+    expect(botonSiguiente.getAttribute('aria-busy')).toBe('true');
+    expect(host.querySelectorAll('.card--seleccionada')).toHaveLength(1);
+
+    navegar.mockRestore();
+  });
+
+  it('preselecciona el servicio indicado por URL cuando existe y está disponible', async () => {
+    const host = await abrirConServicios(SERVICIOS, '/sucursal/7/servicios?servicioId=2');
+    const botones = tarjetas(host);
+
+    expect(botones[0]?.getAttribute('aria-checked')).toBe('false');
+    expect(botones[1]?.getAttribute('aria-checked')).toBe('true');
+    expect(botones[1]?.tabIndex).toBe(0);
+    expect(host.querySelectorAll('.card--seleccionada')).toHaveLength(1);
+    expect(host.querySelector('.aviso-preseleccion')).toBeNull();
+
+    const resumen = texto(host.querySelector('.acciones__resumen')!);
+    expect(resumen).toContain('Color');
+    expect(resumen).toContain('1 h 30 min');
+    expect(resumen).toContain('$ 18.000,50');
+    expect(host.querySelector<HTMLButtonElement>('.boton--empleado')?.disabled).toBe(false);
+  });
+
+  it('si el servicio de la URL no existe, avisa, recarga una vez y no deja selección inválida', async () => {
+    await router.navigateByUrl('/sucursal/7/servicios?servicioId=99');
+    fixture.detectChanges();
+
+    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush(SUCURSAL);
+    backend
+      .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
+      .flush(SERVICIOS);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(texto(host)).toContain('Actualizando los servicios disponibles');
+
+    backend
+      .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
+      .flush(SERVICIOS);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(host)).toContain('ya no está disponible');
+    expect(host.querySelectorAll('.aviso-preseleccion')).toHaveLength(1);
+    expect(host.querySelectorAll('.card--seleccionada')).toHaveLength(0);
+    expect(tarjetas(host).every((boton) => boton.getAttribute('aria-checked') === 'false')).toBe(
+      true,
+    );
+    expect(host.querySelector<HTMLButtonElement>('.boton--empleado')?.disabled).toBe(true);
+  });
+
+  it('vuelve a verificar y preselecciona si el servicio reaparece al recargar', async () => {
+    await router.navigateByUrl('/sucursal/7/servicios?servicioId=2');
+    fixture.detectChanges();
+
+    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush(SUCURSAL);
+    backend
+      .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
+      .flush([SERVICIOS[0]]);
+    fixture.detectChanges();
+
+    expect(texto(fixture.nativeElement)).toContain('Actualizando los servicios disponibles');
+
+    backend
+      .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
+      .flush(SERVICIOS);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const botones = tarjetas(host);
+    expect(botones[1]?.getAttribute('aria-checked')).toBe('true');
+    expect(texto(host.querySelector('.acciones__resumen')!)).toContain('Color');
+    expect(host.querySelector('.aviso-preseleccion')).toBeNull();
+    expect(host.querySelector<HTMLButtonElement>('.boton--empleado')?.disabled).toBe(false);
+  });
+
+  it('no selecciona automáticamente si el servicioId de la URL no es válido', async () => {
+    const host = await abrirConServicios(SERVICIOS, '/sucursal/7/servicios?servicioId=invalido');
+
+    expect(host.querySelectorAll('.card--seleccionada')).toHaveLength(0);
+    expect(tarjetas(host).every((boton) => boton.getAttribute('aria-checked') === 'false')).toBe(
+      true,
+    );
+    expect(host.querySelector('.aviso-preseleccion')).toBeNull();
+    expect(host.querySelector<HTMLButtonElement>('.boton--empleado')?.disabled).toBe(true);
+  });
+
+  it('«Volver al detalle» conserva la sucursal desde la que se inició la reserva', async () => {
+    const host = await abrirConServicios();
+    const volver = host.querySelector<HTMLAnchorElement>('.volver');
+
+    expect(volver?.textContent?.trim()).toContain('Volver al detalle');
+    expect(volver?.getAttribute('href')).toBe('/sucursal/7');
   });
 
   it('US-SERV-06 · muestra tarjetas skeleton mientras cargan los servicios', async () => {
