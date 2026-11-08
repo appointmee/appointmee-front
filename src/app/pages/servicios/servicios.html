@@ -74,6 +74,17 @@
         <a class="boton" routerLink="/">Volver al Home</a>
       </div>
     } @else {
+      @if (avisoPreseleccion()) {
+        <div class="aviso-preseleccion" role="status" aria-live="polite" aria-atomic="true">
+          <span class="aviso-preseleccion__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </span>
+          <p>{{ avisoPreseleccion() }}</p>
+        </div>
+      }
+
       @if (sinConexion() && !cargando() && !error()) {
         <div class="aviso-conexion" role="alert" aria-live="assertive" aria-atomic="true">
           <span class="aviso-conexion__icon" aria-hidden="true">
@@ -160,7 +171,7 @@
       } @else {
         <p class="sr-only" role="status" aria-live="polite">{{ resumenServicios() }}</p>
 
-        <div class="lista">
+        <div class="lista" role="radiogroup" aria-labelledby="servicios-titulo">
           @for (servicio of servicios(); track trackById($index, servicio); let i = $index) {
             <article
               class="card"
@@ -252,32 +263,46 @@
               <button
                 class="card__seleccion"
                 type="button"
-                [attr.aria-pressed]="estaSeleccionado(servicio)"
+                role="radio"
+                [attr.aria-checked]="estaSeleccionado(servicio)"
                 [attr.aria-label]="'Seleccionar ' + servicio.nombre"
+                [attr.tabindex]="esOpcionEnfocable(servicio) ? 0 : -1"
+                [attr.data-servicio-id]="servicio.id"
                 [disabled]="seleccionDeshabilitada()"
                 (click)="seleccionar(servicio)"
+                (keydown)="onTeclaOpcion($event, servicio)"
               ></button>
             </article>
           }
         </div>
 
         <footer class="acciones">
-          <p class="acciones__resumen" role="status" aria-live="polite">
-            @if (seleccionado(); as elegido) {
-              Servicio seleccionado: <strong>{{ elegido.nombre }}</strong>
+          <div class="acciones__resumen" role="status" aria-live="polite" aria-atomic="true">
+            @if (resumenSeleccion(); as resumen) {
+              <p class="acciones__resumen-linea">
+                <span class="acciones__resumen-etiqueta">Servicio seleccionado:</span>
+                <strong>{{ resumen.nombre }}</strong>
+              </p>
+              <p class="acciones__resumen-meta">
+                <span>{{ resumen.duracion }}</span>
+                <span class="acciones__resumen-separador" aria-hidden="true">·</span>
+                <span>{{ resumen.precio }}</span>
+              </p>
             } @else {
-              Elegí un servicio para continuar.
+              <p class="acciones__resumen-linea">Elegí un servicio para continuar.</p>
             }
-          </p>
+          </div>
 
           <button
             dsButton
             variant="primary"
             class="boton boton--empleado"
             type="button"
-            [disabled]="!puedeContinuar()"
+            [disabled]="!puedeContinuar() || navegando()"
+            [attr.aria-busy]="navegando()"
+            (click)="continuar()"
           >
-            Seleccionar empleado
+            Siguiente
           </button>
         </footer>
       }

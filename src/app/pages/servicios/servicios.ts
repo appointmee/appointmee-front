@@ -4,12 +4,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   computed,
   inject,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, forkJoin, of } from 'rxjs';
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
 
@@ -44,6 +45,8 @@ const MAXIMO_ABEJAS = 5;
 })
 export class Servicios {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly servicioService = inject(servicioService);
   private readonly sucursalService = inject(sucursalService);
   private readonly destroyRef = inject(DestroyRef);
@@ -52,6 +55,12 @@ export class Servicios {
   private readonly sucursalIdParam =
     this.route.snapshot.paramMap.get('sucursalId') ??
     this.route.snapshot.queryParamMap.get('sucursalId');
+
+  /** Servicio pedido por URL para preseleccionarlo cuando exista. */
+  private readonly servicioIdUrl = this.parseId(
+    this.route.snapshot.paramMap.get('servicioId') ??
+      this.route.snapshot.queryParamMap.get('servicioId'),
+  );
 
   protected readonly sucursalId = this.parseId(this.sucursalIdParam);
   protected readonly sinContexto = this.sucursalId === null;
@@ -64,6 +73,10 @@ export class Servicios {
   /** La cuenta está autenticada pero no puede reservar por su rol. */
   protected readonly requiereRolCliente = signal(false);
   protected readonly reintentando = signal(false);
+  /** Bloquea el botón mientras el router resuelve la navegación al paso 2. */
+  protected readonly navegando = signal(false);
+  /** Aviso cuando el servicio pedido por URL no está en el listado. */
+  protected readonly avisoPreseleccion = signal<string | null>(null);
   /** El navegador perdió la conexión: se avisa sin descartar lo ya cargado. */
   protected readonly sinConexion = signal(!this.hayConexion());
 
@@ -78,12 +91,26 @@ export class Servicios {
       null,
   );
 
-  /** El botón de empleado sólo se habilita cuando hay una tarjeta seleccionada. */
+  /** Resumen listo para mostrar con los datos del listado, sin pedir detalle. */
+  protected readonly resumenSeleccion = computed(() => {
+    const servicio = this.seleccionado();
+    if (!servicio) {
+      return null;
+    }
+
+    return {
+      nombre: servicio.nombre,
+      duracion: this.formatDuracion(servicio.duracion),
+      precio: this.formatPrecio(servicio.precio),
+    };
+  });
+
+  /** El botón «Siguiente» sólo se habilita cuando hay una tarjeta seleccionada. */
   protected readonly puedeContinuar = computed(() => this.seleccionado() !== null);
 
-  /** Durante una recarga se evita cambiar la selección con datos desactualizados. */
+  /** Durante una recarga o navegación se evita cambiar la selección. */
   protected readonly seleccionDeshabilitada = computed(
-    () => this.cargando() || this.reintentando(),
+    () => this.cargando() || this.reintentando() || this.navegando(),
   );
 
   protected readonly resumenServicios = computed(() => {
@@ -145,6 +172,8 @@ export class Servicios {
   )}`;
 
   private readonly reintento = new Subject<void>();
+  /** Evita recargar el listado más de una vez por una preselección inexistente. */
+  private recargaPreseleccionHecha = false;
   /** El último error visible se produjo por falta de conexión. */
   private readonly errorConexion = signal(false);
   private readonly mensajeSinConexion =
@@ -233,6 +262,10 @@ export class Servicios {
 
         this.cargando.set(false);
         this.reintentando.set(false);
+
+        if (servicios.ok) {
+          this.aplicarPreseleccionDesdeUrl(this.servicios());
+        }
       });
   }
 
@@ -254,6 +287,82 @@ export class Servicios {
 
   protected estaSeleccionado(servicio: ServicioDTO): boolean {
     return this.seleccionadoId() === servicio.id;
+  }
+
+  /**
+   * Dentro de un radiogroup sólo una opción participa del tabulador: la
+   * seleccionada o, si todavía no hay selección, la primera.
+   */
+  protected esOpcionEnfocable(servicio: ServicioDTO): boolean {
+    const idSeleccionado = this.seleccionadoId();
+    if (idSeleccionado !== null) {
+      return idSeleccionado === servicio.id;
+    }
+    return this.servicios()[0]?.id === servicio.id;
+  }
+
+  /** Navegación con flechas y activación con Enter/Espacio del grupo radio. */
+  protected onTeclaOpcion(event: KeyboardEvent, servicio: ServicioDTO): void {
+    if (this.seleccionDeshabilitada()) {
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+      event.preventDefault();
+      this.seleccionar(servicio);
+      this.enfocarServicio(servicio.id);
+      return;
+    }
+
+    const navegacion = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'];
+    if (!navegacion.includes(event.key)) {
+      return;
+    }
+
+    const lista = this.servicios();
+    const actual = lista.findIndex((item) => item.id === servicio.id);
+    if (actual < 0 || lista.length === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    let destino = actual;
+
+    if (event.key === 'Home') {
+      destino = 0;
+    } else if (event.key === 'End') {
+      destino = lista.length - 1;
+    } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      destino = (actual + 1) % lista.length;
+    } else {
+      destino = (actual - 1 + lista.length) % lista.length;
+    }
+
+    const siguiente = lista[destino];
+    this.seleccionar(siguiente);
+    this.enfocarServicio(siguiente.id);
+  }
+
+  /** Continúa al paso 2 del flujo de reserva: selección de profesional. */
+  protected continuar(): void {
+    if (this.navegando()) {
+      return;
+    }
+
+    const servicio = this.seleccionado();
+    if (!servicio || this.sucursalId === null) {
+      return;
+    }
+
+    this.navegando.set(true);
+    this.router
+      .navigate(['/sucursal', this.sucursalId, 'servicios', servicio.id, 'turnos'])
+      .then((navego) => {
+        if (!navego) {
+          this.navegando.set(false);
+        }
+      })
+      .catch(() => this.navegando.set(false));
   }
 
   protected descripcionLarga(servicio: ServicioDTO): boolean {
@@ -315,6 +424,61 @@ export class Servicios {
 
   protected trackById(_index: number, servicio: ServicioDTO): number {
     return servicio.id;
+  }
+
+  /**
+   * Preselecciona el servicio pedido por URL con los datos del listado.
+   * Si no aparece, recarga una única vez el endpoint existente y vuelve a
+   * verificar. Nunca deja una selección inválida ni elige otra por el usuario.
+   */
+  private aplicarPreseleccionDesdeUrl(lista: readonly ServicioDTO[]): void {
+    const idUrl = this.servicioIdUrl;
+    if (idUrl === null) {
+      return;
+    }
+
+    if (lista.some((servicio) => servicio.id === idUrl)) {
+      const actual = this.seleccionadoId();
+      const actualValido = actual !== null && lista.some((servicio) => servicio.id === actual);
+
+      if (!actualValido || actual === idUrl) {
+        this.seleccionadoId.set(idUrl);
+      }
+      this.avisoPreseleccion.set(null);
+      return;
+    }
+
+    const actual = this.seleccionadoId();
+    const conservarSeleccion =
+      actual !== null && actual !== idUrl && lista.some((servicio) => servicio.id === actual);
+
+    if (this.recargaPreseleccionHecha) {
+      if (!conservarSeleccion) {
+        this.seleccionadoId.set(null);
+      }
+      this.avisoPreseleccion.set(
+        'El servicio que intentaste preseleccionar ya no está disponible. Elegí otro servicio para continuar.',
+      );
+      return;
+    }
+
+    this.recargaPreseleccionHecha = true;
+    if (!conservarSeleccion) {
+      this.seleccionadoId.set(null);
+    }
+    this.avisoPreseleccion.set(
+      'El servicio que intentaste preseleccionar no está en el listado. Actualizando los servicios disponibles…',
+    );
+
+    // La recarga usa el mismo endpoint del listado. El flag de arriba impide
+    // que un servicio realmente inexistente genere un ciclo infinito.
+    this.reintento.next();
+  }
+
+  private enfocarServicio(idServicio: number): void {
+    this.host.nativeElement
+      .querySelector<HTMLButtonElement>(`[data-servicio-id="${idServicio}"]`)
+      ?.focus();
   }
 
   private aplicarError(error: HttpErrorResponse): void {
