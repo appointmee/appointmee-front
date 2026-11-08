@@ -12,7 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
-import { authService } from '../services/auth-service';
+import { authService } from '../../services/auth-service';
 
 interface NavItem {
   readonly label: string;

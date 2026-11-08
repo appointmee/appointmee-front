@@ -11,3 +11,9 @@ export interface EmpleadoDTO {
   readonly puntuacion: number | null;
   readonly cantidadPuntuaciones: number | null;
 }
+
+export interface EmpleadoPayload {
+  readonly nombre: string;
+  readonly apellido: string;
+  readonly urlFotoPerfil: string | null;
+}

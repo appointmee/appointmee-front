@@ -12,3 +12,12 @@ export interface ServicioDTO {
   readonly direccionSucursal?: string | null;
   readonly categoriaSucursal?: string | null;
 }
+
+export interface ServicioPayload {
+  readonly sucursalId: number;
+  readonly nombre: string;
+  readonly descripcion: string | null;
+  readonly duracion: number;
+  readonly precio: number | string | null;
+  readonly fotoPerfil: string | null;
+}

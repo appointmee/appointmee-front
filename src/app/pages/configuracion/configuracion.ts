@@ -8,6 +8,7 @@ import { VerificacionEmailModel } from '../../models/auth';
 import { ApiError } from '../../http/api-errors-service';
 import { verificacionPendienteService } from '../../services/verificacion-pendiente-service';
 import { authService } from '../../services/auth-service';
+import { verificacionService } from '../../services/verificacion-service';
 
 @Component({
   selector: 'app-configuracion',
@@ -18,6 +19,7 @@ import { authService } from '../../services/auth-service';
 export class Configuracion implements OnInit {
 
   auth = inject(authService);
+  private verificacion = inject(verificacionService);
   private router = inject(Router);
   private pendiente = inject(verificacionPendienteService);
   private destroyRef = inject(DestroyRef);
@@ -233,13 +235,13 @@ export class Configuracion implements OnInit {
     this.aviso.set('');
     this.error.set('');
 
-    this.auth.solicitarVerificacion(this.verificacionModel().email, reenviar).pipe(
+    this.verificacion.solicitarVerificacion(this.verificacionModel().email, reenviar).pipe(
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({
       next: (estado) => {
         this.pendiente.aplicarEstado(estado);
         if (estado.verificada) {
-          this.auth.completarVerificacion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          this.verificacion.completarVerificacion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: () => this.finalizarVerificacion(),
             error: () => {
               this.enviando.set(false);
@@ -303,7 +305,7 @@ export class Configuracion implements OnInit {
 
     const datos = this.verificacionModel();
 
-    this.auth.verificarEmail(datos.email, datos.codigo).pipe(
+    this.verificacion.verificarEmail(datos.email, datos.codigo).pipe(
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({
       next: () => this.finalizarVerificacion(),

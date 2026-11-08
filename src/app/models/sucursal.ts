@@ -28,3 +28,15 @@ export interface SucursalDetalleDTO {
   readonly cantidadPuntuaciones: number | null;
   readonly fotoPerfil: string | null;
 }
+
+export interface SucursalPayload {
+  readonly nombre: string;
+  readonly direccion: string | null;
+  readonly telefono: string | null;
+  readonly descripcion: string | null;
+  readonly categoria: string | null;
+  readonly horaApertura: string | null;
+  readonly horaCierre: string | null;
+  readonly diasApertura: readonly string[] | null;
+  readonly fotoPerfil: string | null;
+}
