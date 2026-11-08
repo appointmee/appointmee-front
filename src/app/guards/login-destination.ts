@@ -8,11 +8,11 @@ export function destinoDespuesDelLogin(router: Router, returnTo: string | null, 
 
 
   if (roles.includes('ADMINISTRADOR')) return router.parseUrl('/admin');
-  if (roles.includes('CLIENTE')) return router.parseUrl('/');
+  if (roles.includes('CLIENTE')) return router.parseUrl('/sucursales');
   if (roles.includes('EMPLEADOR')) return router.parseUrl('/mis-sucursales');
   if (roles.includes('EMPLEADO')) return router.parseUrl('/mis-turnos');
 
-  return router.parseUrl('/');
+  return router.parseUrl('/sucursales');
 }
 
 function esReturnToInternoValido(returnTo: string | null, router: Router): boolean {
