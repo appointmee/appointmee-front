@@ -281,18 +281,21 @@ test('búsqueda conserva el término y muestra resultados sin errores de consola
   expect(consoleErrors).toEqual([]);
 });
 
-test('detalle permite elegir un servicio y consultar horarios sin errores de consola', async ({ page }) => {
+test('detalle permite seleccionar un servicio sin errores de consola', async ({ page }) => {
   const consoleErrors = watchConsole(page);
   const unexpected = await mockApi(page);
   await page.goto('/sucursal/1');
   await expect(page.getByRole('heading', { name: 'Sucursal Demo' })).toBeVisible();
   await page.getByRole('button', { name: 'Reservar turno en Sucursal Demo' }).click();
   await expect(page).toHaveURL(/\/sucursal\/1\/servicios$/);
+  await expect(page.getByRole('heading', { name: 'Seleccionar servicio' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Corte de cabello' })).toBeVisible();
-  await page.getByRole('link', { name: 'Elegir horario para Corte de cabello' }).click();
 
-  await expect(page).toHaveURL(/\/sucursal\/1\/servicios\/3\/turnos$/);
-  await expect(page.getByRole('button', { name: 'Elegir 09:00 del 2030-12-20' })).toBeVisible();
+  const empleado = page.getByRole('button', { name: 'Seleccionar empleado' });
+  await expect(empleado).toBeDisabled();
+  await page.getByRole('button', { name: 'Seleccionar Corte de cabello' }).click();
+  await expect(empleado).toBeEnabled();
+  await expect(page).toHaveURL(/\/sucursal\/1\/servicios$/);
   expect(unexpected).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });

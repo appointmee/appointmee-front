@@ -30,9 +30,9 @@ export const routes: Routes = [
   },
   {
     path: 'sucursal/:sucursalId/servicios',
-    title: 'AppointMee | Elegir servicio',
+    title: 'AppointMee | Seleccionar servicio',
     data: {
-      title: 'Elegir servicio',
+      title: 'Seleccionar servicio',
       description: 'Elegí el servicio que querés reservar en esta sucursal.',
     },
     loadComponent: () =>
@@ -40,9 +40,9 @@ export const routes: Routes = [
   },
   {
     path: 'servicios',
-    title: 'AppointMee | Elegir servicio',
+    title: 'AppointMee | Seleccionar servicio',
     data: {
-      title: 'Elegir servicio',
+      title: 'Seleccionar servicio',
       description: 'Elegí el servicio que querés reservar en esta sucursal.',
     },
     loadComponent: () =>

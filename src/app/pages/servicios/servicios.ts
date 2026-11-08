@@ -22,6 +22,19 @@ type ResultadoServicios =
   | { readonly ok: true; readonly servicios: readonly ServicioDTO[] }
   | { readonly ok: false; readonly error: HttpErrorResponse };
 
+const LARGO_DESCRIPCION_COLGADA = 160;
+
+const FORMATO_PRECIO = new Intl.NumberFormat('es-AR', {
+  style: 'currency',
+  currency: 'ARS',
+});
+
+const FORMATO_PUNTUACION = new Intl.NumberFormat('es-AR', {
+  maximumFractionDigits: 1,
+});
+
+const MAXIMO_ABEJAS = 5;
+
 @Component({
   selector: 'app-servicios',
   imports: [DsButtonComponent, RouterLink],
@@ -54,6 +67,25 @@ export class Servicios {
   /** El navegador perdió la conexión: se avisa sin descartar lo ya cargado. */
   protected readonly sinConexion = signal(!this.hayConexion());
 
+  /** Id del único servicio seleccionado en la pantalla. */
+  protected readonly seleccionadoId = signal<number | null>(null);
+  /** Descripciones que el usuario expandió para leerlas completas. */
+  protected readonly descripcionesExpandidas = signal<ReadonlySet<number>>(new Set());
+
+  protected readonly seleccionado = computed(
+    () =>
+      this.servicios().find((servicio) => servicio.id === this.seleccionadoId()) ??
+      null,
+  );
+
+  /** El botón de empleado sólo se habilita cuando hay una tarjeta seleccionada. */
+  protected readonly puedeContinuar = computed(() => this.seleccionado() !== null);
+
+  /** Durante una recarga se evita cambiar la selección con datos desactualizados. */
+  protected readonly seleccionDeshabilitada = computed(
+    () => this.cargando() || this.reintentando(),
+  );
+
   protected readonly resumenServicios = computed(() => {
     const total = this.servicios().length;
     return total === 1 ? 'Se cargó 1 servicio.' : `Se cargaron ${total} servicios.`;
@@ -65,6 +97,44 @@ export class Servicios {
       this.servicios()[0]?.nombreSucursal ??
       (this.sucursalId !== null ? `Sucursal #${this.sucursalId}` : ''),
   );
+
+  /** Resumen de la sucursal que acompaña al título de la pantalla. */
+  protected readonly resumenSucursal = computed(() => {
+    const sucursal = this.sucursal();
+    const cantidadCruda = sucursal?.cantidadPuntuaciones;
+    const cantidad =
+      typeof cantidadCruda === 'number' &&
+      Number.isFinite(cantidadCruda) &&
+      cantidadCruda > 0
+        ? Math.floor(cantidadCruda)
+        : 0;
+    const puntuacionCruda = sucursal?.puntuacion;
+    const puntuacion =
+      typeof puntuacionCruda === 'number' &&
+      Number.isFinite(puntuacionCruda) &&
+      puntuacionCruda >= 0
+        ? puntuacionCruda
+        : null;
+    const tieneResenas = sucursal !== null && cantidad > 0 && puntuacion !== null;
+    const abejas =
+      cantidad > 0 && puntuacion !== null
+        ? Array.from({
+            length: Math.min(MAXIMO_ABEJAS, Math.max(0, Math.round(puntuacion))),
+          })
+        : [];
+
+    return {
+      nombre: this.nombreSucursal(),
+      hayDatosSucursal: sucursal !== null,
+      tieneResenas,
+      abejas,
+      puntuacion:
+        puntuacion !== null
+          ? `${FORMATO_PUNTUACION.format(puntuacion)}/${MAXIMO_ABEJAS}`
+          : '',
+      resenas: cantidad === 1 ? '1 reseña' : `${cantidad} reseñas`,
+    };
+  });
 
   protected readonly detalleUrl = computed<readonly (string | number)[]>(() =>
     this.sucursalId !== null ? ['/sucursal', this.sucursalId] : ['/'],
@@ -143,9 +213,21 @@ export class Servicios {
           this.error.set(null);
           this.errorConexion.set(false);
           this.sinConexion.set(false);
-          this.servicios.set(servicios.servicios ?? []);
+
+          const lista = servicios.servicios ?? [];
+          this.servicios.set(lista);
+
+          // Si la recarga ya no incluye el servicio elegido, se limpia la
+          // selección para que el botón no quede habilitado con datos viejos.
+          if (
+            this.seleccionadoId() !== null &&
+            !lista.some((servicio) => servicio.id === this.seleccionadoId())
+          ) {
+            this.seleccionadoId.set(null);
+          }
         } else {
           this.servicios.set([]);
+          this.seleccionadoId.set(null);
           this.aplicarError(servicios.error);
         }
 
@@ -160,6 +242,38 @@ export class Servicios {
     }
     this.reintentando.set(true);
     this.reintento.next();
+  }
+
+  protected seleccionar(servicio: ServicioDTO): void {
+    if (this.seleccionDeshabilitada()) {
+      return;
+    }
+
+    this.seleccionadoId.set(servicio.id);
+  }
+
+  protected estaSeleccionado(servicio: ServicioDTO): boolean {
+    return this.seleccionadoId() === servicio.id;
+  }
+
+  protected descripcionLarga(servicio: ServicioDTO): boolean {
+    return (servicio.descripcion?.trim().length ?? 0) > LARGO_DESCRIPCION_COLGADA;
+  }
+
+  protected estaDescripcionExpandida(idServicio: number): boolean {
+    return this.descripcionesExpandidas().has(idServicio);
+  }
+
+  protected alternarDescripcion(idServicio: number): void {
+    this.descripcionesExpandidas.update((actuales) => {
+      const siguiente = new Set(actuales);
+      if (siguiente.has(idServicio)) {
+        siguiente.delete(idServicio);
+      } else {
+        siguiente.add(idServicio);
+      }
+      return siguiente;
+    });
   }
 
   protected foto(servicio: ServicioDTO): string {
@@ -187,16 +301,16 @@ export class Servicios {
   }
 
   protected formatPrecio(precio: ServicioDTO['precio']): string {
-    const valor = typeof precio === 'string' ? Number(precio) : precio;
-    if (valor === null || valor === undefined || !Number.isFinite(valor)) {
-      return 'Precio a confirmar';
+    if (typeof precio === 'string' && !precio.trim()) {
+      return 'Precio a consultar';
     }
 
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      maximumFractionDigits: 0,
-    }).format(valor);
+    const valor = typeof precio === 'string' ? Number(precio) : precio;
+    if (valor === null || valor === undefined || !Number.isFinite(valor)) {
+      return 'Precio a consultar';
+    }
+
+    return FORMATO_PRECIO.format(valor);
   }
 
   protected trackById(_index: number, servicio: ServicioDTO): number {
