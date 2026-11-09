@@ -15,9 +15,11 @@ import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
 
 import { EmpleadoDTO } from '../../models/empleado';
 import { ServicioDTO } from '../../models/servicio';
+import { SucursalDetalleDTO } from '../../models/sucursal';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { empleadoService } from '../../services/empleado-service';
 import { servicioService } from '../../services/servicio-service';
+import { sucursalService } from '../../services/sucursal-service';
 
 type ResultadoEmpleados =
   | { readonly ok: true; readonly empleados: readonly EmpleadoDTO[] }
@@ -26,6 +28,12 @@ type ResultadoEmpleados =
 type ResultadoServicios =
   | { readonly ok: true; readonly servicios: readonly ServicioDTO[] }
   | { readonly ok: false; readonly error: HttpErrorResponse };
+
+interface ResumenPuntuacion {
+  readonly tienePuntuacion: boolean;
+  readonly numero: string;
+  readonly abejas: readonly number[];
+}
 
 const FORMATO_PUNTUACION = new Intl.NumberFormat('es-AR', {
   maximumFractionDigits: 1,
@@ -51,6 +59,7 @@ export class ElegirEmpleado {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly empleadoService = inject(empleadoService);
   private readonly servicioService = inject(servicioService);
+  private readonly sucursalService = inject(sucursalService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
@@ -67,6 +76,7 @@ export class ElegirEmpleado {
 
   protected readonly empleados = signal<readonly EmpleadoDTO[]>([]);
   protected readonly servicio = signal<ServicioDTO | null>(null);
+  protected readonly sucursal = signal<SucursalDetalleDTO | null>(null);
   protected readonly cargando = signal(!this.sinContexto);
   protected readonly error = signal<string | null>(null);
   protected readonly reintentando = signal(false);
@@ -93,6 +103,8 @@ export class ElegirEmpleado {
     return {
       nombre: this.nombreCompleto(empleado),
       puntuacion: this.puntuacionTexto(empleado),
+      tienePuntuacion: this.tienePuntuacion(empleado),
+      abejas: this.abejas(empleado),
     };
   });
 
@@ -105,17 +117,29 @@ export class ElegirEmpleado {
   );
 
   protected readonly resumenContexto = computed(() => {
+    const sucursal = this.sucursal();
     const servicio = this.servicio();
-    const sucursal = servicio?.nombreSucursal?.trim();
-    const nombreServicio = servicio?.nombre?.trim();
 
     return {
-      sucursal:
-        sucursal ||
-        (this.sucursalId !== null ? `Sucursal #${this.sucursalId}` : 'Sucursal'),
-      servicio:
-        nombreServicio ||
-        (this.servicioId !== null ? `Servicio #${this.servicioId}` : 'Servicio'),
+      sucursal: {
+        nombre:
+          sucursal?.nombre?.trim() ||
+          servicio?.nombreSucursal?.trim() ||
+          (this.sucursalId !== null ? `Sucursal #${this.sucursalId}` : 'Sucursal'),
+        ...this.construirPuntuacion(
+          sucursal?.puntuacion,
+          sucursal?.cantidadPuntuaciones,
+        ),
+      },
+      servicio: {
+        nombre:
+          servicio?.nombre?.trim() ||
+          (this.servicioId !== null ? `Servicio #${this.servicioId}` : 'Servicio'),
+        ...this.construirPuntuacion(
+          servicio?.puntuacion,
+          servicio?.cantidadPuntuaciones,
+        ),
+      },
     };
   });
 
@@ -172,6 +196,11 @@ export class ElegirEmpleado {
         }),
         switchMap(() =>
           forkJoin({
+            sucursal: this.sucursal()
+              ? of(this.sucursal())
+              : this.sucursalService
+                  .obtenerPorId(idSucursal, true)
+                  .pipe(catchError(() => of(null))),
             servicios: this.servicioService.listarPorSucursal(idSucursal).pipe(
               map((servicios): ResultadoServicios => ({ ok: true, servicios })),
               catchError((error: HttpErrorResponse) =>
@@ -193,7 +222,11 @@ export class ElegirEmpleado {
         ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(({ servicios, empleados }) => {
+      .subscribe(({ sucursal, servicios, empleados }) => {
+        if (sucursal) {
+          this.sucursal.set(sucursal);
+        }
+
         this.aplicarContexto(servicios, idServicio);
 
         if (empleados.ok) {
@@ -422,6 +455,36 @@ export class ElegirEmpleado {
     );
   }
 
+  /**
+   * Normaliza la puntuación y las abejas de sucursal y servicio. Si todavía no
+   * hay reseñas no se inventa una puntuación: se informa explícitamente.
+   */
+  private construirPuntuacion(
+    puntuacion: number | null | undefined,
+    cantidadPuntuaciones: number | null | undefined,
+  ): ResumenPuntuacion {
+    if (
+      typeof puntuacion !== 'number' ||
+      !Number.isFinite(puntuacion) ||
+      typeof cantidadPuntuaciones !== 'number' ||
+      !Number.isFinite(cantidadPuntuaciones) ||
+      cantidadPuntuaciones <= 0
+    ) {
+      return { tienePuntuacion: false, numero: '', abejas: [] };
+    }
+
+    const abejas = Math.max(
+      0,
+      Math.min(MAXIMO_ABEJAS, Math.round(puntuacion)),
+    );
+
+    return {
+      tienePuntuacion: true,
+      numero: `${FORMATO_PUNTUACION.format(puntuacion)}/${MAXIMO_ABEJAS}`,
+      abejas: Array.from({ length: abejas }),
+    };
+  }
+
   private aplicarContexto(
     resultado: ResultadoServicios,
     idServicio: number,
@@ -478,7 +541,7 @@ export class ElegirEmpleado {
     }
 
     this.error.set(
-      `No pudimos cargar los profesionales de ${this.resumenContexto().sucursal}.`,
+      `No pudimos cargar los profesionales de ${this.resumenContexto().sucursal.nombre}.`,
     );
   }
 

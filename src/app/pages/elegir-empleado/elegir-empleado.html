@@ -30,14 +30,49 @@
 
       @if (!sinContexto) {
         <aside class="contexto" aria-label="Resumen de la reserva">
-          <p class="contexto__item">
+          <div class="contexto__item">
             <span class="contexto__etiqueta">Sucursal</span>
-            <span class="contexto__valor">{{ resumenContexto().sucursal }}</span>
-          </p>
-          <p class="contexto__item">
+            <span class="contexto__valor">{{ resumenContexto().sucursal.nombre }}</span>
+            @if (resumenContexto().sucursal.tienePuntuacion) {
+              <p class="contexto__rating">
+                <span class="contexto__puntuacion">
+                  {{ resumenContexto().sucursal.numero }}
+                </span>
+                <span class="contexto__abejas" aria-hidden="true">
+                  @for (abeja of resumenContexto().sucursal.abejas; track $index) {
+                    <span class="contexto__abeja">🐝</span>
+                  }
+                </span>
+                <span class="sr-only">
+                  Puntuación promedio {{ resumenContexto().sucursal.numero }}.
+                </span>
+              </p>
+            } @else {
+              <p class="contexto__sin-puntuacion">Todavía no tiene reseñas.</p>
+            }
+          </div>
+
+          <div class="contexto__item">
             <span class="contexto__etiqueta">Servicio</span>
-            <span class="contexto__valor">{{ resumenContexto().servicio }}</span>
-          </p>
+            <span class="contexto__valor">{{ resumenContexto().servicio.nombre }}</span>
+            @if (resumenContexto().servicio.tienePuntuacion) {
+              <p class="contexto__rating">
+                <span class="contexto__puntuacion">
+                  {{ resumenContexto().servicio.numero }}
+                </span>
+                <span class="contexto__abejas" aria-hidden="true">
+                  @for (abeja of resumenContexto().servicio.abejas; track $index) {
+                    <span class="contexto__abeja">🐝</span>
+                  }
+                </span>
+                <span class="sr-only">
+                  Puntuación promedio {{ resumenContexto().servicio.numero }}.
+                </span>
+              </p>
+            } @else {
+              <p class="contexto__sin-puntuacion">Todavía no tiene reseñas.</p>
+            }
+          </div>
         </aside>
       }
     </header>
@@ -268,12 +303,22 @@
             @if (resumenSeleccion(); as resumen) {
               <p class="acciones__resumen-linea">
                 <span class="acciones__resumen-etiqueta">Empleado seleccionado:</span>
-                <strong>{{ resumen.nombre }}</strong>
               </p>
-              @if (resumen.puntuacion) {
+              <p class="acciones__nombre">{{ resumen.nombre }}</p>
+              @if (resumen.tienePuntuacion) {
                 <p class="acciones__resumen-meta">
-                  <span>{{ resumen.puntuacion }}</span>
+                  <span class="acciones__puntuacion">{{ resumen.puntuacion }}</span>
+                  <span class="acciones__abejas" aria-hidden="true">
+                    @for (abeja of resumen.abejas; track $index) {
+                      <span class="acciones__abeja">🐝</span>
+                    }
+                  </span>
+                  <span class="sr-only">
+                    Puntuación promedio {{ resumen.puntuacion }}.
+                  </span>
                 </p>
+              } @else {
+                <p class="acciones__sin-puntuacion">Nadie lo ha puntuado aún.</p>
               }
             } @else {
               <p class="acciones__resumen-linea">Elegí un empleado para continuar.</p>

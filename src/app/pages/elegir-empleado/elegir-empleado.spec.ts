@@ -33,6 +33,22 @@ const SERVICIOS = [
   },
 ];
 
+const SUCURSAL = {
+  id: 7,
+  nombre: 'Sucursal Flores',
+  direccion: 'Av. Siempre Viva 742',
+  telefono: null,
+  descripcion: null,
+  fechaCreacion: null,
+  categoria: null,
+  horaApertura: null,
+  horaCierre: null,
+  diasApertura: null,
+  puntuacion: 4,
+  cantidadPuntuaciones: 20,
+  fotoPerfil: null,
+};
+
 const EMPLEADOS = [
   {
     id: 10,
@@ -100,10 +116,14 @@ describe('US-TURN-07 · Elegir empleado', () => {
     empleados: readonly Record<string, unknown>[] = EMPLEADOS,
     url = RUTA_BASE,
     servicios: readonly Record<string, unknown>[] = SERVICIOS,
+    sucursal: Record<string, unknown> = SUCURSAL,
   ): Promise<HTMLElement> {
     await router.navigateByUrl(url);
     fixture.detectChanges();
 
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/7'))
+      .flush(sucursal);
     backend
       .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
       .flush(servicios);
@@ -157,6 +177,47 @@ describe('US-TURN-07 · Elegir empleado', () => {
     expect(segundoEmpleado?.querySelectorAll('.empleado__abeja')).toHaveLength(0);
   });
 
+  it('muestra el nombre y el promedio de reseñas de la sucursal y del servicio', async () => {
+    const host = await abrirConEmpleados();
+    const items = host.querySelectorAll<HTMLElement>('.contexto__item');
+
+    expect(items).toHaveLength(2);
+
+    const sucursal = items[0]!;
+    expect(sucursal.querySelector('.contexto__valor')?.textContent?.trim()).toBe(
+      'Sucursal Flores',
+    );
+    expect(sucursal.querySelector('.contexto__puntuacion')?.textContent?.trim()).toBe(
+      '4/5',
+    );
+    expect(sucursal.querySelectorAll('.contexto__abeja')).toHaveLength(4);
+    expect(texto(sucursal)).toContain('Puntuación promedio 4/5');
+
+    const servicio = items[1]!;
+    expect(servicio.querySelector('.contexto__valor')?.textContent?.trim()).toBe(
+      'Corte de pelo',
+    );
+    expect(servicio.querySelector('.contexto__puntuacion')?.textContent?.trim()).toBe(
+      '4/5',
+    );
+    expect(servicio.querySelectorAll('.contexto__abeja')).toHaveLength(4);
+    expect(texto(servicio)).toContain('Puntuación promedio 4/5');
+  });
+
+  it('indica cuando la sucursal o el servicio todavía no tienen reseñas', async () => {
+    const host = await abrirConEmpleados(
+      EMPLEADOS,
+      RUTA_BASE,
+      [{ ...SERVICIOS[0], puntuacion: null, cantidadPuntuaciones: 0 }],
+      { ...SUCURSAL, puntuacion: null, cantidadPuntuaciones: 0 },
+    );
+
+    expect(host.querySelectorAll('.contexto__item')).toHaveLength(2);
+    expect(host.querySelectorAll('.contexto__sin-puntuacion')).toHaveLength(2);
+    expect(host.querySelectorAll('.contexto__abeja')).toHaveLength(0);
+    expect(texto(host)).toContain('Todavía no tiene reseñas.');
+  });
+
   it('mantiene una única columna para el listado vertical', async () => {
     const host = await abrirConEmpleados();
     const lista = host.querySelector<HTMLElement>('.lista');
@@ -189,7 +250,18 @@ describe('US-TURN-07 · Elegir empleado', () => {
     expect(host.querySelectorAll('.empleado--seleccionada')).toHaveLength(1);
     expect(host.querySelectorAll('.empleado__check')).toHaveLength(1);
     expect(texto(host)).toContain('Empleado seleccionado:');
-    expect(texto(host)).toContain('Ana Gómez');
+
+    const resumen = host.querySelector<HTMLElement>('.acciones__resumen')!;
+    expect(resumen.querySelector('.acciones__nombre')?.textContent?.trim()).toBe(
+      'Ana Gómez',
+    );
+    expect(
+      resumen.querySelector('.acciones__nombre + .acciones__resumen-meta'),
+    ).not.toBeNull();
+    expect(
+      resumen.querySelector('.acciones__puntuacion')?.textContent?.trim(),
+    ).toBe('4/5');
+    expect(resumen.querySelectorAll('.acciones__abeja')).toHaveLength(4);
 
     botones[1]?.click();
     fixture.detectChanges();
@@ -200,6 +272,10 @@ describe('US-TURN-07 · Elegir empleado', () => {
     expect(host.querySelectorAll('.empleado--seleccionada')).toHaveLength(1);
     expect(texto(host)).toContain('Bruno Díaz');
     expect(texto(host)).not.toContain('Empleado seleccionado: Ana Gómez');
+    expect(
+      host.querySelector('.acciones__sin-puntuacion')?.textContent?.trim(),
+    ).toBe('Nadie lo ha puntuado aún.');
+    expect(host.querySelector('.acciones__resumen-meta')).toBeNull();
   });
 
   it('selecciona con Enter y con barra espaciadora', async () => {
@@ -372,6 +448,9 @@ describe('US-TURN-07 · Elegir empleado', () => {
     expect(host.querySelector('[aria-live="polite"]')).not.toBeNull();
 
     backend
+      .expectOne((request) => request.url.endsWith('/sucursales/7'))
+      .flush(SUCURSAL);
+    backend
       .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
       .flush(SERVICIOS);
     backend
@@ -420,6 +499,9 @@ describe('US-TURN-07 · Elegir empleado', () => {
     fixture.detectChanges();
 
     backend
+      .expectOne((request) => request.url.endsWith('/sucursales/7'))
+      .flush(SUCURSAL);
+    backend
       .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
       .flush(SERVICIOS);
     backend
@@ -467,6 +549,9 @@ describe('US-TURN-07 · Elegir empleado', () => {
     fixture.detectChanges();
 
     backend
+      .expectOne((request) => request.url.endsWith('/sucursales/7'))
+      .flush(SUCURSAL);
+    backend
       .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
       .flush({}, { status: 500, statusText: 'Server Error' });
     backend
@@ -476,8 +561,10 @@ describe('US-TURN-07 · Elegir empleado', () => {
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
-    expect(texto(host)).toContain('Sucursal #7');
+    expect(texto(host)).toContain('Sucursal Flores');
     expect(texto(host)).toContain('Servicio #1');
+    expect(host.querySelector('.contexto__item:first-child .contexto__puntuacion'))
+      .not.toBeNull();
     expect(texto(host)).toContain('Ana Gómez');
     expect(host.querySelector('.estado--error')).toBeNull();
   });
@@ -488,6 +575,9 @@ describe('US-TURN-07 · Elegir empleado', () => {
     await router.navigateByUrl(RUTA_BASE);
     fixture.detectChanges();
 
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/7'))
+      .flush(SUCURSAL);
     backend
       .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
       .flush(SERVICIOS);
