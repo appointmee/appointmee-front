@@ -1,0 +1,343 @@
+<section class="elegir-empleado" aria-labelledby="elegir-empleado-titulo">
+  <div class="elegir-empleado__inner">
+    <nav class="migas" aria-label="Navegación de la reserva">
+      <a class="volver" [routerLink]="volverLink()" [queryParams]="volverQueryParams()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M11 18l-6-6 6-6" />
+        </svg>
+        Volver a servicios
+      </a>
+    </nav>
+
+    <header class="cabecera">
+      <div class="cabecera__intro">
+        <span class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true"></span>
+          Reserva de turno
+        </span>
+        <h1 id="elegir-empleado-titulo">Elegir empleado</h1>
+
+        @if (!sinContexto) {
+          <p class="paso" aria-label="Paso 2 de 3: elegir empleado">
+            <span class="paso__numero" aria-hidden="true">2</span>
+            <span class="paso__texto">Paso 2 de 3 · Empleado</span>
+            <span class="paso__track" aria-hidden="true">
+              <span class="paso__progress"></span>
+            </span>
+          </p>
+        }
+      </div>
+
+      @if (!sinContexto) {
+        <aside class="contexto" aria-label="Resumen de la reserva">
+          <div class="contexto__item">
+            <span class="contexto__etiqueta">Sucursal</span>
+            <span class="contexto__valor">{{ resumenContexto().sucursal.nombre }}</span>
+            @if (resumenContexto().sucursal.tienePuntuacion) {
+              <p class="contexto__rating">
+                <span class="contexto__puntuacion">
+                  {{ resumenContexto().sucursal.numero }}
+                </span>
+                <span class="contexto__abejas" aria-hidden="true">
+                  @for (abeja of resumenContexto().sucursal.abejas; track $index) {
+                    <span class="contexto__abeja">🐝</span>
+                  }
+                </span>
+                <span class="sr-only">
+                  Puntuación promedio {{ resumenContexto().sucursal.numero }}.
+                </span>
+              </p>
+            } @else {
+              <p class="contexto__sin-puntuacion">Todavía no tiene reseñas.</p>
+            }
+          </div>
+
+          <div class="contexto__item">
+            <span class="contexto__etiqueta">Servicio</span>
+            <span class="contexto__valor">{{ resumenContexto().servicio.nombre }}</span>
+            @if (resumenContexto().servicio.tienePuntuacion) {
+              <p class="contexto__rating">
+                <span class="contexto__puntuacion">
+                  {{ resumenContexto().servicio.numero }}
+                </span>
+                <span class="contexto__abejas" aria-hidden="true">
+                  @for (abeja of resumenContexto().servicio.abejas; track $index) {
+                    <span class="contexto__abeja">🐝</span>
+                  }
+                </span>
+                <span class="sr-only">
+                  Puntuación promedio {{ resumenContexto().servicio.numero }}.
+                </span>
+              </p>
+            } @else {
+              <p class="contexto__sin-puntuacion">Todavía no tiene reseñas.</p>
+            }
+          </div>
+        </aside>
+      }
+    </header>
+
+    @if (sinContexto) {
+      <div
+        class="estado estado--contexto"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <span class="estado__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M12 9v4M12 17h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+            />
+          </svg>
+        </span>
+        <h2>No pudimos identificar la reserva</h2>
+        <p>
+          Falta el servicio o la sucursal en la URL. Volvé a elegir un servicio para
+          continuar con la reserva.
+        </p>
+        <a class="boton" routerLink="/">Volver al Home</a>
+      </div>
+    } @else {
+      @if (avisoPreseleccion()) {
+        <div
+          class="aviso"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <span class="aviso__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </span>
+          <p>{{ avisoPreseleccion() }}</p>
+        </div>
+      }
+
+      @if (sinConexion() && !cargando() && !error()) {
+        <div
+          class="aviso aviso--conexion"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          <span class="aviso__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M2 2 22 22M8.5 8.5A10.9 10.9 0 0 1 12 8c4 0 7.4 2 9 5M5 13c1-1.4 2.4-2.4 4-3M8.5 16.5a4.5 4.5 0 0 1 7 0M12 20h.01"
+              />
+            </svg>
+          </span>
+          <div class="aviso__texto">
+            <strong>Sin conexión a internet</strong>
+            <p>Revisá tu conexión y reintentá. Podés seguir viendo lo que ya está cargado.</p>
+          </div>
+          <button
+            class="boton boton--compacto"
+            type="button"
+            [disabled]="reintentando()"
+            [attr.aria-busy]="reintentando()"
+            (click)="reintentar()"
+          >
+            {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+          </button>
+        </div>
+      }
+
+      @if (cargando()) {
+        <div class="empleados__scroll" aria-busy="true">
+          <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            Cargando empleados…
+          </span>
+          <div class="lista lista--skeleton">
+            @for (item of [1, 2, 3, 4]; track item) {
+              <article class="empleado empleado--skeleton" aria-hidden="true">
+                <span class="empleado__foto skeleton"></span>
+                <div class="empleado__body">
+                  <span class="skeleton skeleton--nombre"></span>
+                  <span class="skeleton skeleton--puntuacion"></span>
+                </div>
+              </article>
+            }
+          </div>
+        </div>
+      } @else if (error()) {
+        <div class="empleados__scroll">
+          <div
+            class="estado estado--error"
+            role="alert"
+            aria-live="assertive"
+            aria-atomic="true"
+          >
+            <span class="estado__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+            </span>
+            <h2>
+              {{ sinConexion() ? 'Sin conexión a internet' : 'No pudimos cargar los empleados' }}
+            </h2>
+            <p>{{ error() }}</p>
+            <div class="estado__acciones">
+              <button
+                dsButton
+                class="boton"
+                type="button"
+                [disabled]="reintentando()"
+                [attr.aria-busy]="reintentando()"
+                (click)="reintentar()"
+              >
+                {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+              </button>
+              <a
+                class="boton boton--ghost"
+                [routerLink]="volverLink()"
+                [queryParams]="volverQueryParams()"
+              >
+                Volver a servicios
+              </a>
+            </div>
+            <span class="sr-only" role="status" aria-live="polite">
+              @if (reintentando()) {
+                Reintentando la carga de empleados…
+              }
+            </span>
+          </div>
+        </div>
+      } @else if (empleados().length === 0) {
+        <div class="empleados__scroll">
+          <div class="estado estado--vacio" role="status" aria-live="polite">
+            <span class="estado__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 7h16M4 12h10M4 17h7M17 14v6M14 17h6" />
+              </svg>
+            </span>
+            <h2>Esta sucursal todavía no tiene empleados disponibles</h2>
+            <p>
+              No hay profesionales para mostrar en este momento. Volvé a servicios para elegir
+              otra opción.
+            </p>
+            <a
+              class="boton"
+              [routerLink]="volverLink()"
+              [queryParams]="volverQueryParams()"
+            >
+              Volver a servicios
+            </a>
+          </div>
+        </div>
+      } @else {
+        <div class="empleados__scroll">
+          <div
+            class="lista"
+            role="radiogroup"
+            aria-labelledby="elegir-empleado-titulo"
+          >
+            @for (empleado of empleados(); track trackById($index, empleado); let i = $index) {
+              <article
+                class="empleado"
+                [class.empleado--seleccionada]="estaSeleccionado(empleado)"
+                [class.empleado--deshabilitada]="seleccionDeshabilitada()"
+                [style.--i]="i"
+              >
+                <img
+                  class="empleado__foto"
+                  [src]="foto(empleado)"
+                  [alt]="'Fotografía de ' + nombreCompleto(empleado)"
+                  loading="lazy"
+                  decoding="async"
+                  referrerpolicy="no-referrer"
+                  (error)="onImageError($event)"
+                />
+
+                <div class="empleado__body">
+                  <h2 class="empleado__nombre">{{ nombreCompleto(empleado) }}</h2>
+
+                  <p class="empleado__rating">
+                    @if (tienePuntuacion(empleado)) {
+                      <span class="empleado__puntuacion">
+                        {{ puntuacionTexto(empleado) }}
+                      </span>
+                      <span class="empleado__abejas" aria-hidden="true">
+                        @for (abeja of abejas(empleado); track $index) {
+                          <span class="empleado__abeja">🐝</span>
+                        }
+                      </span>
+                      <span class="sr-only">
+                        Puntuación promedio {{ puntuacionTexto(empleado) }}.
+                      </span>
+                    } @else {
+                      <span class="empleado__sin-puntuacion">Sin puntuaciones</span>
+                    }
+                  </p>
+                </div>
+
+                @if (estaSeleccionado(empleado)) {
+                  <span class="empleado__check" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="m5 12 5 5 9-10" />
+                    </svg>
+                  </span>
+                }
+
+                <button
+                  class="empleado__seleccion"
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="estaSeleccionado(empleado)"
+                  [attr.aria-label]="'Seleccionar a ' + nombreCompleto(empleado)"
+                  [attr.tabindex]="esOpcionEnfocable(empleado) ? 0 : -1"
+                  [attr.data-empleado-id]="empleado.id"
+                  [disabled]="seleccionDeshabilitada()"
+                  (click)="seleccionar(empleado)"
+                  (keydown)="onTeclaOpcion($event, empleado)"
+                ></button>
+              </article>
+            }
+          </div>
+        </div>
+
+        <footer class="acciones">
+          <div class="acciones__resumen" role="status" aria-live="polite" aria-atomic="true">
+            @if (resumenSeleccion(); as resumen) {
+              <p class="acciones__resumen-linea">
+                <span class="acciones__resumen-etiqueta">Empleado seleccionado:</span>
+              </p>
+              <p class="acciones__nombre">{{ resumen.nombre }}</p>
+              @if (resumen.tienePuntuacion) {
+                <p class="acciones__resumen-meta">
+                  <span class="acciones__puntuacion">{{ resumen.puntuacion }}</span>
+                  <span class="acciones__abejas" aria-hidden="true">
+                    @for (abeja of resumen.abejas; track $index) {
+                      <span class="acciones__abeja">🐝</span>
+                    }
+                  </span>
+                  <span class="sr-only">
+                    Puntuación promedio {{ resumen.puntuacion }}.
+                  </span>
+                </p>
+              } @else {
+                <p class="acciones__sin-puntuacion">Nadie lo ha puntuado aún.</p>
+              }
+            } @else {
+              <p class="acciones__resumen-linea">Elegí un empleado para continuar.</p>
+            }
+          </div>
+
+          <button
+            dsButton
+            variant="primary"
+            class="boton boton--siguiente"
+            type="button"
+            [disabled]="!puedeContinuar() || navegando()"
+            [attr.aria-busy]="navegando()"
+            (click)="continuar()"
+          >
+            Siguiente
+          </button>
+        </footer>
+      }
+    }
+  </div>
+</section>
