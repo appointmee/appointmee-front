@@ -117,6 +117,8 @@ export class PagoTurno {
       return null;
     }
 
+    const horaInicio = this.hora.slice(0, 5);
+
     return {
       sucursal: sucursal?.nombre ?? 'Sucursal',
       servicio: servicio?.nombre ?? 'Servicio',
@@ -124,10 +126,19 @@ export class PagoTurno {
         ? `${empleado.nombre} ${empleado.apellido}`.trim()
         : 'Profesional',
       fecha: this.fechaTexto(this.fecha),
-      hora: this.hora.slice(0, 5),
+      hora: horaInicio,
+      horaFin: this.horaFinTexto(this.hora, servicio?.duracion ?? null),
       precio: this.precioTexto(servicio?.precio ?? null),
     };
   });
+
+  protected readonly placeholderImage = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="18" fill="#1f2430"/><path d="M30 62 48 34l18 28" fill="none" stroke="#f7c65a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="48" cy="28" r="6" fill="#f7c65a"/></svg>`,
+  )}`;
+
+  protected readonly placeholderAvatar = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="48" fill="#1f2430"/><circle cx="48" cy="38" r="16" fill="#f7c65a"/><path d="M20 84c4-16 16-24 28-24s24 8 28 24" fill="#f7c65a"/></svg>`,
+  )}`;
 
   constructor() {
     if (!this.sinContexto()) {
@@ -277,6 +288,116 @@ export class PagoTurno {
       a.getHours() === b.getHours() &&
       a.getMinutes() === b.getMinutes()
     );
+  }
+
+  protected fotoSucursal(): string {
+    return this.sucursal()?.fotoPerfil?.trim() || this.placeholderImage;
+  }
+
+  protected fotoServicio(): string {
+    return this.servicio()?.fotoPerfil?.trim() || this.placeholderImage;
+  }
+
+  protected fotoEmpleado(): string {
+    return this.empleado()?.urlFotoPerfil?.trim() || this.placeholderAvatar;
+  }
+
+  protected onImageErrorSucursal(event: Event): void {
+    const img = event.target as HTMLImageElement | null;
+    if (img) {
+      img.src = this.placeholderImage;
+    }
+  }
+
+  protected onImageErrorServicio(event: Event): void {
+    const img = event.target as HTMLImageElement | null;
+    if (img) {
+      img.src = this.placeholderImage;
+    }
+  }
+
+  protected onImageErrorEmpleado(event: Event): void {
+    const img = event.target as HTMLImageElement | null;
+    if (img) {
+      img.src = this.placeholderAvatar;
+    }
+  }
+
+  protected puntuacionSucursal() {
+    return this.construirPuntuacion(
+      this.sucursal()?.puntuacion,
+      this.sucursal()?.cantidadPuntuaciones,
+    );
+  }
+
+  protected puntuacionServicio() {
+    return this.construirPuntuacion(
+      this.servicio()?.puntuacion,
+      this.servicio()?.cantidadPuntuaciones,
+    );
+  }
+
+  protected puntuacionEmpleado() {
+    return this.construirPuntuacion(
+      this.empleado()?.puntuacion,
+      this.empleado()?.cantidadPuntuaciones,
+    );
+  }
+
+  private construirPuntuacion(
+    puntuacion: number | null | undefined,
+    cantidadPuntuaciones: number | null | undefined,
+  ): { tienePuntuacion: boolean; numero: string; abejas: readonly number[] } {
+    if (
+      typeof puntuacion !== 'number' ||
+      !Number.isFinite(puntuacion) ||
+      typeof cantidadPuntuaciones !== 'number' ||
+      !Number.isFinite(cantidadPuntuaciones) ||
+      cantidadPuntuaciones <= 0
+    ) {
+      return { tienePuntuacion: false, numero: '', abejas: [] };
+    }
+
+    const abejas = Math.max(0, Math.min(5, Math.round(puntuacion)));
+    return {
+      tienePuntuacion: true,
+      numero: `${new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 }).format(puntuacion)}/5`,
+      abejas: Array.from({ length: abejas }),
+    };
+  }
+
+  private horaFinTexto(hora: string, duracion: number | null): string {
+    const coincidencia = /^(\d{1,2}):(\d{2})/.exec(hora.trim());
+    if (!coincidencia) {
+      return hora.slice(0, 5);
+    }
+    const horas = Number(coincidencia[1]);
+    const minutos = Number(coincidencia[2]);
+    if (!Number.isFinite(horas) || !Number.isFinite(minutos)) {
+      return hora.slice(0, 5);
+    }
+    const duracionMinutos =
+      typeof duracion === 'number' && Number.isFinite(duracion) && duracion > 0
+        ? duracion
+        : 0;
+    const total = horas * 60 + minutos + duracionMinutos;
+    const horaFinal = Math.floor(total / 60) % 24;
+    const minutoFinal = total % 60;
+    return `${String(horaFinal).padStart(2, '0')}:${String(minutoFinal).padStart(2, '0')}`;
+  }
+
+  protected formatDuracion(minutos: number | null | undefined): string {
+    if (minutos === null || minutos === undefined || !Number.isFinite(minutos) || minutos <= 0) {
+      return 'Duración a confirmar';
+    }
+
+    if (minutos < 60) {
+      return `${minutos} min`;
+    }
+
+    const horas = Math.floor(minutos / 60);
+    const resto = minutos % 60;
+    return resto === 0 ? `${horas} h` : `${horas} h ${resto} min`;
   }
 
   private precioTexto(precio: number | string | null): string {

@@ -63,26 +63,112 @@
         </div>
       } @else if (resumenSeleccion(); as resumen) {
         <div class="resumen-card" aria-label="Resumen de la reserva">
-          <div class="resumen-card__fila">
-            <span class="resumen-card__etiqueta">Sucursal</span>
-            <span class="resumen-card__valor">{{ resumen.sucursal }}</span>
+          <section class="resumen-card__bloque" aria-label="Sucursal">
+            <img
+              class="resumen-card__imagen"
+              [src]="fotoSucursal()"
+              [alt]="'Fotografía de ' + (sucursal()?.nombre ?? 'Sucursal')"
+              loading="lazy"
+              decoding="async"
+              referrerpolicy="no-referrer"
+              (error)="onImageErrorSucursal($event)"
+            />
+            <div class="resumen-card__info">
+              <span class="resumen-card__etiqueta">Sucursal</span>
+              <span class="resumen-card__nombre">{{ sucursal()?.nombre ?? 'Sucursal' }}</span>
+              @if (sucursal()?.direccion) {
+                <span class="resumen-card__detalle">{{ sucursal()?.direccion }}</span>
+              }
+              @if (puntuacionSucursal().tienePuntuacion) {
+                <p class="resumen-card__rating">
+                  <span class="resumen-card__puntuacion">
+                    {{ puntuacionSucursal().numero }}
+                  </span>
+                  <span class="resumen-card__abejas" aria-hidden="true">
+                    @for (abeja of puntuacionSucursal().abejas; track $index) {
+                      <span class="resumen-card__abeja">🐝</span>
+                    }
+                  </span>
+
+                </p>
+              } @else {
+                <p class="resumen-card__sin-puntuacion">Todavía no tiene reseñas.</p>
+              }
+            </div>
+          </section>
+
+          <section class="resumen-card__bloque" aria-label="Servicio">
+            <img
+              class="resumen-card__imagen"
+              [src]="fotoServicio()"
+              [alt]="'Fotografía del servicio ' + (servicio()?.nombre ?? 'Servicio')"
+              loading="lazy"
+              decoding="async"
+              referrerpolicy="no-referrer"
+              (error)="onImageErrorServicio($event)"
+            />
+            <div class="resumen-card__info">
+              <span class="resumen-card__etiqueta">Servicio</span>
+              <span class="resumen-card__nombre">{{ servicio()?.nombre ?? 'Servicio' }}</span>
+              @if (puntuacionServicio().tienePuntuacion) {
+                <p class="resumen-card__rating">
+                  <span class="resumen-card__puntuacion">
+                    {{ puntuacionServicio().numero }}
+                  </span>
+                  <span class="resumen-card__abejas" aria-hidden="true">
+                    @for (abeja of puntuacionServicio().abejas; track $index) {
+                      <span class="resumen-card__abeja">🐝</span>
+                    }
+                  </span>
+
+                </p>
+              } @else {
+                <p class="resumen-card__sin-puntuacion">Todavía no tiene reseñas.</p>
+              }
+              <span class="resumen-card__precio">{{ resumen.precio }}</span>
+              <span class="resumen-card__duracion">{{ formatDuracion(servicio()?.duracion) }}</span>
+            </div>
+          </section>
+
+          <section class="resumen-card__bloque" aria-label="Profesional">
+            <img
+              class="resumen-card__imagen resumen-card__imagen--avatar"
+              [src]="fotoEmpleado()"
+              [alt]="'Fotografía de ' + (empleado() ? empleado()!.nombre + ' ' + empleado()!.apellido : 'Profesional')"
+              loading="lazy"
+              decoding="async"
+              referrerpolicy="no-referrer"
+              (error)="onImageErrorEmpleado($event)"
+            />
+            <div class="resumen-card__info">
+              <span class="resumen-card__etiqueta">Profesional</span>
+              <span class="resumen-card__nombre">{{ empleado() ? (empleado()!.nombre + ' ' + empleado()!.apellido).trim() : 'Profesional' }}</span>
+              @if (puntuacionEmpleado().tienePuntuacion) {
+                <p class="resumen-card__rating">
+                  <span class="resumen-card__puntuacion">
+                    {{ puntuacionEmpleado().numero }}
+                  </span>
+                  <span class="resumen-card__abejas" aria-hidden="true">
+                    @for (abeja of puntuacionEmpleado().abejas; track $index) {
+                      <span class="resumen-card__abeja">🐝</span>
+                    }
+                  </span>
+
+                </p>
+              } @else {
+                <p class="resumen-card__sin-puntuacion">Todavía no tiene reseñas.</p>
+              }
+            </div>
+          </section>
+
+          <div class="resumen-card__fila resumen-card__fila--horario">
+            <span class="resumen-card__etiqueta">Horario y fecha</span>
+            <div class="resumen-card__valor resumen-card__valor--bloque">
+              <span class="resumen-card__fecha">{{ resumen.fecha }}</span>
+              <span class="resumen-card__hora">{{ resumen.hora }} hs - {{ resumen.horaFin }} hs</span>
+            </div>
           </div>
-          <div class="resumen-card__fila">
-            <span class="resumen-card__etiqueta">Servicio</span>
-            <span class="resumen-card__valor">{{ resumen.servicio }}</span>
-          </div>
-          <div class="resumen-card__fila">
-            <span class="resumen-card__etiqueta">Profesional</span>
-            <span class="resumen-card__valor">{{ resumen.empleado }}</span>
-          </div>
-          <div class="resumen-card__fila">
-            <span class="resumen-card__etiqueta">Fecha</span>
-            <span class="resumen-card__valor">{{ resumen.fecha }}</span>
-          </div>
-          <div class="resumen-card__fila">
-            <span class="resumen-card__etiqueta">Horario</span>
-            <span class="resumen-card__valor">{{ resumen.hora }} hs</span>
-          </div>
+
           <div class="resumen-card__fila resumen-card__fila--total">
             <span class="resumen-card__etiqueta">Precio total</span>
             <span class="resumen-card__valor">{{ resumen.precio }}</span>
@@ -95,28 +181,28 @@
           </div>
         }
 
-        <div class="acciones">
-          <button
-            type="button"
-            class="boton boton--pago"
-            [disabled]="creandoPreferencia()"
-            [attr.aria-busy]="creandoPreferencia()"
-            (click)="pagarConMercadoPago()"
-          >
-            @if (creandoPreferencia()) {
-              Procesando pago…
-            } @else {
-              Pagar con Mercado Pago
-            }
-          </button>
-        </div>
+        <div class="acciones-pago">
+          <div class="acciones">
+            <button
+              type="button"
+              class="boton boton--pago"
+              [disabled]="creandoPreferencia()"
+              [attr.aria-busy]="creandoPreferencia()"
+              (click)="pagarConMercadoPago()"
+            >
+              @if (creandoPreferencia()) {
+                Procesando pago…
+              } @else {
+                Pagar con Mercado Pago
+              }
+            </button>
+          </div>
 
-        <p class="ayuda">
-          Se abrirá Mercado Pago en una pestaña nueva. Esta página conservará tu reserva.
-        </p>
+          <p class="ayuda">
+            Se abrirá Mercado Pago en una pestaña nueva. Esta página conservará tu reserva.
+          </p>
+        </div>
       }
     }
   </div>
 </section>
-EOF
-echo done
