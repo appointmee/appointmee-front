@@ -36,9 +36,24 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'sucursal/:sucursalId/servicios/:servicioId/turnos/pago',
+    title: 'AppointMee | Enlace de pago',
+    data: {
+      title: 'Enlace de pago',
+      description: 'Completá el pago para confirmar tu turno.',
+    },
+    loadComponent: () =>
+      import('./pages/pago-turno/pago-turno').then((module) => module.PagoTurno),
+  },
+  {
     path: 'sucursal/:sucursalId/servicios/:servicioId/turnos',
-    title: 'AppointMee | Elegir turno · Temporal',
-    loadComponent: () => import('./pages/elegir-turno/elegir-turno').then(module => module.ElegirTurno),
+    title: 'AppointMee | Seleccionar día y horario',
+    data: {
+      title: 'Seleccionar día y horario',
+      description: 'Elegí el día y el horario disponible para tu turno.',
+    },
+    loadComponent: () =>
+      import('./pages/elegir-turno/elegir-turno').then((module) => module.ElegirTurno),
   },
   {
     path: 'sucursal/:sucursalId/servicios',

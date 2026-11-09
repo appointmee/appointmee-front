@@ -1,0 +1,67 @@
+<section class="pago-turno" aria-labelledby="pago-turno-titulo">
+  <div class="pago-turno__inner">
+    <nav class="migas" aria-label="Navegación de la reserva">
+      <a class="volver" [routerLink]="volverLink()" [queryParams]="volverQueryParams()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M11 18l-6-6 6-6" />
+        </svg>
+        Volver a día y horario
+      </a>
+    </nav>
+
+    <header class="cabecera">
+      <span class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Reserva de turno
+      </span>
+      <h1 id="pago-turno-titulo">Enlace de pago</h1>
+      <p class="paso" aria-label="Paso final: pago">
+        <span class="paso__numero" aria-hidden="true">✓</span>
+        <span class="paso__texto">Paso final · Pago</span>
+      </p>
+    </header>
+
+    @if (sinContexto()) {
+      <div class="estado estado--contexto" role="alert" aria-live="assertive" aria-atomic="true">
+        <span class="estado__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M12 9v4M12 17h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+            />
+          </svg>
+        </span>
+        <h2>No pudimos identificar el turno</h2>
+        <p>
+          Falta la sucursal, el servicio, el profesional o el horario en la URL. Volvé a
+          elegir un día y horario para continuar con la reserva.
+        </p>
+        <a class="boton" [routerLink]="volverLink()">Volver a la reserva</a>
+      </div>
+    } @else {
+      <div class="estado estado--pago" role="status" aria-live="polite">
+        <span class="estado__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 10h18M7 15h4M5 6h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" />
+          </svg>
+        </span>
+        <h2>La integración de pago estará disponible próximamente</h2>
+        <p>
+          Tu día y horario quedaron seleccionados. En la próxima versión vas a poder
+          completar el pago desde esta pantalla.
+        </p>
+
+        @if (resumenSeleccion(); as resumen) {
+          <div class="resumen" aria-label="Turno seleccionado">
+            <span class="resumen__etiqueta">Turno seleccionado</span>
+            <p class="resumen__fecha">{{ resumen.fecha }}</p>
+            <p class="resumen__hora">{{ resumen.hora }} hs</p>
+          </div>
+        }
+
+        <a class="boton" [routerLink]="volverLink()" [queryParams]="volverQueryParams()">
+          Volver a día y horario
+        </a>
+      </div>
+    }
+  </div>
+</section>
