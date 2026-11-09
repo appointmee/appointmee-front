@@ -27,6 +27,7 @@ export class backendService {
     const hostname = globalThis.location?.hostname;
     return hostname === 'localhost' || hostname === '127.0.0.1'
       ? 'http://localhost:8080'
-      : 'https://appointmee-vcs2.onrender.com';
+      // IMPORTANTE: si cambia la URL pública del backend, actualizar esta URL.
+      : 'https://tiny-files-lead.loca.lt';
   }
 }
