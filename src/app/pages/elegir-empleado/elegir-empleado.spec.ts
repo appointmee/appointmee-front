@@ -377,6 +377,26 @@ describe('US-TURN-07 · Elegir empleado', () => {
     expect(router.url).toBe('/sucursal/7/servicios/1/turnos?empleadoId=11');
   });
 
+  it('conserva el día y el horario elegidos al volver al paso 3', async () => {
+    const host = await abrirConEmpleados(
+      EMPLEADOS,
+      `${RUTA_BASE}?empleadoId=10&fecha=2030-12-20&hora=10:00:00`,
+    );
+
+    host.querySelector<HTMLButtonElement>('.boton--siguiente')?.click();
+    await fixture.whenStable();
+
+    const destino = router.parseUrl(router.url);
+    expect(destino.root.children['primary']?.segments.map((segmento) => segmento.path)).toEqual(
+      ['sucursal', '7', 'servicios', '1', 'turnos'],
+    );
+    expect(destino.queryParams).toEqual({
+      empleadoId: '10',
+      fecha: '2030-12-20',
+      hora: '10:00:00',
+    });
+  });
+
   it('bloquea navegaciones duplicadas mientras se procesa el paso 3', async () => {
     const host = await abrirConEmpleados();
 

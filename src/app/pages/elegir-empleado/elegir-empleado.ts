@@ -70,6 +70,13 @@ export class ElegirEmpleado {
     this.route.snapshot.queryParamMap.get('empleadoId'),
   );
 
+  /**
+   * Día y horario elegidos en el paso 3. Se reenvían al continuar para que la
+   * selección sobreviva a la navegación entre pasos.
+   */
+  private readonly fechaUrl = this.route.snapshot.queryParamMap.get('fecha');
+  private readonly horaUrl = this.route.snapshot.queryParamMap.get('hora');
+
   protected readonly sucursalId = this.parseId(this.sucursalIdParam);
   protected readonly servicioId = this.parseId(this.servicioIdParam);
   protected readonly sinContexto = this.sucursalId === null || this.servicioId === null;
@@ -344,11 +351,21 @@ export class ElegirEmpleado {
       return;
     }
 
+    const queryParams: Record<string, string | number> = {
+      empleadoId: empleado.id,
+    };
+    if (this.fechaUrl) {
+      queryParams['fecha'] = this.fechaUrl;
+    }
+    if (this.horaUrl) {
+      queryParams['hora'] = this.horaUrl;
+    }
+
     this.navegando.set(true);
     this.router
       .navigate(
         ['/sucursal', this.sucursalId, 'servicios', this.servicioId, 'turnos'],
-        { queryParams: { empleadoId: empleado.id } },
+        { queryParams },
       )
       .then((navego) => {
         if (!navego) {
