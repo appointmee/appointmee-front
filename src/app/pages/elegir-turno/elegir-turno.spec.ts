@@ -190,11 +190,22 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
       .flush(dias);
   }
 
+  function responderTurnosPropios(turnos: readonly Record<string, unknown>[] = []): void {
+    const pendientes = backend.match((request) =>
+      request.url.endsWith('/turnos/propios'),
+    );
+    pendientes.forEach((request) => {
+      if (!request.cancelled) {
+        request.flush(turnos);
+      }
+    });
+  }
+
   async function abrir(url = RUTA_BASE): Promise<HTMLElement> {
     await navegar(url);
     responderContexto();
     responderDisponibilidad();
-    await fixture.whenStable();
+    responderTurnosPropios();    await fixture.whenStable();
     fixture.detectChanges();
     return host();
   }
@@ -277,6 +288,11 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
     );
     expect(pedido.request.method).toBe('GET');
     pedido.flush(DIAS);
+    backend.match((request) => request.url.endsWith('/turnos/propios')).forEach((request) => {
+      if (!request.cancelled) {
+        request.flush([]);
+      }
+    });
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -545,7 +561,7 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
     expect(texto(hostElement)).toContain('Cargando días y horarios disponibles');
 
     responderDisponibilidad();
-    await fixture.whenStable();
+    responderTurnosPropios();    await fixture.whenStable();
     fixture.detectChanges();
 
     expect(hostElement.querySelectorAll('.dia--skeleton')).toHaveLength(0);
@@ -559,6 +575,7 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
       { fecha: '2030-12-21', horarios: [] },
       { fecha: '2030-12-22', horarios: [] },
     ]);
+    responderTurnosPropios();
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -582,6 +599,11 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
           request.url.endsWith('/turnos/disponibilidad/empleado/9/servicio/3'),
       )
       .flush({}, { status: 503, statusText: 'Unavailable' });
+    backend.match((request) => request.url.endsWith('/turnos/propios')).forEach((request) => {
+      if (!request.cancelled) {
+        request.flush([]);
+      }
+    });
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -605,7 +627,7 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
     expect(reintentando.textContent).toContain('Reintentando');
 
     responderDisponibilidad();
-    await fixture.whenStable();
+    responderTurnosPropios();    await fixture.whenStable();
     fixture.detectChanges();
 
     expect(hostElement.querySelector('.aviso--error')).toBeNull();
@@ -634,6 +656,11 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
           request.url.endsWith('/turnos/disponibilidad/empleado/9/servicio/3'),
       )
       .flush({}, { status: 503, statusText: 'Unavailable' });
+    backend.match((request) => request.url.endsWith('/turnos/propios')).forEach((request) => {
+      if (!request.cancelled) {
+        request.flush([]);
+      }
+    });
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -680,7 +707,7 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
     expect(texto(hostElement)).toContain('La conexión volvió');
 
     responderDisponibilidad();
-    await fixture.whenStable();
+    responderTurnosPropios();    await fixture.whenStable();
     fixture.detectChanges();
 
     expect(texto(hostElement)).not.toContain('Sin conexión a internet');
@@ -718,7 +745,7 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
       .expectOne((request) => request.url.endsWith('/sucursales/7/elegir-empleado'))
       .flush({}, { status: 500, statusText: 'Server Error' });
     responderDisponibilidad();
-    await fixture.whenStable();
+    responderTurnosPropios();    await fixture.whenStable();
     fixture.detectChanges();
 
     const hostElement = host();
@@ -806,6 +833,10 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
+    responderContexto();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
     expect(auth.login).toHaveBeenCalledWith('ana@example.com', 'Clave123!');
     expect(router.url).toContain('/sucursal/7/servicios/3/turnos/pago');
     const query = router.parseUrl(router.url).queryParams;
@@ -815,7 +846,7 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
       hora: '10:00:00',
     });
     expect(texto()).toContain('Enlace de pago');
-    expect(texto()).toContain('La integración de pago estará disponible próximamente');
+    expect(texto()).toContain('Pagar con Mercado Pago');
   });
 
   it('con sesión pero sin rol Cliente avisa y no navega', async () => {
@@ -846,6 +877,10 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    responderContexto();
     await fixture.whenStable();
     fixture.detectChanges();
 

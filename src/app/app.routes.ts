@@ -46,6 +46,14 @@ export const routes: Routes = [
       import('./pages/pago-turno/pago-turno').then((module) => module.PagoTurno),
   },
   {
+    path: 'pago/resultado',
+    title: 'AppointMee | Resultado del pago',
+    loadComponent: () =>
+      import('./pages/resultado-pago/resultado-pago').then(
+        (module) => module.ResultadoPago,
+      ),
+  },
+  {
     path: 'sucursal/:sucursalId/servicios/:servicioId/turnos',
     title: 'AppointMee | Seleccionar día y horario',
     data: {

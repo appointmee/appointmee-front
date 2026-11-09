@@ -17,7 +17,7 @@ import { LoginModal } from '../../components/login-modal/login-modal';
 import { EmpleadoDTO } from '../../models/empleado';
 import { ServicioDTO } from '../../models/servicio';
 import { SucursalDetalleDTO } from '../../models/sucursal';
-import { DisponibilidadDTO } from '../../models/turno';
+import { DisponibilidadDTO, TurnoMiniDTO } from '../../models/turno';
 import { authService } from '../../services/auth-service';
 import { empleadoService } from '../../services/empleado-service';
 import { servicioService } from '../../services/servicio-service';
@@ -661,6 +661,48 @@ export class ElegirTurno {
       });
   }
 
+  private liberarHorariosRechazados(
+    dias: readonly DisponibilidadDTO[],
+    turnos: readonly TurnoMiniDTO[],
+    nombreServicio: string,
+  ): readonly DisponibilidadDTO[] {
+    const rechazados = (turnos ?? []).filter(
+      (turno) =>
+        turno.estadoTurno === 'PAGO_RECHAZADO' &&
+        turno.nombreServicio === nombreServicio,
+    );
+
+    if (!rechazados.length) {
+      return dias ?? [];
+    }
+
+    const resultado = (dias ?? []).map((dia) => ({
+      fecha: dia.fecha,
+      horarios: [...(dia.horarios ?? [])],
+    }));
+
+    for (const turno of rechazados) {
+      const fechaTurno = (turno.fechaTurno ?? '').slice(0, 10);
+      const horaTurno = (turno.fechaTurno ?? '').slice(11, 19);
+      if (!fechaTurno || !horaTurno) {
+        continue;
+      }
+
+      let dia = resultado.find((item) => item.fecha === fechaTurno);
+      if (!dia) {
+        dia = { fecha: fechaTurno, horarios: [] };
+        resultado.push(dia);
+      }
+
+      if (!dia.horarios.includes(horaTurno)) {
+        dia.horarios.push(horaTurno);
+        dia.horarios.sort();
+      }
+    }
+
+    return resultado;
+  }
+
   private cargarDisponibilidad(empleadoId: number, servicioId: number): void {
     this.recargarDisponibilidad
       .pipe(
@@ -673,10 +715,13 @@ export class ElegirTurno {
           this.sinConexion.set(!this.hayConexion());
         }),
         switchMap(() =>
-          this.turnosApi.disponibilidad(empleadoId, servicioId).pipe(
-            map((dias): Resultado<readonly DisponibilidadDTO[]> => ({
+          forkJoin({
+            dias: this.turnosApi.disponibilidad(empleadoId, servicioId),
+            turnos: this.turnosApi.propios().pipe(catchError(() => of<TurnoMiniDTO[]>([]))),
+          }).pipe(
+            map(({ dias, turnos }): Resultado<readonly DisponibilidadDTO[]> => ({
               ok: true,
-              datos: dias ?? [],
+              datos: this.liberarHorariosRechazados(dias ?? [], turnos ?? [], this.servicio()?.nombre ?? ''),
             })),
             catchError((error: HttpErrorResponse) =>
               of<Resultado<readonly DisponibilidadDTO[]>>({ ok: false, error }),
