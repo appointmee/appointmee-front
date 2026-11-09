@@ -163,6 +163,15 @@ export class PagoTurno {
 
       this.guardarContextoPago(turnoId);
       window.open(url, '_blank');
+
+      // Se conserva el contexto en la pestaña original y se muestra el
+      // resultado de la operación en una página independiente.
+      void this.router.navigate(['/pago/resultado'], {
+        queryParams: {
+          turnoId,
+          sucursalId: this.sucursalId,
+        },
+      });
     } catch (error) {
       this.errorPago.set(this.mensajeError(error));
     } finally {
