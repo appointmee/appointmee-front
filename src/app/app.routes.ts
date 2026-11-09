@@ -24,6 +24,18 @@ export const routes: Routes = [
     redirectTo: 'sucursales',
   },
   {
+    path: 'sucursal/:sucursalId/servicios/:servicioId/empleados',
+    title: 'AppointMee | Elegir empleado',
+    data: {
+      title: 'Elegir empleado',
+      description: 'Elegí al profesional que realizará el servicio reservado.',
+    },
+    loadComponent: () =>
+      import('./pages/elegir-empleado/elegir-empleado').then(
+        (module) => module.ElegirEmpleado,
+      ),
+  },
+  {
     path: 'sucursal/:sucursalId/servicios/:servicioId/turnos',
     title: 'AppointMee | Elegir turno · Temporal',
     loadComponent: () => import('./pages/elegir-turno/elegir-turno').then(module => module.ElegirTurno),

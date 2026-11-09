@@ -369,7 +369,7 @@ export class Servicios {
 
     this.navegando.set(true);
     this.router
-      .navigate(['/sucursal', this.sucursalId, 'servicios', servicio.id, 'turnos'])
+      .navigate(['/sucursal', this.sucursalId, 'servicios', servicio.id, 'empleados'])
       .then((navego) => {
         if (!navego) {
           this.navegando.set(false);
