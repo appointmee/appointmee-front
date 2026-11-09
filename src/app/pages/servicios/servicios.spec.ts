@@ -69,6 +69,7 @@ describe('US-SERV-02 · Seleccionar servicio', () => {
       imports: [TestShell],
       providers: [
         provideRouter([
+          { path: 'sucursal/:sucursalId/servicios/:servicioId/empleados', component: Dummy },
           { path: 'sucursal/:sucursalId/servicios/:servicioId/turnos', component: Dummy },
           { path: 'sucursal/:sucursalId/servicios', component: Servicios },
           { path: 'servicios', component: Servicios },
@@ -402,7 +403,7 @@ describe('US-SERV-02 · Seleccionar servicio', () => {
     botonSiguiente().click();
     await fixture.whenStable();
 
-    expect(router.url).toBe('/sucursal/7/servicios/1/turnos');
+    expect(router.url).toBe('/sucursal/7/servicios/1/empleados');
   });
 
   it('bloquea navegaciones duplicadas mientras se procesa el paso 2', async () => {
@@ -419,7 +420,7 @@ describe('US-SERV-02 · Seleccionar servicio', () => {
     fixture.detectChanges();
 
     expect(navegar).toHaveBeenCalledTimes(1);
-    expect(navegar).toHaveBeenCalledWith(['/sucursal', 7, 'servicios', 1, 'turnos']);
+    expect(navegar).toHaveBeenCalledWith(['/sucursal', 7, 'servicios', 1, 'empleados']);
     expect(botonSiguiente.disabled).toBe(true);
     expect(botonSiguiente.getAttribute('aria-busy')).toBe('true');
     expect(host.querySelectorAll('.card--seleccionada')).toHaveLength(1);
