@@ -806,6 +806,10 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
+    responderContexto();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
     expect(auth.login).toHaveBeenCalledWith('ana@example.com', 'Clave123!');
     expect(router.url).toContain('/sucursal/7/servicios/3/turnos/pago');
     const query = router.parseUrl(router.url).queryParams;
@@ -815,7 +819,7 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
       hora: '10:00:00',
     });
     expect(texto()).toContain('Enlace de pago');
-    expect(texto()).toContain('La integración de pago estará disponible próximamente');
+    expect(texto()).toContain('Pagar con Mercado Pago');
   });
 
   it('con sesión pero sin rol Cliente avisa y no navega', async () => {
@@ -846,6 +850,10 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    responderContexto();
     await fixture.whenStable();
     fixture.detectChanges();
 
