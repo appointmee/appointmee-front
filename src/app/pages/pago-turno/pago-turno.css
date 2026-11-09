@@ -382,6 +382,12 @@
   justify-content: center;
 }
 
+.acciones-pago {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
+
 .boton--pago {
   min-width: 220px;
 }

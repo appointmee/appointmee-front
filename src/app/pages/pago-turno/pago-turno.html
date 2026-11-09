@@ -89,9 +89,7 @@
                       <span class="resumen-card__abeja">🐝</span>
                     }
                   </span>
-                  <span class="sr-only">
-                    Puntuación promedio {{ puntuacionSucursal().numero }}.
-                  </span>
+
                 </p>
               } @else {
                 <p class="resumen-card__sin-puntuacion">Todavía no tiene reseñas.</p>
@@ -122,9 +120,7 @@
                       <span class="resumen-card__abeja">🐝</span>
                     }
                   </span>
-                  <span class="sr-only">
-                    Puntuación promedio {{ puntuacionServicio().numero }}.
-                  </span>
+
                 </p>
               } @else {
                 <p class="resumen-card__sin-puntuacion">Todavía no tiene reseñas.</p>
@@ -156,9 +152,7 @@
                       <span class="resumen-card__abeja">🐝</span>
                     }
                   </span>
-                  <span class="sr-only">
-                    Puntuación promedio {{ puntuacionEmpleado().numero }}.
-                  </span>
+
                 </p>
               } @else {
                 <p class="resumen-card__sin-puntuacion">Todavía no tiene reseñas.</p>
@@ -186,25 +180,27 @@
           </div>
         }
 
-        <div class="acciones">
-          <button
-            type="button"
-            class="boton boton--pago"
-            [disabled]="creandoPreferencia()"
-            [attr.aria-busy]="creandoPreferencia()"
-            (click)="pagarConMercadoPago()"
-          >
-            @if (creandoPreferencia()) {
-              Procesando pago…
-            } @else {
-              Pagar con Mercado Pago
-            }
-          </button>
-        </div>
+        <div class="acciones-pago">
+          <div class="acciones">
+            <button
+              type="button"
+              class="boton boton--pago"
+              [disabled]="creandoPreferencia()"
+              [attr.aria-busy]="creandoPreferencia()"
+              (click)="pagarConMercadoPago()"
+            >
+              @if (creandoPreferencia()) {
+                Procesando pago…
+              } @else {
+                Pagar con Mercado Pago
+              }
+            </button>
+          </div>
 
-        <p class="ayuda">
-          Se abrirá Mercado Pago en una pestaña nueva. Esta página conservará tu reserva.
-        </p>
+          <p class="ayuda">
+            Se abrirá Mercado Pago en una pestaña nueva. Esta página conservará tu reserva.
+          </p>
+        </div>
       }
     }
   </div>
