@@ -331,6 +331,12 @@
   margin-top: 4px;
 }
 
+.resumen-card__duracion {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .resumen-card__fila--horario .resumen-card__valor--bloque {
   display: grid;
   gap: 2px;

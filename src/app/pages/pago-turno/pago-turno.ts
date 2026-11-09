@@ -386,6 +386,20 @@ export class PagoTurno {
     return `${String(horaFinal).padStart(2, '0')}:${String(minutoFinal).padStart(2, '0')}`;
   }
 
+  protected formatDuracion(minutos: number | null | undefined): string {
+    if (minutos === null || minutos === undefined || !Number.isFinite(minutos) || minutos <= 0) {
+      return 'Duración a confirmar';
+    }
+
+    if (minutos < 60) {
+      return `${minutos} min`;
+    }
+
+    const horas = Math.floor(minutos / 60);
+    const resto = minutos % 60;
+    return resto === 0 ? `${horas} h` : `${horas} h ${resto} min`;
+  }
+
   private precioTexto(precio: number | string | null): string {
     if (precio === null || precio === undefined || precio === '') {
       return 'A confirmar';
