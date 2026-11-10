@@ -6,6 +6,7 @@ import { Router, RouterOutlet, provideRouter } from '@angular/router';
 
 import { authService } from '../../services/auth-service';
 import { SucursalDetalle } from './sucursal-detalle';
+import { ReporteError } from '../error/reporte-error';
 
 @Component({
   standalone: true,
@@ -50,12 +51,14 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
     vi.resetAllMocks();
     auth.autenticado.mockReturnValue(false);
     auth.tieneAlgunRol.mockReturnValue(false);
+    sessionStorage.clear();
 
     await TestBed.configureTestingModule({
       imports: [TestShell],
       providers: [
         provideRouter([
           { path: 'sucursal/:sucursalId/servicios', component: Dummy },
+          { path: 'sucursal/:sucursalId/servicios/:servicioId/turnos', component: Dummy },
           { path: 'sucursal/:id', component: SucursalDetalle },
           { path: 'login', component: Dummy },
           { path: 'sucursales', component: Dummy },
@@ -64,6 +67,7 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: authService, useValue: auth },
+        { provide: ReporteError, useValue: { registrar: vi.fn() } },
       ],
     }).compileComponents();
 
@@ -76,6 +80,7 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
   afterEach(() => {
     fixture.destroy();
     backend.verify();
+    sessionStorage.clear();
   });
 
   async function abrir(url: string): Promise<HTMLElement> {
@@ -186,5 +191,23 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
     expect(host.querySelector<HTMLAnchorElement>('a[href="/sucursales"]')?.textContent).toContain(
       'Volver a sucursales',
     );
+  });
+
+  it('US-SERV-04 · el botón Reservar turno retoma la elección previa de servicio', async () => {
+    sessionStorage.setItem(
+      'appointmee.reserva-contexto.v1',
+      JSON.stringify({ version: 1, sucursalId: 7, servicioId: 3 }),
+    );
+
+    const host = await abrir('/sucursal/7');
+    botonReserva(host).click();
+    await fixture.whenStable();
+
+    expect(router.url).toBe('/sucursal/7/servicios/3/turnos');
+    expect(JSON.parse(sessionStorage.getItem('appointmee.reserva-contexto.v1') ?? 'null')).toEqual({
+      version: 1,
+      sucursalId: 7,
+      servicioId: 3,
+    });
   });
 });

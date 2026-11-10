@@ -120,4 +120,19 @@ describe('Consulta pública de horarios y login al seleccionar', () => {
     reintentar.click(); fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.turnos__horarios button').length).toBe(2);
   });
+
+  it('US-SERV-04 · con contexto inválido limpia el contexto y ofrece volver al detalle', async () => {
+    await router.navigateByUrl('/sucursal/7/servicios/999/turnos');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'Este servicio no pertenece a la sucursal o ya no está disponible.',
+    );
+    expect(sessionStorage.getItem('appointmee.reserva-contexto.v1')).toBeNull();
+
+    const volver = fixture.nativeElement.querySelector('a.boton') as HTMLAnchorElement;
+    expect(volver?.textContent?.trim()).toBe('Volver al detalle');
+  });
 });
