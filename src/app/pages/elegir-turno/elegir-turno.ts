@@ -5,6 +5,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, catchError, distinctUntilChanged, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { LoginModal } from '../../components/login-modal/login-modal';
+import { ContextoReserva } from '../../services/reserva-contexto-service';
+import { reservaContextoService } from '../../services/reserva-contexto-service';
 import { EmpleadoDTO } from '../../models/empleado';
 import { ServicioDTO } from '../../models/servicio';
 import { DisponibilidadDTO, HorarioSeleccionado } from '../../models/turno';
@@ -27,6 +29,7 @@ export class ElegirTurno {
   private serviciosApi = inject(servicioService);
   private empleadosApi = inject(empleadoService);
   private turnosApi = inject(turnoService);
+  private reservaContexto = inject(reservaContextoService);
   private destroyRef = inject(DestroyRef);
   private recargar = new Subject<void>();
   private cambiarEmpleado = new Subject<number>();
@@ -45,6 +48,9 @@ export class ElegirTurno {
   errorHorarios = signal('');
   aviso = signal('');
   loginAbierto = signal(false);
+  contexto = signal<ContextoReserva | null>(null);
+  /** El contexto temporal de la reserva ya no es válido. */
+  contextoInvalido = signal(false);
 
   destinoRetorno = computed(() => {
     const seleccionado = this.seleccionado();
@@ -91,8 +97,14 @@ export class ElegirTurno {
         this.seleccionado.set(null);
         this.disponibilidad.set([]);
         this.aviso.set('');
+        this.contextoInvalido.set(false);
         if (![ids.sucursalId, ids.servicioId].every(id => Number.isInteger(id) && id > 0)) {
-          return of({ servicio: null, empleados: [], error: 'No encontramos el servicio o la sucursal.' });
+          // El contexto temporal de la reserva ya no es válido: se limpia y se
+          // informa con una acción clara para volver al detalle de la sucursal.
+          this.contexto.set(null);
+          this.reservaContexto.limpiar();
+          this.error.set('No encontramos el servicio o la sucursal.');
+          return of({ servicio: null, empleados: [], error: this.error() });
         }
         return forkJoin({
           servicios: this.serviciosApi.listarPorSucursal(ids.sucursalId),
@@ -111,8 +123,13 @@ export class ElegirTurno {
       this.cargando.set(false);
       this.servicio.set(resultado.servicio);
       this.empleados.set(resultado.empleados);
+      this.contexto.set(this.reservaContexto.obtener());
       if (resultado.error || !resultado.servicio) {
+        // El contexto temporal ya no es válido: se limpia y se informa con un
+        // mensaje claro y la acción de volver al detalle.
+        this.contextoInvalido.set(true);
         this.error.set(resultado.error || 'Este servicio no pertenece a la sucursal o ya no está disponible.');
+        this.reservaContexto.limpiar();
         return;
       }
       const previo = Number(this.route.snapshot.queryParamMap.get('empleadoId'));

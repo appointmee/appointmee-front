@@ -8,7 +8,11 @@
   } @else if (error()) {
     <div role="alert">
       <p>{{ error() }}</p>
-      <button dsButton type="button" (click)="reintentar()">Reintentar</button>
+      @if (contextoInvalido()) {
+        <a class="boton" [routerLink]="['/sucursal', contexto()?.sucursalId ?? sucursalId()]">Volver al detalle</a>
+      } @else {
+        <button dsButton type="button" (click)="reintentar()">Reintentar</button>
+      }
     </div>
   } @else if (servicio(); as servicio) {
     <h2>{{ servicio.nombre }}</h2>

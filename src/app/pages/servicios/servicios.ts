@@ -9,12 +9,13 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, forkJoin, of } from 'rxjs';
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
 
 import { ServicioDTO } from '../../models/servicio';
 import { SucursalDetalleDTO } from '../../models/sucursal';
+import { reservaContextoService } from '../../services/reserva-contexto-service';
 import { servicioService } from '../../services/servicio-service';
 import { sucursalService } from '../../services/sucursal-service';
 
@@ -31,8 +32,10 @@ type ResultadoServicios =
 })
 export class Servicios {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly servicioService = inject(servicioService);
   private readonly sucursalService = inject(sucursalService);
+  private readonly reservaContexto = inject(reservaContextoService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Acepta /sucursal/:sucursalId/servicios y /servicios?sucursalId=… */
@@ -42,6 +45,8 @@ export class Servicios {
 
   protected readonly sucursalId = this.parseId(this.sucursalIdParam);
   protected readonly sinContexto = this.sucursalId === null;
+  /** Servicio retomado del contexto temporal cuando corresponde. */
+  protected readonly servicioIdSeleccionado = signal<number | null>(null);
 
   protected readonly sucursal = signal<SucursalDetalleDTO | null>(null);
   protected readonly servicios = signal<readonly ServicioDTO[]>([]);
@@ -78,7 +83,7 @@ export class Servicios {
   /** El último error visible se produjo por falta de conexión. */
   private readonly errorConexion = signal(false);
   private readonly mensajeSinConexion =
-    'Revisá tu conexión a internet y volvé a intentar.';
+    'Sin conexión a internet. Revisá tu conexión y volvé a intentar.';
 
   private readonly onOffline = (): void => {
     this.sinConexion.set(true);
@@ -101,8 +106,18 @@ export class Servicios {
 
     const idSucursal = this.sucursalId;
     if (idSucursal === null) {
+      // Sin sucursal no hay contexto de reserva que restaurar.
+      this.error.set('No pudimos identificar la sucursal.');
       return;
     }
+
+    const contexto = this.reservaContexto.obtener();
+    const servicioId =
+      contexto !== null && contexto.sucursalId === idSucursal ? contexto.servicioId : null;
+    this.servicioIdSeleccionado.set(servicioId);
+    // El contexto temporal (IDs) se guarda en sessionStorage para que la
+    // sucursal y el servicio elegidos se conserven al volver o recargar.
+    this.reservaContexto.guardar(idSucursal, servicioId);
 
     this.reintento
       .pipe(
@@ -116,6 +131,10 @@ export class Servicios {
           this.sinConexion.set(!this.hayConexion());
           this.requiereLogin.set(false);
           this.requiereRolCliente.set(false);
+          const contexto = this.reservaContexto.obtener();
+          const servicioId =
+            contexto !== null && contexto.sucursalId === idSucursal ? contexto.servicioId : null;
+          this.servicioIdSeleccionado.set(servicioId);
         }),
         switchMap(() =>
           forkJoin({
@@ -155,11 +174,22 @@ export class Servicios {
   }
 
   protected reintentar(): void {
-    if (this.reintentando()) {
+    if (this.reintentando() || this.sinContexto) {
       return;
     }
     this.reintentando.set(true);
     this.reintento.next();
+  }
+
+  protected elegirServicio(event: Event, servicioId: number): void {
+    event.preventDefault();
+    if (this.sucursalId === null) {
+      return;
+    }
+    this.servicioIdSeleccionado.set(servicioId);
+    // Se conserva la sucursal y el servicio elegidos en el contexto temporal.
+    this.reservaContexto.guardar(this.sucursalId, servicioId);
+    void this.router.navigate(['/sucursal', this.sucursalId, 'servicios', servicioId, 'turnos']);
   }
 
   protected foto(servicio: ServicioDTO): string {
@@ -221,6 +251,8 @@ export class Servicios {
     }
 
     if (error.status === 404) {
+      // El contexto refería a una sucursal que ya no existe: se descarta.
+      this.reservaContexto.limpiar();
       this.error.set('No encontramos la sucursal solicitada.');
       return;
     }
