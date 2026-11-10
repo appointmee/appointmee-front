@@ -30,6 +30,15 @@
       }
     </header>
 
+    @if (contextoInvalido()) {
+      <div class="estado estado--contexto" role="alert">
+        <span class="estado__icon" aria-hidden="true">!</span>
+        <h2>La selección anterior ya no está disponible</h2>
+        <p>Elegí un servicio vigente para continuar con la reserva.</p>
+        <a class="boton boton--ghost" [routerLink]="detalleUrl()">Volver al detalle</a>
+      </div>
+    }
+
     @if (sinContexto) {
       <div class="estado estado--contexto" role="alert">
         <span class="estado__icon" aria-hidden="true">
@@ -93,7 +102,7 @@
     } @else {
       <div class="grid" aria-live="polite">
         @for (servicio of servicios(); track trackById($index, servicio); let i = $index) {
-          <article class="card" [style.--i]="i">
+          <article class="card" [class.card--seleccionada]="servicioSeleccionadoId() === servicio.id" [style.--i]="i">
             <div class="card__media">
               <img
                 [src]="foto(servicio)"
@@ -117,9 +126,25 @@
                 </span>
                 <span class="card__precio">{{ formatPrecio(servicio.precio) }}</span>
               </div>
+              <button
+                class="card__select"
+                type="button"
+                [attr.aria-pressed]="servicioSeleccionadoId() === servicio.id"
+                (click)="seleccionarServicio(servicio.id)"
+              >
+                {{ servicioSeleccionadoId() === servicio.id ? 'Servicio elegido' : 'Elegir servicio' }}
+              </button>
             </div>
           </article>
         }
+      </div>
+      <div class="servicios__acciones">
+        <button class="boton" type="button" [disabled]="servicioSeleccionadoId() === null" (click)="continuarConProfesional()">
+          Continuar con profesional
+        </button>
+        <button class="boton boton--ghost" type="button" (click)="cancelarReserva()">
+          Cancelar reserva
+        </button>
       </div>
     }
   </div>

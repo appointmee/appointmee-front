@@ -8,13 +8,14 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, forkJoin, of } from 'rxjs';
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
 
 import { ServicioDTO } from '../../models/servicio';
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import { servicioService } from '../../services/servicio-service';
+import { reservaContextoService } from '../../services/reserva-contexto-service';
 import { sucursalService } from '../../services/sucursal-service';
 
 type ResultadoServicios =
@@ -30,8 +31,10 @@ type ResultadoServicios =
 })
 export class Servicios {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly servicioService = inject(servicioService);
   private readonly sucursalService = inject(sucursalService);
+  private readonly reservaContexto = inject(reservaContextoService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Acepta /sucursal/:sucursalId/servicios y /servicios?sucursalId=… */
@@ -50,6 +53,10 @@ export class Servicios {
   /** La cuenta está autenticada pero no puede reservar por su rol. */
   protected readonly requiereRolCliente = signal(false);
   protected readonly reintentando = signal(false);
+  protected readonly servicioSeleccionadoId = signal<number | null>(null);
+  protected readonly contextoInvalido = signal(false);
+
+  private readonly servicioIdParam = this.route.snapshot.queryParamMap.get('servicioId');
 
   protected readonly nombreSucursal = computed(
     () =>
@@ -71,7 +78,22 @@ export class Servicios {
   constructor() {
     const idSucursal = this.sucursalId;
     if (idSucursal === null) {
+      this.reservaContexto.limpiar();
       return;
+    }
+
+    const servicioEnUrl = this.parseId(this.servicioIdParam);
+    const servicioGuardado = this.reservaContexto.leer(idSucursal)?.servicioId ?? null;
+    this.servicioSeleccionadoId.set(servicioEnUrl ?? (this.servicioIdParam === null ? servicioGuardado : null));
+    if (this.servicioIdParam !== null && servicioEnUrl === null) {
+      this.contextoInvalido.set(true);
+      this.reservaContexto.limpiar();
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { servicioId: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
     }
 
     this.reintento
@@ -110,6 +132,7 @@ export class Servicios {
         if (servicios.ok) {
           this.error.set(null);
           this.servicios.set(servicios.servicios);
+          this.validarSeleccion(idSucursal, servicios.servicios);
         } else {
           this.servicios.set([]);
           this.aplicarError(servicios.error);
@@ -169,6 +192,60 @@ export class Servicios {
     return servicio.id;
   }
 
+  protected seleccionarServicio(servicioId: number): void {
+    if (this.sucursalId === null || !this.servicios().some((servicio) => servicio.id === servicioId)) return;
+    this.servicioSeleccionadoId.set(servicioId);
+    this.contextoInvalido.set(false);
+    this.reservaContexto.guardar({ sucursalId: this.sucursalId, servicioId });
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { servicioId },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  protected continuarConProfesional(): void {
+    const sucursalId = this.sucursalId;
+    const servicioId = this.servicioSeleccionadoId();
+    if (sucursalId === null || servicioId === null) return;
+    void this.router.navigate(['/sucursal', sucursalId, 'profesionales'], {
+      queryParams: { servicioId },
+    });
+  }
+
+  protected cancelarReserva(): void {
+    this.reservaContexto.limpiar();
+    void this.router.navigate(this.detalleUrl(), { queryParams: { reserva: 'cancelada' } });
+  }
+
+  private validarSeleccion(sucursalId: number, servicios: readonly ServicioDTO[]): void {
+    const servicioId = this.servicioSeleccionadoId();
+    if (servicioId === null) return;
+    if (!servicios.some((servicio) => servicio.id === servicioId)) {
+      this.servicioSeleccionadoId.set(null);
+      this.contextoInvalido.set(true);
+      this.reservaContexto.limpiar();
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { servicioId: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+      return;
+    }
+
+    this.reservaContexto.guardar({ sucursalId, servicioId });
+    if (this.route.snapshot.queryParamMap.get('servicioId') !== String(servicioId)) {
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { servicioId },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }
+  }
+
   private aplicarError(error: HttpErrorResponse): void {
     if (error.status === 401) {
       this.error.set('Necesitás iniciar sesión para ver los servicios de esta sucursal.');
@@ -192,6 +269,8 @@ export class Servicios {
     }
 
     if (error.status === 404) {
+      this.contextoInvalido.set(true);
+      this.reservaContexto.limpiar();
       this.error.set('No encontramos la sucursal solicitada.');
       return;
     }

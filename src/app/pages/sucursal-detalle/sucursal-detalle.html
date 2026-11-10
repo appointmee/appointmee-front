@@ -155,6 +155,10 @@
       </div>
     </header>
 
+    @if (avisoReserva()) {
+      <p class="detalle__reserva-aviso" role="status">{{ avisoReserva() }}</p>
+    }
+
     <div class="detalle__inner">
       <div class="detalle__grid">
         <div class="detalle__main">

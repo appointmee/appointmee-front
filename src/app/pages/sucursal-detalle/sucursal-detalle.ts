@@ -19,6 +19,7 @@ import { apiErrorsService } from '../../http/api-errors-service';
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import { authService } from '../../services/auth-service';
 import { sucursalService } from '../../services/sucursal-service';
+import { reservaContextoService } from '../../services/reserva-contexto-service';
 
 type CargaResultado =
   | { readonly estado: 'ok'; readonly sucursal: SucursalDetalleDTO }
@@ -53,6 +54,7 @@ export class SucursalDetalle {
   private readonly auth = inject(authService);
   private readonly title = inject(Title);
   private readonly apiErrors = inject(apiErrorsService);
+  private readonly reservaContexto = inject(reservaContextoService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly placeholderImage = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -70,6 +72,11 @@ export class SucursalDetalle {
   protected readonly navegando = signal(false);
   /** Mensaje específico para una sesión autenticada sin rol CLIENTE. */
   protected readonly avisoRol = signal<string | null>(null);
+  protected readonly avisoReserva = signal<string | null>(
+    this.route.snapshot.queryParamMap.get('reserva') === 'cancelada'
+      ? 'La reserva se canceló y limpiamos la selección temporal.'
+      : null,
+  );
 
   protected readonly ayudaReserva = 'Elegí el servicio, el profesional y el horario.';
 
@@ -191,7 +198,8 @@ export class SucursalDetalle {
       return;
     }
 
-    const destino = `/sucursal/${sucursal.id}/servicios`;
+    const contexto = this.reservaContexto.leer(sucursal.id);
+    const destino = `/sucursal/${sucursal.id}/servicios${contexto ? `?servicioId=${contexto.servicioId}` : ''}`;
     this.navegando.set(true);
 
     const navegacion = this.auth.autenticado()

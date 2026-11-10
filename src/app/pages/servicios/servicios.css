@@ -192,6 +192,11 @@
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
 }
 
+.card--seleccionada {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(247, 198, 90, 0.18);
+}
+
 .card__media {
   aspect-ratio: 16 / 10;
   overflow: hidden;
@@ -244,6 +249,42 @@
   margin-top: 4px;
   padding-top: 14px;
   border-top: 1px solid var(--line);
+}
+
+.card__select {
+  min-height: 42px;
+  margin-top: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.card--seleccionada .card__select {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #211704;
+}
+
+.card__select:focus-visible,
+.servicios__acciones .boton:focus-visible {
+  outline: 2px solid rgba(247, 198, 90, 0.8);
+  outline-offset: 3px;
+}
+
+.servicios__acciones {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.servicios__acciones .boton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .card__duracion {

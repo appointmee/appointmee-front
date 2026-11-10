@@ -43,6 +43,25 @@ export const routes: Routes = [
       import('./pages/servicios/servicios').then((module) => module.Servicios),
   },
   {
+    path: 'sucursal/:sucursalId/profesionales',
+    canActivate: [authGuard],
+    title: 'AppointMee | Elegir profesional',
+    data: { title: 'Elegir profesional', description: 'Elegí quién te atenderá.' },
+    loadComponent: () =>
+      import('./pages/profesionales-reserva/profesionales-reserva').then(
+        (module) => module.ProfesionalesReserva,
+      ),
+  },
+  {
+    path: 'reserva/confirmada',
+    canActivate: [authGuard],
+    title: 'AppointMee | Reserva confirmada',
+    loadComponent: () =>
+      import('./pages/reserva-confirmada/reserva-confirmada').then(
+        (module) => module.ReservaConfirmada,
+      ),
+  },
+  {
     path: 'servicios',
     title: 'AppointMee | Elegir servicio',
     data: {

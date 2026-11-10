@@ -1019,6 +1019,16 @@
   text-align: center;
 }
 
+.detalle__reserva-aviso {
+  width: min(calc(100% - 48px), 1180px);
+  margin: 20px auto 0;
+  padding: 14px 18px;
+  border: 1px solid rgba(247, 198, 90, 0.3);
+  border-radius: 12px;
+  background: rgba(247, 198, 90, 0.08);
+  color: var(--text);
+}
+
 .detalle__estado-icon {
   display: grid;
   width: 54px;
