@@ -80,7 +80,7 @@ describe('Autenticación e interceptor', () => {
     sesion();
     for (const url of [
       'https://example.com/data',
-      `${API_URL}.example.com/data`,
+      'http://localhost.example.com:8080/data',
       `${API_URL}/auth/login`,
     ]) {
       http.get(url).subscribe();

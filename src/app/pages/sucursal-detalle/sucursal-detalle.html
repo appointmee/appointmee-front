@@ -80,7 +80,7 @@
       <img
         class="detalle__hero-img"
         [src]="imagenPrincipal()"
-        [alt]="imagenPrincipal() === placeholderImage ? 'No hay imágenes disponibles para ' + s.nombre : 'Vista de ' + s.nombre"
+        [alt]="imagenPrincipal() === placeholderImage ? 'No hay imágenes disponibles para ' + s.nombre : 'Foto ' + (imagenesGaleria().indexOf(imagenPrincipal()) + 1) + ' de ' + s.nombre"
         width="1600"
         height="700"
         fetchpriority="high"
@@ -176,7 +176,7 @@
             >
               <img
                 [src]="imagen"
-                [alt]="'Miniatura ' + (indice + 1) + ' de ' + s.nombre"
+                [alt]="'Foto ' + (indice + 1) + ' de ' + s.nombre"
                 width="160"
                 height="100"
                 loading="lazy"
