@@ -1,3 +1,8 @@
+
+/**
+ * Modelos sucursal
+ */
+
 export interface SucursalMiniDTO {
   readonly id: number;
   readonly nombre: string;
@@ -8,11 +13,6 @@ export interface SucursalMiniDTO {
   readonly diasApertura?: readonly string[];
 }
 
-/**
- * Respuesta de GET /sucursales/{id} (SucursalResponseDTO del backend).
- * Solo se tipan los campos que consume el detalle: el endpoint también
- * devuelve datos del empleador y de los empleados que no se muestran.
- */
 export interface SucursalDetalleDTO {
   readonly id: number;
   readonly nombre: string;

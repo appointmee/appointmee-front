@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CuentaSinVerificarModal } from '../../components/cuenta-sin-verificar-modal/cuenta-sin-verificar-modal';
 import { verificacionPendienteService } from '../../services/verificacion-pendiente-service';
 import { LoginModel } from '../../models/auth';
-import { ApiError } from '../../http/api-errors-service';
+import { ApiError } from '../../models/api-error';
 import { authService } from '../../services/auth-service';
 import { destinoDespuesDelLogin } from '../../guards/login-destination';
 

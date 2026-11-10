@@ -11,7 +11,10 @@ import { apiErrorInterceptor } from '../http/api-errors-service';
 import { authInterceptor } from './auth-interceptor';
 
 @Component({ template: '' })
-class TestPage {}
+class TestPage { }
+
+/// test unitario de autenticación (authService)
+
 
 describe('Autenticación e interceptor', () => {
   let API_URL: string;
@@ -22,6 +25,7 @@ describe('Autenticación e interceptor', () => {
   let router: Router;
   const perfil = { id: 1, roles: ['CLIENTE'], fotoPerfil: null };
   const tokens = { token: 'access-nuevo', refreshToken: 'refresh-nuevo', expiresIn: 900 };
+
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({
@@ -42,14 +46,17 @@ describe('Autenticación e interceptor', () => {
     verificacion = TestBed.inject(verificacionService);
     router = TestBed.inject(Router);
   });
+
   afterEach(() => {
     backend.verify();
     localStorage.clear();
   });
+
   function sesion() {
     localStorage.setItem('token', 'access-viejo');
     localStorage.setItem('refreshToken', 'refresh-viejo');
   }
+
   function rechazar(url: string) {
     backend.expectOne(url).flush({}, { status: 401, statusText: 'Unauthorized' });
   }
@@ -68,6 +75,7 @@ describe('Autenticación e interceptor', () => {
     expect(auth.perfil()?.email).toBe('ana@example.com');
     expect(localStorage.getItem('refreshToken')).toBe('refresh-nuevo');
   });
+
   it('no envía tokens a terceros ni a endpoints públicos', () => {
     sesion();
     for (const url of [
@@ -81,6 +89,7 @@ describe('Autenticación e interceptor', () => {
       request.flush({});
     }
   });
+
   it('dos respuestas 401 comparten un solo refresh y reintentan con el nuevo access', () => {
     sesion();
     http.get(`${API_URL}/uno`).subscribe();
@@ -98,6 +107,7 @@ describe('Autenticación e interceptor', () => {
     }
     expect(localStorage.getItem('refreshToken')).toBe('refresh-nuevo');
   });
+
   it('un 401 tardío usa el access ya renovado sin rotar de nuevo', () => {
     sesion();
     http.get(`${API_URL}/uno`).subscribe();
@@ -113,6 +123,7 @@ describe('Autenticación e interceptor', () => {
     expect(retry.request.headers.get('Authorization')).toBe('Bearer access-nuevo');
     retry.flush({});
   });
+
   it('refresh rechazado limpia la sesión y conserva returnTo', async () => {
     sesion();
     await router.navigateByUrl('/private?tab=history');
@@ -125,6 +136,7 @@ describe('Autenticación e interceptor', () => {
     expect(router.url).toContain('/login?');
     expect(router.url).toContain('returnTo=%2Fprivate%3Ftab%3Dhistory');
   });
+
   it('un fallo de red del refresh conserva las credenciales', () => {
     sesion();
     http.get(`${API_URL}/privado`).subscribe({ error: () => undefined });
@@ -133,6 +145,7 @@ describe('Autenticación e interceptor', () => {
     expect(localStorage.getItem('refreshToken')).toBe('refresh-viejo');
     expect(localStorage.getItem('token')).toBe('access-viejo');
   });
+
   it('restaura desde refresh cuando falta el access', () => {
     localStorage.setItem('refreshToken', 'refresh-viejo');
     auth.inicializar().subscribe();
@@ -141,6 +154,7 @@ describe('Autenticación e interceptor', () => {
     backend.expectOne(`${API_URL}/usuarios/me`).flush(perfil);
     expect(auth.autenticado()).toBe(true);
   });
+
   it('logout llama al servidor y limpia la sesión', () => {
     sesion();
     auth.logout().subscribe();
@@ -150,6 +164,7 @@ describe('Autenticación e interceptor', () => {
     expect(auth.visitante()).toBe(true);
     expect(localStorage.getItem('refreshToken')).toBeNull();
   });
+
   it('logout con access vencido renueva antes de revocar en el servidor', () => {
     sesion();
     auth.logout().subscribe();
@@ -161,6 +176,7 @@ describe('Autenticación e interceptor', () => {
     expect(localStorage.getItem('token')).toBeNull();
     expect(localStorage.getItem('refreshToken')).toBeNull();
   });
+
   it('un perfil tardío no revive una sesión cerrada', () => {
     sesion();
     auth.validarToken().subscribe({ error: () => undefined });
@@ -169,12 +185,14 @@ describe('Autenticación e interceptor', () => {
     me.flush(perfil);
     expect(auth.autenticado()).toBe(false);
   });
+
   it('una petición anónima no intenta refresh ni fuerza navegación', () => {
     http.get(`${API_URL}/publico`).subscribe({ error: () => undefined });
     rechazar(`${API_URL}/publico`);
     backend.expectNone(`${API_URL}/auth/refresh`);
     expect(router.url).toBe('/');
   });
+
   it('los métodos de verificación son públicos y usan el contrato del backend', () => {
     sesion();
     TestBed.inject(verificacionPendienteService).guardarEmail('ana@example.com', 'ticket-prueba');

@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { timer } from 'rxjs';
 
 import { VerificacionEmailModel } from '../../models/auth';
-import { ApiError } from '../../http/api-errors-service';
+import { ApiError } from '../../models/api-error';
 import { verificacionPendienteService } from '../../services/verificacion-pendiente-service';
 import { authService } from '../../services/auth-service';
 import { verificacionService } from '../../services/verificacion-service';

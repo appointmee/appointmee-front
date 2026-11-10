@@ -1,7 +1,5 @@
 /**
- * Respuesta de GET /sucursales/{id}/elegir-empleado (EmpleadoResponseDTO del backend).
- * La puntuación llega ya redondeada y es null cuando el profesional todavía
- * no tiene reseñas.
+ * MOdelos Empleado
  */
 export interface EmpleadoDTO {
   readonly id: number;

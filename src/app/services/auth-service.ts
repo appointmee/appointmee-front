@@ -46,8 +46,6 @@ export class authService {
   });
 
 
-
-
   /* 
   Funcion que se ejecuta al abrir la app. 
   Si hay una sesion abierta (existen el token) la trae,
@@ -60,16 +58,16 @@ export class authService {
     if (!this.getAccessToken() && !this.getRefreshToken()) return of(undefined);
     
     this.estado.set('restaurando');
-
+    
     const preparar = this.getAccessToken() ? of(this.getAccessToken()!) : this.renovarSesion();
 
     return preparar.pipe(
       switchMap(() => this.validarToken()),
 
       map(() => undefined),
+
       catchError((error) => {
         if (error?.status === 401) this.limpiarSesion();
-        // Un fallo de conexión no debe borrar un refresh válido.
         this.estado.set('visitante');
         return of(undefined);
       }),
@@ -150,9 +148,7 @@ export class authService {
     const request = this.refreshHttp.post<Tokens>(`${this.api.baseUrl}/auth/refresh`, { refreshToken }).pipe(
       map((tokens) => {
         if (revision !== this.revision) throw new Error('Operación de sesión cancelada');
-
         this.guardarTokens(tokens);
-
         return this.getAccessToken()!;
       }),
 
@@ -172,6 +168,12 @@ export class authService {
 
   // Autenticacion -------------------------------------------------------------------------------
 
+  /**
+   * 
+   * evita que un login anterior sobrescriba una 
+   * sesión más reciente y que un error viejo limpie una sesión nueva.
+   *  
+   */
   login(email: string, password: string): Observable<void> {
     return defer(() => {
       this.revision++;

@@ -1,5 +1,5 @@
 /**
- * Respuesta de GET /sucursales/{id}/resenias (ReseniaResponseDTO del backend).
+ * Modelos para la resenia
  */
 export interface ReseniaDTO {
   readonly puntuacion: number;
