@@ -27,6 +27,7 @@ export interface SucursalDetalleDTO {
   readonly puntuacion: number | null;
   readonly cantidadPuntuaciones: number | null;
   readonly fotoPerfil: string | null;
+  readonly imagenes?: readonly string[] | null;
 }
 
 export interface SucursalPayload {

@@ -68,6 +68,8 @@ export class SucursalDetalle {
   protected readonly sinConexion = signal(false);
   protected readonly reintentando = signal(false);
   protected readonly descripcionExpandida = signal(false);
+  protected readonly imagenSeleccionada = signal<string | null>(null);
+  private readonly imagenesFallidas = signal<ReadonlySet<string>>(new Set());
   /** Bloquea el CTA mientras el router resuelve la navegación. */
   protected readonly navegando = signal(false);
   /** Mensaje específico para una sesión autenticada sin rol CLIENTE. */
@@ -87,6 +89,28 @@ export class SucursalDetalle {
   );
 
   protected readonly categoria = computed(() => this.humanizarCategoria(this.sucursal()?.categoria));
+
+  protected readonly imagenesGaleria = computed(() => {
+    const actual = this.sucursal();
+    if (!actual) {
+      return [];
+    }
+
+    const fallidas = this.imagenesFallidas();
+    const candidatas = [actual.fotoPerfil, ...(actual.imagenes ?? [])].flatMap((url) =>
+      typeof url === 'string' && url.trim() ? [url.trim()] : [],
+    );
+    return [...new Set(candidatas)].filter((url) => !fallidas.has(url));
+  });
+
+  protected readonly imagenPrincipal = computed(() => {
+    const imagenes = this.imagenesGaleria();
+    const seleccionada = this.imagenSeleccionada();
+    return (
+      (seleccionada && imagenes.includes(seleccionada) ? seleccionada : imagenes[0]) ??
+      this.placeholderImage
+    );
+  });
 
   protected readonly descripcion = computed(() => this.sucursal()?.descripcion?.trim() ?? '');
 
@@ -217,11 +241,31 @@ export class SucursalDetalle {
     this.descripcionExpandida.update((expandida) => !expandida);
   }
 
-  protected onImageError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    if (img.src !== this.placeholderImage) {
-      img.src = this.placeholderImage;
+  protected seleccionarImagen(url: string): void {
+    this.imagenSeleccionada.set(url);
+  }
+
+  protected moverGaleria(event: KeyboardEvent): void {
+    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') {
+      return;
     }
+
+    const imagenes = this.imagenesGaleria();
+    if (imagenes.length < 2) {
+      return;
+    }
+
+    event.preventDefault();
+    const indiceActual = Math.max(0, imagenes.indexOf(this.imagenPrincipal()));
+    const incremento = event.key === 'ArrowRight' ? 1 : -1;
+    const siguiente = (indiceActual + incremento + imagenes.length) % imagenes.length;
+    this.imagenSeleccionada.set(imagenes[siguiente]);
+    const galeria = event.currentTarget as HTMLElement;
+    galeria.querySelectorAll<HTMLButtonElement>('.detalle__miniatura')[siguiente]?.focus();
+  }
+
+  protected onImageError(url: string): void {
+    this.imagenesFallidas.update((fallidas) => new Set([...fallidas, url]));
   }
 
   private cargar(idParam: string | null): Observable<CargaResultado> {
@@ -298,6 +342,8 @@ export class SucursalDetalle {
     this.sinConexion.set(false);
     this.reintentando.set(false);
     this.descripcionExpandida.set(false);
+    this.imagenSeleccionada.set(null);
+    this.imagenesFallidas.set(new Set());
     this.navegando.set(false);
     this.avisoRol.set(null);
     this.loading.set(true);

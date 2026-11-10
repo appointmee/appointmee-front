@@ -79,9 +79,13 @@
     <header class="detalle__hero">
       <img
         class="detalle__hero-img"
-        [src]="s.fotoPerfil || placeholderImage"
-        [alt]="'Fachada de ' + s.nombre"
-        (error)="onImageError($event)"
+        [src]="imagenPrincipal()"
+        [alt]="imagenPrincipal() === placeholderImage ? 'No hay imágenes disponibles para ' + s.nombre : 'Vista de ' + s.nombre"
+        width="1600"
+        height="700"
+        fetchpriority="high"
+        decoding="async"
+        (error)="onImageError(imagenPrincipal())"
       />
       <div class="detalle__hero-overlay" aria-hidden="true"></div>
 
@@ -153,6 +157,36 @@
           }
         </div>
       </div>
+
+      @if (imagenesGaleria().length > 1) {
+        <div
+          class="detalle__galeria"
+          role="group"
+          [attr.aria-label]="'Galería de imágenes de ' + s.nombre"
+          (keydown)="moverGaleria($event)"
+        >
+          @for (imagen of imagenesGaleria(); track imagen; let indice = $index) {
+            <button
+              class="detalle__miniatura"
+              type="button"
+              [class.detalle__miniatura--activa]="imagenPrincipal() === imagen"
+              [attr.aria-label]="'Mostrar imagen ' + (indice + 1) + ' de ' + imagenesGaleria().length + ' de ' + s.nombre"
+              [attr.aria-pressed]="imagenPrincipal() === imagen"
+              (click)="seleccionarImagen(imagen)"
+            >
+              <img
+                [src]="imagen"
+                [alt]="'Miniatura ' + (indice + 1) + ' de ' + s.nombre"
+                width="160"
+                height="100"
+                loading="lazy"
+                decoding="async"
+                (error)="onImageError(imagen)"
+              />
+            </button>
+          }
+        </div>
+      }
     </header>
 
     @if (avisoReserva()) {
