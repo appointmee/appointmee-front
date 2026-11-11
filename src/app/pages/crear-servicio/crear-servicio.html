@@ -2,12 +2,32 @@
   <h1>Crear servicio</h1>
   @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
   @if (exito()) { <p class="exito" role="status">{{ exito() }}</p> }
-  <form (ngSubmit)="guardar()">
-    <label>Sucursal ID <input type="number" [(ngModel)]="sucursalId" name="sucursalId" /></label>
-    <label>Nombre <input [(ngModel)]="nombre" name="nombre" /></label>
+  @if (tieneErrores()) {
+    <div class="resumen" role="alert">
+      <p>Corregí los siguientes campos:</p>
+      <ul>
+        @for (e of listaErrores(); track e[0]) {
+          <li><a href="#{{ e[0] }}">{{ e[1] }}</a></li>
+        }
+      </ul>
+    </div>
+  }
+  <form #f="ngForm" (ngSubmit)="guardar(f)">
+    <label id="sucursalId">Sucursal ID
+      <input #primerInvalido type="number" [(ngModel)]="sucursalId" name="sucursalId" [attr.aria-invalid]="!!errorDe('sucursalId')" [attr.aria-describedby]="errorDe('sucursalId') ? 'err-sucursalId' : null" />
+      @if (errorDe('sucursalId')) { <span id="err-sucursalId" class="campo-error">{{ errorDe('sucursalId') }}</span> }
+    </label>
+    <label id="nombre">Nombre
+      <input [(ngModel)]="nombre" name="nombre" [attr.aria-invalid]="!!errorDe('nombre')" [attr.aria-describedby]="errorDe('nombre') ? 'err-nombre' : null" />
+      @if (errorDe('nombre')) { <span id="err-nombre" class="campo-error">{{ errorDe('nombre') }}</span> }
+    </label>
     <label>Descripción <textarea [(ngModel)]="descripcion" name="descripcion"></textarea></label>
-    <label>Duración (min) <input type="number" [(ngModel)]="duracion" name="duracion" /></label>
+    <label id="duracion">Duración (min)
+      <input type="number" [(ngModel)]="duracion" name="duracion" [attr.aria-invalid]="!!errorDe('duracion')" [attr.aria-describedby]="errorDe('duracion') ? 'err-duracion' : null" />
+      @if (errorDe('duracion')) { <span id="err-duracion" class="campo-error">{{ errorDe('duracion') }}</span> }
+    </label>
     <label>Precio <input type="number" [(ngModel)]="precio" name="precio" /></label>
+    <label>Foto URL <input [(ngModel)]="fotoPerfil" name="fotoPerfil" /></label>
     <button type="submit" [disabled]="guardando()" [attr.aria-busy]="guardando()">Guardar</button>
   </form>
 </section>
