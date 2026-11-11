@@ -257,6 +257,13 @@ Checklist para dar por terminada una tarea del sistema de diseño:
 - [ ] Pantallas activas migradas (o limitación concreta documentada en el PR).
 - [ ] Tests, build y suite completa en verde.
 
+## 8. Definición de terminado (100 % de criterios de aceptación OBLIGATORIO)
+
+Una tarea NO está terminada si falta aunque sea un único criterio de aceptación.
+No se permite abrir ni mergear un PR que no cumpla el 100 % de los criterios de
+aceptación de la historia. Los PRs parciales/andamiajes deben marcarse como
+borrador (draft) y no pueden mergearse.
+
 ## 8. Definición de terminado
 
 Una tarea está terminada solo cuando:
