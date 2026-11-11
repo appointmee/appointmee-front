@@ -1,0 +1,283 @@
+:host {
+  display: block;
+}
+
+.pagina {
+  min-height: calc(100dvh - var(--nav-h));
+  padding: calc(var(--nav-h) + 40px) 24px 80px;
+}
+
+.pagina__inner {
+  display: grid;
+  gap: 24px;
+  width: min(100% - 48px, 900px);
+  margin: 0 auto;
+}
+
+.pagina__header {
+  display: grid;
+  gap: 8px;
+}
+
+.eyebrow {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+h1 {
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+}
+
+.pagina__header p {
+  color: var(--muted);
+}
+
+.panel {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(13, 17, 23, 0.72);
+}
+
+.detalle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+
+.detalle__foto {
+  width: 84px;
+  height: 84px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line);
+  object-fit: cover;
+  background: var(--surface);
+}
+
+.detalle__body {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.detalle__nombre {
+  font-size: var(--font-size-xl);
+}
+
+.datos {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.datos__fila {
+  display: grid;
+  gap: 2px;
+}
+
+.datos__etiqueta {
+  color: var(--muted);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.datos__valor {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.datos__valor--mono {
+  font-family: var(--mono);
+  font-size: var(--font-size-sm);
+}
+
+.datos__resenias {
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.rating__numero {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+.rating__abejas {
+  display: inline-flex;
+  gap: 1px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.rating__sin-puntuacion {
+  color: var(--muted);
+}
+
+.abeja {
+  display: inline-block;
+  line-height: 1;
+}
+
+.abeja--vacia {
+  filter: grayscale(1);
+  opacity: 0.25;
+}
+
+.estado {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 28px 18px;
+  text-align: center;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.estado__icono svg {
+  width: 34px;
+  height: 34px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.estado--error {
+  color: var(--danger);
+}
+
+.estado p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.skeleton {
+  display: block;
+  height: 12px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.12), rgba(255,255,255,.06));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.skeleton--avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: var(--radius-full);
+}
+
+.skeleton--nombre {
+  width: 45%;
+  height: 16px;
+}
+
+.skeleton--short {
+  width: 60%;
+}
+
+.detalle--skeleton .detalle__body {
+  display: grid;
+  gap: 10px;
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+}
+
+.boton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.boton--principal {
+  background: var(--accent);
+  color: #1a1405;
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.boton--ghost {
+  background: transparent;
+}
+
+.volver-gestor,
+.volver-gestor:visited {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  background: transparent;
+  color: #fff !important;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.volver-gestor:hover {
+  background: var(--accent-soft);
+}
+
+.volver-gestor svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .detalle {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detalle__foto {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

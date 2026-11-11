@@ -181,11 +181,25 @@ export const routes: Routes = [
     data: {
       title: 'Empleados',
       roles: ['EMPLEADOR'],
-      description: 'Agregate como empleado de tu sucursal.',
+      description: 'Consultá el equipo de tu sucursal y agregate como empleado.',
     },
     loadComponent: () =>
       import('./pages/empleados-sucursal/empleados-sucursal').then(
         (module) => module.EmpleadosSucursal,
+      ),
+  },
+  {
+    path: 'mis-sucursales/:sucursalId/empleado/:empleadoId',
+    canActivate: [authGuard],
+    title: 'AppointMee | Detalle del empleado',
+    data: {
+      title: 'Detalle del empleado',
+      roles: ['EMPLEADOR'],
+      description: 'Consultá los datos y la puntuación promedio de un empleado de tu sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/empleado-detalle/empleado-detalle').then(
+        (module) => module.EmpleadoDetalle,
       ),
   },
   {
