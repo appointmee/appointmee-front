@@ -1,0 +1,8 @@
+<section class="eliminar-empleado">
+  <h1>Eliminar empleado</h1>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (exito()) { <p class="exito" role="status">{{ exito() }}</p> }
+  <label>Sucursal ID <input type="number" [(ngModel)]="sucursalId" name="sucursalId" /></label>
+  <label>Empleado ID <input type="number" [(ngModel)]="empleadoId" name="empleadoId" /></label>
+  <button type="button" (click)="eliminar()" [disabled]="eliminando()" [attr.aria-busy]="eliminando()">Eliminar</button>
+</section>
