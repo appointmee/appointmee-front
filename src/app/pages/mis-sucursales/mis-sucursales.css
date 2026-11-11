@@ -451,6 +451,11 @@ h1 {
 .gestor__cabecera {
   display: grid;
   gap: 10px;
+  justify-items: start;
+}
+
+.gestor__cabecera .eyebrow {
+  width: fit-content;
 }
 
 .gestor__cabecera h1 {
