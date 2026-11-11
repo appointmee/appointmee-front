@@ -411,9 +411,73 @@ h1 {
   }
 }
 
+.volver-gestor {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.volver-gestor:hover {
+  background: var(--accent-soft);
+}
+
+.volver-gestor svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .gestor {
   display: grid;
   gap: 20px;
+}
+
+.gestor__cabecera {
+  display: grid;
+  gap: 10px;
+}
+
+.gestor__cabecera h1 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+}
+
+.gestor__rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--muted);
+}
+
+.gestor__abejas {
+  display: inline-flex;
+  gap: 2px;
+  font-size: 1.1rem;
+}
+
+.abeja--vacia {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
+.gestor__puntuacion {
+  color: var(--muted);
 }
 
 .gestor__cabecera {

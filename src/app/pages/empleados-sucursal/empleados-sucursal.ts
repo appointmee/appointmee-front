@@ -27,7 +27,7 @@ export class EmpleadosSucursal {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly sucursalId = Number(
+  protected readonly sucursalId = Number(
     this.route.snapshot.paramMap.get('sucursalId') ?? '',
   );
 

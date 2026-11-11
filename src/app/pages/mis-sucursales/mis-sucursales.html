@@ -1,16 +1,18 @@
 <section class="gestion" aria-labelledby="gestion-titulo">
   <div class="gestion__inner">
-    <header class="gestion__header">
-      <span class="eyebrow">
-        <span class="eyebrow__dot" aria-hidden="true"></span>
-        Mis sucursales
-      </span>
-      <h1 id="gestion-titulo">Gestión de sucursales propias</h1>
-      <p>
-        Seleccioná una de tus sucursales para acceder a las distintas secciones del gestor.
-      </p>
-      <a routerLink="/mis-sucursales/nueva" class="boton boton--primario">Crear sucursal</a>
-    </header>
+    @if (!sucursalSeleccionada()) {
+      <header class="gestion__header">
+        <span class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true"></span>
+          Mis sucursales
+        </span>
+        <h1 id="gestion-titulo">Gestión de sucursales propias</h1>
+        <p>
+          Seleccioná una de tus sucursales para acceder a las distintas secciones del gestor.
+        </p>
+        <a routerLink="/mis-sucursales/nueva" class="boton boton--primario">Crear sucursal</a>
+      </header>
+    }
 
     @if (cargandoSucursales()) {
       <div class="lista" aria-busy="true" aria-live="polite">
@@ -51,19 +53,35 @@
         <p>Cuando crees una sucursal, vas a poder gestionarla desde acá.</p>
       </div>
     } @else if (sucursalSeleccionada(); as sucursal) {
-      <nav class="migas" aria-label="Navegación de sucursales">
-        <button class="volver" type="button" (click)="volverALista()">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M19 12H5M11 18l-6-6 6-6" />
-          </svg>
-          Volver a mis sucursales
-        </button>
-      </nav>
+      <button class="volver-gestor" type="button" (click)="volverALista()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M11 18l-6-6 6-6" />
+        </svg>
+        Volver a mis sucursales
+      </button>
 
       <section class="gestor" aria-labelledby="gestor-titulo">
         <header class="gestor__cabecera">
-          <span class="panel__eyebrow">Sucursal seleccionada</span>
-          <h2 id="gestor-titulo">{{ sucursal.nombre }}</h2>
+          <span class="eyebrow">
+            <span class="eyebrow__dot" aria-hidden="true"></span>
+            Gestor de sucursal
+          </span>
+          <h1 id="gestor-titulo">{{ sucursal.nombre }}</h1>
+          <div class="gestor__rating" aria-label="Puntuación {{ puntuacion() }} de 5">
+            <span class="gestor__abejas" aria-hidden="true">
+              @for (llena of abejas(); track $index) {
+                <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
+              }
+            </span>
+            <span class="gestor__puntuacion">
+              {{ puntuacion() }}/5
+              @if (cantidadResenias() > 0) {
+                · {{ cantidadResenias() }} reseñas
+              } @else {
+                · Sin reseñas
+              }
+            </span>
+          </div>
         </header>
 
         <div class="gestor__tarjetas">

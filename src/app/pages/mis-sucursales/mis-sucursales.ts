@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 
 import { humanizarCategoria } from '../../models/solicitud-empleado';
@@ -24,6 +24,8 @@ import { sucursalService } from '../../services/sucursal-service';
 })
 export class MisSucursales {
   private readonly sucursalesApi = inject(sucursalService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly recargar = new Subject<void>();
 
@@ -38,9 +40,34 @@ export class MisSucursales {
     this.sucursales().find((sucursal) => sucursal.id === this.sucursalSeleccionadaId()) ?? null,
   );
 
+  protected readonly puntuacion = computed(() => {
+    const valor = this.sucursalSeleccionada()?.puntuacion;
+    return typeof valor === 'number' && Number.isFinite(valor)
+      ? Math.max(0, Math.min(5, Math.round(valor)))
+      : 0;
+  });
+
+  protected readonly cantidadResenias = computed(() => {
+    const valor = this.sucursalSeleccionada()?.cantidadPuntuaciones;
+    return typeof valor === 'number' && Number.isFinite(valor) && valor > 0 ? valor : 0;
+  });
+
+  protected readonly abejas = computed(() =>
+    [1, 2, 3, 4, 5].map((posicion) => posicion <= this.puntuacion()),
+  );
+
   protected readonly humanizarCategoria = humanizarCategoria;
 
   constructor() {
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        const id = Number(params.get('sucursalId'));
+        if (Number.isInteger(id) && id > 0) {
+          this.sucursalSeleccionadaId.set(id);
+        }
+      });
+
     this.recargar
       .pipe(
         startWith(undefined as void),
@@ -78,9 +105,19 @@ export class MisSucursales {
 
   protected seleccionarSucursal(id: number): void {
     this.sucursalSeleccionadaId.set(id);
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { sucursalId: id },
+      queryParamsHandling: 'merge',
+    });
   }
 
   protected volverALista(): void {
     this.sucursalSeleccionadaId.set(null);
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { sucursalId: null },
+      queryParamsHandling: 'merge',
+    });
   }
 }

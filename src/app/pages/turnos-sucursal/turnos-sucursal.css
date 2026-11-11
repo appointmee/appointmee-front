@@ -1045,3 +1045,35 @@
     animation: none;
   }
 }
+
+.volver-gestor {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.volver-gestor:hover {
+  background: var(--accent-soft);
+}
+
+.volver-gestor svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
