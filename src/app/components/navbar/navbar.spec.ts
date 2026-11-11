@@ -70,6 +70,51 @@ describe('Buscador del navbar', () => {
   });
 });
 
+describe('Acceso a Mis Turnos', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  async function renderizar(roles: readonly string[]): Promise<HTMLElement> {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([
+          { path: 'sucursales', component: EmptyPage },
+          { path: 'mis-turnos', component: EmptyPage },
+          { path: 'admin', component: EmptyPage },
+        ]),
+        {
+          provide: authService,
+          useValue: {
+            autenticado: signal(true),
+            visitante: signal(false),
+            restaurando: signal(false),
+            perfil: signal(null),
+            iniciales: signal('AM'),
+            tieneAlgunRol: (...solicitados: string[]) =>
+              solicitados.some((rol) => roles.includes(rol)),
+          },
+        },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/sucursales');
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  it('oculta Mis Turnos a administradores', async () => {
+    const html = await renderizar(['ADMINISTRADOR']);
+    expect(html.querySelector('.nav a[href="/mis-turnos"]')).toBeNull();
+    expect(html.querySelector('.nav a[href="/admin"]')).not.toBeNull();
+  });
+
+  it('muestra Mis Turnos a clientes y empleadores', async () => {
+    const html = await renderizar(['CLIENTE', 'EMPLEADOR']);
+    expect(html.querySelector('.nav a[href="/mis-turnos"]')).not.toBeNull();
+  });
+});
+
 describe('Navbar en la vista de error', () => {
   beforeEach(() => TestBed.resetTestingModule());
 

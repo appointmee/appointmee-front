@@ -90,6 +90,7 @@ export class DsEmptyStateComponent {
         aria-modal="true"
         [attr.aria-label]="ariaLabel || (ariaLabelledby ? null : 'Diálogo')"
         [attr.aria-labelledby]="ariaLabelledby || null"
+        [style.max-width]="maxWidth"
         tabindex="-1"
         (click)="$event.stopPropagation()"
         (keydown)="onKeydown($event)"
@@ -99,7 +100,7 @@ export class DsEmptyStateComponent {
     </div>
   }`,
   styles: [
-    `.ds-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000}.ds-modal{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:var(--space-4);max-width:500px;width:90%;max-height:90dvh;overflow:auto}.ds-modal:focus-visible{outline:2px solid var(--accent);outline-offset:2px}`,
+    `.ds-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:var(--space-4)}.ds-modal{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);padding:var(--space-4);max-width:500px;width:100%;max-height:90dvh;overflow:auto;overscroll-behavior:contain}.ds-modal:focus-visible{outline:2px solid var(--accent);outline-offset:2px}`,
   ],
 })
 export class DsModalComponent implements AfterViewChecked, OnDestroy {
@@ -122,6 +123,8 @@ export class DsModalComponent implements AfterViewChecked, OnDestroy {
   get open(): boolean { return this.isOpen; }
   @Input() ariaLabel = '';
   @Input() ariaLabelledby = '';
+  /** Ancho máximo del panel; la pantalla puede ampliarlo para contenido extenso. */
+  @Input() maxWidth = '500px';
   @Output() close = new EventEmitter<void>();
   @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
   private focused = false;

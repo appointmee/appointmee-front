@@ -151,6 +151,16 @@ describe('componentes de sistema de diseño', () => {
     expect(document.activeElement).toBe(dialog);
   });
 
+  it('modal permite ampliar el ancho del panel', async () => {
+    await TestBed.configureTestingModule({ imports: [DsModalComponent] }).compileComponents();
+    const f = TestBed.createComponent(DsModalComponent);
+    f.componentInstance.open = true;
+    f.componentInstance.maxWidth = '680px';
+    f.detectChanges();
+    const dialog = f.nativeElement.querySelector('[role="dialog"]') as HTMLElement;
+    expect(dialog.style.maxWidth).toBe('680px');
+  });
+
   it('modal emite close con Escape', async () => {
     await TestBed.configureTestingModule({ imports: [DsModalComponent] }).compileComponents();
     const f = TestBed.createComponent(DsModalComponent);
