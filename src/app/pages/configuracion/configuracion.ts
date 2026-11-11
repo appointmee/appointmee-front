@@ -8,9 +8,10 @@ import { destinoDespuesDelLogin } from '../../guards/login-destination';
 import { timer } from 'rxjs';
 
 import { VerificacionEmailModel } from '../../models/auth';
-import { ApiError } from '../../http/api-errors-service';
+import { ApiError } from '../../models/api-error';
 import { verificacionPendienteService } from '../../services/verificacion-pendiente-service';
 import { authService } from '../../services/auth-service';
+import { verificacionService } from '../../services/verificacion-service';
 import { CambiarPassword } from '../../components/cambiar-password/cambiar-password';
 
 @Component({
@@ -24,6 +25,7 @@ export class Configuracion implements OnInit {
   seccion = signal<'verificacion' | 'password'>('verificacion');
 
   auth = inject(authService);
+  private verificacion = inject(verificacionService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private pendiente = inject(verificacionPendienteService);
@@ -245,13 +247,13 @@ export class Configuracion implements OnInit {
     this.aviso.set('');
     this.error.set('');
 
-    this.auth.solicitarVerificacion(this.verificacionModel().email, reenviar).pipe(
+    this.verificacion.solicitarVerificacion(this.verificacionModel().email, reenviar).pipe(
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({
       next: (estado) => {
         this.pendiente.aplicarEstado(estado);
         if (estado.verificada) {
-          this.auth.completarVerificacion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          this.verificacion.completarVerificacion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: () => this.finalizarVerificacion(),
             error: () => {
               this.enviando.set(false);
@@ -315,7 +317,7 @@ export class Configuracion implements OnInit {
 
     const datos = this.verificacionModel();
 
-    this.auth.verificarEmail(datos.email, datos.codigo).pipe(
+    this.verificacion.verificarEmail(datos.email, datos.codigo).pipe(
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({
       next: () => this.finalizarVerificacion(),

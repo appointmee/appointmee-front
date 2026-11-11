@@ -1,9 +1,13 @@
+
+/**
+ * MOdelos Servicio
+ */
+
 export interface ServicioDTO {
   readonly id: number;
   readonly nombre: string;
   readonly descripcion: string | null;
   readonly duracion: number;
-  /** BigDecimal serializado por el backend. */
   readonly precio: number | string | null;
   readonly fotoPerfil: string | null;
   readonly puntuacion: number | null;
@@ -11,4 +15,13 @@ export interface ServicioDTO {
   readonly nombreSucursal?: string | null;
   readonly direccionSucursal?: string | null;
   readonly categoriaSucursal?: string | null;
+}
+
+export interface ServicioPayload {
+  readonly sucursalId: number;
+  readonly nombre: string;
+  readonly descripcion: string | null;
+  readonly duracion: number;
+  readonly precio: number | string | null;
+  readonly fotoPerfil: string | null;
 }

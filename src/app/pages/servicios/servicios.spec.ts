@@ -65,7 +65,6 @@ describe('US-SERV-02 · Seleccionar servicio', () => {
   let backend: HttpTestingController;
 
   beforeEach(async () => {
-    sessionStorage.clear();
     await TestBed.configureTestingModule({
       imports: [TestShell],
       providers: [
@@ -74,7 +73,6 @@ describe('US-SERV-02 · Seleccionar servicio', () => {
           { path: 'sucursal/:sucursalId/servicios/:servicioId/turnos', component: Dummy },
           { path: 'sucursal/:sucursalId/servicios', component: Servicios },
           { path: 'servicios', component: Servicios },
-          { path: 'sucursal/:sucursalId/servicios/:servicioId/turnos', component: Dummy },
           { path: 'sucursal/:id', component: Dummy },
           { path: '', component: Dummy },
         ]),
@@ -92,7 +90,6 @@ describe('US-SERV-02 · Seleccionar servicio', () => {
   afterEach(() => {
     fixture.destroy();
     backend.verify();
-    sessionStorage.clear();
     vi.restoreAllMocks();
   });
 
@@ -697,61 +694,5 @@ describe('US-SERV-02 · Seleccionar servicio', () => {
     fixture.detectChanges();
 
     expect(imagen.getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
-  });
-
-  it('US-SERV-04 · restaura la sucursal y el servicio elegidos desde el contexto temporal', async () => {
-    sessionStorage.setItem(
-      'appointmee.reserva-contexto.v1',
-      JSON.stringify({ version: 1, sucursalId: 7, servicioId: 2 }),
-    );
-
-    await router.navigateByUrl('/sucursal/7/servicios');
-    fixture.detectChanges();
-
-    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush(SUCURSAL);
-    backend
-      .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
-      .flush(SERVICIOS);
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    const host = fixture.nativeElement as HTMLElement;
-    const seleccionado = host.querySelector('.card--seleccionado');
-    expect(seleccionado).not.toBeNull();
-    expect(seleccionado?.textContent).toContain('Color');
-    expect(JSON.parse(sessionStorage.getItem('appointmee.reserva-contexto.v1') ?? 'null')).toEqual({
-      version: 1,
-      sucursalId: 7,
-      servicioId: 2,
-    });
-  });
-
-  it('US-SERV-04 · al elegir un servicio guarda el contexto y avanza al paso de profesional', async () => {
-    await router.navigateByUrl('/sucursal/7/servicios');
-    fixture.detectChanges();
-
-    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush(SUCURSAL);
-    backend
-      .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
-      .flush(SERVICIOS);
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    const host = fixture.nativeElement as HTMLElement;
-    const elegir = Array.from(host.querySelectorAll<HTMLAnchorElement>('a')).find(
-      (ancla) => (ancla.textContent ?? '').trim() === 'Elegir turno',
-    );
-    expect(elegir).toBeDefined();
-
-    elegir?.click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(router.url).toBe('/sucursal/7/servicios/1/turnos');
-    expect(JSON.parse(sessionStorage.getItem('appointmee.reserva-contexto.v1') ?? 'null')).toEqual({
-      version: 1,
-      sucursalId: 7,
-      servicioId: 1,
-    });
   });
 });

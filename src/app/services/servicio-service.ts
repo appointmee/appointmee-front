@@ -3,26 +3,41 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
-import { ServicioDTO } from '../models/servicio';
+import { ServicioDTO, ServicioPayload } from '../models/servicio';
 import { backendService } from './backend-service';
+
+//CRUD SEVICIOS
 
 @Injectable({ providedIn: 'root' })
 export class servicioService {
   private readonly api = inject(backendService);
   private readonly http = inject(HttpClient);
 
-  /**
-   * Listado de servicios de una sucursal. El error se muestra dentro de la
-   * pantalla, por eso se le pide al interceptor global que no navegue ni
-   * muestre el aviso general.
-   */
+  //GET
   listarPorSucursal(idSucursal: number): Observable<ServicioDTO[]> {
     return this.http.get<ServicioDTO[]>(
       `${this.api.baseUrl}/servicios/listar/sucursal/${idSucursal}`,
       { context: this.contextoSinAvisoGlobal() },
     );
   }
+// GET
+  obtenerPorId(servicioId: number): Observable<ServicioDTO> {
+    return this.http.get<ServicioDTO>(`${this.api.baseUrl}/servicios/${servicioId}`);
+  }
+  //POST
+  crear(datos: ServicioPayload): Observable<ServicioDTO> {
+    return this.http.post<ServicioDTO>(`${this.api.baseUrl}/servicios`, datos);
+  }
+//PUT
+  actualizar(servicioId: number, datos: ServicioPayload): Observable<ServicioDTO> {
+    return this.http.put<ServicioDTO>(`${this.api.baseUrl}/servicios/${servicioId}`, datos);
+  }
+//DELETE
+  eliminar(servicioId: number): Observable<void> {
+    return this.http.delete<void>(`${this.api.baseUrl}/servicios/${servicioId}`);
+  }
 
+  // esto sirve para hacer que el handler global lo ignore
   private contextoSinAvisoGlobal(): HttpContext {
     return new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true);
   }

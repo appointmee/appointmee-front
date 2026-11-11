@@ -4,6 +4,7 @@ import { NavigationEnd, NavigationError, Router, RouterLink, RouterOutlet } from
 import { Navbar } from './components/navbar/navbar';
 import { ApiErrors } from './http/api-errors';
 import { NavigationHistory } from './navigation-history';
+import { reservaContextoService } from './services/reserva-contexto-service';
 
 @Component({
   imports: [RouterOutlet, RouterLink, Navbar],
@@ -14,6 +15,7 @@ import { NavigationHistory } from './navigation-history';
 export class App {
   protected readonly apiErrors = inject(ApiErrors);
   private readonly navigationHistory = inject(NavigationHistory);
+  private readonly reservaContexto = inject(reservaContextoService);
   private readonly router = inject(Router);
 
   protected readonly rutaFallida = signal<string | null>(null);
@@ -27,8 +29,19 @@ export class App {
       } else if (event instanceof NavigationEnd) {
         this.rutaFallida.set(null);
         this.reintentando.set(false);
+        if (!this.esRutaDeReserva(event.urlAfterRedirects)) {
+          this.reservaContexto.limpiar();
+        }
       }
     });
+  }
+
+  private esRutaDeReserva(url: string): boolean {
+    const [path, query = ''] = url.split('?');
+    if (/^\/sucursal\/\d+(?:\/servicios|\/profesionales)?\/?$/.test(path ?? '')) return true;
+    if (path !== '/login') return false;
+    const destino = new URLSearchParams(query).get('returnTo') ?? '';
+    return /^\/sucursal\/\d+\/servicios(?:\?|$)/.test(destino);
   }
 
   protected reintentarNavegacion(): void {

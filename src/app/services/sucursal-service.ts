@@ -17,15 +17,16 @@ function contextoSilenciado(activado: boolean): HttpContext {
 @Injectable({ providedIn: 'root' })
 export class sucursalService {
   private readonly api = inject(backendService);
-
   private readonly http = inject(HttpClient);
 
+  //GET
   listar(silenciarErroresGlobales = false): Observable<SucursalMiniDTO[]> {
     return this.http.get<SucursalMiniDTO[]>(`${this.api.baseUrl}/sucursales/listar`, {
       context: contextoSilenciado(silenciarErroresGlobales),
     });
   }
 
+  //GET
   filtrar(
     categoria?: string | null,
     nombre?: string | null,
@@ -44,17 +45,14 @@ export class sucursalService {
       context: contextoSilenciado(silenciarErroresGlobales),
     });
   }
-
+//GET CATEGORIAS
   categorias(): Observable<string[]> {
     return this.http.get<string[]>(`${this.api.baseUrl}/sucursales/categorias`, {
       context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
     });
   }
 
-  /**
-   * Detalle de una sucursal. `silenciarErroresGlobales` permite que la pantalla
-   * que lo consume muestre su propio estado de error sin navegar a /error.
-   */
+  //GET
   listarPropias(): Observable<SucursalMiniDTO[]> {
     return this.http.get<SucursalMiniDTO[]>(
       `${this.api.baseUrl}/sucursales/listar/propias`,

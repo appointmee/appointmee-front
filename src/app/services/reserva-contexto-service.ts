@@ -126,6 +126,9 @@ export class reservaContextoService {
     if (segmentos.length === 2) {
       return true;
     }
+    if (segmentos.length === 3 && segmentos[2] === 'profesionales') {
+      return true;
+    }
     if (segmentos[2] !== 'servicios') {
       return false;
     }

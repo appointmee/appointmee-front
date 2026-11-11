@@ -8,7 +8,6 @@
   padding-top: var(--nav-h);
 }
 
-/* "Saltar al contenido": oculto hasta recibir foco por teclado. */
 .skip-link {
   position: fixed;
   top: 10px;
@@ -34,7 +33,6 @@
   outline-offset: 2px;
 }
 
-/* El <main> recibe foco con tabindex="-1" al "saltar al contenido". */
 .app-main:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -4px;
