@@ -95,7 +95,11 @@ export class EditarServicioPage {
     if (this.cargando() || this.servicioId === null) return;
     this.formulario().markAsTouched();
     if (this.formulario().invalid()) {
-      this.formulario.nombre().focusBoundControl();
+      const primerCampoInvalido = [
+        this.formulario.nombre,
+        this.formulario.duracion,
+      ].find(campo => campo().invalid());
+      primerCampoInvalido?.().focusBoundControl();
       return;
     }
 
