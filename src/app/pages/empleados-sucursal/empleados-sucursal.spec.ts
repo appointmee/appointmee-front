@@ -313,6 +313,17 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     expect(css).toMatch(/right:\s*0/);
   });
 
+  it('rodea con borde amarillo el listado y el bloque de auto-incorporación', async () => {
+    await abrir();
+    responderListado();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const css = estilosRegistrados();
+
+    expect(css).toMatch(/\.panel[^{]*\{[^}]*border:\s*2px solid var\(--accent\)/);
+  });
+
   it('reduce las dimensiones del bloque de auto-incorporación', async () => {
     await abrir();
     responderListado();
