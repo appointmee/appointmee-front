@@ -38,7 +38,7 @@ export class App {
 
   private esRutaDeReserva(url: string): boolean {
     const [path, query = ''] = url.split('?');
-    if (/^\/sucursal\/\d+(?:\/servicios|\/profesionales)?\/?$/.test(path ?? '')) return true;
+    if (/^\/sucursal\/\d+(?:\/servicios(?:\/\d+(?:\/(?:empleados|turnos))?\/?)?|\/profesionales)?\/?$/.test(path ?? '')) return true;
     if (path !== '/login') return false;
     const destino = new URLSearchParams(query).get('returnTo') ?? '';
     return /^\/sucursal\/\d+\/servicios(?:\?|$)/.test(destino);
