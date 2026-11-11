@@ -263,6 +263,93 @@
           }
         </section>
       </div>
+
+      <section class="acciones" aria-labelledby="acciones-titulo">
+        <h3 id="acciones-titulo" class="sr-only">Acciones del turno</h3>
+
+        @if (exitoAccion()) {
+          <p class="accion__exito" role="status">{{ exitoAccion() }}</p>
+        }
+
+        @if (confirmacion(); as accion) {
+          <div class="confirmacion" role="alertdialog" aria-labelledby="confirmacion-titulo">
+            <p id="confirmacion-titulo" class="confirmacion__texto">
+              @if (accion === 'finalizar') {
+                ¿Está seguro de que desea finalizar este turno?
+              } @else {
+                ¿Está seguro de que desea cancelar este turno?
+              }
+            </p>
+
+            @if (errorAccion()) {
+              <p class="accion__error" role="alert">{{ errorAccion() }}</p>
+            }
+
+            <div class="confirmacion__acciones">
+              <button
+                dsButton
+                class="accion__boton accion__boton--confirmar"
+                type="button"
+                [loading]="procesandoAccion() && accionEnCurso() === accion"
+                [disabled]="procesandoAccion()"
+                (clicked)="confirmarAccion()"
+              >
+                Confirmar
+              </button>
+              <button
+                dsButton
+                variant="secondary"
+                class="accion__boton accion__boton--volver"
+                type="button"
+                [disabled]="procesandoAccion()"
+                (click)="cancelarConfirmacion()"
+              >
+                Volver
+              </button>
+            </div>
+          </div>
+        } @else {
+          @if (errorAccion()) {
+            <p class="accion__error" role="alert">{{ errorAccion() }}</p>
+          }
+
+          <div class="acciones__botones">
+            <div class="accion">
+              <button
+                dsButton
+                class="accion__boton accion__boton--finalizar"
+                type="button"
+                [disabled]="!puedeFinalizar() || procesandoAccion() || detalleCargando()"
+                [loading]="procesandoAccion() && accionEnCurso() === 'finalizar'"
+                (clicked)="solicitarFinalizar()"
+              >
+                Finalizar turno
+              </button>
+              @if (motivoFinalizar(); as motivo) {
+                <p class="accion__mensaje">{{ motivo }}</p>
+              }
+            </div>
+
+            @if (rol === 'EMPLEADOR') {
+              <div class="accion">
+                <button
+                  dsButton
+                  class="accion__boton accion__boton--cancelar"
+                  type="button"
+                  [disabled]="!puedeCancelar() || procesandoAccion() || detalleCargando()"
+                  [loading]="procesandoAccion() && accionEnCurso() === 'cancelar'"
+                  (clicked)="solicitarCancelar()"
+                >
+                  Cancelar turno
+                </button>
+                @if (motivoCancelar(); as motivo) {
+                  <p class="accion__mensaje">{{ motivo }}</p>
+                }
+              </div>
+            }
+          </div>
+        }
+      </section>
     }
   </article>
 </ds-modal>
