@@ -27,6 +27,7 @@ export class EditarServicio {
   protected readonly cargando = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly exito = signal<string | null>(null);
+  protected readonly erroresCampos = signal<Record<string,string>>({});
 
   protected cargar(): void {
     if (!this.servicioId) return;
@@ -49,6 +50,12 @@ export class EditarServicio {
   }
 
   protected guardar(): void {
+    const errores: Record<string,string> = {};
+    if (!this.sucursalId) errores['sucursalId']='La sucursal es obligatoria.';
+    if (!this.nombre.trim()) errores['nombre']='El nombre es obligatorio.';
+    if (!this.duracion || this.duracion <= 0) errores['duracion']='La duración debe ser mayor a 0.';
+    this.erroresCampos.set(errores);
+    if (Object.keys(errores).length) { this.error.set('Revisá los campos marcados.'); return; }
     if (!this.servicioId || !this.sucursalId || !this.nombre.trim()) {
       this.error.set('Completá los campos obligatorios.');
       return;
@@ -73,5 +80,13 @@ export class EditarServicio {
         this.error.set('No se pudo actualizar el servicio.');
       },
     });
+  }
+
+  protected tieneErrores(): boolean { return Object.keys(this.erroresCampos()).length > 0; }
+  protected listaErrores(): [string,string][] { return Object.entries(this.erroresCampos()); }
+  protected errorDe(campo: string): string | null { return this.erroresCampos()[campo] ?? null; }
+
+  protected descartar(): void {
+    if (window.confirm('¿Descartar los cambios?')) { this.cargar(); }
   }
 }

@@ -2,13 +2,31 @@
   <h1>Editar servicio</h1>
   @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
   @if (exito()) { <p class="exito" role="status">{{ exito() }}</p> }
+  @if (tieneErrores()) {
+    <div class="resumen" role="alert">
+      <p>Corregí los siguientes campos:</p>
+      <ul>@for (e of listaErrores(); track e[0]) { <li>{{ e[1] }}</li> }</ul>
+    </div>
+  }
   <label>Servicio ID <input type="number" [(ngModel)]="servicioId" name="servicioId" (change)="cargar()" /></label>
   <form (ngSubmit)="guardar()">
-    <label>Sucursal ID <input type="number" [(ngModel)]="sucursalId" name="sucursalId" /></label>
-    <label>Nombre <input [(ngModel)]="nombre" name="nombre" /></label>
+    <label>Sucursal ID
+      <input type="number" [(ngModel)]="sucursalId" name="sucursalId" [attr.aria-invalid]="!!errorDe('sucursalId')" />
+      @if (errorDe('sucursalId')) { <span class="campo-error">{{ errorDe('sucursalId') }}</span> }
+    </label>
+    <label>Nombre
+      <input [(ngModel)]="nombre" name="nombre" [attr.aria-invalid]="!!errorDe('nombre')" />
+      @if (errorDe('nombre')) { <span class="campo-error">{{ errorDe('nombre') }}</span> }
+    </label>
     <label>Descripción <textarea [(ngModel)]="descripcion" name="descripcion"></textarea></label>
-    <label>Duración (min) <input type="number" [(ngModel)]="duracion" name="duracion" /></label>
+    <label>Duración (min)
+      <input type="number" [(ngModel)]="duracion" name="duracion" [attr.aria-invalid]="!!errorDe('duracion')" />
+      @if (errorDe('duracion')) { <span class="campo-error">{{ errorDe('duracion') }}</span> }
+    </label>
     <label>Precio <input type="number" [(ngModel)]="precio" name="precio" /></label>
-    <button type="submit" [disabled]="guardando()" [attr.aria-busy]="guardando()">Guardar</button>
+    <div class="acciones">
+      <button type="submit" [disabled]="guardando()" [attr.aria-busy]="guardando()">Guardar</button>
+      <button type="button" (click)="descartar()">Descartar</button>
+    </div>
   </form>
 </section>
