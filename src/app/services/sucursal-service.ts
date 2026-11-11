@@ -60,6 +60,14 @@ export class sucursalService {
     );
   }
 
+  /** GET /sucursales/listar/como-empleado: sucursales donde el usuario es empleado. */
+  listarComoEmpleado(): Observable<SucursalMiniDTO[]> {
+    return this.http.get<SucursalMiniDTO[]>(
+      `${this.api.baseUrl}/sucursales/listar/como-empleado`,
+      { context: this.contextoSinAvisoGlobal() },
+    );
+  }
+
   agregarEmpleado(sucursalId: number, email: string): Observable<string> {
     return this.http.post(
       `${this.api.baseUrl}/sucursales/${sucursalId}/empleados/agregar`,
