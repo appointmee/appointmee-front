@@ -1,38 +1,28 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
-import { Subject, of, throwError } from 'rxjs';
-import { ResetPasswordPage } from './reset-password';
-import { authService } from '../../services/auth-service';
-import { MensajeResponse } from '../../models/auth';
-import { captureResetPasswordToken } from '../../security/reset-password-token';
+import { Subject, throwError } from 'rxjs';
 
-describe('Restablecer contraseña', () => {
+import { MensajeResponse } from '../../models/auth';
+import { authService } from '../../services/auth-service';
+import { ResetPasswordPage } from './reset-password';
+
+describe('Restablecer contraseña con código', () => {
   let fixture: ComponentFixture<ResetPasswordPage>;
   let page: ResetPasswordPage;
-  let respuesta: Subject<MensajeResponse>;
-  const auth = { restablecerPassword: vi.fn(), validarEnlaceRecuperacion: vi.fn() };
-  const token = 'token-de-prueba-para-restablecer';
-
-  function capturarToken(): void {
-    captureResetPasswordToken(
-      { href: `https://appointmee.example/reset-password?token=${encodeURIComponent(token)}` } as Location,
-      { state: null, replaceState: vi.fn() } as unknown as History,
-    );
-  }
+  let emailState: ReturnType<typeof signal<string | null>>;
+  const respuesta = new Subject<MensajeResponse>();
+  const auth = { emailRecuperacionPendiente: vi.fn(), restablecerPassword: vi.fn() };
 
   beforeEach(async () => {
     TestBed.resetTestingModule();
     vi.resetAllMocks();
-    capturarToken();
-    respuesta = new Subject<MensajeResponse>();
+    emailState = signal<string | null>('persona@example.com');
+    auth.emailRecuperacionPendiente.mockImplementation(() => emailState());
     auth.restablecerPassword.mockReturnValue(respuesta);
-    auth.validarEnlaceRecuperacion.mockReturnValue(of({ valido: true, expiresInSeconds: 900 }));
     await TestBed.configureTestingModule({
       imports: [ResetPasswordPage],
-      providers: [
-        provideRouter([]),
-        { provide: authService, useValue: auth },
-      ],
+      providers: [provideRouter([]), { provide: authService, useValue: auth }],
     }).compileComponents();
     fixture = TestBed.createComponent(ResetPasswordPage);
     page = fixture.componentInstance;
@@ -40,103 +30,54 @@ describe('Restablecer contraseña', () => {
   });
   afterEach(() => TestBed.resetTestingModule());
 
-  function enviar() {
-    page.onSubmit(new Event('submit', { cancelable: true }));
-    fixture.detectChanges();
-  }
-
   function completar() {
-    page.passwordModel.set({ password: 'NuevaClave123!', confirmarPassword: 'NuevaClave123!' });
+    page.modelo.set({ code: '012345', password: 'NuevaClave123!', confirmarPassword: 'NuevaClave123!' });
     fixture.detectChanges();
   }
 
-  it('valida complejidad y coincidencia sin enviar datos inválidos', () => {
-    page.passwordModel.set({ password: 'simple', confirmarPassword: 'simple' }); enviar();
+  it('mantiene el email fuera de la URL y presenta campos de código y contraseña', () => {
+    expect(fixture.nativeElement.querySelector('#reset-code')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#reset-password')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('persona@example.com');
+    expect(location.search).toBe('');
+  });
+
+  it('valida código de seis dígitos, complejidad y coincidencia antes de enviar', () => {
+    page.modelo.set({ code: '12', password: 'simple', confirmarPassword: 'simple' });
+    page.onSubmit(new Event('submit', { cancelable: true }));
     expect(auth.restablecerPassword).not.toHaveBeenCalled();
-    completar();
-    page.passwordModel.update(datos => ({ ...datos, confirmarPassword: 'OtraClave123!' })); enviar();
+    page.modelo.set({ code: '012345', password: 'NuevaClave123!', confirmarPassword: 'OtraClave123!' });
+    page.onSubmit(new Event('submit', { cancelable: true }));
     expect(auth.restablecerPassword).not.toHaveBeenCalled();
   });
 
-  it('envía una sola vez y redirige al login con confirmación sin conservar contraseñas', () => {
+  it('envía email, código y contraseña una sola vez; limpia contraseñas al completar', () => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
-    completar(); enviar(); enviar();
-    expect(auth.restablecerPassword).toHaveBeenCalledExactlyOnceWith(token, 'NuevaClave123!');
-    respuesta.next({ message: 'Contraseña restablecida' }); fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Contraseña restablecida');
-    expect(fixture.nativeElement.querySelector('a[href="/login"]')).not.toBeNull();
-    expect(page.passwordModel()).toEqual({ password: '', confirmarPassword: '' });
-    expect(fixture.nativeElement.textContent).not.toContain(token);
+    completar();
+    page.onSubmit(new Event('submit', { cancelable: true }));
+    page.onSubmit(new Event('submit', { cancelable: true }));
+    expect(auth.restablecerPassword).toHaveBeenCalledExactlyOnceWith('persona@example.com', '012345', 'NuevaClave123!');
+    respuesta.next({ message: 'Contraseña restablecida' });
+    fixture.detectChanges();
+    expect(page.modelo()).toEqual({ code: '', password: '', confirmarPassword: '' });
     expect(navigate).toHaveBeenCalledWith(['/login'], { replaceUrl: true, state: { passwordActualizada: true } });
   });
 
-  it('avisa si el enlace venció o ya se usó sin ofrecer otro', () => {
-    completar(); enviar(); respuesta.error({ status: 400 }); fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('El enlace no es válido o venció');
-    expect(fixture.nativeElement.querySelector('a[href="/olvide-mi-contrasena"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('form')).toBeNull();
+  it('muestra el límite de intentos como error inline', () => {
+    auth.restablecerPassword.mockReturnValueOnce(throwError(() => ({ status: 429 })));
+    completar();
+    page.onSubmit(new Event('submit', { cancelable: true }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Demasiados intentos');
   });
 
-  it.each([0, 503])('limpia las contraseñas y permite reintentar tras error %s', status => {
-    completar(); enviar(); respuesta.error({ status }); fixture.detectChanges();
-    expect(page.passwordModel()).toEqual({ password: '', confirmarPassword: '' });
-    expect(page.enlaceInvalido()).toBe(false);
-    expect(fixture.nativeElement.querySelector('[type="submit"]').textContent).toContain('Reintentar');
-    auth.restablecerPassword.mockReturnValue(new Subject<MensajeResponse>());
-    completar(); enviar();
-    expect(auth.restablecerPassword).toHaveBeenCalledTimes(2);
-  });
-
-  it('no muestra el formulario si falta el token', () => {
+  it('no ofrece el formulario si se abre sin el estado del email', () => {
     fixture.destroy();
+    emailState.set(null);
     fixture = TestBed.createComponent(ResetPasswordPage);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('form')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/recuperar-password"]')).not.toBeNull();
     expect(auth.restablecerPassword).not.toHaveBeenCalled();
-  });
-
-  it('oculta los campos mientras comprueba el enlace y si ya estaba vencido', () => {
-    fixture.destroy();
-    const validacion = new Subject<{ valido: boolean; expiresInSeconds: number }>();
-    auth.validarEnlaceRecuperacion.mockReturnValue(validacion);
-    capturarToken();
-    fixture = TestBed.createComponent(ResetPasswordPage);
-    page = fixture.componentInstance;
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Comprobando enlace');
-    expect(fixture.nativeElement.querySelector('input')).toBeNull();
-    completar(); enviar();
-    expect(auth.restablecerPassword).not.toHaveBeenCalled();
-    validacion.next({ valido: false, expiresInSeconds: 0 }); fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('El enlace no es válido o venció');
-    expect(fixture.nativeElement.querySelector('input')).toBeNull();
-  });
-
-  it('si falla la validación por red permite reintentar sin habilitar el formulario', () => {
-    fixture.destroy();
-    auth.validarEnlaceRecuperacion.mockReturnValueOnce(throwError(() => ({ status: 0 })));
-    capturarToken();
-    fixture = TestBed.createComponent(ResetPasswordPage); fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('No pudimos comprobar el enlace');
-    expect(fixture.nativeElement.querySelector('input')).toBeNull();
-    fixture.nativeElement.querySelector('button').click(); fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('#reset-password')).not.toBeNull();
-  });
-
-  it('retira los campos si el enlace vence mientras está abierto', async () => {
-    fixture.destroy();
-    vi.useFakeTimers();
-    try {
-      auth.validarEnlaceRecuperacion.mockReturnValue(of({ valido: true, expiresInSeconds: 1 }));
-      capturarToken();
-      fixture = TestBed.createComponent(ResetPasswordPage); fixture.detectChanges();
-      expect(fixture.nativeElement.querySelector('input')).not.toBeNull();
-      await vi.advanceTimersByTimeAsync(1000); fixture.detectChanges();
-      expect(fixture.nativeElement.querySelector('input')).toBeNull();
-      expect(fixture.nativeElement.textContent).toContain('El enlace no es válido o venció');
-    } finally {
-      fixture.destroy();
-      vi.useRealTimers();
-    }
   });
 });

@@ -70,6 +70,29 @@ describe('Buscador del navbar', () => {
   });
 });
 
+describe('Navbar en recuperación de contraseña', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('mantiene navegación mínima en la nueva ruta pública de recuperación', async () => {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([{ path: 'recuperar-password', component: EmptyPage }]),
+        { provide: authService, useValue: {
+          autenticado: signal(true), visitante: signal(false), restaurando: signal(false),
+          perfil: signal(null), iniciales: signal('AM'), tieneAlgunRol: () => false,
+        } },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/recuperar-password');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.nav')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.navbar__cta--auth').textContent).toContain('Crear cuenta');
+  });
+});
+
 describe('Acceso a Mis Turnos', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
