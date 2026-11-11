@@ -232,7 +232,7 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
 
     const sticky = host.querySelector<HTMLButtonElement>('.detalle__cta-mobile button');
     expect(sticky).not.toBeNull();
-    expect(sticky?.getAttribute('aria-label')).toBe('Reservar turno en Sucursal Flores');
+    expect(sticky?.getAttribute('aria-label')).toBe('Seleccionar turno en Sucursal Flores');
   });
 
   it('con sesión CLIENTE navega a elegir servicio con el sucursalId correcto', async () => {

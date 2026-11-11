@@ -395,3 +395,176 @@ baseTest('el detector reconoce filtraciones en objetos de consola y analytics', 
   expect(containsSensitiveValue('Clave123%2521')).toBe(true);
   expect(containsSensitiveValue('registro completado')).toBe(false);
 });
+
+for (const width of [320, 360, 390, 768, 1024, 1440]) {
+  test(`responsive: pantallas públicas y reserva a ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width <= 390 ? 640 : 900 });
+    await mockApi(page);
+
+    for (const [path, title] of [
+      ['/', 'Organizar tus turnos nunca fue tan sencillo.'],
+      ['/sucursales', 'Encontrá tu sucursal'],
+      ['/sucursal/1', 'Sucursal Demo'],
+      ['/sucursal/1/servicios', 'Seleccionar servicio'],
+      ['/sucursal/1/equipo', 'Sucursal Demo'],
+      ['/sucursal/1/resenias', 'Sucursal Demo'],
+      ['/sucursal/1/servicios/3/empleados', 'Elegir empleado'],
+      ['/sucursal/1/servicios/3/turnos?empleadoId=7', 'Seleccionar día y horario'],
+      ['/olvide-mi-contrasena', 'Recuperar contraseña'],
+      ['/pagina-inexistente', 'No encontramos esta página'],
+      ['/login', 'Iniciar sesión'],
+      ['/registrarme', /Crear cuenta|Registr/],
+    ] as const) {
+      await page.goto(path);
+      const heading = page.getByRole('heading', { name: title, exact: true, level: 1 });
+      await expect(heading).toBeVisible();
+      expect(await heading.evaluate(element => {
+        const navbar = document.querySelector('.navbar');
+        return element.getBoundingClientRect().top >= (navbar?.getBoundingClientRect().bottom ?? 0);
+      }), path).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth), path).toBeLessThanOrEqual(width);
+    }
+
+    await page.goto('/login');
+    const submit = page.locator('main button[type="submit"]');
+    const target = await submit.boundingBox();
+    expect(target?.height).toBeGreaterThanOrEqual(44);
+    expect(target?.width).toBeGreaterThanOrEqual(44);
+    await expect(page.locator('main input[type="email"]')).toHaveAttribute('autocomplete', 'email');
+
+    if (width <= 390) {
+      await page.goto('/sucursal/1/servicios/3/turnos?empleadoId=7');
+      await page.locator('button.dia[data-fecha]').first().click();
+      await page.locator('button.horario[data-hora]').first().click();
+      await page.getByRole('button', { name: 'Continuar' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Iniciá sesión para continuar con el turno' });
+      await expect(dialog).toBeVisible();
+      const bounds = (await dialog.boundingBox())!;
+      expect(bounds.x).toBeGreaterThanOrEqual(0);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+      expect(bounds.y + bounds.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+      const close = dialog.getByRole('button', { name: 'Cerrar inicio de sesión' });
+      expect((await close.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+    }
+
+    if (width <= 1024) {
+      await page.goto('/sucursales');
+      const menuButton = page.getByRole('button', { name: 'Abrir menú' });
+      await menuButton.click();
+      const menu = page.getByRole('complementary', { name: 'Menú de navegación' });
+      await expect(menu).toBeVisible();
+      const bounds = await menu.boundingBox();
+      expect((bounds?.x ?? -1) + (bounds?.width ?? 0)).toBeLessThanOrEqual(width);
+      expect((bounds?.y ?? -1) + (bounds?.height ?? 0)).toBeLessThanOrEqual(page.viewportSize()!.height);
+      await page.keyboard.press('Escape');
+      await expect(menu).toBeHidden();
+      await expect(menuButton).toBeFocused();
+    }
+  });
+}
+
+test('responsive: verificación de correo y ajustes a 360px', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  await mockApi(page, true);
+  await page.goto('/login');
+  await page.getByLabel('Email', { exact: true }).fill('ana@example.com');
+  await page.getByLabel('Contraseña', { exact: true }).fill('Clave123!');
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+  await page.getByRole('button', { name: 'Aceptar y verificar' }).click();
+
+  const digits = page.locator('input[inputmode="numeric"]');
+  await expect(digits).toHaveCount(6);
+  await expect(digits.first()).toHaveAttribute('autocomplete', 'one-time-code');
+  for (const digit of await digits.all()) {
+    const target = (await digit.boundingBox())!;
+    expect(target.width).toBeGreaterThanOrEqual(44);
+    expect(target.height).toBeGreaterThanOrEqual(44);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+
+  await digits.first().fill('123456');
+  await page.getByRole('button', { name: 'Verificar', exact: true }).click();
+  await expect(page).toHaveURL(/\/sucursales$/);
+  await page.goto('/configuracion');
+  await expect(page.getByRole('heading', { name: 'Ajustes' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+});
+
+test('responsive: pantallas de gestión con sesión y áreas seguras', async ({ page }) => {
+  await mockApi(page);
+  const empleador = { ...usuario, roles: ['EMPLEADOR'] };
+  await page.route(`${api}/auth/login`, route =>
+    reply(route, 200, { ...tokenResponse, usuario: empleador }),
+  );
+  await page.route(`${api}/usuarios/me`, route => reply(route, 200, empleador));
+  await page.route(`${api}/sucursales/listar/propias`, route => reply(route, 200, [sucursal]));
+  await page.route(`${api}/solicitudes-empleado/**`, route => reply(route, 200, []));
+  await page.route(`${api}/solicitudes-empleador/**`, route => reply(route, 200, []));
+
+  await page.goto('/login');
+  await page.getByLabel('Email', { exact: true }).fill('ana@example.com');
+  await page.getByLabel('Contraseña', { exact: true }).fill('Clave123!');
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+  await expect(page).not.toHaveURL(/\/login$/);
+
+  for (const width of [360, 390, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 720 });
+    for (const [path, title] of [
+      ['/mis-sucursales', 'Gestión de sucursales propias'],
+      ['/mis-sucursales/nueva', 'Crear sucursal'],
+      ['/solicitudes', 'Solicitudes'],
+      ['/solicitudes/empleo/enviadas/1', 'Todas las solicitudes de empleo enviadas'],
+      ['/mis-turnos', 'Mis Turnos'],
+      ['/perfil', 'Mi Perfil'],
+      ['/configuracion', 'Ajustes'],
+    ] as const) {
+      await page.goto(path);
+      if (width === 390) {
+        // Simula los insets del notch para verificar los márgenes CSS.
+        await page.addStyleTag({
+          content: ':root{--safe-top:24px;--safe-bottom:20px;--safe-left:12px;--safe-right:12px}',
+        });
+      }
+      const heading = page.getByRole('heading', { name: title, exact: true, level: 1 });
+      await expect(heading).toBeVisible();
+      expect(await heading.evaluate(element => {
+        const navbar = document.querySelector('.navbar');
+        return element.getBoundingClientRect().top >= (navbar?.getBoundingClientRect().bottom ?? 0);
+      }), path).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth), path).toBeLessThanOrEqual(width);
+    }
+  }
+
+  await page.goto('/mis-sucursales/nueva');
+  await expect(page.locator('input[type="tel"]')).toHaveAttribute('autocomplete', 'tel');
+});
+
+test('responsive: barra de reserva visible al pie solo en móvil', async ({ page }) => {
+  await mockApi(page);
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.goto('/sucursal/1');
+  const bar = page.locator('.detalle__cta-mobile');
+  const select = bar.getByRole('button', { name: 'Seleccionar turno en Sucursal Demo' });
+  await expect(select).toBeInViewport();
+  await expect(bar.getByRole('link', { name: 'Volver' })).toHaveAttribute('href', '/sucursales');
+  expect((await bar.boundingBox())!.y + (await bar.boundingBox())!.height).toBe(640);
+
+  const crumbs = page.getByRole('navigation', { name: 'Migas de pan' });
+  const current = (await crumbs.locator('[aria-current="page"]').boundingBox())!;
+  for (const link of await crumbs.getByRole('link').all()) {
+    const bounds = (await link.boundingBox())!;
+    expect(Math.abs(bounds.y + bounds.height / 2 - current.y - current.height / 2)).toBeLessThan(1);
+  }
+
+  await expect.poll(() => page.locator('.reservadas').evaluate(element => {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+    return element.getBoundingClientRect().bottom
+      - document.querySelector('.detalle__cta-mobile')!.getBoundingClientRect().top;
+  })).toBeLessThanOrEqual(1);
+  await expect(select).toBeInViewport();
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(bar).toBeHidden();
+});
