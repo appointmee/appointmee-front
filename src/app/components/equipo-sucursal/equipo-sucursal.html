@@ -1,4 +1,16 @@
 <section class="equipo" aria-label="Nuestro equipo">
+  @if (exitoEliminacion()) {
+    <div class="equipo__aviso equipo__aviso--exito" role="status" aria-live="polite">
+      <p>{{ exitoEliminacion() }}</p>
+    </div>
+  }
+
+  @if (errorEliminacion()) {
+    <div class="equipo__aviso equipo__aviso--error" role="alert">
+      <p>{{ errorEliminacion() }}</p>
+    </div>
+  }
+
   @if (loading()) {
     <div class="equipo__estado" aria-live="polite" aria-busy="true">
       <span class="sr-only">Cargando profesionales…</span>
@@ -64,6 +76,20 @@
               }
             </div>
           </div>
+
+          @if (puedeEliminar()) {
+            <button
+              dsButton
+              class="equipo-card__eliminar"
+              variant="danger"
+              size="sm"
+              type="button"
+              [attr.aria-label]="'Eliminar a ' + nombreCompleto(empleado) + ' del equipo'"
+              (clicked)="solicitarEliminacion(empleado)"
+            >
+              Eliminar
+            </button>
+          }
         </article>
       }
     </div>
@@ -82,5 +108,35 @@
         </a>
       </div>
     }
+  }
+
+  @if (empleadoAEliminar(); as empleado) {
+    <ds-modal
+      [open]="true"
+      ariaLabelledby="eliminar-empleado-titulo"
+      (close)="cancelarEliminacion()"
+    >
+      <h2 id="eliminar-empleado-titulo" class="equipo__modal-titulo">Eliminar del equipo</h2>
+      <p>
+        ¿Confirmás que querés eliminar a
+        <strong>{{ nombreCompleto(empleado) }}</strong> del equipo de esta sucursal?
+      </p>
+      <p class="equipo__modal-aviso">Esta acción no se puede deshacer.</p>
+
+      <div class="equipo__modal-acciones">
+        <button dsButton type="button" (clicked)="cancelarEliminacion()" [disabled]="eliminando()">
+          Cancelar
+        </button>
+        <button
+          dsButton
+          variant="danger"
+          type="button"
+          [loading]="eliminando()"
+          (clicked)="confirmarEliminacion()"
+        >
+          {{ eliminando() ? 'Eliminando…' : 'Sí, eliminar' }}
+        </button>
+      </div>
+    </ds-modal>
   }
 </section>

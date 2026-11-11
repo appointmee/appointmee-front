@@ -7,15 +7,26 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Observable, Subject, catchError, map, of, startWith, switchMap, tap } from 'rxjs';
+import {
+  Observable,
+  Subject,
+  catchError,
+  combineLatest,
+  map,
+  of,
+  startWith,
+  switchMap,
+  tap,
+} from 'rxjs';
 
 import { EquipoSucursal } from '../../components/equipo-sucursal/equipo-sucursal';
 import { apiErrorsService } from '../../http/api-errors-service';
 import { SucursalDetalleDTO } from '../../models/sucursal';
+import { authService } from '../../services/auth-service';
 import { sucursalService } from '../../services/sucursal-service';
 import { ErrorPage } from '../error/error';
 
@@ -41,6 +52,7 @@ const ESCALA_TEXTO: Readonly<Record<number, string>> = {
 })
 export class SucursalEquipo {
   private readonly service = inject(sucursalService);
+  private readonly auth = inject(authService);
   private readonly route = inject(ActivatedRoute);
   private readonly title = inject(Title);
   private readonly apiErrors = inject(apiErrorsService);
@@ -51,6 +63,7 @@ export class SucursalEquipo {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly noEncontrada = signal(false);
+  protected readonly puedeEliminarEmpleados = signal(false);
 
   private readonly recargar$ = new Subject<void>();
 
@@ -93,6 +106,22 @@ export class SucursalEquipo {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((resultado) => this.aplicarResultado(resultado));
+
+    combineLatest([toObservable(this.sucursal), toObservable(this.auth.perfil)])
+      .pipe(
+        switchMap(([sucursal, perfil]) => {
+          if (!sucursal || !perfil?.roles.includes('EMPLEADOR')) {
+            return of(false);
+          }
+
+          return this.service.listarPropias().pipe(
+            map((propias) => propias.some((propia) => propia.id === sucursal.id)),
+            catchError(() => of(false)),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((puedeEliminar) => this.puedeEliminarEmpleados.set(puedeEliminar));
   }
 
   protected reintentar(): void {
@@ -160,6 +189,7 @@ export class SucursalEquipo {
     this.sucursal.set(null);
     this.error.set(null);
     this.noEncontrada.set(false);
+    this.puedeEliminarEmpleados.set(false);
     this.loading.set(true);
   }
 }

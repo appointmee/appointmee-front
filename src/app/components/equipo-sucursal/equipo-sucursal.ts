@@ -1,4 +1,5 @@
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
+import { DsModalComponent } from '../../shared/ui/misc/misc.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -28,7 +29,7 @@ const ESCALA_TEXTO: Readonly<Record<number, string>> = {
 
 @Component({
   selector: 'app-equipo-sucursal',
-  imports: [DsButtonComponent, RouterLink],
+  imports: [DsButtonComponent, DsModalComponent, RouterLink],
   templateUrl: './equipo-sucursal.html',
   styleUrl: './equipo-sucursal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,10 +42,15 @@ export class EquipoSucursal {
   readonly sucursalId = input.required<number>();
   readonly limite = input<number | null>(LIMITE_DETALLE);
   readonly mostrarVerMas = input(true);
+  readonly puedeEliminar = input(false);
 
   protected readonly empleados = signal<readonly EmpleadoDTO[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+  protected readonly empleadoAEliminar = signal<EmpleadoDTO | null>(null);
+  protected readonly eliminando = signal(false);
+  protected readonly exitoEliminacion = signal<string | null>(null);
+  protected readonly errorEliminacion = signal<string | null>(null);
 
   protected readonly placeholderAvatar = `data:image/svg+xml;utf8,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240"><rect width="240" height="240" fill="#10151d"/><circle cx="120" cy="92" r="38" fill="#39424f"/><path d="M48 216c9-47 36-72 72-72s63 25 72 72" fill="#39424f"/></svg>',
@@ -80,6 +86,10 @@ export class EquipoSucursal {
         tap(() => {
           this.loading.set(true);
           this.error.set(null);
+          this.empleadoAEliminar.set(null);
+          this.eliminando.set(false);
+          this.exitoEliminacion.set(null);
+          this.errorEliminacion.set(null);
         }),
         switchMap((id) => this.cargar(id)),
         takeUntilDestroyed(this.destroyRef),
@@ -92,6 +102,45 @@ export class EquipoSucursal {
 
   protected reintentar(): void {
     this.recargar$.next();
+  }
+
+  protected solicitarEliminacion(empleado: EmpleadoDTO): void {
+    if (!this.puedeEliminar() || this.eliminando()) return;
+    this.exitoEliminacion.set(null);
+    this.errorEliminacion.set(null);
+    this.empleadoAEliminar.set(empleado);
+  }
+
+  protected cancelarEliminacion(): void {
+    if (this.eliminando()) return;
+    this.empleadoAEliminar.set(null);
+  }
+
+  protected confirmarEliminacion(): void {
+    const empleado = this.empleadoAEliminar();
+    if (!empleado || this.eliminando()) return;
+
+    this.eliminando.set(true);
+    this.errorEliminacion.set(null);
+
+    this.service
+      .eliminar(this.sucursalId(), empleado.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.eliminando.set(false);
+          this.empleadoAEliminar.set(null);
+          this.empleados.update((lista) => lista.filter((item) => item.id !== empleado.id));
+          this.exitoEliminacion.set(
+            `Eliminamos a ${this.nombreCompleto(empleado)} del equipo.`,
+          );
+        },
+        error: (error: HttpErrorResponse) => {
+          this.eliminando.set(false);
+          this.empleadoAEliminar.set(null);
+          this.errorEliminacion.set(this.mensajeErrorEliminacion(error));
+        },
+      });
   }
 
   protected nombre(empleado: EmpleadoDTO): string {
@@ -172,5 +221,25 @@ export class EquipoSucursal {
     }
 
     return 'No pudimos cargar al equipo de esta sucursal. Intentá de nuevo en unos segundos.';
+  }
+
+  private mensajeErrorEliminacion(error: HttpErrorResponse): string {
+    if (error.status === 0) {
+      return 'No pudimos conectarnos con el servidor. Revisá tu conexión e intentá de nuevo.';
+    }
+
+    if (error.status === 401) {
+      return 'Tu sesión expiró. Iniciá sesión nuevamente para eliminar empleados.';
+    }
+
+    if (error.status === 403) {
+      return 'Solo el empleador de esta sucursal puede eliminar empleados.';
+    }
+
+    if (error.status === 404 || error.status === 409) {
+      return 'Ese empleado ya no forma parte del equipo. Actualizá la lista e intentá nuevamente.';
+    }
+
+    return 'No pudimos eliminar al empleado. Intentá de nuevo en unos segundos.';
   }
 }

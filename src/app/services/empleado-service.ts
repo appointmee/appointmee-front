@@ -47,9 +47,13 @@ export class empleadoService {
   }
 
   //DELETE
-  eliminar(sucursalId: number, empleadoId: number): Observable<void> {
-    return this.http.delete<void>(
-      `${this.api.baseUrl}/sucursales/${sucursalId}/empleados/${empleadoId}`,
+  eliminar(sucursalId: number, empleadoId: number): Observable<string> {
+    return this.http.delete(
+      `${this.api.baseUrl}/sucursales/${sucursalId}/empleados/eliminar/${empleadoId}`,
+      {
+        responseType: 'text',
+        context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+      },
     );
   }
 }

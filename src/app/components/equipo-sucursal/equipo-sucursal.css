@@ -144,6 +144,37 @@
   font-style: italic;
 }
 
+/* Avisos de eliminación */
+
+.equipo__aviso {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.equipo__aviso p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.equipo__aviso--exito {
+  border-color: var(--success);
+  background: var(--success-soft);
+}
+
+.equipo__aviso--error {
+  border-color: var(--danger);
+  background: rgba(255, 122, 122, 0.1);
+}
+
+.equipo-card__eliminar {
+  flex-shrink: 0;
+  align-self: center;
+  margin-left: auto;
+}
+
 /* Estados de la sección */
 
 .equipo__estado {
@@ -266,6 +297,27 @@
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* Confirmación de eliminación */
+
+.equipo__modal-titulo {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-lg);
+}
+
+.equipo__modal-aviso {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.equipo__modal-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
 }
 
 /* Skeleton */
