@@ -37,6 +37,7 @@ export class authService {
 
   private readonly estado = signal<'visitante' | 'restaurando' | 'autenticado'>('visitante');
   private readonly usuario = signal<UsuarioSesion | null>(null);
+  private readonly emailRecuperacion = signal<string | null>(null);
 
   private renovacion?: Observable<string>;
   private revision = 0;
@@ -49,6 +50,15 @@ export class authService {
   readonly visitante = computed(() => this.estado() === 'visitante');
   readonly restaurando = computed(() => this.estado() === 'restaurando');
   readonly perfil = this.usuario.asReadonly();
+  readonly emailRecuperacionPendiente = this.emailRecuperacion.asReadonly();
+
+  guardarEmailRecuperacion(email: string): void {
+    this.emailRecuperacion.set(email.trim().toLowerCase());
+  }
+
+  limpiarEmailRecuperacion(): void {
+    this.emailRecuperacion.set(null);
+  }
 
   readonly iniciales = computed(() => {
     const partes = (this.usuario()?.email?.split('@')[0] ?? '').split(/[._+\s-]+/).filter(Boolean);
@@ -115,11 +125,12 @@ export class authService {
     return this.http.post<{ message: string }>(`${this.api.baseUrl}/auth/forgot-password`, { email });
   }
 
-  restablecerPassword(token: string, newPassword: string): Observable<MensajeResponse> {
-    return this.http.post<MensajeResponse>(`${this.api.baseUrl}/auth/reset-password`, { token, newPassword }).pipe(
+  restablecerPassword(email: string, code: string, newPassword: string): Observable<MensajeResponse> {
+    return this.http.post<MensajeResponse>(`${this.api.baseUrl}/auth/reset-password/code`, { email, code, newPassword }).pipe(
       tap(() => {
         this.limpiarSesion();
         this.pendiente.limpiar();
+        this.limpiarEmailRecuperacion();
       }),
     );
   }

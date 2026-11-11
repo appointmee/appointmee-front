@@ -76,6 +76,7 @@ export class Navbar {
       || ruta === '/registrarme'
       || ruta === '/reset-password'
       || ruta === '/olvide-mi-contrasena'
+      || ruta === '/recuperar-password'
       || ruta === '/configuracion/verificar-email'
       || ruta === '/verificar-email';
   });

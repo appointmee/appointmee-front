@@ -305,9 +305,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/reset-password/reset-password').then(module => module.ResetPasswordPage),
   },
   {
-    path: 'olvide-mi-contrasena',
+    path: 'recuperar-password',
     title: 'AppointMee | Recuperar contraseña',
     loadComponent: () => import('./pages/forgot-password/forgot-password').then(module => module.ForgotPasswordPage),
+  },
+  {
+    path: 'olvide-mi-contrasena',
+    redirectTo: 'recuperar-password',
+    pathMatch: 'full',
   },
   {
     path: 'verificar-email',
