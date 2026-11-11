@@ -29,7 +29,7 @@ export class AgregarmeEmpleado {
     this.error.set(null);
     this.api.agregarEmpleado(this.sucursalId, this.email.trim()).subscribe({
       next: () => { this.guardando.set(false); this.exito.set('Solicitud enviada.'); },
-      error: (_e: HttpErrorResponse) => { this.guardando.set(false); this.error.set('No se pudo enviar.'); },
+      error: (e: HttpErrorResponse) => { this.guardando.set(false); this.error.set(e.status === 409 ? 'Ya sos empleado de esta sucursal.' : 'No se pudo enviar.'); },
     });
   }
 }
