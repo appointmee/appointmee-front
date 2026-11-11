@@ -17,7 +17,6 @@ import { ErrorPage } from '../error/error';
 import { EquipoSucursal } from '../../components/equipo-sucursal/equipo-sucursal';
 import { ReseniasSucursal } from '../../components/resenias-sucursal/resenias-sucursal';
 import { apiErrorsService } from '../../http/api-errors-service';
-import { reservaContextoService } from '../../services/reserva-contexto-service';
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import { sucursalService } from '../../services/sucursal-service';
 
@@ -53,7 +52,6 @@ export class SucursalDetalle {
   private readonly router = inject(Router);
   private readonly title = inject(Title);
   private readonly apiErrors = inject(apiErrorsService);
-  private readonly reservaContexto = inject(reservaContextoService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly placeholderImage = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -172,7 +170,6 @@ export class SucursalDetalle {
    * - cliente autenticado: va directo a elegir servicio;
    * - visitante: va al login conservando el destino;
    * - sesión sin rol CLIENTE: muestra un aviso específico en vez de un 403.
-   * - si ya hubo una elección previa (contexto temporal), retoma esa reserva.
    */
   protected iniciarReserva(): void {
     if (this.navegando()) {
@@ -186,15 +183,7 @@ export class SucursalDetalle {
 
     this.avisoRol.set(null);
 
-    const contexto = this.reservaContexto.obtener();
-    const servicioId =
-      contexto !== null && contexto.sucursalId === sucursal.id ? contexto.servicioId : null;
-    // Se conserva la sucursal y el servicio elegidos para retomar la reserva.
-    this.reservaContexto.guardar(sucursal.id, servicioId);
-
-    const destino = servicioId
-      ? `/sucursal/${sucursal.id}/servicios/${servicioId}/turnos`
-      : `/sucursal/${sucursal.id}/servicios`;
+    const destino = `/sucursal/${sucursal.id}/servicios`;
     this.navegando.set(true);
     const navegacion = this.router.navigateByUrl(destino);
 
