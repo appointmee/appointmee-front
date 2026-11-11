@@ -1,0 +1,4 @@
+.editar-servicio { padding: 1rem; }
+.editar-servicio form { display: grid; gap: .5rem; max-width: 480px; }
+.error { color: #b00020; }
+.exito { color: #1b5e20; }
