@@ -71,7 +71,7 @@ h1 {
  * la sección de auto-incorporación.
  */
 .empleados__scroll {
-  --fila-alto: 116px;
+  --fila-alto: 140px;
 
   max-height: calc(5 * var(--fila-alto));
   padding: 0 6px 0 2px;
@@ -209,10 +209,11 @@ h1 {
 /*
  * Botón de eliminación: replica el diseño del botón "Finalizar turno" del
  * detalle de turnos (turno-detalle-modal.css) con la paleta roja de las
- * acciones destructivas. Va debajo de las reseñas y la puntuación.
+ * acciones destructivas. Va debajo de las reseñas y la puntuación y usa el
+ * tamaño compacto del sistema de diseño para no comer altura de la fila.
  */
 .empleado__eliminar {
-  min-width: 150px;
+  min-width: 96px;
   margin-top: var(--space-1);
   background: rgba(255, 122, 122, 0.16);
   color: #ffb0b0;
@@ -456,7 +457,7 @@ h1 {
   }
 
   .empleados__scroll {
-    --fila-alto: 172px;
+    --fila-alto: 180px;
   }
 
   .empleado__foto,

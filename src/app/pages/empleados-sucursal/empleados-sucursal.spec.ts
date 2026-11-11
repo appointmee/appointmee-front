@@ -294,7 +294,7 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
 
     const css = estilosRegistrados();
 
-    expect(css).toMatch(/--fila-alto:\s*116px/);
+    expect(css).toMatch(/--fila-alto:\s*140px/);
     expect(css).toMatch(/max-height:\s*calc\(5\s*\*\s*var\(--fila-alto\)\)/);
     expect(css).toMatch(/overflow-y:\s*auto/);
   });
@@ -448,8 +448,9 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
 
       const css = estilosRegistrados();
 
-      // Mismas propiedades que "Finalizar turno" (turno-detalle-modal.css).
-      expect(css).toMatch(/\.empleado__eliminar[^{]*\{[^}]*min-width:\s*150px/);
+      // Mismas propiedades que "Finalizar turno" (turno-detalle-modal.css),
+      // con un tamaño compacto para no comer altura de la fila.
+      expect(css).toMatch(/\.empleado__eliminar[^{]*\{[^}]*min-width:\s*96px/);
       expect(css).toMatch(/\.empleado__eliminar[^{]*\{[^}]*background:\s*rgba\(255, 122, 122, 0\.16\)/);
       expect(css).toMatch(
         /\.empleado__eliminar[^{]*\{[^}]*border-color:\s*rgba\(255, 122, 122, 0\.32\)/,
@@ -459,9 +460,11 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
         /\.empleado__eliminar[^{]*:hover:not\(:disabled\)[^{]*\{[^}]*background:\s*rgba\(255, 122, 122, 0\.26\)/,
       );
 
-      // Se apoya en el mismo botón del sistema de diseño que "Finalizar turno".
+      // Se apoya en el mismo botón del sistema de diseño que "Finalizar turno",
+      // pero en su tamaño compacto.
       const boton = botonesEliminar(fixture.nativeElement)[0];
       expect(boton.classList.contains('ds-btn')).toBe(true);
+      expect(boton.classList.contains('ds-btn--sm')).toBe(true);
     });
 
     it('pide confirmación identificando al empleado antes de eliminar', async () => {
