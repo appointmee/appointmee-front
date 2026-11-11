@@ -4,5 +4,5 @@
   @if (exito()) { <p class="exito" role="status">{{ exito() }}</p> }
   <label>Sucursal ID <input type="number" [(ngModel)]="sucursalId" name="sucursalId" /></label>
   <label>Empleado ID <input type="number" [(ngModel)]="empleadoId" name="empleadoId" /></label>
-  <button type="button" (click)="eliminar()" [disabled]="eliminando()" [attr.aria-busy]="eliminando()">Eliminar</button>
+  <button type="button" (click)="eliminar()" [disabled]="eliminando() || !puedeEliminar()" [attr.aria-busy]="eliminando()">Eliminar</button>
 </section>
