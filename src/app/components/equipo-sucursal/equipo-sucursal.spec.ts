@@ -78,6 +78,39 @@ describe('EquipoSucursal · eliminar empleados', () => {
     return boton!;
   }
 
+  function confirmar(empleadoId: number, respuesta = 'Se eliminó al empleado correctamente'): void {
+    backend
+      .expectOne(
+        (request) =>
+          request.method === 'DELETE' &&
+          request.url.endsWith(`/sucursales/5/empleados/eliminar/${empleadoId}`),
+      )
+      .flush(respuesta);
+    fixture.detectChanges();
+  }
+
+  it('expone el diálogo de confirmación de forma accesible', () => {
+    botonEliminar().click();
+    fixture.detectChanges();
+
+    const dialogo = host().querySelector('[role="dialog"]');
+    expect(dialogo).not.toBeNull();
+    expect(dialogo?.getAttribute('aria-modal')).toBe('true');
+    expect(dialogo?.getAttribute('aria-labelledby')).toBe('eliminar-empleado-titulo');
+    expect(document.activeElement).toBe(dialogo);
+  });
+
+  it('cierra la confirmación con Escape sin eliminar', () => {
+    botonEliminar().click();
+    fixture.detectChanges();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(host().querySelector('[role="dialog"]')).toBeNull();
+    backend.expectNone((request) => request.method === 'DELETE');
+  });
+
   it('pide confirmación y no elimina hasta confirmar', () => {
     botonEliminar().click();
     fixture.detectChanges();
@@ -138,6 +171,40 @@ describe('EquipoSucursal · eliminar empleados', () => {
     expect(textoTarjetas()).not.toContain('Ana');
   });
 
+  it('muestra el vacío al eliminar al último empleado', () => {
+    for (const id of [7, 8]) {
+      botonEliminar().click();
+      fixture.detectChanges();
+      botonPorTexto('Sí, eliminar').click();
+      fixture.detectChanges();
+      confirmar(id);
+    }
+
+    expect(host().textContent).toContain('Todavía no hay profesionales cargados');
+    expect(host().querySelectorAll('.equipo-card')).toHaveLength(0);
+  });
+
+  it('informa sin conexión al intentar eliminar', () => {
+    botonEliminar().click();
+    fixture.detectChanges();
+    botonPorTexto('Sí, eliminar').click();
+    fixture.detectChanges();
+
+    backend
+      .expectOne(
+        (request) =>
+          request.method === 'DELETE' &&
+          request.url.endsWith('/sucursales/5/empleados/eliminar/7'),
+      )
+      .flush(null, { status: 0, statusText: 'Unknown Error' });
+    fixture.detectChanges();
+
+    expect(host().querySelector('.equipo__aviso--error')?.textContent).toContain(
+      'No pudimos conectarnos con el servidor.',
+    );
+    expect(textoTarjetas()).toContain('Ana');
+  });
+
   it('muestra el error inline y conserva al empleado si falla la eliminación', () => {
     botonEliminar().click();
     fixture.detectChanges();
@@ -160,6 +227,26 @@ describe('EquipoSucursal · eliminar empleados', () => {
     );
     expect(textoTarjetas()).toContain('Ana');
     expect(textoTarjetas()).toContain('Pérez');
+  });
+
+  it('avisa cuando el empleado ya no forma parte del equipo', () => {
+    botonEliminar().click();
+    fixture.detectChanges();
+    botonPorTexto('Sí, eliminar').click();
+    fixture.detectChanges();
+
+    backend
+      .expectOne(
+        (request) =>
+          request.method === 'DELETE' &&
+          request.url.endsWith('/sucursales/5/empleados/eliminar/7'),
+      )
+      .flush('No es empleado', { status: 409, statusText: 'Conflict' });
+    fixture.detectChanges();
+
+    expect(host().querySelector('.equipo__aviso--error')?.textContent).toContain(
+      'Ese empleado ya no forma parte del equipo.',
+    );
   });
 
   it('no muestra la acción de eliminar si el usuario no puede gestionar el equipo', () => {

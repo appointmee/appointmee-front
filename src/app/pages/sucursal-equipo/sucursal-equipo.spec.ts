@@ -141,6 +141,18 @@ describe('SucursalEquipo · permisos de eliminación', () => {
     expect(tieneBotonEliminar()).toBe(false);
   });
 
+  it('oculta la acción si falla la consulta de sucursales propias sin romper la pantalla', async () => {
+    await abrir(['EMPLEADOR']);
+
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/listar/propias'))
+      .flush(null, { status: 500, statusText: 'Error' });
+    fixture!.detectChanges();
+
+    expect(tieneBotonEliminar()).toBe(false);
+    expect(html.textContent).toContain('Todo el equipo');
+  });
+
   it('oculta la acción para usuarios que no son empleadores sin consultar sus sucursales', async () => {
     await abrir(['CLIENTE']);
 
