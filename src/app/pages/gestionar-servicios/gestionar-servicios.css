@@ -1,0 +1,71 @@
+.gestionar-servicios {
+  width: min(100% - 2rem, 56rem);
+  margin-inline: auto;
+  padding-block: var(--space-8);
+  color: var(--text);
+}
+
+.gestionar-servicios__volver { color: var(--accent-strong); }
+.gestionar-servicios header { margin-block: var(--space-5); }
+.gestionar-servicios h1 { margin: 0; font-size: var(--font-size-2xl); }
+.gestionar-servicios header p,
+.gestionar-servicios__lista p { color: var(--muted); }
+
+.gestionar-servicios__lista {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.gestionar-servicios__lista li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.gestionar-servicios__lista h2,
+.gestionar-servicios__lista p { margin: 0; }
+.gestionar-servicios__lista p { margin-top: var(--space-2); }
+
+.gestionar-servicios__error,
+.gestionar-servicios__exito,
+.gestionar-servicios__estado {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+}
+
+.gestionar-servicios__error { color: var(--danger); background: var(--surface); border: 1px solid var(--danger); }
+.gestionar-servicios__exito { color: var(--success-light); background: var(--success-soft); }
+.gestionar-servicios__estado { border: 1px solid var(--line); background: var(--surface); }
+
+.gestionar-servicios__fondo {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgb(0 0 0 / 72%);
+}
+
+.gestionar-servicios__dialogo {
+  width: min(100%, 32rem);
+  padding: var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.gestionar-servicios__acciones { display: flex; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-6); }
+
+@media (max-width: 40rem) {
+  .gestionar-servicios__lista li { align-items: stretch; flex-direction: column; }
+  .gestionar-servicios__acciones { flex-direction: column-reverse; }
+}

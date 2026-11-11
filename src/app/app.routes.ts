@@ -175,6 +175,20 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'mis-sucursales/:sucursalId/servicios/gestionar',
+    canActivate: [authGuard],
+    title: 'AppointMee | Administrar servicios',
+    data: {
+      title: 'Administrar servicios',
+      roles: ['EMPLEADOR', 'ADMINISTRADOR'],
+      description: 'Gestioná los servicios disponibles en una sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/gestionar-servicios/gestionar-servicios').then(
+        module => module.GestionarServiciosPage,
+      ),
+  },
+  {
     path: 'mis-sucursales/:sucursalId/turnos',
     canActivate: [authGuard],
     title: 'AppointMee | Turnos de la sucursal',

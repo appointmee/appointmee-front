@@ -33,8 +33,12 @@ export class servicioService {
     return this.http.put<ServicioDTO>(`${this.api.baseUrl}/servicios/${servicioId}`, datos);
   }
 //DELETE
-  eliminar(servicioId: number): Observable<void> {
-    return this.http.delete<void>(`${this.api.baseUrl}/servicios/${servicioId}`);
+  /** Elimina un servicio usando la ruta real del backend y deja el error a la pantalla. */
+  eliminar(servicioId: number): Observable<string> {
+    return this.http.delete(`${this.api.baseUrl}/servicios/eliminar/${servicioId}`, {
+      context: this.contextoSinAvisoGlobal(),
+      responseType: 'text',
+    });
   }
 
   // esto sirve para hacer que el handler global lo ignore

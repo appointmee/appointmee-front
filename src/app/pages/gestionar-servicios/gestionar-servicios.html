@@ -1,0 +1,60 @@
+<section class="gestionar-servicios" aria-labelledby="gestionar-servicios-titulo">
+  <a class="gestionar-servicios__volver" [routerLink]="['/mis-sucursales']">Volver a mis sucursales</a>
+  <header>
+    <h1 id="gestionar-servicios-titulo">Administrar servicios</h1>
+    <p>Revisá los servicios de esta sucursal y eliminá los que ya no ofrecés.</p>
+  </header>
+
+  @if (exito()) { <p class="gestionar-servicios__exito" role="status" aria-live="polite">{{ exito() }}</p> }
+  @if (error()) {
+    <div class="gestionar-servicios__error" role="alert">
+      <p>{{ error() }}</p>
+      @if (sucursalId !== null) {
+        <button dsButton type="button" variant="secondary" [disabled]="cargando()" [attr.aria-busy]="cargando()" (click)="cargar()">
+          {{ cargando() ? 'Reintentando…' : 'Reintentar' }}
+        </button>
+      }
+    </div>
+  }
+
+  @if (cargando()) {
+    <p class="gestionar-servicios__estado" role="status" aria-live="polite" aria-busy="true">Cargando servicios…</p>
+  } @else if (servicios().length === 0 && !error()) {
+    <div class="gestionar-servicios__estado" role="status" aria-live="polite">
+      <h2>No hay servicios para mostrar</h2>
+      <p>Cuando agregues servicios a esta sucursal, aparecerán acá.</p>
+    </div>
+  } @else {
+    <ul class="gestionar-servicios__lista" aria-label="Servicios de la sucursal">
+      @for (servicio of servicios(); track servicio.id) {
+        <li>
+          <div>
+            <h2>{{ servicio.nombre }}</h2>
+            <p>{{ servicio.duracion }} minutos · {{ servicio.descripcion || 'Sin descripción' }}</p>
+          </div>
+          <button dsButton type="button" variant="secondary" [disabled]="eliminandoId() !== null" (click)="pedirConfirmacion(servicio)">
+            Eliminar {{ servicio.nombre }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (pendiente(); as servicio) {
+    <div class="gestionar-servicios__fondo" (click)="cancelar()">
+      <section class="gestionar-servicios__dialogo" role="alertdialog" aria-modal="true"
+        aria-labelledby="confirmar-eliminar-titulo" aria-describedby="confirmar-eliminar-texto"
+        (click)="$event.stopPropagation()">
+        <h2 id="confirmar-eliminar-titulo">¿Eliminar «{{ servicio.nombre }}»?</h2>
+        <p id="confirmar-eliminar-texto">El servicio dejará de estar disponible en esta sucursal.</p>
+        <div class="gestionar-servicios__acciones">
+          <button dsButton type="button" variant="secondary" autofocus [disabled]="eliminandoId() !== null" (click)="cancelar()">Cancelar</button>
+          <button dsButton type="button" variant="primary" [disabled]="eliminandoId() !== null"
+            [attr.aria-busy]="eliminandoId() === servicio.id" (click)="confirmar()">
+            {{ eliminandoId() === servicio.id ? 'Eliminando…' : 'Sí, eliminar' }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+</section>
