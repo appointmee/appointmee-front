@@ -1,0 +1,3 @@
+.mis-turnos { padding: 1rem; }
+.mis-turnos__lista { list-style: none; padding: 0; }
+.mis-turnos__item { display: flex; gap: 1rem; padding: .5rem 0; border-bottom: 1px solid #eee; }

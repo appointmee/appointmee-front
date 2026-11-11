@@ -142,7 +142,7 @@ export const routes: Routes = [
       title: 'Mis Turnos',
       description: 'Consultá y gestioná todos tus turnos en un solo lugar.',
     },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () => import('./pages/mis-turnos/mis-turnos').then((module) => module.MisTurnos),
   },
   {
     path: 'mis-sucursales',

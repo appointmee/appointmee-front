@@ -1,0 +1,29 @@
+<section class="mis-turnos">
+  <header class="mis-turnos__header">
+    <h1>Mis turnos</h1>
+    <p>Consultá y gestioná todos tus turnos en un solo lugar.</p>
+  </header>
+
+  @if (cargando()) {
+    <p class="mis-turnos__estado" role="status" aria-live="polite">Cargando turnos…</p>
+  } @else if (error()) {
+    <div class="mis-turnos__error" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" (click)="reintentar()" [disabled]="reintentando()" [attr.aria-busy]="reintentando()">
+        Reintentar
+      </button>
+    </div>
+  } @else if (turnos().length === 0) {
+    <p class="mis-turnos__estado">No tenés turnos registrados.</p>
+  } @else {
+    <ul class="mis-turnos__lista">
+      @for (turno of turnos(); track turno.id) {
+        <li class="mis-turnos__item">
+          <span class="mis-turnos__servicio">{{ turno.nombreServicio }}</span>
+          <span class="mis-turnos__fecha">{{ turno.fechaTurno }}</span>
+          <span class="mis-turnos__estado-turno">{{ turno.estadoTurno }}</span>
+        </li>
+      }
+    </ul>
+  }
+</section>
