@@ -23,10 +23,10 @@ describe('authGuard', () => {
       providers: [provideRouter([]), { provide: authService, useValue: auth }],
     });
   });
-  async function ejecutar(roles?: string[]) {
+  async function ejecutar(roles?: string[], rolesExcluidos?: string[]) {
     const result = TestBed.runInInjectionContext(() =>
       authGuard(
-        { data: { roles } } as unknown as ActivatedRouteSnapshot,
+        { data: { roles, rolesExcluidos } } as unknown as ActivatedRouteSnapshot,
         { url: '/admin' } as RouterStateSnapshot,
       ),
     );
@@ -53,6 +53,20 @@ describe('authGuard', () => {
     auth.validarToken.mockReturnValue(of({}));
     auth.tieneAlgunRol.mockReturnValue(true);
     expect(await ejecutar(['ADMINISTRADOR'])).toBe(true);
+  });
+  it('rechaza el acceso cuando el usuario tiene un rol excluido', async () => {
+    auth.getAccessToken.mockReturnValue('access');
+    auth.validarToken.mockReturnValue(of({}));
+    auth.tieneAlgunRol.mockReturnValue(true);
+    expect(((await ejecutar(undefined, ['ADMINISTRADOR'])) as UrlTree).toString()).toBe(
+      '/error?status=403',
+    );
+  });
+  it('permite el acceso cuando no tiene el rol excluido', async () => {
+    auth.getAccessToken.mockReturnValue('access');
+    auth.validarToken.mockReturnValue(of({}));
+    auth.tieneAlgunRol.mockReturnValue(false);
+    expect(await ejecutar(undefined, ['ADMINISTRADOR'])).toBe(true);
   });
   it('entiende el 401 normalizado por el interceptor de errores', async () => {
     auth.getAccessToken.mockReturnValue('access');

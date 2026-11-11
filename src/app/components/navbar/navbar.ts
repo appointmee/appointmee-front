@@ -22,6 +22,8 @@ interface NavItem {
   readonly exact: boolean;
   /** Si se define, el acceso solo aparece con alguno de estos roles (criterio 4 de US-HOME-06). */
   readonly roles?: readonly string[];
+  /** Si se define, el acceso se oculta cuando el usuario tiene alguno de estos roles. */
+  readonly rolesExcluidos?: readonly string[];
 }
 
 const ICONS = {
@@ -93,7 +95,13 @@ export class Navbar {
   protected readonly linksBase: readonly NavItem[] = [
     { label: 'Home', path: '/', icon: ICONS.home, exact: true },
     { label: 'Sucursales', path: '/sucursales', icon: ICONS.store, exact: false },
-    { label: 'Mis Turnos', path: '/mis-turnos', icon: ICONS.calendar, exact: false },
+    {
+      label: 'Mis Turnos',
+      path: '/mis-turnos',
+      icon: ICONS.calendar,
+      exact: false,
+      rolesExcluidos: ['ADMINISTRADOR'],
+    },
   ];
 
   /** Disponibles solo con el rol correspondiente (criterio 3, 4). */
@@ -110,11 +118,18 @@ export class Navbar {
   ];
 
   protected readonly primaryLinks = computed(() => [
-    ...this.linksBase,
+    ...this.linksBase.filter((link) => !this.accesoExcluido(link)),
     ...this.linksPorRol.filter((link) =>
       this.auth.tieneAlgunRol(...(link.roles ?? [])),
     ),
   ]);
+
+  private accesoExcluido(link: NavItem): boolean {
+    return (
+      !!link.rolesExcluidos?.length &&
+      this.auth.tieneAlgunRol(...link.rolesExcluidos)
+    );
+  }
 
   constructor() {
     this.router.events

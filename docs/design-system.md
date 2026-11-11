@@ -35,6 +35,8 @@ Combinaciones usadas y verificadas (texto normal >= 4,5:1; texto grande >= 3:1):
 | `--muted` sobre `--surface` | 7,35:1 | ✅ | ✅ |
 | `--accent-strong` sobre `--page-bg` | 14,47:1 | ✅ | ✅ |
 | `--success` sobre `--surface` | 9,00:1 | ✅ | ✅ |
+| `--success-light` sobre `--surface` | 12,00:1 | ✅ | ✅ |
+| `--success-strong` sobre `--surface` | 8,31:1 | ✅ | ✅ |
 | `--info` sobre `--surface` | 7,03:1 | ✅ | ✅ |
 | `--danger` sobre `--surface` | 7,49:1 | ✅ | ✅ |
 | `#07090d` sobre `--accent` (botón primario) | 12,51:1 | ✅ | ✅ |
@@ -76,7 +78,7 @@ Los tokens y el foco visible son globales. Las tarjetas, avisos y diálogos espe
 - Checkbox: `[checked]`, `[value]` y `(checkedChange)`; admite `[(checked)]`.
 - Radio: indicar siempre `name` por grupo y un `value` por opción. Vincular `[checked]` y `(valueChange)` al estado de la pantalla. Usar nombres diferentes para grupos independientes y un `fieldset` con `legend`.
 - Card interactiva: `interactive` agrega rol y foco; `(activated)` funciona con clic, Enter y Espacio. Para navegación, preferir un enlace nativo y evitar controles anidados dentro de una card que actúe como botón.
-- Modal: proporcionar `ariaLabel` o `ariaLabelledby`, controlar `[open]` y responder a `(close)`. El foco queda dentro; Escape solicita el cierre. El fondo se vuelve `inert` y se restaura al cerrar o destruir el modal.
+- Modal: proporcionar `ariaLabel` o `ariaLabelledby`, controlar `[open]` y responder a `(close)`. El foco queda dentro; Escape solicita el cierre. El fondo se vuelve `inert`, el backdrop aplica blur y el panel tiene scroll interno. `maxWidth` permite ampliar el panel (por defecto `500px`) sin duplicar estilos.
 - Breakpoints: `--bp-*` documenta los valores comunes. Las variables CSS no se sustituyen directamente en condiciones `@media`; usar los valores documentados.
 
 ### Verificación

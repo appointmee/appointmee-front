@@ -19,13 +19,20 @@ export const authGuard: CanActivateFn = (route, state) => {
   if (!navigator.onLine) return of(true);
 
 
-  // Primero validamos la sesión y después los roles de la ruta.
+  // Primero validamos la sesión y después los roles de la ruta. Además de los
+  // roles requeridos, una ruta puede excluir roles concretos (por ejemplo,
+  // Mis Turnos no está disponible para administradores).
 
   return auth.validarToken().pipe(
     map(() => {
       const roles = route.data['roles'] as string[] | undefined;
+      const rolesExcluidos = route.data['rolesExcluidos'] as string[] | undefined;
 
-      return !roles?.length || auth.tieneAlgunRol(...roles)
+      const cumpleRolesRequeridos = !roles?.length || auth.tieneAlgunRol(...roles);
+      const tieneRolExcluido =
+        !!rolesExcluidos?.length && auth.tieneAlgunRol(...rolesExcluidos);
+
+      return cumpleRolesRequeridos && !tieneRolExcluido
         ? true
         : router.createUrlTree(['/error'], { queryParams: { status: 403 } });
     }),
