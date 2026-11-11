@@ -2,6 +2,13 @@
   <h1>Eliminar sucursal</h1>
   @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
   @if (exito()) { <p class="exito" role="status">{{ exito() }}</p> }
-  <label>Sucursal ID <input type="number" [(ngModel)]="sucursalId" name="sucursalId" /></label>
-  <button type="button" (click)="eliminar()" [disabled]="eliminando() || !puedeEliminar()" [attr.aria-busy]="eliminando()">Eliminar</button>
+  @if (cargando()) { <p role="status">Cargando…</p> }
+  @else if (sucursales().length === 0) { <p>No hay sucursales.</p> }
+  @else {
+    <ul>
+      @for (s of sucursales(); track s.id) {
+        <li>{{ s.nombre }} <button type="button" (click)="eliminar(s.id)" [disabled]="eliminando() || !puedeEliminar()" [attr.aria-busy]="eliminando()">Eliminar</button></li>
+      }
+    </ul>
+  }
 </section>
