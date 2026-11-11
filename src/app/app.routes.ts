@@ -349,6 +349,18 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/registrarme/registrarme').then(module => module.Registrarme),
   },
   {
+    path: 'admin/usuarios',
+    canActivate: [authGuard],
+    title: 'AppointMee | Gestión de usuarios',
+    data: {
+      title: 'Gestión de usuarios',
+      roles: ['ADMINISTRADOR'],
+      description: 'Panel para listar, filtrar, ver detalle y eliminar usuarios.',
+    },
+    loadComponent: () =>
+      import('./pages/admin-usuarios/admin-usuarios').then((module) => module.AdminUsuarios),
+  },
+  {
     path: 'admin',
     canActivate: [authGuard],
     title: 'AppointMee | Administración',

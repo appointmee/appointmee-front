@@ -1,0 +1,189 @@
+<section class="admin-usuarios" aria-labelledby="admin-usuarios-titulo">
+  <div class="admin-usuarios__inner">
+    <header class="admin-usuarios__header">
+      <div>
+        <a routerLink="/admin" class="volver">← Volver a administración</a>
+        <span class="eyebrow"><span class="eyebrow__dot" aria-hidden="true"></span>Panel interno</span>
+        <h1 id="admin-usuarios-titulo">Gestión de usuarios</h1>
+        <p>Listá, filtrá, consultá el detalle y eliminá usuarios del sistema.</p>
+      </div>
+    </header>
+
+    @if (exito()) {
+      <div class="aviso aviso--exito" role="status" aria-live="polite">
+        <p>{{ exito() }}</p>
+      </div>
+    }
+
+    <section class="panel" aria-labelledby="filtros-titulo">
+      <header class="panel__cabecera">
+        <div>
+          <span class="panel__eyebrow">Búsqueda</span>
+          <h2 id="filtros-titulo">Filtros</h2>
+        </div>
+      </header>
+
+      <form class="filtros" (submit)="$event.preventDefault(); aplicarFiltros()">
+        <div class="campo">
+          <label for="filtro-nombre">Nombre</label>
+          <input
+            id="filtro-nombre"
+            type="text"
+            [value]="filtroNombre()"
+            (input)="filtroNombre.set($any($event.target).value)"
+            autocomplete="off"
+          />
+        </div>
+        <div class="campo">
+          <label for="filtro-apellido">Apellido</label>
+          <input
+            id="filtro-apellido"
+            type="text"
+            [value]="filtroApellido()"
+            (input)="filtroApellido.set($any($event.target).value)"
+            autocomplete="off"
+          />
+        </div>
+        <div class="campo">
+          <label for="filtro-activo">Estado</label>
+          <select
+            id="filtro-activo"
+            [value]="filtroActivo()"
+            (change)="filtroActivo.set($any($event.target).value)"
+          >
+            <option value="todos">Todos</option>
+            <option value="activos">Activos</option>
+            <option value="inactivos">Inactivos</option>
+          </select>
+        </div>
+        <div class="filtros__acciones">
+          <button dsButton type="submit">Aplicar filtros</button>
+          <button dsButton type="button" (click)="limpiarFiltros()">Limpiar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="lista-titulo">
+      <header class="panel__cabecera">
+        <div>
+          <span class="panel__eyebrow">Usuarios</span>
+          <h2 id="lista-titulo">Listado</h2>
+        </div>
+        <div class="panel__acciones">
+          <span class="panel__contador" [attr.aria-label]="total() + ' usuarios'">{{ total() }} {{ total() === 1 ? 'usuario' : 'usuarios' }}</span>
+          <button dsButton type="button" [disabled]="reintentando()" [attr.aria-busy]="reintentando()" (click)="reintentar()">
+            {{ reintentando() ? 'Actualizando…' : 'Actualizar' }}
+          </button>
+        </div>
+      </header>
+
+      @if (cargando()) {
+        <div class="lista" aria-busy="true" aria-live="polite">
+          <span class="sr-only">Cargando usuarios…</span>
+          @for (item of [1, 2, 3, 4, 5]; track item) {
+            <div class="skeleton-item" aria-hidden="true">
+              <span class="skeleton skeleton--line"></span>
+              <span class="skeleton skeleton--line skeleton--short"></span>
+            </div>
+          }
+        </div>
+      } @else if (error() && usuarios().length === 0) {
+        <div class="estado estado--error" role="alert">
+          <h3>No pudimos cargar los usuarios</h3>
+          <p>{{ error() }}</p>
+          <button dsButton type="button" [disabled]="reintentando()" [attr.aria-busy]="reintentando()" (click)="reintentar()">
+            {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+          </button>
+        </div>
+      } @else {
+        @if (error()) {
+          <div class="aviso aviso--error" role="alert">
+            <p>{{ error() }}</p>
+            <button dsButton type="button" [disabled]="reintentando()" (click)="reintentar()">
+              {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+            </button>
+          </div>
+        }
+
+        @if (usuarios().length === 0) {
+          <div class="estado estado--vacio" role="status">
+            <h3>No se encontraron usuarios</h3>
+            <p>Probá ajustar los filtros o actualizá el listado.</p>
+          </div>
+        } @else {
+          <ul class="lista" aria-live="polite">
+            @for (usuario of usuarios(); track usuario.id) {
+              <li class="usuario-item">
+                <div class="usuario-resumen">
+                  <div class="usuario-resumen__info">
+                    <p class="usuario-resumen__nombre">{{ usuario.nombre }} {{ usuario.apellido }}</p>
+                    <p class="usuario-resumen__meta">ID: {{ usuario.id }} ·
+                      <span [class.estado-activo]="usuario.estado" [class.estado-inactivo]="!usuario.estado">
+                        {{ usuario.estado ? 'Activo' : 'Inactivo' }}
+                      </span>
+                    </p>
+                  </div>
+                  <div class="usuario-resumen__acciones">
+                    <button dsButton type="button" (click)="alternar(usuario.id)" [attr.aria-expanded]="estaExpandido(usuario.id)">
+                      {{ estaExpandido(usuario.id) ? 'Ocultar detalle' : 'Ver detalle' }}
+                    </button>
+                    <button dsButton type="button" (click)="pedirConfirmacionEliminar(usuario.id)" [disabled]="eliminandoDe(usuario.id)">
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+
+                @if (confirmarEliminar() === usuario.id) {
+                  <div class="confirmacion" role="alertdialog" aria-label="Confirmar eliminación">
+                    <p>¿Eliminar al usuario <strong>{{ usuario.nombre }} {{ usuario.apellido }}</strong> (ID {{ usuario.id }})? Esta acción no se puede deshacer desde aquí.</p>
+                    @if (errorEliminarDe(usuario.id)) {
+                      <p class="error-inline" role="alert">{{ errorEliminarDe(usuario.id) }}</p>
+                    }
+                    <div class="confirmacion__acciones">
+                      <button dsButton type="button" [disabled]="eliminandoDe(usuario.id)" [attr.aria-busy]="eliminandoDe(usuario.id)" (click)="confirmarEliminarUsuario(usuario.id)">
+                        {{ eliminandoDe(usuario.id) ? 'Eliminando…' : 'Confirmar eliminación' }}
+                      </button>
+                      <button dsButton type="button" [disabled]="eliminandoDe(usuario.id)" (click)="cancelarEliminar()">Cancelar</button>
+                    </div>
+                  </div>
+                } @else if (errorEliminarDe(usuario.id)) {
+                  <p class="error-inline" role="alert">{{ errorEliminarDe(usuario.id) }}</p>
+                }
+
+                @if (estaExpandido(usuario.id)) {
+                  <div class="detalle" aria-live="polite">
+                    @if (cargandoDetalleDe(usuario.id)) {
+                      <p class="detalle__cargando" aria-busy="true">Cargando detalle…</p>
+                    } @else if (errorDetalleDe(usuario.id)) {
+                      <div class="estado estado--error" role="alert">
+                        <p>{{ errorDetalleDe(usuario.id) }}</p>
+                        <button dsButton type="button" (click)="reintentarDetalle(usuario.id)">Reintentar</button>
+                      </div>
+                    } @else if (detalleDe(usuario.id); as detalle) {
+                      <dl class="detalle__grid">
+                        <div><dt>ID</dt><dd>{{ detalle.id }}</dd></div>
+                        <div><dt>Nombre</dt><dd>{{ detalle.nombre }}</dd></div>
+                        <div><dt>Apellido</dt><dd>{{ detalle.apellido }}</dd></div>
+                        <div><dt>Email</dt><dd>{{ detalle.email }}</dd></div>
+                        <div><dt>Fecha de creación</dt><dd>{{ detalle.fechaCreacion }}</dd></div>
+                        <div><dt>Roles</dt><dd>{{ detalle.roles.join(', ') || '—' }}</dd></div>
+                        <div><dt>Sucursales (empleado)</dt><dd>{{ detalle.sucursalesEmpleado.length }}</dd></div>
+                      </dl>
+                      @if (detalle.sucursalesEmpleado.length > 0) {
+                        <ul class="detalle__sucursales">
+                          @for (s of detalle.sucursalesEmpleado; track s.id) {
+                            <li>{{ s.nombre }} ({{ s.categoria }})</li>
+                          }
+                        </ul>
+                      }
+                    }
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      }
+    </section>
+  </div>
+</section>
