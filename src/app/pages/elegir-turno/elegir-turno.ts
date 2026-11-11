@@ -20,6 +20,7 @@ import { SucursalDetalleDTO } from '../../models/sucursal';
 import { DisponibilidadDTO, TurnoMiniDTO } from '../../models/turno';
 import { authService } from '../../services/auth-service';
 import { empleadoService } from '../../services/empleado-service';
+import { reservaContextoService } from '../../services/reserva-contexto-service';
 import { servicioService } from '../../services/servicio-service';
 import { sucursalService } from '../../services/sucursal-service';
 import { turnoService } from '../../services/turno-service';
@@ -92,6 +93,7 @@ export class ElegirTurno {
   private readonly serviciosApi = inject(servicioService);
   private readonly empleadosApi = inject(empleadoService);
   private readonly turnosApi = inject(turnoService);
+  private readonly reservaContexto = inject(reservaContextoService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly sucursalId = signal<number | null>(null);
@@ -116,6 +118,7 @@ export class ElegirTurno {
   protected readonly sinConexion = signal(!this.hayConexion());
   protected readonly loginAbierto = signal(false);
   protected readonly navegando = signal(false);
+  protected readonly contextoInvalido = signal(false);
 
   private readonly recargarContexto = new Subject<void>();
   private readonly recargarDisponibilidad = new Subject<void>();
@@ -649,8 +652,10 @@ export class ElegirTurno {
         }
 
         if (servicios.ok && this.servicio() === null) {
+          this.contextoInvalido.set(true);
+          this.reservaContexto.limpiar();
           this.errorContexto.set(
-            'El servicio seleccionado ya no está disponible. Volvé a elegir un servicio para continuar.',
+            'Este servicio no pertenece a la sucursal o ya no está disponible.',
           );
           return;
         }

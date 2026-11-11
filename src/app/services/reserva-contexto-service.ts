@@ -139,7 +139,7 @@ export class reservaContextoService {
       return true;
     }
     if (segmentos.length === 5) {
-      return segmentos[4] === 'turnos';
+      return segmentos[4] === 'turnos' || segmentos[4] === 'empleados';
     }
     return false;
   }

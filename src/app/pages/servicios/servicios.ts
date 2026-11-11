@@ -19,6 +19,7 @@ import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
 
 import { ServicioDTO } from '../../models/servicio';
 import { SucursalDetalleDTO } from '../../models/sucursal';
+import { reservaContextoService } from '../../services/reserva-contexto-service';
 import { servicioService } from '../../services/servicio-service';
 import { sucursalService } from '../../services/sucursal-service';
 
@@ -56,6 +57,7 @@ export class Servicios {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly servicioService = inject(servicioService);
   private readonly sucursalService = inject(sucursalService);
+  private readonly reservaContexto = inject(reservaContextoService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Acepta /sucursal/:sucursalId/servicios y /servicios?sucursalId=… */
@@ -216,6 +218,15 @@ export class Servicios {
       return;
     }
 
+    // Restaura la selección previa desde el contexto temporal si sigue vigente
+    // y la URL no pide un servicio concreto.
+    if (this.servicioIdUrl === null) {
+      const contexto = this.reservaContexto.obtener();
+      if (contexto !== null && contexto.sucursalId === idSucursal && contexto.servicioId !== null) {
+        this.seleccionadoId.set(contexto.servicioId);
+      }
+    }
+
     this.reintento
       .pipe(
         startWith(undefined as void),
@@ -296,6 +307,9 @@ export class Servicios {
     }
 
     this.seleccionadoId.set(servicio.id);
+    if (this.sucursalId !== null) {
+      this.reservaContexto.guardar(this.sucursalId, servicio.id);
+    }
   }
 
   protected estaSeleccionado(servicio: ServicioDTO): boolean {
@@ -367,6 +381,7 @@ export class Servicios {
       return;
     }
 
+    this.reservaContexto.guardar(this.sucursalId, servicio.id);
     this.navegando.set(true);
     this.router
       .navigate(['/sucursal', this.sucursalId, 'servicios', servicio.id, 'empleados'])
@@ -562,6 +577,7 @@ export class Servicios {
     }
 
     if (error.status === 404) {
+      this.reservaContexto.limpiar();
       this.error.set('No encontramos la sucursal solicitada.');
       return;
     }
