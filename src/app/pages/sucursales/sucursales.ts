@@ -141,7 +141,7 @@ export class Sucursales {
       }
       const categoria = this.categoriasCargadas()
         ? this.validarCategoria(qp['categoria'] ?? null)
-        : null;
+        : this.selectedCategory();
       if (categoria !== this.selectedCategory()) {
         this.selectedCategory.set(categoria);
       }
@@ -272,7 +272,8 @@ export class Sucursales {
     opciones: { actualizarUrl?: boolean; forzar?: boolean } = {},
   ): void {
     const { actualizarUrl = true, forzar = false } = opciones;
-    const termino = terminoDeBusqueda(this.searchTerm());
+    const raw = normalizarTerminoBusqueda(this.searchTerm());
+    const termino = /^\d+$/.test(raw) ? raw : (raw.length >= MIN_CARACTERES_BUSQUEDA ? raw : '');
     const categoria = this.selectedCategory();
     const clave = this.claveSolicitud(termino, categoria);
 
