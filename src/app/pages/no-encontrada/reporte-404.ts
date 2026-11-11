@@ -30,10 +30,7 @@ export class Reporte404 {
 
   private apiUrl(): string | null {
     if (typeof window === 'undefined') return null;
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') return this.backend.baseUrl;
-    // IMPORTANTE: si cambia la URL pública del backend, actualizar esta URL.
-    return 'https://tiny-files-lead.loca.lt';
+    return this.backend.baseUrl;
   }
 
   private referrerSinQuery(referrer: string | null): string | null {
