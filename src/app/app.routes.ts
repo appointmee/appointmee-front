@@ -3,6 +3,14 @@ import { authGuard } from './guards/auth-guard';
 import { verificationGuard } from './guards/verification-guard';
 import { guestGuard } from './guards/guest-guard';
 
+
+/*
+
+  Usamos loadcomponent: en vez de component: porque
+  nos permite cargar las cosas solo cuando se necesitan
+
+*/
+
 export const routes: Routes = [
   {
     path: '',
@@ -74,6 +82,25 @@ export const routes: Routes = [
       import('./pages/servicios/servicios').then((module) => module.Servicios),
   },
   {
+    path: 'sucursal/:sucursalId/profesionales',
+    canActivate: [authGuard],
+    title: 'AppointMee | Elegir profesional',
+    data: { title: 'Elegir profesional', description: 'Elegí quién te atenderá.' },
+    loadComponent: () =>
+      import('./pages/profesionales-reserva/profesionales-reserva').then(
+        (module) => module.ProfesionalesReserva,
+      ),
+  },
+  {
+    path: 'reserva/confirmada',
+    canActivate: [authGuard],
+    title: 'AppointMee | Reserva confirmada',
+    loadComponent: () =>
+      import('./pages/reserva-confirmada/reserva-confirmada').then(
+        (module) => module.ReservaConfirmada,
+      ),
+  },
+  {
     path: 'servicios',
     title: 'AppointMee | Seleccionar servicio',
     data: {
@@ -100,7 +127,6 @@ export const routes: Routes = [
       ),
   },
   {
-    // El detalle es público: el CTA decide si inicia sesión antes de reservar.
     path: 'sucursal/:id',
     title: 'AppointMee | Sucursal',
     loadComponent: () =>

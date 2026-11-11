@@ -81,12 +81,13 @@
     <header class="detalle__hero">
       <img
         class="detalle__hero-img"
-        [src]="s.fotoPerfil || placeholderImage"
-        [alt]="'Fachada de ' + s.nombre"
-        decoding="async"
+        [src]="imagenPrincipal()"
+        [alt]="altImagenPrincipal()"
+        width="1600"
+        height="700"
         fetchpriority="high"
-        referrerpolicy="no-referrer"
-        (error)="onImageError($event)"
+        decoding="async"
+        (error)="onImageError(imagenPrincipal())"
       />
       <div class="detalle__hero-overlay" aria-hidden="true"></div>
 
@@ -158,7 +159,41 @@
           }
         </div>
       </div>
+
+      @if (imagenesGaleria().length > 1) {
+        <div
+          class="detalle__galeria"
+          role="group"
+          [attr.aria-label]="'Galería de imágenes de ' + s.nombre"
+          (keydown)="moverGaleria($event)"
+        >
+          @for (imagen of imagenesGaleria(); track imagen.url; let indice = $index) {
+            <button
+              class="detalle__miniatura"
+              type="button"
+              [class.detalle__miniatura--activa]="imagenPrincipal() === imagen.url"
+              [attr.aria-label]="'Mostrar ' + imagen.alt + ' (' + (indice + 1) + ' de ' + imagenesGaleria().length + ')'"
+              [attr.aria-pressed]="imagenPrincipal() === imagen.url"
+              (click)="seleccionarImagen(imagen.url)"
+            >
+              <img
+                [src]="imagen.url"
+                [alt]="imagen.alt"
+                width="160"
+                height="100"
+                loading="lazy"
+                decoding="async"
+                (error)="onImageError(imagen.url)"
+              />
+            </button>
+          }
+        </div>
+      }
     </header>
+
+    @if (avisoReserva()) {
+      <p class="detalle__reserva-aviso" role="status">{{ avisoReserva() }}</p>
+    }
 
     <div class="detalle__inner">
       <div class="detalle__grid">

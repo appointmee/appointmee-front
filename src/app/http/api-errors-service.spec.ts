@@ -11,6 +11,8 @@ import { apiErrorsService, apiErrorInterceptor } from './api-errors-service';
 @Component({ standalone: true, template: '' })
 class TestRoute {}
 
+// tests unitarios de apiErrorsService y apiErrorInterceptor
+
 describe('apiErrorsService', () => {
   let errors: apiErrorsService;
 

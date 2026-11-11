@@ -5,21 +5,27 @@ import { Component } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 import { verificacionPendienteService } from '../services/verificacion-pendiente-service';
 import { authService } from '../services/auth-service';
+import { verificacionService } from '../services/verificacion-service';
 import { backendService } from '../services/backend-service';
 import { apiErrorInterceptor } from '../http/api-errors-service';
 import { authInterceptor } from './auth-interceptor';
 
 @Component({ template: '' })
-class TestPage {}
+class TestPage { }
+
+/// test unitario de autenticación (authService)
+
 
 describe('Autenticación e interceptor', () => {
   let API_URL: string;
   let http: HttpClient;
   let backend: HttpTestingController;
   let auth: authService;
+  let verificacion: verificacionService;
   let router: Router;
   const perfil = { id: 1, roles: ['CLIENTE'], fotoPerfil: null };
   const tokens = { token: 'access-nuevo', refreshToken: 'refresh-nuevo', expiresIn: 900 };
+
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({
@@ -37,16 +43,20 @@ describe('Autenticación e interceptor', () => {
     http = TestBed.inject(HttpClient);
     backend = TestBed.inject(HttpTestingController);
     auth = TestBed.inject(authService);
+    verificacion = TestBed.inject(verificacionService);
     router = TestBed.inject(Router);
   });
+
   afterEach(() => {
     backend.verify();
     localStorage.clear();
   });
+
   function sesion() {
     localStorage.setItem('token', 'access-viejo');
     localStorage.setItem('refreshToken', 'refresh-viejo');
   }
+
   function rechazar(url: string) {
     backend.expectOne(url).flush({}, { status: 401, statusText: 'Unauthorized' });
   }
@@ -91,11 +101,12 @@ describe('Autenticación e interceptor', () => {
     expect(auth.perfil()?.email).toBe('ana@example.com');
     expect(localStorage.getItem('refreshToken')).toBe('refresh-nuevo');
   });
+
   it('no envía tokens a terceros ni a endpoints públicos', () => {
     sesion();
     for (const url of [
       'https://example.com/data',
-      `${API_URL}.example.com/data`,
+      'http://localhost.example.com:8080/data',
       `${API_URL}/auth/login`,
       `${API_URL}/sucursales/listar/filtrar`,
       `${API_URL}/servicios/listar/sucursal/7`,
@@ -108,6 +119,7 @@ describe('Autenticación e interceptor', () => {
       request.flush({});
     }
   });
+
   it('dos respuestas 401 comparten un solo refresh y reintentan con el nuevo access', () => {
     sesion();
     http.get(`${API_URL}/uno`).subscribe();
@@ -125,6 +137,7 @@ describe('Autenticación e interceptor', () => {
     }
     expect(localStorage.getItem('refreshToken')).toBe('refresh-nuevo');
   });
+
   it('un 401 tardío usa el access ya renovado sin rotar de nuevo', () => {
     sesion();
     http.get(`${API_URL}/uno`).subscribe();
@@ -140,6 +153,7 @@ describe('Autenticación e interceptor', () => {
     expect(retry.request.headers.get('Authorization')).toBe('Bearer access-nuevo');
     retry.flush({});
   });
+
   it('refresh rechazado limpia la sesión y conserva returnTo', async () => {
     sesion();
     await router.navigateByUrl('/private?tab=history');
@@ -152,6 +166,7 @@ describe('Autenticación e interceptor', () => {
     expect(router.url).toContain('/login?');
     expect(router.url).toContain('returnTo=%2Fprivate%3Ftab%3Dhistory');
   });
+
   it('un fallo de red del refresh conserva las credenciales', () => {
     sesion();
     http.get(`${API_URL}/privado`).subscribe({ error: () => undefined });
@@ -160,6 +175,7 @@ describe('Autenticación e interceptor', () => {
     expect(localStorage.getItem('refreshToken')).toBe('refresh-viejo');
     expect(localStorage.getItem('token')).toBe('access-viejo');
   });
+
   it('restaura desde refresh cuando falta el access', () => {
     localStorage.setItem('refreshToken', 'refresh-viejo');
     auth.inicializar().subscribe();
@@ -168,6 +184,7 @@ describe('Autenticación e interceptor', () => {
     backend.expectOne(`${API_URL}/usuarios/me`).flush(perfil);
     expect(auth.autenticado()).toBe(true);
   });
+
   it('logout llama al servidor y limpia la sesión', () => {
     sesion();
     auth.logout().subscribe();
@@ -177,6 +194,7 @@ describe('Autenticación e interceptor', () => {
     expect(auth.visitante()).toBe(true);
     expect(localStorage.getItem('refreshToken')).toBeNull();
   });
+
   it('logout con access vencido renueva antes de revocar en el servidor', () => {
     sesion();
     auth.logout().subscribe();
@@ -188,6 +206,7 @@ describe('Autenticación e interceptor', () => {
     expect(localStorage.getItem('token')).toBeNull();
     expect(localStorage.getItem('refreshToken')).toBeNull();
   });
+
   it('un perfil tardío no revive una sesión cerrada', () => {
     sesion();
     auth.validarToken().subscribe({ error: () => undefined });
@@ -196,23 +215,25 @@ describe('Autenticación e interceptor', () => {
     me.flush(perfil);
     expect(auth.autenticado()).toBe(false);
   });
+
   it('una petición anónima no intenta refresh ni fuerza navegación', () => {
     http.get(`${API_URL}/publico`).subscribe({ error: () => undefined });
     rechazar(`${API_URL}/publico`);
     backend.expectNone(`${API_URL}/auth/refresh`);
     expect(router.url).toBe('/');
   });
+
   it('los métodos de verificación son públicos y usan el contrato del backend', () => {
     sesion();
     TestBed.inject(verificacionPendienteService).guardarEmail('ana@example.com', 'ticket-prueba');
-    auth.solicitarVerificacion('ana@example.com').subscribe();
+    verificacion.solicitarVerificacion('ana@example.com').subscribe();
     const envio = backend.expectOne(`${API_URL}/auth/send-verification`);
     expect(envio.request.method).toBe('POST');
     expect(envio.request.body).toEqual({ email: 'ana@example.com', reenviar: true });
     expect(envio.request.headers.get('X-Verification-Token')).toBe('ticket-prueba');
     expect(envio.request.headers.has('Authorization')).toBe(false);
     envio.flush({ verificada: false, enviado: true, enviadoAhora: true, retryAfterSeconds: 15, attemptsRemaining: 5, expiresInSeconds: 300 }, { status: 202, statusText: 'Accepted' });
-    auth.verificarEmail('ana@example.com', '012345').subscribe();
+    verificacion.verificarEmail('ana@example.com', '012345').subscribe();
     const confirmacion = backend.expectOne(`${API_URL}/auth/verify-email`);
     expect(confirmacion.request.body).toEqual({ email: 'ana@example.com', codigo: '012345' });
     expect(confirmacion.request.headers.has('Authorization')).toBe(false);
@@ -225,7 +246,7 @@ describe('Autenticación e interceptor', () => {
   it('recupera una confirmación aplicada si se perdió su respuesta, sin decir código inválido', () => {
     const pending = TestBed.inject(verificacionPendienteService); pending.guardarEmail('ana@example.com', 'ticket');
     let exito = false;
-    auth.verificarEmail('ana@example.com', '012345').subscribe(() => { exito = true; });
+    verificacion.verificarEmail('ana@example.com', '012345').subscribe(() => { exito = true; });
     backend.expectOne(`${API_URL}/auth/verify-email`).error(new ProgressEvent('error'));
     const status = backend.expectOne(`${API_URL}/auth/verification-status`);
     expect(status.request.headers.get('X-Verification-Token')).toBe('ticket');
@@ -238,7 +259,7 @@ describe('Autenticación e interceptor', () => {
 
   it('una respuesta incompleta no guarda tokens ni marca autenticación antes de recuperarla', () => {
     TestBed.inject(verificacionPendienteService).guardarEmail('ana@example.com', 'ticket');
-    auth.verificarEmail('ana@example.com', '012345').subscribe({ error: () => undefined });
+    verificacion.verificarEmail('ana@example.com', '012345').subscribe({ error: () => undefined });
     backend.expectOne(`${API_URL}/auth/verify-email`).flush({ message: 'ok' });
     expect(localStorage.getItem('token')).toBeNull(); expect(auth.autenticado()).toBe(false);
     backend.expectOne(`${API_URL}/auth/verification-status`).flush({ verificada: false, enviado: true, enviadoAhora: false, retryAfterSeconds: 10, attemptsRemaining: 5, expiresInSeconds: 250 });
@@ -247,7 +268,7 @@ describe('Autenticación e interceptor', () => {
 
   it('cancelar mientras verifica no revive una sesión al llegar una respuesta tardía', () => {
     const pending = TestBed.inject(verificacionPendienteService); pending.guardarEmail('ana@example.com', 'ticket');
-    auth.verificarEmail('ana@example.com', '012345').subscribe({ error: () => undefined });
+    verificacion.verificarEmail('ana@example.com', '012345').subscribe({ error: () => undefined });
     pending.limpiar();
     backend.expectOne(`${API_URL}/auth/verify-email`).flush({ ...tokens, accessToken: tokens.token, message: 'ok', usuario: perfil });
     expect(auth.autenticado()).toBe(false); expect(localStorage.getItem('token')).toBeNull();

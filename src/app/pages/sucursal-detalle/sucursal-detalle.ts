@@ -65,10 +65,17 @@ export class SucursalDetalle {
   protected readonly sinConexion = signal(false);
   protected readonly reintentando = signal(false);
   protected readonly descripcionExpandida = signal(false);
+  protected readonly imagenSeleccionada = signal<string | null>(null);
+  private readonly imagenesFallidas = signal<ReadonlySet<string>>(new Set());
   /** Bloquea el CTA mientras el router resuelve la navegación. */
   protected readonly navegando = signal(false);
   /** Mensaje específico para una sesión autenticada sin rol CLIENTE. */
   protected readonly avisoRol = signal<string | null>(null);
+  protected readonly avisoReserva = signal<string | null>(
+    this.route.snapshot.queryParamMap.get('reserva') === 'cancelada'
+      ? 'La reserva se canceló y limpiamos la selección temporal.'
+      : null,
+  );
 
   protected readonly ayudaReserva = 'Elegí el servicio, el profesional y el horario.';
 
@@ -79,6 +86,64 @@ export class SucursalDetalle {
   );
 
   protected readonly categoria = computed(() => this.humanizarCategoria(this.sucursal()?.categoria));
+
+  protected readonly imagenesGaleria = computed(() => {
+    const actual = this.sucursal();
+    if (!actual) {
+      return [];
+    }
+
+    const fallidas = this.imagenesFallidas();
+    const adicionales = (Array.isArray(actual.imagenes) ? actual.imagenes : []).flatMap((imagen, indice) => {
+      if (typeof imagen === 'string') {
+        return { url: imagen, alt: `Foto ${indice + 1} de ${actual.nombre}` };
+      }
+
+      if (!imagen || typeof imagen !== 'object') {
+        return [];
+      }
+
+      return {
+        url: imagen.url,
+        alt:
+          (typeof imagen.descripcion === 'string' && imagen.descripcion.trim()) ||
+          `Foto ${indice + 1} de ${actual.nombre}`,
+      };
+    });
+    const candidatas = [
+      { url: actual.fotoPerfil, alt: `Foto de perfil de ${actual.nombre}` },
+      ...adicionales,
+    ].flatMap(({ url, alt }) =>
+      typeof url === 'string' && url.trim() ? [{ url: url.trim(), alt }] : [],
+    );
+
+    return [...new Map(candidatas.map((imagen) => [imagen.url, imagen])).values()].filter(
+      (imagen) => !fallidas.has(imagen.url),
+    );
+  });
+
+  protected readonly imagenPrincipal = computed(() => {
+    const imagenes = this.imagenesGaleria();
+    const seleccionada = this.imagenSeleccionada();
+    return (
+      (seleccionada && imagenes.some((imagen) => imagen.url === seleccionada)
+        ? seleccionada
+        : imagenes[0]?.url) ??
+      this.placeholderImage
+    );
+  });
+
+  protected readonly altImagenPrincipal = computed(() => {
+    const principal = this.imagenPrincipal();
+    if (principal === this.placeholderImage) {
+      return `No hay imágenes disponibles para ${this.sucursal()?.nombre ?? 'esta sucursal'}`;
+    }
+
+    return (
+      this.imagenesGaleria().find((imagen) => imagen.url === principal)?.alt ??
+      `Foto de ${this.sucursal()?.nombre ?? 'la sucursal'}`
+    );
+  });
 
   protected readonly descripcion = computed(() => this.sucursal()?.descripcion?.trim() ?? '');
 
@@ -198,10 +263,31 @@ export class SucursalDetalle {
     this.descripcionExpandida.update((expandida) => !expandida);
   }
 
-  protected onImageError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    img.onerror = null;
-    img.src = this.placeholderImage;
+  protected seleccionarImagen(url: string): void {
+    this.imagenSeleccionada.set(url);
+  }
+
+  protected moverGaleria(event: KeyboardEvent): void {
+    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') {
+      return;
+    }
+
+    const imagenes = this.imagenesGaleria().map((imagen) => imagen.url);
+    if (imagenes.length < 2) {
+      return;
+    }
+
+    event.preventDefault();
+    const indiceActual = Math.max(0, imagenes.indexOf(this.imagenPrincipal()));
+    const incremento = event.key === 'ArrowRight' ? 1 : -1;
+    const siguiente = (indiceActual + incremento + imagenes.length) % imagenes.length;
+    this.imagenSeleccionada.set(imagenes[siguiente]);
+    const galeria = event.currentTarget as HTMLElement;
+    galeria.querySelectorAll<HTMLButtonElement>('.detalle__miniatura')[siguiente]?.focus();
+  }
+
+  protected onImageError(url: string): void {
+    this.imagenesFallidas.update((fallidas) => new Set([...fallidas, url]));
   }
 
   private cargar(idParam: string | null): Observable<CargaResultado> {
@@ -278,6 +364,8 @@ export class SucursalDetalle {
     this.sinConexion.set(false);
     this.reintentando.set(false);
     this.descripcionExpandida.set(false);
+    this.imagenSeleccionada.set(null);
+    this.imagenesFallidas.set(new Set());
     this.navegando.set(false);
     this.avisoRol.set(null);
     this.loading.set(true);

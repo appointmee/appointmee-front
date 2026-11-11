@@ -5,7 +5,10 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { Router, RouterOutlet, provideRouter } from '@angular/router';
 
 import { authService } from '../../services/auth-service';
+import { destinoDespuesDelLogin } from '../../guards/login-destination';
+import { SucursalDetalleDTO } from '../../models/sucursal';
 import { SucursalDetalle } from './sucursal-detalle';
+import { ReporteError } from '../error/reporte-error';
 
 @Component({
   standalone: true,
@@ -64,6 +67,7 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: authService, useValue: auth },
+        { provide: ReporteError, useValue: { registrar: vi.fn() } },
       ],
     }).compileComponents();
 
@@ -86,6 +90,37 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
       .expectOne((request) => request.url.endsWith('/sucursales/7'))
       .flush(SUCURSAL);
 
+    fixture.detectChanges();
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/7/resenias'))
+      .flush([]);
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/7/elegir-empleado'))
+      .flush([]);
+
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  async function abrirConSucursal(
+    sucursal: SucursalDetalleDTO,
+  ): Promise<HTMLElement> {
+    await router.navigateByUrl('/sucursal/7');
+    fixture.detectChanges();
+
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/7'))
+      .flush(sucursal);
+
+    fixture.detectChanges();
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/7/resenias'))
+      .flush([]);
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/7/elegir-empleado'))
+      .flush([]);
+
     await fixture.whenStable();
     fixture.detectChanges();
     for (const request of backend.match(request => /\/(resenias|elegir-empleado)$/.test(request.url))) request.flush([]);
@@ -102,6 +137,85 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
     expect(boton).not.toBeNull();
     return boton!;
   }
+
+  it('muestra miniaturas accesibles y cambia la principal al seleccionarlas', async () => {
+    const host = await abrirConSucursal({
+      ...SUCURSAL,
+      imagenes: ['https://imagenes.example/sucursal-1.jpg', 'https://imagenes.example/sucursal-2.jpg'],
+    });
+    const principal = host.querySelector<HTMLImageElement>('.detalle__hero-img');
+    const miniaturas = host.querySelectorAll<HTMLButtonElement>('.detalle__miniatura');
+
+    expect(principal?.getAttribute('src')).toBe('https://imagenes.example/sucursal-1.jpg');
+    expect(principal?.getAttribute('alt')).toBe('Foto 1 de Sucursal Flores');
+    expect(miniaturas).toHaveLength(2);
+    expect(miniaturas[0].getAttribute('aria-pressed')).toBe('true');
+    expect(miniaturas[1].getAttribute('aria-pressed')).toBe('false');
+    expect(miniaturas[1].getAttribute('aria-label')).toContain('Mostrar Foto 2 de Sucursal Flores');
+    expect(miniaturas[1].querySelector('img')?.getAttribute('loading')).toBe('lazy');
+
+    miniaturas[1].click();
+    fixture.detectChanges();
+
+    expect(principal?.getAttribute('src')).toBe('https://imagenes.example/sucursal-2.jpg');
+    expect(miniaturas[0].getAttribute('aria-pressed')).toBe('false');
+    expect(miniaturas[1].getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('usa la descripción de cada imagen cuando el DTO la incluye', async () => {
+    const host = await abrirConSucursal({
+      ...SUCURSAL,
+      imagenes: [
+        {
+          url: 'https://imagenes.example/fachada.jpg',
+          descripcion: 'Fachada principal con entrada de vidrio',
+        },
+        'https://imagenes.example/segunda.jpg',
+      ],
+    });
+    const principal = host.querySelector<HTMLImageElement>('.detalle__hero-img');
+    const miniaturas = host.querySelectorAll<HTMLButtonElement>('.detalle__miniatura');
+
+    expect(miniaturas[0].querySelector('img')?.getAttribute('alt')).toBe(
+      'Fachada principal con entrada de vidrio',
+    );
+    miniaturas[0].click();
+    fixture.detectChanges();
+    expect(principal?.getAttribute('alt')).toBe('Fachada principal con entrada de vidrio');
+    expect(miniaturas[0].getAttribute('aria-label')).toContain(
+      'Fachada principal con entrada de vidrio',
+    );
+  });
+
+  it('permite recorrer las miniaturas con flechas y mueve el foco', async () => {
+    const host = await abrirConSucursal({
+      ...SUCURSAL,
+      imagenes: ['https://imagenes.example/sucursal-1.jpg', 'https://imagenes.example/sucursal-2.jpg'],
+    });
+    const miniaturas = host.querySelectorAll<HTMLButtonElement>('.detalle__miniatura');
+    miniaturas[0].focus();
+    miniaturas[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(host.querySelector<HTMLImageElement>('.detalle__hero-img')?.getAttribute('src')).toBe(
+      'https://imagenes.example/sucursal-2.jpg',
+    );
+    expect(document.activeElement).toBe(miniaturas[1]);
+  });
+
+  it('usa placeholder si la foto de perfil también falla', async () => {
+    const host = await abrirConSucursal({
+      ...SUCURSAL,
+      fotoPerfil: 'https://imagenes.example/rota.jpg',
+      imagenes: [],
+    });
+    const principal = host.querySelector<HTMLImageElement>('.detalle__hero-img');
+    principal?.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+
+    expect(principal?.getAttribute('src')).toContain('data:image/svg+xml');
+    expect(principal?.getAttribute('alt')).toBe('No hay imágenes disponibles para Sucursal Flores');
+  });
 
   it('muestra el CTA primario, el texto de apoyo y un nombre accesible', async () => {
     const host = await abrir('/sucursal/7');

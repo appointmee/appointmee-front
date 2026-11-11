@@ -141,8 +141,6 @@ export class authService {
 
 
 
-
-
   // Verificación de la cuenta (endpoints públicos)
 
   estadoVerificacion(): Observable<EstadoVerificacion> {
@@ -227,7 +225,7 @@ export class authService {
     return respuesta;
   }
 
-  private guardarSesionVerificada(respuesta: VerificacionEmailResponse, email: string,
+  guardarSesionVerificada(respuesta: VerificacionEmailResponse, email: string,
       ticket: string | undefined, revision: number): void {
     if (!ticket || this.pendiente.leer()?.verificationToken !== ticket || this.revision !== revision) {
       throw new HttpErrorResponse({ status: 401 });
@@ -254,7 +252,6 @@ export class authService {
       map(() => undefined),
       catchError((error) => {
         if (error?.status === 401) this.limpiarSesion();
-        // Un fallo de conexión no debe borrar un refresh válido.
         this.estado.set('visitante');
         return of(undefined);
       }),
@@ -355,5 +352,9 @@ export class authService {
 
     localStorage.setItem('token', access);
     localStorage.setItem('refreshToken', tokens.refreshToken);
+  }
+
+  revisionActual(): number {
+    return this.revision;
   }
 }

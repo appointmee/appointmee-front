@@ -40,26 +40,49 @@ function codeForStatus(status: number): string {
 
 @Injectable({ providedIn: 'root' })
 export class apiErrorsService {
-  readonly notice = signal<{ error: ApiError; retry?: () => void; retrying?: boolean } | null>(
-    null,
-  );
 
+  readonly notice =
+  signal<{
+    error: ApiError;
+    retry?: () => void; retrying?: boolean } |
+    null>(null,);
+
+
+    /*
+
+    transforma un error HTTP en un error ApiError (models)
+    que angular puede usar para mostrar
+    mensajes y manejar errores dentro de appointmee
+
+    osea los errores del backend los transforma y toma decisiones sobre ellos
+
+    */
   map(response: HttpErrorResponse): ApiError {
     const reference = crypto.randomUUID();
-    const conflictCode =
-      response.error && typeof response.error === 'object'
-        ? (response.error as { code?: unknown }).code
-        : undefined;
+
+
+    const conflictCode = response.error &&
+      typeof response.error === 'object' ?
+      (response.error as { code?: unknown }).code :
+      undefined;
+
+
     const conflictText = typeof response.error === 'string' ? response.error.toLowerCase() : '';
+
     const duplicateEmail =
       conflictCode === 'EMAIL_ALREADY_EXISTS' ||
       /email.{0,30}(registrad|exist)|ya existe.{0,20}email/.test(conflictText);
+
+
     const fields =
-      response.status === 400 || response.status === 422
-        ? this.fieldErrors(response.error)
-        : response.status === 409 && duplicateEmail
-          ? { email: 'Este email ya está registrado.' }
-          : {};
+      response.status === 400 ||
+      response.status === 422 ?
+      this.fieldErrors(response.error):
+      response.status === 409 && duplicateEmail ?
+      { email: 'Este email ya está registrado.' } :
+      { };
+
+
     const message =
       response.status === 409
         ? this.safeConflictMessage(response.error)
@@ -71,14 +94,19 @@ export class apiErrorsService {
       : codeForStatus(response.status);
     const verificationToken = code === 'EMAIL_NOT_VERIFIED' && response.status === 403
       && typeof response.error?.verificationToken === 'string' ? response.error.verificationToken : undefined;
+
     const verificationExpiresIn = Number.isFinite(response.error?.verificationExpiresIn)
       ? response.error.verificationExpiresIn : undefined;
+
     const attemptsRemaining = Number.isInteger(response.error?.attemptsRemaining)
       ? response.error.attemptsRemaining : undefined;
+
     const retryAfter = response.headers.get('Retry-After') ?? (Number.isFinite(response.error?.retryAfterSeconds) ? String(response.error.retryAfterSeconds) : null);
+
     const seconds = retryAfter && /^\d+$/.test(retryAfter)
       ? Number(retryAfter)
       : retryAfter ? Math.ceil((Date.parse(retryAfter) - Date.now()) / 1000) : 0;
+
     const retryAfterSeconds = Number.isFinite(seconds) && seconds > 0 ? seconds : undefined;
 
     return { status: response.status, message, fields, reference, code, retryAfterSeconds, verificationToken, verificationExpiresIn, attemptsRemaining };
@@ -186,17 +214,17 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
           }
           const retry: (() => void) | undefined = canRetry
             ? () => {
-                const current = errors.notice();
-                if (current?.retrying) return;
-                errors.notice.update((notice) => (notice ? { ...notice, retrying: true } : notice));
-                void next(request).subscribe({
-                  next: () => errors.dismiss(),
-                  error: (retryCause: HttpErrorResponse) => {
-                    const retryError = errors.map(retryCause);
-                    errors.notice.set({ error: retryError, retry, retrying: false });
-                  },
-                });
-              }
+              const current = errors.notice();
+              if (current?.retrying) return;
+              errors.notice.update((notice) => (notice ? { ...notice, retrying: true } : notice));
+              void next(request).subscribe({
+                next: () => errors.dismiss(),
+                error: (retryCause: HttpErrorResponse) => {
+                  const retryError = errors.map(retryCause);
+                  errors.notice.set({ error: retryError, retry, retrying: false });
+                },
+              });
+            }
             : undefined;
           errors.notice.set({ error, retry });
         }

@@ -34,6 +34,53 @@
   display: block;
 }
 
+.detalle__galeria {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 9px;
+  width: min(100%, 720px);
+  margin: 18px auto 0;
+}
+
+.detalle__miniatura {
+  flex: 0 1 82px;
+  width: 82px;
+  height: 58px;
+  padding: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 10px;
+  background: rgba(7, 9, 13, 0.72);
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+.detalle__miniatura img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.detalle__miniatura:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-strong);
+}
+
+.detalle__miniatura--activa {
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 2px rgba(247, 198, 90, 0.45);
+}
+
+.detalle__miniatura:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
 .detalle__hero-overlay {
   position: absolute;
   inset: 0;
@@ -1028,6 +1075,16 @@
   text-align: center;
 }
 
+.detalle__reserva-aviso {
+  width: min(calc(100% - 48px), 1180px);
+  margin: 20px auto 0;
+  padding: 14px 18px;
+  border: 1px solid rgba(247, 198, 90, 0.3);
+  border-radius: 12px;
+  background: rgba(247, 198, 90, 0.08);
+  color: var(--text);
+}
+
 .detalle__estado-icon {
   display: grid;
   width: 54px;
@@ -1291,6 +1348,17 @@
   .detalle__hero {
     min-height: 440px;
     padding: 96px 16px 24px;
+  }
+
+  .detalle__galeria {
+    gap: 7px;
+    margin-top: 14px;
+  }
+
+  .detalle__miniatura {
+    flex-basis: 68px;
+    width: 68px;
+    height: 50px;
   }
 
   .detalle__hero-top {
