@@ -181,7 +181,7 @@ export const routes: Routes = [
     data: {
       title: 'Empleados',
       roles: ['EMPLEADOR'],
-      description: 'Agregate como empleado de tu sucursal.',
+      description: 'Consultá el equipo de tu sucursal y agregate como empleado.',
     },
     loadComponent: () =>
       import('./pages/empleados-sucursal/empleados-sucursal').then(
