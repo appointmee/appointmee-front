@@ -1,59 +1,29 @@
-# Appointmee
+# AppointMee
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.7.
+Aplicación web para descubrir sucursales y gestionar reservas de turnos. Esta copia contiene el frontend Angular; el backend se mantiene en un repositorio separado.
 
-## Development server
+## Documentación
 
-To start a local development server, run:
+Empezá por el [índice de documentación](docs/README.md). Allí se reúnen la descripción, arquitectura, instalación, funcionalidades, roles, API, datos, integraciones y recursos del proyecto.
 
-```bash
-ng serve
-```
+## Repositorios
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- [Frontend Angular](https://github.com/appointmee/appointmee-front)
+- [Backend Spring Boot](https://github.com/appointmee/appointmee-back)
 
-## Code scaffolding
+La guía existente del backend es la referencia para su configuración y ejecución: [README del backend](https://github.com/appointmee/appointmee-back#readme). Los contratos HTTP vigentes se consultan en Swagger con el backend iniciado: `http://localhost:8080/swagger-ui/index.html`.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Inicio rápido del frontend
 
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Requisitos: Node.js 22 y npm 11, de acuerdo con el `Dockerfile` y `package.json` de este repositorio.
 
 ```bash
-ng generate --help
+npm ci
+npm start
 ```
 
-## Building
+La aplicación se abre en `http://localhost:4200` y espera el backend en `http://localhost:8080`. Para pasos completos, variables de entorno y pruebas, consultá [Instalación y ejecución](docs/03-instalacion.md).
 
-To build the project run:
+## Alcance de esta documentación
 
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+El código de este repositorio es la fuente principal para el frontend. La documentación del backend se enlaza donde corresponde para evitar duplicarla. Jira no está conectado en este entorno, por lo que el [estado y las fuentes](docs/09-recursos-y-gestion.md) identifican lo que no se pudo validar desde ese sistema.
