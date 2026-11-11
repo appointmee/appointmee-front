@@ -24,6 +24,7 @@ export class EliminarSucursal {
       this.error.set('Ingresá un ID de sucursal.');
       return;
     }
+    if (!window.confirm('¿Confirmás la eliminación?')) return;
     this.eliminando.set(true);
     this.error.set(null);
     this.api.eliminar(this.sucursalId).subscribe({
