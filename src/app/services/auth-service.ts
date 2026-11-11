@@ -77,6 +77,11 @@ export class authService {
     return !!this.usuario()?.roles.some((rol) => roles.includes(rol));
   }
 
+  actualizarFotoPerfil(fotoPerfil: string | null): void {
+    const usuario = this.usuario();
+    if (usuario) this.usuario.set({ ...usuario, fotoPerfil });
+  }
+
 
   // Inicio de sesión
 

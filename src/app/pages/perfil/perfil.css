@@ -1,0 +1,40 @@
+:host {
+  display: block;
+  min-height: calc(100dvh - var(--nav-h));
+  padding: var(--space-8) var(--space-4);
+  background: var(--page-bg);
+  color: var(--text);
+}
+
+.perfil__foto {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0 auto var(--space-6);
+  max-width: 42rem;
+}
+
+.perfil__foto img,
+.perfil__avatar {
+  width: 6rem;
+  height: 6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
+  object-fit: cover;
+}
+
+.perfil__avatar {
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+@media (max-width: 480px) {
+  .perfil__foto {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -237,7 +237,7 @@ export const routes: Routes = [
       title: 'Mi Perfil',
       description: 'Actualizá tus datos y mantené tu cuenta al día.',
     },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () => import('./pages/perfil/perfil').then((module) => module.PerfilPage),
   },
   {
     path: 'solicitudes/todas',

@@ -1,0 +1,86 @@
+<section class="crear-sucursal" aria-labelledby="perfil-titulo">
+  <header class="crear-sucursal__header">
+    <h1 id="perfil-titulo">Mi perfil</h1>
+    <p>Consultá y actualizá tus datos personales.</p>
+  </header>
+
+  @if (cargandoDatos()) {
+    <p role="status" aria-live="polite">Cargando tu perfil…</p>
+  } @else if (error() && !model().email) {
+    <div class="aviso aviso--error" role="alert">
+      <p>{{ error() }}</p>
+      <button dsButton type="button" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else {
+    @if (error()) { <div class="aviso aviso--error" role="alert">{{ error() }}</div> }
+    @if (exito()) { <div class="aviso aviso--exito" role="status" aria-live="polite">{{ exito() }}</div> }
+
+    <div class="perfil__foto" aria-label="Foto de perfil">
+      @if (model().fotoUrl && !fotoRota()) {
+        <img [src]="model().fotoUrl" alt="Foto de perfil actual" width="96" height="96"
+          loading="lazy" referrerpolicy="no-referrer" (error)="fotoRota.set(true)" />
+      } @else {
+        <span class="perfil__avatar" aria-label="Avatar predeterminado">{{ iniciales() }}</span>
+      }
+      @if (model().fotoUrl) {
+        <button dsButton type="button" [disabled]="cargando()" (click)="eliminarFoto()">Eliminar foto y usar avatar predeterminado</button>
+      }
+    </div>
+
+    <form (submit)="onSubmit($event)" novalidate [attr.aria-busy]="cargando()">
+      @if (formulario().touched() && formulario().invalid()) {
+        <div class="aviso aviso--error" role="alert" aria-labelledby="perfil-errores-titulo">
+          <h2 id="perfil-errores-titulo">Revisá estos campos:</h2>
+          <ul>
+            @if (formulario.nombre().invalid()) { <li><a href="#perfil-nombre" (click)="formulario.nombre().focusBoundControl()">Nombre: {{ formulario.nombre().errors()[0]?.message }}</a></li> }
+            @if (formulario.apellido().invalid()) { <li><a href="#perfil-apellido" (click)="formulario.apellido().focusBoundControl()">Apellido: {{ formulario.apellido().errors()[0]?.message }}</a></li> }
+            @if (formulario.email().invalid()) { <li><a href="#perfil-email" (click)="formulario.email().focusBoundControl()">Email: {{ formulario.email().errors()[0]?.message }}</a></li> }
+            @if (formulario.fotoUrl().invalid()) { <li><a href="#perfil-foto" (click)="formulario.fotoUrl().focusBoundControl()">Foto: {{ formulario.fotoUrl().errors()[0]?.message }}</a></li> }
+          </ul>
+        </div>
+      }
+
+      <div class="campo">
+        <label for="perfil-nombre">Nombre</label>
+        <ds-input><input #dsNativeControl id="perfil-nombre" type="text" autocomplete="given-name" [formField]="formulario.nombre"
+          [readOnly]="cargando()" [attr.aria-invalid]="formulario.nombre().touched() && formulario.nombre().invalid()"
+          aria-describedby="perfil-nombre-error" /></ds-input>
+        <div id="perfil-nombre-error" class="error" aria-live="polite">
+          @if (formulario.nombre().touched()) { @for (error of formulario.nombre().errors(); track error.kind) { <p>{{ error.message }}</p> } }
+        </div>
+      </div>
+      <div class="campo">
+        <label for="perfil-apellido">Apellido</label>
+        <ds-input><input #dsNativeControl id="perfil-apellido" type="text" autocomplete="family-name" [formField]="formulario.apellido"
+          [readOnly]="cargando()" [attr.aria-invalid]="formulario.apellido().touched() && formulario.apellido().invalid()"
+          aria-describedby="perfil-apellido-error" /></ds-input>
+        <div id="perfil-apellido-error" class="error" aria-live="polite">
+          @if (formulario.apellido().touched()) { @for (error of formulario.apellido().errors(); track error.kind) { <p>{{ error.message }}</p> } }
+        </div>
+      </div>
+      <div class="campo">
+        <label for="perfil-email">Email</label>
+        <ds-input><input #dsNativeControl id="perfil-email" type="email" autocomplete="email" [formField]="formulario.email"
+          [readOnly]="cargando()" [attr.aria-invalid]="formulario.email().touched() && formulario.email().invalid()"
+          aria-describedby="perfil-email-error" /></ds-input>
+        <div id="perfil-email-error" class="error" aria-live="polite">
+          @if (formulario.email().touched()) { @for (error of formulario.email().errors(); track error.kind) { <p>{{ error.message }}</p> } }
+        </div>
+      </div>
+      <div class="campo">
+        <label for="perfil-foto">URL de foto de perfil</label>
+        <ds-input><input #dsNativeControl id="perfil-foto" type="url" autocomplete="url" [formField]="formulario.fotoUrl"
+          [readOnly]="cargando()" [attr.aria-invalid]="formulario.fotoUrl().touched() && formulario.fotoUrl().invalid()"
+          aria-describedby="perfil-foto-error" /></ds-input>
+        <div id="perfil-foto-error" class="error" aria-live="polite">
+          @if (formulario.fotoUrl().touched()) { @for (error of formulario.fotoUrl().errors(); track error.kind) { <p>{{ error.message }}</p> } }
+        </div>
+      </div>
+      <div class="acciones">
+        <button dsButton type="submit" [disabled]="cargando()" [attr.aria-busy]="cargando()">
+          {{ cargando() ? 'Guardando…' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </form>
+  }
+</section>
