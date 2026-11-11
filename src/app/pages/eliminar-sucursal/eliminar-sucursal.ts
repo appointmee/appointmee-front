@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { sucursalService } from '../../services/sucursal-service';
+import { AuthService } from '../../services/auth-service';
 
 @Component({
   selector: 'app-eliminar-sucursal',
@@ -13,11 +14,13 @@ import { sucursalService } from '../../services/sucursal-service';
 })
 export class EliminarSucursal {
   private readonly api = inject(sucursalService);
+  protected readonly auth = inject(AuthService);
 
   sucursalId: number | null = null;
   protected readonly eliminando = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly exito = signal<string | null>(null);
+  protected puedeEliminar(): boolean { return this.auth.tieneAlgunRol('EMPLEADOR','ADMINISTRADOR'); }
 
   protected eliminar(): void {
     if (!this.sucursalId) {
