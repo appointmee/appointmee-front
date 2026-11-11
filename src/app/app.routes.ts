@@ -175,6 +175,34 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'mis-sucursales/:sucursalId/empleados',
+    canActivate: [authGuard],
+    title: 'AppointMee | Empleados de la sucursal',
+    data: {
+      title: 'Empleados',
+      roles: ['EMPLEADOR'],
+      description: 'Agregate como empleado de tu sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/empleados-sucursal/empleados-sucursal').then(
+        (module) => module.EmpleadosSucursal,
+      ),
+  },
+  {
+    path: 'mis-sucursales/:sucursalId/solicitudes',
+    canActivate: [authGuard],
+    title: 'AppointMee | Solicitudes de la sucursal',
+    data: {
+      title: 'Solicitudes',
+      roles: ['EMPLEADOR'],
+      description: 'Enviá y consultá las solicitudes de empleo de tu sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/solicitudes-sucursal/solicitudes-sucursal').then(
+        (module) => module.SolicitudesSucursal,
+      ),
+  },
+  {
     path: 'mis-sucursales/:sucursalId/turnos',
     canActivate: [authGuard],
     title: 'AppointMee | Turnos de la sucursal',

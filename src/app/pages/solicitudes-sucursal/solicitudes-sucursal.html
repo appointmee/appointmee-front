@@ -1,0 +1,153 @@
+<section class="pagina" aria-labelledby="solicitudes-titulo">
+  <div class="pagina__inner">
+    <a class="volver" routerLink="/mis-sucursales">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M19 12H5M11 18l-6-6 6-6" />
+      </svg>
+      Volver a mis sucursales
+    </a>
+
+    <header class="pagina__header">
+      <span class="eyebrow">Solicitudes</span>
+      <h1 id="solicitudes-titulo">Solicitudes de empleo</h1>
+      <p>Gestioná las invitaciones de incorporación a tu sucursal.</p>
+    </header>
+
+    <div class="solicitudes__layout">
+      <section class="panel" aria-labelledby="enviar-titulo">
+        <header class="panel__cabecera">
+          <div>
+            <span class="panel__eyebrow">Enviar</span>
+            <h2 id="enviar-titulo">Enviar solicitudes de empleo</h2>
+          </div>
+        </header>
+        <p class="panel__descripcion">
+          Invitá a una persona a incorporarse a la sucursal ingresando su correo electrónico.
+        </p>
+
+        @if (exitoEnvio()) {
+          <div class="aviso aviso--exito" role="status" aria-live="polite">
+            <p>{{ exitoEnvio() }}</p>
+          </div>
+        }
+
+        <div class="busqueda">
+          <label class="busqueda__label" for="email-destinatario">Correo electrónico</label>
+          <div class="busqueda__fila">
+            <input
+              id="email-destinatario"
+              class="busqueda__input"
+              type="email"
+              [value]="email()"
+              (input)="email.set($any($event.target).value)"
+              placeholder="nombre@ejemplo.com"
+              [disabled]="enviando()"
+            />
+          </div>
+          <p class="busqueda__ayuda">
+            Ingresá el correo de la persona que querés invitar. El sistema va a validar los
+            datos al enviar la solicitud.
+          </p>
+        </div>
+
+        @if (errorEnvio()) {
+          <p class="busqueda__error" role="alert">{{ errorEnvio() }}</p>
+        }
+
+        <button
+          class="boton boton--principal"
+          type="button"
+          [disabled]="enviando() || email().trim().length === 0"
+          (click)="enviarSolicitud()"
+        >
+          @if (enviando()) {
+            <span class="solicitud__spinner" aria-hidden="true"></span>
+          }
+          {{ enviando() ? 'Enviando…' : 'Enviar solicitud de incorporación' }}
+        </button>
+      </section>
+
+      <section class="panel" aria-labelledby="enviadas-titulo">
+        <header class="panel__cabecera">
+          <div>
+            <span class="panel__eyebrow">Enviadas</span>
+            <h2 id="enviadas-titulo">Solicitudes enviadas desde esta sucursal</h2>
+          </div>
+          @if (solicitudesEnviadas().length > 0) {
+            <span class="panel__contador" [attr.aria-label]="solicitudesEnviadas().length + ' invitaciones enviadas'">
+              {{ solicitudesEnviadas().length }}
+            </span>
+          }
+        </header>
+
+        @if (cargandoEnviadas()) {
+          <div class="lista" aria-busy="true" aria-live="polite">
+            <span class="sr-only">Cargando las solicitudes enviadas…</span>
+            @for (item of [1, 2, 3]; track item) {
+              <div class="solicitud-skeleton" aria-hidden="true">
+                <span class="skeleton skeleton--avatar"></span>
+                <span class="skeleton skeleton--line"></span>
+                <span class="skeleton skeleton--line skeleton--short"></span>
+              </div>
+            }
+          </div>
+        } @else if (errorEnviadas() && solicitudesEnviadas().length === 0) {
+          <div class="estado estado--error" role="alert">
+            <span class="estado__icono" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+            </span>
+            <h3>No pudimos cargar las solicitudes enviadas</h3>
+            <p>{{ errorEnviadas() }}</p>
+            <button
+              class="boton boton--ghost"
+              type="button"
+              [disabled]="reintentandoEnviadas()"
+              (click)="reintentarEnviadas()"
+            >
+              {{ reintentandoEnviadas() ? 'Reintentando…' : 'Reintentar' }}
+            </button>
+          </div>
+        } @else if (solicitudesEnviadas().length === 0) {
+          <div class="estado estado--vacio" role="status">
+            <span class="estado__icono" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 5h16v14H4zM8 9h8M8 13h5" />
+              </svg>
+            </span>
+            <h3>Todavía no enviaste invitaciones</h3>
+            <p>Cuando invites a alguien a sumarse al equipo, vas a poder seguir su estado desde acá.</p>
+          </div>
+        } @else {
+          @if (errorEnviadas()) {
+            <div class="aviso aviso--error" role="alert">
+              <p>{{ errorEnviadas() }}</p>
+              <button
+                type="button"
+                [disabled]="reintentandoEnviadas()"
+                (click)="reintentarEnviadas()"
+              >
+                {{ reintentandoEnviadas() ? 'Reintentando…' : 'Reintentar' }}
+              </button>
+            </div>
+          }
+
+          <app-solicitud-empleado-lista
+            [solicitudes]="visiblesEnviadas()"
+            tipo="enviada"
+          />
+
+          @if (hayMasEnviadas()) {
+            <a class="ver-mas" [routerLink]="['/solicitudes/empleo/enviadas', sucursalId]">
+              <span>Ver más solicitudes</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </a>
+          }
+        }
+      </section>
+    </div>
+  </div>
+</section>
