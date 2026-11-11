@@ -24,6 +24,7 @@ export class EliminarServicio {
       this.error.set('Ingresá un ID de servicio.');
       return;
     }
+    if (!window.confirm('¿Confirmás la eliminación?')) return;
     this.eliminando.set(true);
     this.error.set(null);
     this.api.eliminar(this.servicioId).subscribe({
