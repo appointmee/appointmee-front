@@ -8,24 +8,26 @@
     </a>
 
     @if (loading()) {
-      <div class="perfil perfil--skeleton" aria-hidden="true">
-        <span class="skeleton skeleton--avatar"></span>
-        <div class="perfil__datos">
-          <span class="skeleton skeleton--line skeleton--eyebrow"></span>
-          <span class="skeleton skeleton--line skeleton--title"></span>
-          <span class="skeleton skeleton--line skeleton--short"></span>
+      <div class="cargando" aria-busy="true">
+        <div class="perfil perfil--skeleton" aria-hidden="true">
+          <span class="skeleton skeleton--avatar"></span>
+          <div class="perfil__datos">
+            <span class="skeleton skeleton--line skeleton--eyebrow"></span>
+            <span class="skeleton skeleton--line skeleton--title"></span>
+            <span class="skeleton skeleton--line skeleton--short"></span>
+          </div>
         </div>
+
+        <article class="panel panel--skeleton" aria-hidden="true">
+          <span class="skeleton skeleton--line skeleton--panel-title"></span>
+          <span class="skeleton skeleton--line"></span>
+          <span class="skeleton skeleton--line skeleton--short"></span>
+        </article>
+
+        <span class="sr-only" role="status">Cargando el detalle del profesional…</span>
       </div>
-
-      <article class="panel panel--skeleton" aria-hidden="true">
-        <span class="skeleton skeleton--line skeleton--panel-title"></span>
-        <span class="skeleton skeleton--line"></span>
-        <span class="skeleton skeleton--line skeleton--short"></span>
-      </article>
-
-      <span class="sr-only" role="status">Cargando el detalle del profesional…</span>
     } @else if (sucursalNoEncontrada()) {
-      <div class="estado" role="alert">
+      <div class="estado" role="status">
         <h1>No encontramos esta sucursal</h1>
         <p>La sucursal que buscás no existe o ya no está disponible.</p>
         <div class="estado__acciones">

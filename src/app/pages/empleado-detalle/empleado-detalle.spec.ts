@@ -105,7 +105,8 @@ describe('EmpleadoDetalle', () => {
 
   it('muestra el estado de carga antes de resolver los datos', () => {
     expect(html.textContent).toContain('Cargando el detalle del profesional');
-    expect(html.querySelector('[aria-busy="true"], [role="status"]')).not.toBeNull();
+    expect(html.querySelector('[aria-busy="true"]')).not.toBeNull();
+    expect(html.querySelector('[role="status"]')).not.toBeNull();
 
     flushSucursal();
     flushEmpleados();
