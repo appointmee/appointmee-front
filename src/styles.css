@@ -27,6 +27,7 @@
   --accent-strong: #ffd77a;
   --accent-soft: rgba(247, 198, 90, 0.12);
   --danger: #ff7a7a;
+  --danger-soft: rgba(255, 122, 122, 0.15);
   --success: #2ecc71;
   --success-light: #7ee2a8;
   --success-light-soft: rgba(126, 226, 168, 0.14);

@@ -39,6 +39,8 @@ Combinaciones usadas y verificadas (texto normal >= 4,5:1; texto grande >= 3:1):
 | `--success-strong` sobre `--surface` | 8,31:1 | ✅ | ✅ |
 | `--info` sobre `--surface` | 7,03:1 | ✅ | ✅ |
 | `--danger` sobre `--surface` | 7,49:1 | ✅ | ✅ |
+| `--text` sobre `--danger-soft` (compuesto sobre `--surface`) | 13,59:1 | ✅ | ✅ |
+| `--danger` sobre `--danger-soft` (compuesto sobre `--surface`) | 6,05:1 | ✅ | ✅ |
 | `#07090d` sobre `--accent` (botón primario) | 12,51:1 | ✅ | ✅ |
 | `#07090d` sobre `--danger` (botón peligro) | 7,89:1 | ✅ | ✅ |
 
