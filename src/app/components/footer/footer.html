@@ -1,0 +1,33 @@
+<footer class="site-footer" aria-label="Pie de página">
+  <div class="site-footer__inner">
+    <div class="site-footer__top">
+      <div class="site-footer__brand">
+        <a routerLink="/" class="site-footer__brand-link" aria-label="AppointMee - Inicio">
+          <img src="appointmee-logo.png" alt="" width="36" height="36" loading="lazy" />
+          <span>Appoint<span class="site-footer__accent">Mee</span></span>
+        </a>
+        <p>Conectamos clientes con establecimientos para gestionar turnos de forma simple, rápida y organizada.</p>
+      </div>
+      <nav class="site-footer__links" aria-label="Enlaces del pie de página">
+        <div>
+          <h2>Navegación</h2>
+          <a routerLink="/">Inicio</a>
+          <a routerLink="/sucursales">Sucursales</a>
+        </div>
+        <div>
+          <h2>Cuenta</h2>
+          @if (auth.visitante()) {
+            <a routerLink="/login">Iniciar sesión</a>
+            <a routerLink="/registrarme">Crear cuenta</a>
+          } @else {
+            <a routerLink="/perfil">Mi perfil</a>
+            <a routerLink="/configuracion">Configuración</a>
+          }
+        </div>
+      </nav>
+    </div>
+    <div class="site-footer__bottom">
+      <span>© {{ currentYear }} AppointMee. Todos los derechos reservados.</span>
+    </div>
+  </div>
+</footer>
