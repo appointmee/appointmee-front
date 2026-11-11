@@ -1,2 +1,2 @@
-.ver-empleados { padding: 1rem; }
-.error { color: #b00020; }
+.ver-empleados { padding: var(--space-4); }
+.error { color: var(--danger); }
