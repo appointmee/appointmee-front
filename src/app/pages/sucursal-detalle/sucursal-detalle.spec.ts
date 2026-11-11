@@ -8,6 +8,7 @@ import { authService } from '../../services/auth-service';
 import { destinoDespuesDelLogin } from '../../guards/login-destination';
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import { SucursalDetalle } from './sucursal-detalle';
+import { ReporteError } from '../error/reporte-error';
 
 @Component({
   standalone: true,
@@ -66,6 +67,7 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: authService, useValue: auth },
+        { provide: ReporteError, useValue: { registrar: vi.fn() } },
       ],
     }).compileComponents();
 
@@ -120,6 +122,8 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
       .flush([]);
 
     await fixture.whenStable();
+    fixture.detectChanges();
+    for (const request of backend.match(request => /\/(resenias|elegir-empleado)$/.test(request.url))) request.flush([]);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
@@ -242,36 +246,20 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
     expect(router.url).toBe('/sucursal/7/servicios');
   });
 
-  it('sin sesión va al login con returnTo a la elección de servicio de esa sucursal', async () => {
+  it('sin sesión permite abrir los servicios sin pasar por el login', async () => {
     const host = await abrir('/sucursal/7');
     botonReserva(host).click();
     await fixture.whenStable();
-
-    expect(router.url.split('?')[0]).toBe('/login');
-    expect(router.parseUrl(router.url).queryParams['returnTo']).toBe('/sucursal/7/servicios');
-
-    // El login acepta ese returnTo y vuelve a la elección sin perder la sucursal.
-    const destino = destinoDespuesDelLogin(router, '/sucursal/7/servicios');
-    expect(router.serializeUrl(destino)).toBe('/sucursal/7/servicios');
+    expect(router.url).toBe('/sucursal/7/servicios');
   });
 
-  it('con sesión sin rol CLIENTE muestra un aviso específico y no navega', async () => {
+  it('permite consultar servicios con otros roles; el rol se exige al elegir un turno', async () => {
     auth.autenticado.mockReturnValue(true);
     auth.tieneAlgunRol.mockReturnValue(false);
-
     const host = await abrir('/sucursal/7');
-    const navegar = vi.spyOn(router, 'navigate');
-    const navegarPorUrl = vi.spyOn(router, 'navigateByUrl');
-
     botonReserva(host).click();
-    fixture.detectChanges();
-
-    expect(texto(host)).toContain('Tu cuenta no tiene el rol Cliente');
-    expect(host.querySelector('.panel__aviso')?.getAttribute('role')).toBe('alert');
-    expect(host.querySelector('.detalle__cta-aviso')?.textContent).toContain('rol Cliente');
-    expect(navegar).not.toHaveBeenCalled();
-    expect(navegarPorUrl).not.toHaveBeenCalled();
-    expect(router.url).toBe('/sucursal/7');
+    await fixture.whenStable();
+    expect(router.url).toBe('/sucursal/7/servicios');
   });
 
   it('bloquea un segundo clic mientras la navegación está en curso', async () => {

@@ -1,15 +1,19 @@
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
-import { DisponibilidadDTO, TurnoCrearPayload, TurnoCreadoDTO } from '../models/turno';
+import {
+  DisponibilidadDTO,
+  TurnoClienteDetalleDTO,
+  TurnoCrearDTO,
+  TurnoMiniDTO,
+} from '../models/turno';
 import { backendService } from './backend-service';
 
 @Injectable({ providedIn: 'root' })
 export class turnoService {
-  private readonly api = inject(backendService);
-  private readonly http = inject(HttpClient);
+  private http = inject(HttpClient);
+  private api = inject(backendService);
 
   disponibilidad(empleadoId: number, servicioId: number): Observable<DisponibilidadDTO[]> {
     return this.http.get<DisponibilidadDTO[]>(
@@ -18,9 +22,23 @@ export class turnoService {
     );
   }
 
-  registrar(datos: TurnoCrearPayload): Observable<TurnoCreadoDTO> {
-    return this.http.post<TurnoCreadoDTO>(`${this.api.baseUrl}/turnos/registrar`, datos, {
+  registrar(turno: TurnoCrearDTO): Observable<string> {
+    return this.http.post(`${this.api.baseUrl}/turnos/registrar`, turno, {
+      context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+      responseType: 'text',
+    });
+  }
+
+  propios(): Observable<TurnoMiniDTO[]> {
+    return this.http.get<TurnoMiniDTO[]>(`${this.api.baseUrl}/turnos/propios`, {
       context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
     });
+  }
+
+  detallePropio(turnoId: number): Observable<TurnoClienteDetalleDTO> {
+    return this.http.get<TurnoClienteDetalleDTO>(
+      `${this.api.baseUrl}/turnos/propios/detalles/${turnoId}`,
+      { context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true) },
+    );
   }
 }

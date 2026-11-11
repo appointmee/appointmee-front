@@ -2,14 +2,19 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
-import { ApiError } from '../models/api-error';
 import { authService } from '../services/auth-service';
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from './error-handling-context';
+import type { FrontendError } from '../models/frontend-error';
 
-
-/**
- * handler global de ERRORES
- */
+export interface ApiError extends FrontendError {
+  readonly fields: Readonly<Record<string, string>>;
+  readonly reference: string;
+  readonly code: string;
+  readonly verificationToken?: string;
+  readonly verificationExpiresIn?: number;
+  readonly attemptsRemaining?: number;
+  readonly retryAfterSeconds?: number;
+}
 
 const SAFE_MESSAGES: Readonly<Record<number, string>> = {
   401: 'Tu sesión expiró. Iniciá sesión para continuar.',
@@ -22,10 +27,21 @@ const SAFE_MESSAGES: Readonly<Record<number, string>> = {
   0: 'No pudimos conectarnos. Revisá tu conexión.',
 };
 
+const BACKEND_CODES = new Set([
+  'REGISTRATION_PENDING_VERIFICATION', 'EMAIL_NOT_VERIFIED', 'EMAIL_ALREADY_VERIFIED',
+  'VERIFICATION_CODE_INVALID', 'VERIFICATION_CODE_EXPIRED', 'VERIFICATION_ATTEMPTS_EXCEEDED',
+  'VERIFICATION_SESSION_FAILED',
+  'CURRENT_PASSWORD_INVALID', 'NEW_PASSWORD_REUSED',
+]);
+
+function codeForStatus(status: number): string {
+  return status === 0 ? 'NETWORK_ERROR' : `HTTP_${status}`;
+}
+
 @Injectable({ providedIn: 'root' })
 export class apiErrorsService {
 
-  readonly notice = 
+  readonly notice =
   signal<{
     error: ApiError;
     retry?: () => void; retrying?: boolean } |
@@ -33,9 +49,9 @@ export class apiErrorsService {
 
 
     /*
-    
+
     transforma un error HTTP en un error ApiError (models)
-    que angular puede usar para mostrar 
+    que angular puede usar para mostrar
     mensajes y manejar errores dentro de appointmee
 
     osea los errores del backend los transforma y toma decisiones sobre ellos
@@ -59,11 +75,11 @@ export class apiErrorsService {
 
 
     const fields =
-      response.status === 400 || 
-      response.status === 422 ? 
-      this.fieldErrors(response.error): 
-      response.status === 409 && duplicateEmail ? 
-      { email: 'Este email ya está registrado.' } : 
+      response.status === 400 ||
+      response.status === 422 ?
+      this.fieldErrors(response.error):
+      response.status === 409 && duplicateEmail ?
+      { email: 'Este email ya está registrado.' } :
       { };
 
 
@@ -73,16 +89,9 @@ export class apiErrorsService {
         : (SAFE_MESSAGES[response.status] ??
           'Ocurrió un error inesperado. Volvé al inicio e intentá nuevamente.');
 
-    const permitidos = [
-      'EMAIL_NOT_VERIFIED',
-      'EMAIL_ALREADY_VERIFIED', 
-      'VERIFICATION_CODE_INVALID',
-      'VERIFICATION_CODE_EXPIRED', 
-      'VERIFICATION_ATTEMPTS_EXCEEDED'
-    ];
-
-    const code = permitidos.includes(String(conflictCode)) ? conflictCode as ApiError['code'] : undefined;
-
+    const code = typeof conflictCode === 'string' && BACKEND_CODES.has(conflictCode)
+      ? conflictCode
+      : codeForStatus(response.status);
     const verificationToken = code === 'EMAIL_NOT_VERIFIED' && response.status === 403
       && typeof response.error?.verificationToken === 'string' ? response.error.verificationToken : undefined;
 

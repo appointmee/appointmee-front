@@ -63,8 +63,8 @@ export class ProfesionalesReserva {
       return;
     }
 
-    const guardado = this.reservaContexto.leer(sucursalId);
-    if (guardado && guardado.servicioId !== servicioId) {
+    const servicioGuardado = this.reservaContexto.servicioSeleccionado(sucursalId);
+    if (servicioGuardado !== null && servicioGuardado !== servicioId) {
       this.marcarContextoInvalido();
       this.cargando.set(false);
       return;
@@ -81,7 +81,7 @@ export class ProfesionalesReserva {
           this.marcarContextoInvalido();
         } else {
           this.servicio.set(servicio);
-          this.reservaContexto.guardar({ sucursalId, servicioId });
+          this.reservaContexto.guardar(sucursalId, servicioId);
           if (profesionales === null) {
             this.error.set('No pudimos cargar los profesionales. Volvé a intentarlo desde la sucursal.');
           } else {

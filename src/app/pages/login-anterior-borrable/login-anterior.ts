@@ -1,3 +1,5 @@
+import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 // Copia histórica del login anterior. Sin ruta, imports activos ni componente ejecutable.
 // Se conserva como comentarios porque sus dependencias originales fueron reemplazadas.
 
@@ -12,7 +14,7 @@
 //  */
 // @Component({
 //   selector: 'app-login',
-//   imports: [RouterLink],
+//   imports: [DsInputComponent, DsButtonComponent, RouterLink],
 //   templateUrl: './login.html',
 //   styleUrl: './login.css',
 //   changeDetection: ChangeDetectionStrategy.OnPush,

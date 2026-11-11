@@ -1,9 +1,10 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { ReseniaDTO, ReseniaPayload } from '../models/resenia';
 import { backendService } from './backend-service';
+import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 
 // CRUD RESENIA
 
@@ -14,7 +15,10 @@ export class reseniaService {
 
   //GET
   listarPorSucursal(sucursalId: number): Observable<ReseniaDTO[]> {
-    return this.http.get<ReseniaDTO[]>(`${this.api.baseUrl}/sucursales/${sucursalId}/resenias`);
+    return this.http.get<ReseniaDTO[]>(
+      `${this.api.baseUrl}/sucursales/${sucursalId}/resenias`,
+      { context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true) },
+    );
   }
 
   //GET
@@ -29,6 +33,7 @@ export class reseniaService {
     return this.http.post<ReseniaDTO>(
       `${this.api.baseUrl}/sucursales/${sucursalId}/resenias`,
       datos,
+      { context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true) },
     );
   }
 //PUT

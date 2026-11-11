@@ -7,17 +7,33 @@ import { SucursalDetalleDTO, SucursalMiniDTO, SucursalPayload } from '../models/
 
 // CRUD SUCURSAL
 
+/**
+ * Devuelve un HttpContext que silencia el manejo global de errores para que la
+ * pantalla consumidora presente su propio estado de error inline (sin navegar a
+ * /error ni mostrar el aviso general).
+ */
+function contextoSilenciado(activado: boolean): HttpContext {
+  return activado ? new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true) : new HttpContext();
+}
+
 @Injectable({ providedIn: 'root' })
 export class sucursalService {
   private readonly api = inject(backendService);
   private readonly http = inject(HttpClient);
-//GET
-  listar(): Observable<SucursalMiniDTO[]> {
-    return this.http.get<SucursalMiniDTO[]>(`${this.api.baseUrl}/sucursales/listar`);
+
+  //GET
+  listar(silenciarErroresGlobales = false): Observable<SucursalMiniDTO[]> {
+    return this.http.get<SucursalMiniDTO[]>(`${this.api.baseUrl}/sucursales/listar`, {
+      context: contextoSilenciado(silenciarErroresGlobales),
+    });
   }
 
   //GET
-  filtrar(categoria?: string | null, nombre?: string | null): Observable<SucursalMiniDTO[]> {
+  filtrar(
+    categoria?: string | null,
+    nombre?: string | null,
+    silenciarErroresGlobales = false,
+  ): Observable<SucursalMiniDTO[]> {
     let params = new HttpParams();
     if (categoria) {
       params = params.set('categoria', categoria);
@@ -28,13 +44,32 @@ export class sucursalService {
     }
     return this.http.get<SucursalMiniDTO[]>(`${this.api.baseUrl}/sucursales/listar/filtrar`, {
       params,
+      context: contextoSilenciado(silenciarErroresGlobales),
     });
   }
 //GET CATEGORIAS
   categorias(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.api.baseUrl}/sucursales/categorias`);
+    return this.http.get<string[]>(`${this.api.baseUrl}/sucursales/categorias`, {
+      context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+    });
   }
-//GET
+
+  //GET
+  listarPropias(): Observable<SucursalMiniDTO[]> {
+    return this.http.get<SucursalMiniDTO[]>(
+      `${this.api.baseUrl}/sucursales/listar/propias`,
+      { context: this.contextoSinAvisoGlobal() },
+    );
+  }
+
+  agregarEmpleado(sucursalId: number, email: string): Observable<string> {
+    return this.http.post(
+      `${this.api.baseUrl}/sucursales/${sucursalId}/empleados/agregar`,
+      { email },
+      { context: this.contextoSinAvisoGlobal(), responseType: 'text' },
+    );
+  }
+
   obtenerPorId(
     idSucursal: number,
     silenciarErroresGlobales = false,
@@ -47,7 +82,8 @@ export class sucursalService {
       context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
     });
   }
-//POST
+
+  //POST
   crear(datos: SucursalPayload): Observable<SucursalDetalleDTO> {
     return this.http.post<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales`, datos);
   }
@@ -58,5 +94,9 @@ export class sucursalService {
   //DELETE
   eliminar(idSucursal: number): Observable<void> {
     return this.http.delete<void>(`${this.api.baseUrl}/sucursales/${idSucursal}`);
+  }
+
+  private contextoSinAvisoGlobal(): HttpContext {
+    return new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true);
   }
 }

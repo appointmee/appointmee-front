@@ -4,9 +4,17 @@
   <p class="ajustes__descripcion">Personalizá tus preferencias y la forma en que usás AppointMee.</p>
 
   <nav class="ajustes__pestanas" aria-label="Secciones de ajustes">
-    <span class="ajustes__pestana ajustes__pestana--activa" aria-current="page">Verificar cuenta</span>
+    <button dsButton type="button" class="ajustes__pestana" [class.ajustes__pestana--activa]="seccion() === 'verificacion'"
+      [attr.aria-pressed]="seccion() === 'verificacion'" (click)="seccion.set('verificacion')">Verificar cuenta</button>
+    @if (auth.autenticado()) {
+      <button dsButton type="button" class="ajustes__pestana" [class.ajustes__pestana--activa]="seccion() === 'password'"
+        [attr.aria-pressed]="seccion() === 'password'" (click)="seccion.set('password')">Cambiar contraseña</button>
+    }
   </nav>
 
+  @if (seccion() === 'password' && auth.autenticado()) {
+    <app-cambiar-password />
+  } @else {
   <section class="verificacion" aria-labelledby="verificacion-titulo">
     <div class="verificacion__cabecera">
       <div>
@@ -26,9 +34,9 @@
 
       @if (redirigiendo()) {
         <p class="verificacion__aviso">En un momento te llevamos a Sucursales…</p>
-        <button class="verificacion__principal" type="button" (click)="irASucursales()">Ir a Sucursales</button>
+        <button dsButton class="verificacion__principal" type="button" (click)="irASucursales()">Ir a Sucursales</button>
       } @else if (!auth.autenticado()) {
-        <button class="verificacion__principal" type="button" (click)="volverAlLogin()">Volver al inicio de sesión</button>
+        <button dsButton class="verificacion__principal" type="button" (click)="volverAlLogin()">Volver al inicio de sesión</button>
       }
     } @else if (contextoValido()) {
       <div class="verificacion__destinatario">
@@ -51,7 +59,7 @@
           <div class="verificacion__fila-codigo">
           <div class="verificacion__casillas">
             @for (indice of indicesCodigo; track indice) {
-              <input #casillaCodigo [id]="'verificacion-codigo-' + indice"
+              <ds-input><input #dsNativeControl #casillaCodigo [id]="'verificacion-codigo-' + indice"
                      class="verificacion__casilla" type="text" inputmode="numeric"
                      [attr.autocomplete]="indice === 0 ? 'one-time-code' : 'off'"
                      [attr.maxlength]="indice === 0 ? 6 : 1"
@@ -60,10 +68,10 @@
                      [value]="digito(indice)" (input)="ingresarCodigo($event, indice)"
                      (paste)="pegarCodigo($event, indice)" (keydown)="teclaCodigo($event, indice)"
                      (focus)="seleccionarCodigo($event)"
-                     [readOnly]="enviando() || confirmando() || bloqueada()" />
+                     [readOnly]="enviando() || confirmando() || bloqueada()" /></ds-input>
             }
           </div>
-        <button class="verificacion__secundario" type="button" (click)="enviarCodigo()"
+        <button dsButton class="verificacion__secundario" type="button" (click)="enviarCodigo()"
                 [disabled]="enviando() || confirmando() || segundosReenvio() > 0">
           {{ enviando() ? 'Enviando…' : segundosReenvio() > 0 ? 'Reenviar en ' + segundosReenvio() + ' s' : reenvioSugerido() || bloqueada() ? 'Pedir un código nuevo' : codigoEnviado() ? 'Reenviar código' : 'Enviar código' }}
         </button>
@@ -85,15 +93,16 @@
         </div>
 
         <div class="verificacion__acciones-verificar">
-          <button class="verificacion__principal" type="submit" [disabled]="!puedeVerificar()">
+          <button dsButton class="verificacion__principal" type="submit" [disabled]="!puedeVerificar()">
             {{ confirmando() ? 'Verificando…' : 'Verificar' }}
           </button>
-          <button class="verificacion__salir" type="button" aria-label="Volver al inicio de sesión" (click)="volverAlLogin()">Volver</button>
+          <button dsButton class="verificacion__salir" type="button" aria-label="Volver al inicio de sesión" (click)="volverAlLogin()">Volver</button>
         </div>
       </form>
     } @else {
       <p class="verificacion__aviso">Volvé a iniciar sesión para continuar con la verificación de tu cuenta.</p>
-      <button class="verificacion__salir" type="button" (click)="volverAlLogin()">Volver al inicio de sesión</button>
+      <button dsButton class="verificacion__salir" type="button" (click)="volverAlLogin()">Volver al inicio de sesión</button>
     }
   </section>
+  }
 </section>

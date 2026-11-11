@@ -1,3 +1,4 @@
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -33,7 +34,7 @@ const ESCALA_TEXTO: Readonly<Record<number, string>> = {
 
 @Component({
   selector: 'app-sucursal-equipo',
-  imports: [ErrorPage, EquipoSucursal, RouterLink],
+  imports: [DsButtonComponent, ErrorPage, EquipoSucursal, RouterLink],
   templateUrl: './sucursal-equipo.html',
   styleUrl: './sucursal-equipo.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

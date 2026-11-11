@@ -18,7 +18,7 @@
   } @else if (error()) {
     <div class="equipo__estado equipo__estado--error" role="alert">
       <p class="equipo__estado-texto">{{ error() }}</p>
-      <button class="equipo__reintentar" type="button" (click)="reintentar()">Reintentar</button>
+      <button dsButton class="equipo__reintentar" type="button" (click)="reintentar()">Reintentar</button>
     </div>
   } @else if (!hayEmpleados()) {
     <div class="equipo__vacio">
@@ -37,6 +37,7 @@
             [alt]="'Fotografía de ' + nombreCompleto(empleado)"
             loading="lazy"
             decoding="async"
+            referrerpolicy="no-referrer"
             (error)="onImageError($event)"
           />
 
