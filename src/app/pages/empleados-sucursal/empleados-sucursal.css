@@ -71,7 +71,7 @@ h1 {
  * la sección de auto-incorporación.
  */
 .empleados__scroll {
-  --fila-alto: 96px;
+  --fila-alto: 116px;
 
   max-height: calc(5 * var(--fila-alto));
   padding: 0 6px 0 2px;
@@ -108,18 +108,16 @@ h1 {
   position: relative;
 }
 
-/* Divisor amarillo parcial entre una fila y la siguiente. */
+/* Divisor amarillo que separa una fila de la siguiente a lo ancho completo. */
 .empleado:not(:last-child)::after {
   content: '';
   position: absolute;
   left: 0;
+  right: 0;
   bottom: 0;
-  width: 38%;
-  max-width: 220px;
   height: 2px;
-  border-radius: var(--radius-full);
   background: var(--accent);
-  opacity: 0.55;
+  opacity: 0.45;
 }
 
 .empleado__contenido {
@@ -132,8 +130,8 @@ h1 {
 }
 
 .empleado__foto {
-  width: 52px;
-  height: 52px;
+  width: 62px;
+  height: 62px;
   border-radius: var(--radius-full);
   border: 1px solid var(--line);
   object-fit: cover;
@@ -151,6 +149,7 @@ h1 {
   flex-wrap: wrap;
   gap: 0 6px;
   margin: 0;
+  font-size: 1.1rem;
   font-weight: 600;
   line-height: 1.25;
 }
@@ -164,14 +163,14 @@ h1 {
 .empleado__id {
   margin: 0;
   color: var(--muted);
-  font-size: var(--font-size-sm);
+  font-size: 0.95rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
 .empleado__id {
   font-family: var(--mono);
-  font-size: var(--font-size-xs);
+  font-size: 0.85rem;
 }
 
 .empleado__rating {
@@ -184,15 +183,15 @@ h1 {
 .empleado__puntuacion {
   color: var(--accent);
   font-family: var(--mono);
-  font-size: var(--font-size-sm);
+  font-size: 1.05rem;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .empleado__abejas {
   display: inline-flex;
-  gap: 1px;
-  font-size: 14px;
+  gap: 2px;
+  font-size: 18px;
   line-height: 1;
 }
 
@@ -209,7 +208,7 @@ h1 {
 .empleado__resenias,
 .empleado__sin-puntuacion {
   color: var(--muted);
-  font-size: var(--font-size-xs);
+  font-size: 0.85rem;
   white-space: nowrap;
 }
 
@@ -250,7 +249,7 @@ h1 {
 
 .skeleton {
   display: block;
-  height: 12px;
+  height: 14px;
   border-radius: var(--radius-full);
   background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.12), rgba(255,255,255,.06));
   background-size: 200% 100%;
@@ -258,14 +257,14 @@ h1 {
 }
 
 .skeleton--avatar {
-  width: 52px;
-  height: 52px;
+  width: 62px;
+  height: 62px;
   border-radius: var(--radius-full);
 }
 
 .skeleton--nombre {
   width: 45%;
-  height: 14px;
+  height: 16px;
 }
 
 .skeleton--email {
@@ -409,7 +408,7 @@ h1 {
   }
 
   .empleados__scroll {
-    --fila-alto: 138px;
+    --fila-alto: 172px;
   }
 
   .empleado__foto,
