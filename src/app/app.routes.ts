@@ -175,6 +175,20 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'mis-sucursales/:sucursalId/servicios/:servicioId/editar',
+    canActivate: [authGuard],
+    title: 'AppointMee | Editar servicio',
+    data: {
+      title: 'Editar servicio',
+      roles: ['EMPLEADOR'],
+      description: 'Editá un servicio existente.',
+    },
+    loadComponent: () =>
+      import('./pages/editar-servicio/editar-servicio').then(
+        (module) => module.EditarServicioPage,
+      ),
+  },
+  {
     path: 'mis-sucursales/:sucursalId/turnos',
     canActivate: [authGuard],
     title: 'AppointMee | Turnos de la sucursal',

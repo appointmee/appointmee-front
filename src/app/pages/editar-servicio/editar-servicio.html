@@ -1,0 +1,83 @@
+<section class="editar-servicio" aria-labelledby="editar-titulo">
+  <header class="editar-servicio__header">
+    <h1 id="editar-titulo">Editar servicio</h1>
+    <p>Actualizá los datos del servicio.</p>
+  </header>
+
+  @if (cargandoDatos()) {
+    <p role="status">Cargando servicio…</p>
+  } @else {
+    @if (exito()) {
+      <div class="aviso aviso--exito" role="status" aria-live="polite">{{ exito() }}</div>
+    }
+    @if (error()) {
+      <div class="aviso aviso--error" role="alert">{{ error() }}</div>
+    }
+
+    <form (submit)="onSubmit($event)" novalidate>
+      <div class="campo">
+        <label for="nombre">Nombre</label>
+        <ds-input>
+          <input #dsNativeControl id="nombre" type="text"
+                 [formField]="formulario.nombre" aria-describedby="nombre-error" />
+        </ds-input>
+        @if (formulario.nombre().touched() && formulario.nombre().invalid()) {
+          <p id="nombre-error" class="error" role="alert">{{ formulario.nombre().errors()[0]?.message }}</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="descripcion">Descripción</label>
+        <ds-input>
+          <input #dsNativeControl id="descripcion" type="text"
+                 [formField]="formulario.descripcion" />
+        </ds-input>
+      </div>
+
+      <div class="campo">
+        <label for="duracion">Duración (minutos)</label>
+        <ds-input>
+          <input #dsNativeControl id="duracion" type="number"
+                 [formField]="formulario.duracion" aria-describedby="duracion-error" />
+        </ds-input>
+        @if (formulario.duracion().touched() && formulario.duracion().invalid()) {
+          <p id="duracion-error" class="error" role="alert">{{ formulario.duracion().errors()[0]?.message }}</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="precio">Precio</label>
+        <ds-input>
+          <input #dsNativeControl id="precio" type="number"
+                 [formField]="formulario.precio" />
+        </ds-input>
+      </div>
+
+      <div class="campo">
+        <label for="fotoPerfil">Foto (URL)</label>
+        <ds-input>
+          <input #dsNativeControl id="fotoPerfil" type="url"
+                 [formField]="formulario.fotoPerfil" />
+        </ds-input>
+      </div>
+
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="cancelar()">Cancelar</button>
+        <button dsButton type="submit" [disabled]="cargando()" [attr.aria-busy]="cargando()">
+          {{ cargando() ? 'Guardando…' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (confirmarDescarte()) {
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="descarte-titulo">
+      <h2 id="descarte-titulo">¿Descartar cambios?</h2>
+      <p>Los cambios no guardados se perderán.</p>
+      <div class="modal__acciones">
+        <button type="button" (click)="confirmarDescarte.set(false)">Seguir editando</button>
+        <button type="button" (click)="confirmarDescartar()">Descartar</button>
+      </div>
+    </div>
+  }
+</section>
