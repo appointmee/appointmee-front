@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 
 import { SolicitudEmpleadoLista } from '../../components/solicitud-empleado-lista/solicitud-empleado-lista';
@@ -35,6 +35,7 @@ const SOLICITUDES_VISIBLES = 3;
 export class MisSucursales {
   private readonly sucursalesApi = inject(sucursalService);
   private readonly solicitudesApi = inject(solicitudEmpleadoService);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly recargar = new Subject<void>();
 
@@ -50,6 +51,11 @@ export class MisSucursales {
   protected readonly enviando = signal(false);
   protected readonly errorEnvio = signal<string | null>(null);
   protected readonly exitoEnvio = signal<string | null>(null);
+  protected readonly exitoCreacionServicio = signal<string | null>(
+    typeof this.router.getCurrentNavigation()?.extras.state?.['exitoCreacionServicio'] === 'string'
+      ? this.router.getCurrentNavigation()?.extras.state?.['exitoCreacionServicio'] as string
+      : null,
+  );
 
   protected readonly solicitudesEnviadas = signal<readonly SolicitudEmpleadoVista[]>([]);
   protected readonly cargandoEnviadas = signal(false);

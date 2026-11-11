@@ -101,7 +101,9 @@ export class CrearServicioPage {
         next: () => {
           this.cargando.set(false);
           this.exito.set('Servicio creado correctamente.');
-          void this.router.navigateByUrl('/mis-sucursales');
+          void this.router.navigateByUrl('/mis-sucursales', {
+            state: { exitoCreacionServicio: this.exito() },
+          });
         },
         error: () => {
           this.cargando.set(false);

@@ -13,6 +13,10 @@
       <a routerLink="/mis-sucursales/nueva" class="boton boton--primario">Crear sucursal</a>
     </header>
 
+    @if (exitoCreacionServicio()) {
+      <p class="aviso aviso--exito" role="status" aria-live="polite">{{ exitoCreacionServicio() }}</p>
+    }
+
     @if (cargandoSucursales()) {
       <div class="lista" aria-busy="true" aria-live="polite">
         <span class="sr-only">Cargando tus sucursales…</span>
