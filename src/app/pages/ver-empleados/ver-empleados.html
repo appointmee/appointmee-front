@@ -1,0 +1,12 @@
+<section class="ver-empleados">
+  <h1>Empleados de la sucursal</h1>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  <label>Sucursal ID <input type="number" [(ngModel)]="sucursalId" name="sucursalId" (change)="cargar()" /></label>
+  @if (cargando()) { <p role="status">Cargando…</p> }
+  @else if (empleados().length === 0) { <p>No hay empleados.</p> }
+  @else {
+    <ul>
+      @for (e of empleados(); track e.id) { <li>{{ e.nombre }} {{ e.apellido }}</li> }
+    </ul>
+  }
+</section>
