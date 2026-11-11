@@ -83,10 +83,6 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
             path: 'mis-sucursales/:sucursalId/empleados',
             component: EmpleadosSucursal,
           },
-          {
-            path: 'mis-sucursales/:sucursalId/empleado/:empleadoId',
-            component: Dummy,
-          },
           { path: 'mis-sucursales', component: Dummy },
           { path: '', component: Dummy },
         ]),
@@ -295,12 +291,12 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
 
     const css = estilosRegistrados();
 
-    expect(css).toMatch(/--fila-alto:\s*96px/);
+    expect(css).toMatch(/--fila-alto:\s*116px/);
     expect(css).toMatch(/max-height:\s*calc\(5\s*\*\s*var\(--fila-alto\)\)/);
     expect(css).toMatch(/overflow-y:\s*auto/);
   });
 
-  it('separa las filas con una línea divisoria parcial amarilla', async () => {
+  it('separa las filas con una línea divisoria amarilla a lo ancho completo', async () => {
     await abrir();
     responderListado();
     await fixture.whenStable();
@@ -310,7 +306,8 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
 
     expect(css).toMatch(/\.empleado[^{]*:not\(:last-child\)[^{]*::after/);
     expect(css).toMatch(/background:\s*var\(--accent\)/);
-    expect(css).toMatch(/width:\s*38%/);
+    expect(css).toMatch(/left:\s*0/);
+    expect(css).toMatch(/right:\s*0/);
   });
 
   it('reduce las dimensiones del bloque de auto-incorporación', async () => {
@@ -359,16 +356,24 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     expect(filas(host).length).toBe(3);
   });
 
-  it('enlaza cada fila con el detalle del empleado', async () => {
+  it('no permite seleccionar ni abrir el detalle de un empleado', async () => {
     const host = await abrir();
     responderListado();
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const enlaces = Array.from(host.querySelectorAll<HTMLAnchorElement>('.empleado__enlace'));
-    expect(enlaces.length).toBe(2);
-    expect(enlaces[0].getAttribute('href')).toContain('/mis-sucursales/7/empleado/10');
-    expect(enlaces[1].getAttribute('href')).toContain('/mis-sucursales/7/empleado/11');
-    expect(enlaces[0].getAttribute('aria-label')).toBe('Ver detalle de Ana Gómez');
+    const scroll = host.querySelector<HTMLElement>('.empleados__scroll');
+    expect(scroll?.querySelectorAll('a').length).toBe(0);
+    expect(scroll?.querySelectorAll('button').length).toBe(0);
+    expect(scroll?.querySelectorAll('.empleado__enlace').length).toBe(0);
+  });
+
+  it('no repite el texto de la puntuación porque ya se ve en las abejas y el número', async () => {
+    const host = await abrir();
+    responderListado();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(host)).not.toContain('Puntuación promedio');
   });
 });
