@@ -1,3 +1,5 @@
+import { UsuarioResponseDTO } from './usuario';
+
 export interface DisponibilidadDTO {
   fecha: string;
   horarios: readonly string[];
@@ -36,6 +38,18 @@ export interface TurnoMiniDTO {
 export interface UsuarioMiniDTO {
   readonly nombre: string;
   readonly apellido: string;
+}
+
+/** Respuesta de GET /turnos/de-sucursal/detalles/{turnoId} (TurnoResponseDTO). */
+export interface TurnoEmpleadorDetalleDTO {
+  readonly id: number;
+  readonly fechaReserva: string;
+  readonly fechaTurno: string;
+  readonly estadoTurno: EstadoTurno;
+  readonly cliente: UsuarioMiniDTO;
+  readonly empleado: UsuarioResponseDTO;
+  readonly servicio: ServicioTurnoDTO;
+  readonly resenia: ReseniaTurnoDTO | null;
 }
 
 export interface ServicioTurnoDTO {
