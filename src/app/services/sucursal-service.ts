@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { backendService } from './backend-service';
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
-import { SucursalDetalleDTO, SucursalMiniDTO } from '../models/sucursal';
+import { SucursalDetalleDTO, SucursalMiniDTO, SucursalPayload } from '../models/sucursal';
 
 /**
  * Devuelve un HttpContext que silencia el manejo global de errores para que la
@@ -80,6 +80,24 @@ export class sucursalService {
     }
     return this.http.get<SucursalDetalleDTO>(url, {
       context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+    });
+  }
+
+  crear(datos: SucursalPayload): Observable<SucursalDetalleDTO> {
+    return this.http.post<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales`, datos, {
+      context: contextoSilenciado(true),
+    });
+  }
+
+  actualizar(idSucursal: number, datos: SucursalPayload): Observable<SucursalDetalleDTO> {
+    return this.http.put<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales/${idSucursal}`, datos, {
+      context: contextoSilenciado(true),
+    });
+  }
+
+  eliminar(idSucursal: number): Observable<void> {
+    return this.http.delete<void>(`${this.api.baseUrl}/sucursales/${idSucursal}`, {
+      context: contextoSilenciado(true),
     });
   }
 

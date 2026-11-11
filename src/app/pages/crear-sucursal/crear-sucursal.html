@@ -1,0 +1,81 @@
+<section class="crear-sucursal" aria-labelledby="crear-titulo">
+  <header class="crear-sucursal__header">
+    <h1 id="crear-titulo">Crear sucursal</h1>
+    <p>Completá los datos de tu nuevo local.</p>
+  </header>
+
+  @if (exito()) {
+    <div class="aviso aviso--exito" role="status" aria-live="polite">{{ exito() }}</div>
+  }
+  @if (error()) {
+    <div class="aviso aviso--error" role="alert">{{ error() }}</div>
+  }
+
+  <form (submit)="onSubmit($event)" novalidate>
+    <div class="campo">
+      <label for="nombre">Nombre</label>
+      <ds-input>
+        <input #dsNativeControl id="nombre" type="text" autocomplete="organization"
+               [formField]="formulario.nombre" aria-describedby="nombre-error" />
+      </ds-input>
+      @if (formulario.nombre().touched() && formulario.nombre().invalid()) {
+        <p id="nombre-error" class="error" role="alert">{{ formulario.nombre().errors()[0]?.message }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="direccion">Dirección</label>
+      <ds-input>
+        <input #dsNativeControl id="direccion" type="text" autocomplete="street-address"
+               [formField]="formulario.direccion" />
+      </ds-input>
+    </div>
+
+    <div class="campo">
+      <label for="telefono">Teléfono</label>
+      <ds-input>
+        <input #dsNativeControl id="telefono" type="tel" autocomplete="tel"
+               [formField]="formulario.telefono" />
+      </ds-input>
+    </div>
+
+    <div class="campo">
+      <label for="categoria">Categoría</label>
+      <ds-input>
+        <input #dsNativeControl id="categoria" type="text"
+               [formField]="formulario.categoria" />
+      </ds-input>
+    </div>
+
+    <div class="campo">
+      <label for="descripcion">Descripción</label>
+      <ds-input>
+        <input #dsNativeControl id="descripcion" type="text"
+               [formField]="formulario.descripcion" />
+      </ds-input>
+    </div>
+
+    <div class="campo">
+      <label for="horaApertura">Hora de apertura</label>
+      <ds-input>
+        <input #dsNativeControl id="horaApertura" type="time"
+               [formField]="formulario.horaApertura" />
+      </ds-input>
+    </div>
+
+    <div class="campo">
+      <label for="horaCierre">Hora de cierre</label>
+      <ds-input>
+        <input #dsNativeControl id="horaCierre" type="time"
+               [formField]="formulario.horaCierre" />
+      </ds-input>
+    </div>
+
+    <div class="acciones">
+      <a routerLink="/mis-sucursales" class="boton boton--secundario">Cancelar</a>
+      <button dsButton type="submit" [disabled]="cargando()">
+        {{ cargando() ? 'Creando…' : 'Crear sucursal' }}
+      </button>
+    </div>
+  </form>
+</section>

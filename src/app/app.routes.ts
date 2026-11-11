@@ -133,6 +133,20 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'mis-sucursales/nueva',
+    canActivate: [authGuard],
+    title: 'AppointMee | Crear sucursal',
+    data: {
+      title: 'Crear sucursal',
+      roles: ['EMPLEADOR'],
+      description: 'Creá una nueva sucursal para gestionarla desde tu panel.',
+    },
+    loadComponent: () =>
+      import('./pages/crear-sucursal/crear-sucursal').then(
+        (module) => module.CrearSucursalPage,
+      ),
+  },
+  {
     path: 'solicitudes/empleo/enviadas/:sucursalId',
     canActivate: [authGuard],
     title: 'AppointMee | Solicitudes de empleo enviadas',

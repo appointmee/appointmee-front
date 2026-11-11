@@ -13,6 +13,18 @@ export interface SucursalMiniDTO {
  * Solo se tipan los campos que consume el detalle: el endpoint también
  * devuelve datos del empleador y de los empleados que no se muestran.
  */
+export interface SucursalPayload {
+  readonly nombre: string;
+  readonly direccion: string | null;
+  readonly telefono: string | null;
+  readonly descripcion: string | null;
+  readonly categoria: string | null;
+  readonly horaApertura: string | null;
+  readonly horaCierre: string | null;
+  readonly diasApertura: readonly string[] | null;
+  readonly fotoPerfil: string | null;
+}
+
 export interface SucursalDetalleDTO {
   readonly id: number;
   readonly nombre: string;
