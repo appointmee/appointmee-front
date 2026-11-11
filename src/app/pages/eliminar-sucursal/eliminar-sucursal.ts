@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 
 import { SucursalMiniDTO } from '../../models/sucursal';
 import { sucursalService } from '../../services/sucursal-service';
-import { AuthService } from '../../services/auth-service';
+import { authService } from "../../services/auth-service";
 
 @Component({
   selector: 'app-eliminar-sucursal',
@@ -13,7 +13,7 @@ import { AuthService } from '../../services/auth-service';
 })
 export class EliminarSucursal {
   private readonly api = inject(sucursalService);
-  protected readonly auth = inject(AuthService);
+  protected readonly auth = inject(authService);
 
   protected readonly sucursales = signal<readonly SucursalMiniDTO[]>([]);
   protected readonly eliminando = signal(false);
