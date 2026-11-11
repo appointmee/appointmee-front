@@ -1,4 +1,4 @@
-<section class="detalle" [class.detalle--con-aviso]="avisoRol()">
+<section class="detalle">
   @if (loading()) {
     <h1 class="sr-only">Cargando sucursal</h1>
     <div class="detalle__hero detalle__hero--skeleton" aria-hidden="true">
@@ -373,10 +373,6 @@
           <p class="detalle__cta-aviso" role="alert">{{ avisoRol() }}</p>
         }
 
-        <div class="detalle__cta-copy">
-          <strong>{{ s.nombre }}</strong>
-          <span>{{ categoria() }}</span>
-        </div>
         <div class="detalle__cta-acciones">
           <a class="btn btn--ghost" routerLink="/sucursales">Volver</a>
           <button dsButton
@@ -384,11 +380,11 @@
             type="button"
             [disabled]="navegando()"
             [attr.aria-busy]="navegando()"
-            [attr.aria-label]="'Reservar turno en ' + s.nombre"
+            [attr.aria-label]="'Seleccionar turno en ' + s.nombre"
             aria-describedby="reserva-ayuda"
             (click)="iniciarReserva()"
           >
-            {{ navegando() ? 'Abriendo…' : 'Reservar turno' }}
+            {{ navegando() ? 'Abriendo…' : 'Seleccionar turno' }}
           </button>
         </div>
       </div>

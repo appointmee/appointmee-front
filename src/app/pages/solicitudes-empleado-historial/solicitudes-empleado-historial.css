@@ -4,7 +4,7 @@
 
 .historial {
   min-height: calc(100dvh - var(--nav-h));
-  padding: calc(var(--nav-h) + 40px) 24px 80px;
+  padding: 40px 24px 80px;
 }
 
 .historial__inner {
@@ -167,7 +167,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 42px;
+  min-height: var(--touch-target);
   padding: 10px 18px;
   border: 1px solid transparent;
   border-radius: 11px;
@@ -375,7 +375,7 @@
 
 @media (max-width: 640px) {
   .historial {
-    padding: calc(var(--nav-h) + 24px) 16px 64px;
+    padding: 24px 16px 64px;
   }
 
   .historial__inner {

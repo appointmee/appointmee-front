@@ -169,7 +169,7 @@
 
 .equipo__reintentar {
   justify-self: start;
-  min-height: 40px;
+  min-height: var(--touch-target);
   padding: 0 16px;
   border: 1px solid rgba(247, 198, 90, 0.36);
   border-radius: 11px;

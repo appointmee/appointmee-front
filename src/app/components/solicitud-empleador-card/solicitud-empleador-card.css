@@ -241,7 +241,7 @@ app-solicitud-empleador-detalle {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 38px;
+  min-height: var(--touch-target);
   padding: 8px 14px;
   border: 1px solid transparent;
   border-radius: 10px;

@@ -16,7 +16,13 @@
 
 :root {
   color-scheme: dark;
-  --nav-h: 76px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --nav-h: calc(76px + var(--safe-top));
+  --touch-target: 44px;
+  --dialog-gutter: 12px;
   /* Colores */
   --page-bg: #07090d;
   --surface: #0d1117;
@@ -73,6 +79,8 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-block-start: calc(var(--nav-h) + 8px);
+  scroll-padding-block-end: calc(var(--safe-bottom) + 8px);
 }
 
 body {
@@ -182,4 +190,52 @@ a {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #303a49;
+}
+
+/* Los contenedores pueden encogerse y el contenido largo puede replegarse. */
+body {
+  overflow-wrap: anywhere;
+}
+
+img,
+video {
+  max-inline-size: 100%;
+  object-fit: contain;
+}
+
+:where(button, input:not([type='hidden'], [type='radio'], [type='checkbox']), select, textarea),
+a[class] {
+  min-block-size: var(--touch-target);
+}
+
+button {
+  min-inline-size: var(--touch-target);
+  max-inline-size: 100%;
+}
+
+a[class] {
+  min-inline-size: var(--touch-target);
+}
+
+input, select, textarea {
+  max-inline-size: 100%;
+}
+
+dialog {
+  inset: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  max-inline-size: calc(100% - var(--safe-left) - var(--safe-right) - 2 * var(--dialog-gutter));
+  max-block-size: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 2 * var(--dialog-gutter));
+  overscroll-behavior: contain;
+}
+
+@media (pointer: coarse) {
+  input:not([type='radio'], [type='checkbox']), select, textarea {
+    font-size: max(1rem, 16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }

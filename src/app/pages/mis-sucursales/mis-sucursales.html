@@ -94,6 +94,7 @@
                 id="email-destinatario"
                 class="busqueda__input"
                 type="email"
+                autocomplete="email"
                 [value]="email()"
                 (input)="email.set($any($event.target).value)"
                 placeholder="nombre@ejemplo.com"

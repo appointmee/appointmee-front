@@ -1,7 +1,6 @@
 .login-modal {
   position: fixed;
   width: min(440px, calc(100vw - 24px));
-  max-height: calc(100dvh - 24px);
   margin: auto;
   padding: 0;
   overflow-y: auto;
@@ -18,14 +17,17 @@
 }
 
 .login-modal__cerrar {
-  position: absolute;
+  position: sticky;
+  display: block;
+  margin: 0 8px 0 auto;
+  z-index: 1;
   top: 8px;
   right: 8px;
-  width: 36px;
-  height: 36px;
+  width: var(--touch-target);
+  height: var(--touch-target);
   border: 0;
   border-radius: 8px;
-  background: transparent;
+  background: var(--surface);
   color: var(--text);
   font: inherit;
   cursor: pointer;

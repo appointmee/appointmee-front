@@ -1,6 +1,5 @@
 .verificacion-modal {
   width: min(440px, calc(100vw - 32px));
-  max-height: calc(100dvh - 32px);
   overflow: auto;
   margin: auto;
   padding: 28px;

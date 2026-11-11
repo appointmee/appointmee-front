@@ -4,7 +4,7 @@
 
 .gestion {
   min-height: calc(100dvh - var(--nav-h));
-  padding: calc(var(--nav-h) + 40px) 24px 80px;
+  padding: 40px 24px 80px;
 }
 
 .gestion__inner {
@@ -248,7 +248,7 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 42px;
+  min-height: var(--touch-target);
   padding: 0 16px;
   border: 1px solid var(--line);
   border-radius: 12px;

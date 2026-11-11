@@ -4,7 +4,7 @@
 
 .listado {
   min-height: calc(100dvh - var(--nav-h));
-  padding: calc(var(--nav-h) + 40px) 24px 80px;
+  padding: 40px 24px 80px;
 }
 
 .listado__inner {
@@ -200,7 +200,7 @@
 .grid {
   display: grid;
   gap: 20px;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 @media (min-width: 640px) {
@@ -482,11 +482,11 @@ button.estado__link:disabled {
   }
 
   .listado {
-    padding: calc(var(--nav-h) + 24px) 16px 64px;
+    padding: 24px 16px 64px;
   }
 
   .listado__inner {
-    width: calc(100% - 32px);
+    width: 100%;
   }
 }
 

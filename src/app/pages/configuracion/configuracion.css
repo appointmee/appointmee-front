@@ -256,3 +256,19 @@
   flex: 0 1 150px;
   margin: 0 0 0 auto;
 }
+
+.verificacion__acciones-verificar {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 400px) {
+  .ajustes,
+  .verificacion {
+    padding-inline: 12px;
+  }
+
+  .verificacion__fila-codigo .verificacion__casillas {
+    grid-template-columns: repeat(auto-fit, minmax(var(--touch-target), 1fr));
+    gap: 4px;
+  }
+}

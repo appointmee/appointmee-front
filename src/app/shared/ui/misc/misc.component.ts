@@ -99,7 +99,7 @@ export class DsEmptyStateComponent {
     </div>
   }`,
   styles: [
-    `.ds-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000}.ds-modal{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:var(--space-4);max-width:500px;width:90%;max-height:90dvh;overflow:auto}.ds-modal:focus-visible{outline:2px solid var(--accent);outline-offset:2px}`,
+    `.ds-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:calc(var(--safe-top) + var(--dialog-gutter)) calc(var(--safe-right) + var(--dialog-gutter)) calc(var(--safe-bottom) + var(--dialog-gutter)) calc(var(--safe-left) + var(--dialog-gutter));z-index:1000}.ds-modal{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:var(--space-4);max-width:500px;width:100%;max-height:100%;overflow:auto;overscroll-behavior:contain}.ds-modal:focus-visible{outline:2px solid var(--accent);outline-offset:2px}`,
   ],
 })
 export class DsModalComponent implements AfterViewChecked, OnDestroy {
@@ -195,7 +195,7 @@ export class DsModalComponent implements AfterViewChecked, OnDestroy {
     <span aria-live="polite">{{ pageLabel }} {{ page }} {{ ofLabel }} {{ totalPages }}</span>
     <button type="button" (click)="next()" [disabled]="page >= totalPages">{{ nextLabel }}</button>
   </nav>`,
-  styles: [`.ds-pagination{display:flex;gap:var(--space-2);align-items:center}`],
+  styles: [`.ds-pagination{display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center}`],
 })
 export class DsPaginationComponent {
   @Input() page = 1;
@@ -269,7 +269,7 @@ export class DsSelectComponent implements AfterViewInit {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<label class="ds-checkbox" [attr.for]="id"><input [id]="id" type="checkbox" [disabled]="disabled" [checked]="checked" [value]="value" (change)="onChange($event)" [attr.aria-invalid]="error ? 'true' : null" [attr.aria-describedby]="error ? id + '-error' : null" /><span><ng-content></ng-content></span></label>@if(error){<span class="ds-error" [id]="id + '-error'" role="alert">{{error}}</span>}`,
-  styles: [`.ds-checkbox{display:inline-flex;gap:var(--space-2);align-items:center;cursor:pointer}.ds-checkbox:has(input:disabled){opacity:.6;cursor:not-allowed}.ds-checkbox input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}`],
+  styles: [`.ds-checkbox{display:inline-flex;min-width:var(--touch-target);min-height:var(--touch-target);gap:var(--space-2);align-items:center;cursor:pointer}.ds-checkbox:has(input:disabled){opacity:.6;cursor:not-allowed}.ds-checkbox input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}`],
 })
 export class DsCheckboxComponent {
   readonly id = `ds-checkbox-${++nextSelectId}`;
@@ -291,7 +291,7 @@ export class DsCheckboxComponent {
   template: `<label class="ds-radio"
     ><input type="radio" [disabled]="disabled" [name]="name" [checked]="checked" [value]="value" (change)="onChange($event)" [attr.aria-invalid]="error ? 'true' : null" [attr.aria-describedby]="error ? id + '-error' : null" /><span><ng-content></ng-content></span
   ></label>@if(error){<span class="ds-error" [id]="id + '-error'" role="alert">{{error}}</span>}`,
-  styles: [`.ds-radio{display:inline-flex;gap:var(--space-2);align-items:center;cursor:pointer}.ds-radio:hover input:not(:disabled){accent-color:var(--accent-strong)}.ds-radio:has(input:disabled){opacity:.6;cursor:not-allowed}.ds-radio input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.ds-radio input:active:not(:disabled){transform:scale(.96)}.ds-error{color:var(--danger);font-size:var(--font-size-xs)}`],
+  styles: [`.ds-radio{display:inline-flex;min-width:var(--touch-target);min-height:var(--touch-target);gap:var(--space-2);align-items:center;cursor:pointer}.ds-radio:hover input:not(:disabled){accent-color:var(--accent-strong)}.ds-radio:has(input:disabled){opacity:.6;cursor:not-allowed}.ds-radio input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.ds-radio input:active:not(:disabled){transform:scale(.96)}.ds-error{color:var(--danger);font-size:var(--font-size-xs)}`],
 })
 export class DsRadioComponent {
   readonly id = `ds-radio-${++nextSelectId}`;

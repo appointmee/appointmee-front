@@ -6,5 +6,5 @@
 .aviso { padding: .75rem 1rem; border-radius: .5rem; margin-bottom: 1rem; }
 .aviso--exito { background: #e6f4ea; color: #1e4620; }
 .aviso--error { background: #fdecea; color: #5f2120; }
-.acciones { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1.5rem; }
+.acciones { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: flex-end; margin-top: 1.5rem; }
 .boton--secundario { text-decoration: none; padding: .5rem 1rem; border: 1px solid #ccc; border-radius: .5rem; }

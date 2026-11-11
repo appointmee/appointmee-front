@@ -4,7 +4,7 @@
 
 .pago-turno {
   min-height: calc(100dvh - var(--nav-h));
-  padding: calc(var(--nav-h) + 32px) 24px 32px;
+  padding: 32px 24px 32px;
 }
 
 .pago-turno__inner {
@@ -421,7 +421,7 @@
 
 @media (max-width: 640px) {
   .pago-turno {
-    padding: calc(var(--nav-h) + 20px) 16px 20px;
+    padding: 20px 16px 20px;
   }
 
   .estado {

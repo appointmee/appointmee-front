@@ -4,7 +4,7 @@
 
 .solicitudes {
   min-height: calc(100dvh - var(--nav-h));
-  padding: calc(var(--nav-h) + 40px) 24px 80px;
+  padding: 40px 24px 80px;
 }
 
 .solicitudes__inner {
@@ -235,7 +235,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 42px;
+  min-height: var(--touch-target);
   margin-top: auto;
   padding: 10px 14px;
   border: 1px solid var(--line);
@@ -460,7 +460,7 @@
 
 @media (max-width: 640px) {
   .solicitudes {
-    padding: calc(var(--nav-h) + 24px) 16px 64px;
+    padding: 24px 16px 64px;
   }
 
   .solicitudes__inner {

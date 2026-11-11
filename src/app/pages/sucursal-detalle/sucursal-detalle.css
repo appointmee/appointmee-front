@@ -106,7 +106,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 42px;
+  min-height: var(--touch-target);
   padding: 0 16px 0 13px;
   border: 1px solid rgba(247, 198, 90, 0.68);
   border-radius: 999px;
@@ -211,6 +211,9 @@
 }
 
 .breadcrumb__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #cbd5e1;
   font-size: 12.5px;
   font-weight: 550;
@@ -313,7 +316,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
+  min-height: var(--touch-target);
   padding: 6px 15px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
@@ -1264,27 +1267,24 @@
     margin-left: 16px;
   }
 
+  .detalle:has(.detalle__cta-mobile) {
+    padding-bottom: 0;
+    margin-block-end: calc(-1 * var(--safe-bottom));
+  }
+
   .detalle__cta-mobile {
-    position: fixed;
-    left: 0;
-    right: 0;
+    position: sticky;
     bottom: 0;
     z-index: 900;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    display: grid;
+    gap: 8px;
+    padding: 8px 16px calc(8px + var(--safe-bottom));
     border-top: 1px solid rgba(247, 198, 90, 0.18);
-    background: rgba(9, 12, 17, 0.93);
-    backdrop-filter: blur(16px) saturate(150%);
-    -webkit-backdrop-filter: blur(16px) saturate(150%);
-    box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.45);
+    background: rgba(9, 12, 17, 0.96);
+    box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.4);
   }
 
   .detalle__cta-aviso {
-    flex: 1 1 100%;
     margin: 0;
     color: #f0e2b6;
     font-size: 12.5px;
@@ -1292,47 +1292,18 @@
   }
 
   .detalle__cta-acciones {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-
-  .detalle__cta-copy {
     display: grid;
-    min-width: 0;
-    gap: 2px;
-  }
-
-  .detalle__cta-copy strong {
-    overflow: hidden;
-    color: #eef2f7;
-    font-size: 13.5px;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .detalle__cta-copy span {
-    color: var(--muted);
-    font-size: 11.5px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 8px;
   }
 
   .detalle__cta-mobile .btn {
-    flex-shrink: 0;
-    min-height: 44px;
-    padding: 0 18px;
+    min-width: 0;
+    min-height: var(--touch-target);
+    padding: 6px 8px;
     font-size: 14px;
-  }
-
-  .detalle {
-    padding-bottom: calc(96px + env(safe-area-inset-bottom));
-  }
-
-  /* El aviso de rol agrega una fila a la barra fija: se reserva su altura
-     para que no tape el último contenido ni el footer. */
-  .detalle--con-aviso {
-    padding-bottom: calc(172px + env(safe-area-inset-bottom));
+    text-align: center;
+    white-space: normal;
   }
 
   .panel--reserva .btn--block {
@@ -1400,7 +1371,7 @@
 
   .volver {
     font-size: 12.5px;
-    min-height: 38px;
+    min-height: var(--touch-target);
     padding: 0 14px 0 11px;
   }
 

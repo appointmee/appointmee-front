@@ -4,7 +4,7 @@
 
 .resultado-pago {
   min-height: calc(100dvh - var(--nav-h));
-  padding: calc(var(--nav-h) + 32px) 24px 32px;
+  padding: 32px 24px 32px;
 }
 
 .resultado-pago__inner {
@@ -184,7 +184,7 @@
 
 @media (max-width: 640px) {
   .resultado-pago {
-    padding: calc(var(--nav-h) + 20px) 16px 20px;
+    padding: 20px 16px 20px;
   }
   .tarjeta {
     padding: 30px 20px;

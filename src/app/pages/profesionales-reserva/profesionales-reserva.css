@@ -2,7 +2,7 @@
 
 .reserva {
   min-height: calc(100dvh - var(--nav-h));
-  padding: calc(var(--nav-h) + 40px) 24px 80px;
+  padding: 40px 24px 80px;
 }
 
 .reserva__inner { width: min(100% - 48px, 1180px); margin: 0 auto; display: grid; gap: 28px; }
@@ -22,7 +22,7 @@
 .horarios { display: grid; gap: 16px; padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.02); }
 .horarios h2 { margin: 0; color: #f6f8fb; }
 .fechas, .horas { display: flex; flex-wrap: wrap; gap: 10px; }
-.opcion { min-height: 42px; padding: 0 16px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.04); color: var(--text); cursor: pointer; }
+.opcion { min-height: var(--touch-target); padding: 0 16px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.04); color: var(--text); cursor: pointer; }
 .opcion--seleccionada { border-color: var(--accent); background: var(--accent); color: #211704; }
 .mensaje { margin: 0; }
 .mensaje--error { color: #ffb3ad; }

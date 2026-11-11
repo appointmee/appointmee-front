@@ -328,3 +328,27 @@ completado o con limitación concreta documentada.
 - Tests nuevos para cada criterio nuevo; build + suite completa en verde.
 - PR contra `develop`; descripción con qué cambió, cómo se probó y riesgos.
 
+
+### Diseño responsive y accesibilidad táctil
+
+Aplicar a toda pantalla y componente nuevo o modificado, incluidos los estados de
+carga, vacío, error y los flujos con sesión.
+
+- Diseñar primero para móvil. Probar en 360, 390, 768, 1024 y 1440 px y con zoom
+  del navegador al 200 %. Revisar títulos largos y valores que vienen de la API.
+- Mantener el documento sin scroll horizontal accidental. Si una lista necesita
+  desplazamiento horizontal, limitarlo a su contenedor y conservar el foco visible.
+- Dar a botones, enlaces de acción e iconos interactivos un área mínima de 44 × 44
+  px usando el token `--touch-target`. Revisar también los controles compactos.
+- Usar tipos de campo, `inputmode` y `autocomplete` según el dato. Conservar
+  etiquetas visibles y permitir que teclado y autocompletado nativos funcionen.
+- Preservar la proporción de las imágenes. Usar `object-fit` si la caja tiene
+  dimensiones fijas y verificar el fallback.
+- Respetar las safe areas y dejar espacio para que navbar y footer fijos no tapen
+  contenido ni el foco al navegar. Evitar reservar alturas fijas para barras cuyo
+  texto puede ocupar varias líneas.
+- Hacer que menús y modales quepan en viewports bajos, con scroll interno si hace
+  falta. Verificar cierre por botón y Escape, y retorno del foco.
+- Registrar en el PR las rutas y tamaños probados, el resultado del zoom y
+  cualquier limitación de verificación. Usar Playwright para cubrir regresiones
+  de layout y comprobar visualmente las interacciones que lo requieran.

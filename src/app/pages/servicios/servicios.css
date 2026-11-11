@@ -4,7 +4,7 @@
 
 .servicios {
   min-height: calc(100dvh - var(--nav-h));
-  padding: calc(var(--nav-h) + 40px) 24px 80px;
+  padding: 40px 24px 80px;
 }
 
 .servicios__inner {
@@ -720,7 +720,7 @@
 }
 
 .boton--compacto {
-  min-height: 40px;
+  min-height: var(--touch-target);
   margin-left: auto;
   padding: 9px 16px;
   white-space: nowrap;
@@ -859,7 +859,7 @@
 
 @media (max-width: 640px) {
   .servicios {
-    padding: calc(var(--nav-h) + 24px) 16px 64px;
+    padding: 24px 16px 64px;
   }
 
   .servicios__inner {

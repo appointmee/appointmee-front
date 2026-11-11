@@ -12,7 +12,7 @@
 
 .login--modal .login__card {
   width: 100%;
-  padding-top: 44px;
+  padding-top: 12px;
   border: 0;
   box-shadow: none;
 }
@@ -145,7 +145,9 @@
 
 .login__toggle {
   position: absolute;
-  inset: 4px 6px 4px auto;
+  inset: 0 6px 0 auto;
+  height: var(--touch-target);
+  margin-block: auto;
   border: 0;
   border-radius: 8px;
   padding: 0 10px;
@@ -193,6 +195,11 @@
   border-radius: 12px;
   background: transparent;
   cursor: pointer;
+}
+
+.login__forgot {
+  display: grid;
+  place-items: center;
 }
 
 button.login__link {
