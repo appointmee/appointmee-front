@@ -6,7 +6,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tiny-files-lead.loca.lt https://res.cloudinary.com https://encrypted-tbn0.gstatic.com https://images.pexels.com https://static.vecteezy.com https://img.magnific.com https://pimedelaar.org; font-src 'self' data:; connect-src 'self' https://tiny-files-lead.loca.lt https://vitals.vercel-insights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://appointrail-production.up.railway.app https://res.cloudinary.com https://encrypted-tbn0.gstatic.com https://images.pexels.com https://static.vecteezy.com https://img.magnific.com https://pimedelaar.org; font-src 'self' data:; connect-src 'self' https://appointrail-production.up.railway.app https://vitals.vercel-insights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
         },
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "DENY" },

@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class backendService {
 
-  // El frontend estático usa backend local en desarrollo y HTTPS en Vercel.
+  // El frontend estático usa backend local en desarrollo y HTTPS en producción.
   readonly baseUrl = this.resolveBaseUrl();
 
 
@@ -28,6 +28,6 @@ export class backendService {
     return hostname === 'localhost' || hostname === '127.0.0.1'
       ? 'http://localhost:8080'
       // IMPORTANTE: si cambia la URL pública del backend, actualizar esta URL.
-      : 'https://tiny-files-lead.loca.lt';
+      : 'https://appointrail-production.up.railway.app';
   }
 }
