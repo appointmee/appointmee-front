@@ -26,11 +26,11 @@ export class servicioService {
   }
   //POST
   crear(datos: ServicioPayload): Observable<ServicioDTO> {
-    return this.http.post<ServicioDTO>(`${this.api.baseUrl}/servicios`, datos);
+    return this.http.post<ServicioDTO>(`${this.api.baseUrl}/servicios/crear`, datos);
   }
 //PUT
   actualizar(servicioId: number, datos: ServicioPayload): Observable<ServicioDTO> {
-    return this.http.put<ServicioDTO>(`${this.api.baseUrl}/servicios/${servicioId}`, datos);
+    return this.http.patch<ServicioDTO>(`${this.api.baseUrl}/servicios/modificar/${servicioId}`, datos);
   }
 //DELETE
   eliminar(servicioId: number): Observable<void> {

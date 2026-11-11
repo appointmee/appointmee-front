@@ -56,7 +56,11 @@ export class CrearServicioPage {
     if (this.cargando()) return;
     this.formulario().markAsTouched();
     if (this.formulario().invalid()) {
-      this.formulario.nombre().focusBoundControl();
+      const primerCampoInvalido = [
+        this.formulario.nombre,
+        this.formulario.duracion,
+      ].find(campo => campo().invalid());
+      primerCampoInvalido?.().focusBoundControl();
       return;
     }
     if (this.sucursalId === null) {
