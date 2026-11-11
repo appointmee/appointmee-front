@@ -109,7 +109,7 @@ describe('Registro de cliente', () => {
     expect(page.mensaje()).toContain('pendiente de verificación');
     const acciones = fixture.nativeElement.querySelector('.registro__recuperar');
     expect(acciones.querySelector('a[href="/login"]')).not.toBeNull();
-    expect(acciones.querySelector('a[href="/olvide-mi-contrasena"]')).not.toBeNull();
+    expect(acciones.querySelector('a[href="/recuperar-password"]')).not.toBeNull();
     expect(auth.registrar).toHaveBeenCalledTimes(1);
     expect(auth.login).not.toHaveBeenCalled();
   });

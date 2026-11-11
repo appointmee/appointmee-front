@@ -75,6 +75,7 @@ export class Navbar {
     return accesoDeInvitado || ruta === '/login'
       || ruta === '/registrarme'
       || ruta === '/reset-password'
+      || ruta === '/recuperar-password'
       || ruta === '/olvide-mi-contrasena'
       || ruta === '/configuracion/verificar-email'
       || ruta === '/verificar-email';

@@ -157,7 +157,7 @@ describe('Login con Signal Forms', () => {
     completar(); enviar();
     expect(navigate.mock.calls[0][0].toString()).toBe('/perfil');
     expect(fixture.nativeElement.querySelector('a[href="/registrarme"]')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('.login__forgot').getAttribute('href')).toContain('/olvide-mi-contrasena');
+    expect(fixture.nativeElement.querySelector('.login__forgot').getAttribute('href')).toContain('/recuperar-password');
     expect(fixture.nativeElement.querySelector('.login__feedback').getAttribute('aria-live')).toBe('polite');
   });
 
