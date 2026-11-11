@@ -1,0 +1,97 @@
+<section class="crear-sucursal" aria-labelledby="editar-sucursal-titulo">
+  <header class="crear-sucursal__header">
+    <h1 id="editar-sucursal-titulo">Editar sucursal</h1>
+    <p>Actualizá los datos de tu local.</p>
+  </header>
+
+  @if (cargandoDatos()) {
+    <p role="status" aria-live="polite">Cargando los datos de la sucursal…</p>
+  } @else {
+    @if (error()) { <div class="aviso aviso--error" role="alert">{{ error() }}</div> }
+    @if (exito()) { <div class="aviso aviso--exito" role="status" aria-live="polite">{{ exito() }}</div> }
+
+    <form (submit)="onSubmit($event)" novalidate [attr.aria-busy]="cargando()">
+      @if (formulario().touched() && formulario().invalid()) {
+        <div class="aviso aviso--error" role="alert" aria-labelledby="errores-sucursal-titulo">
+          <h2 id="errores-sucursal-titulo">Revisá estos campos:</h2>
+          <ul>
+            @if (formulario.nombre().invalid()) { <li><a href="#nombre" (click)="formulario.nombre().focusBoundControl()">Nombre: {{ formulario.nombre().errors()[0]?.message }}</a></li> }
+            @if (formulario.direccion().invalid()) { <li><a href="#direccion" (click)="formulario.direccion().focusBoundControl()">Dirección: {{ formulario.direccion().errors()[0]?.message }}</a></li> }
+            @if (formulario.telefono().invalid()) { <li><a href="#telefono" (click)="formulario.telefono().focusBoundControl()">Teléfono: {{ formulario.telefono().errors()[0]?.message }}</a></li> }
+            @if (formulario.descripcion().invalid()) { <li><a href="#descripcion" (click)="formulario.descripcion().focusBoundControl()">Descripción: {{ formulario.descripcion().errors()[0]?.message }}</a></li> }
+          </ul>
+        </div>
+      }
+
+      <div class="campo">
+        <label for="nombre">Nombre</label>
+        <ds-input><input #dsNativeControl id="nombre" type="text" autocomplete="organization"
+          [formField]="formulario.nombre" [readOnly]="cargando()"
+          [attr.aria-invalid]="formulario.nombre().touched() && formulario.nombre().invalid()"
+          aria-describedby="nombre-error" /></ds-input>
+        <div id="nombre-error" class="error" aria-live="polite">
+          @if (formulario.nombre().touched()) { @for (error of formulario.nombre().errors(); track error.kind) { <p>{{ error.message }}</p> } }
+        </div>
+      </div>
+      <div class="campo">
+        <label for="direccion">Dirección</label>
+        <ds-input><input #dsNativeControl id="direccion" type="text" autocomplete="street-address"
+          [formField]="formulario.direccion" [readOnly]="cargando()"
+          [attr.aria-invalid]="formulario.direccion().touched() && formulario.direccion().invalid()"
+          aria-describedby="direccion-error" /></ds-input>
+        <div id="direccion-error" class="error" aria-live="polite">
+          @if (formulario.direccion().touched()) { @for (error of formulario.direccion().errors(); track error.kind) { <p>{{ error.message }}</p> } }
+        </div>
+      </div>
+      <div class="campo">
+        <label for="telefono">Teléfono</label>
+        <ds-input><input #dsNativeControl id="telefono" type="tel" inputmode="numeric" autocomplete="tel"
+          [formField]="formulario.telefono" [readOnly]="cargando()"
+          [attr.aria-invalid]="formulario.telefono().touched() && formulario.telefono().invalid()"
+          aria-describedby="telefono-error" /></ds-input>
+        <div id="telefono-error" class="error" aria-live="polite">
+          @if (formulario.telefono().touched()) { @for (error of formulario.telefono().errors(); track error.kind) { <p>{{ error.message }}</p> } }
+        </div>
+      </div>
+      <div class="campo">
+        <label for="descripcion">Descripción</label>
+        <ds-input><input #dsNativeControl id="descripcion" type="text" [formField]="formulario.descripcion"
+          [readOnly]="cargando()" [attr.aria-invalid]="formulario.descripcion().touched() && formulario.descripcion().invalid()"
+          aria-describedby="descripcion-error" /></ds-input>
+        <div id="descripcion-error" class="error" aria-live="polite">
+          @if (formulario.descripcion().touched()) { @for (error of formulario.descripcion().errors(); track error.kind) { <p>{{ error.message }}</p> } }
+        </div>
+      </div>
+      <div class="campo">
+        <label for="horaApertura">Hora de apertura</label>
+        <ds-input><input #dsNativeControl id="horaApertura" type="time" [formField]="formulario.horaApertura" [readOnly]="cargando()" /></ds-input>
+      </div>
+      <div class="campo">
+        <label for="horaCierre">Hora de cierre</label>
+        <ds-input><input #dsNativeControl id="horaCierre" type="time" [formField]="formulario.horaCierre" [readOnly]="cargando()" /></ds-input>
+      </div>
+      <div class="campo">
+        <label for="fotoPerfil">URL de la foto de perfil</label>
+        <ds-input><input #dsNativeControl id="fotoPerfil" type="url" autocomplete="url" [formField]="formulario.fotoPerfil" [readOnly]="cargando()" /></ds-input>
+      </div>
+
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" [disabled]="cargando()" (click)="cancelar()">Cancelar</button>
+        <button dsButton type="submit" [disabled]="cargando()" [attr.aria-busy]="cargando()">
+          {{ cargando() ? 'Guardando…' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (confirmarDescarte()) {
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="descarte-sucursal-titulo">
+      <h2 id="descarte-sucursal-titulo">¿Descartar cambios?</h2>
+      <p>Los cambios que no guardaste se perderán.</p>
+      <div class="acciones">
+        <button type="button" (click)="confirmarDescarte.set(false)">Seguir editando</button>
+        <button type="button" (click)="confirmarDescartar()">Descartar</button>
+      </div>
+    </div>
+  }
+</section>

@@ -95,9 +95,19 @@ export class sucursalService {
     });
   }
 
-  actualizar(idSucursal: number, datos: SucursalPayload): Observable<SucursalDetalleDTO> {
-    return this.http.put<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales/${idSucursal}`, datos, {
+  actualizar(idSucursal: number, datos: SucursalPayload): Observable<string> {
+    const { nombre, direccion, telefono, descripcion, horaApertura, horaCierre, fotoPerfil } = datos;
+    return this.http.patch(`${this.api.baseUrl}/sucursales/modificar/${idSucursal}`, {
+      nombre,
+      direccion,
+      telefono,
+      descripcion,
+      horaApertura,
+      horaCierre,
+      fotoUrl: fotoPerfil,
+    }, {
       context: contextoSilenciado(true),
+      responseType: 'text',
     });
   }
 
