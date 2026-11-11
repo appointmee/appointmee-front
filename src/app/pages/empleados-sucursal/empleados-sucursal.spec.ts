@@ -150,7 +150,7 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     fixture.detectChanges();
   });
 
-  it('muestra todos los datos de UsuarioResponseDTO en cada fila', async () => {
+  it('muestra los datos visibles de cada empleado sin exponer su identificador', async () => {
     const host = await abrir();
     responderListado();
     await fixture.whenStable();
@@ -160,9 +160,12 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     expect(contenido).toContain('Ana');
     expect(contenido).toContain('Gómez');
     expect(contenido).toContain('ana@ejemplo.com');
-    expect(contenido).toContain('ID 10');
     expect(contenido).toContain('bruno@ejemplo.com');
-    expect(contenido).toContain('ID 11');
+
+    // El identificador interno no se muestra en el listado.
+    expect(contenido).not.toContain('ID 10');
+    expect(contenido).not.toContain('ID 11');
+    expect(host.querySelectorAll('.empleado__id').length).toBe(0);
 
     const foto = host.querySelector<HTMLImageElement>('.empleado__foto');
     expect(foto?.getAttribute('src')).toBe('https://example.com/ana.jpg');

@@ -159,18 +159,12 @@ h1 {
   font-weight: 400;
 }
 
-.empleado__email,
-.empleado__id {
+.empleado__email {
   margin: 0;
   color: var(--muted);
   font-size: 0.95rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
-}
-
-.empleado__id {
-  font-family: var(--mono);
-  font-size: 0.85rem;
 }
 
 .empleado__rating {
