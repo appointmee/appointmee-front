@@ -25,12 +25,18 @@ export class servicioService {
     return this.http.get<ServicioDTO>(`${this.api.baseUrl}/servicios/${servicioId}`);
   }
   //POST
-  crear(datos: ServicioPayload): Observable<ServicioDTO> {
-    return this.http.post<ServicioDTO>(`${this.api.baseUrl}/servicios/crear`, datos);
+  crear(datos: ServicioPayload): Observable<string> {
+    const { sucursalId, nombre, descripcion, duracion, precio, fotoPerfil } = datos;
+    return this.http.post(`${this.api.baseUrl}/servicios/crear`, {
+      sucursalId, nombre, descripcion, duracion, precio, fotoUrl: fotoPerfil,
+    }, { responseType: 'text' });
   }
 //PUT
-  actualizar(servicioId: number, datos: ServicioPayload): Observable<ServicioDTO> {
-    return this.http.patch<ServicioDTO>(`${this.api.baseUrl}/servicios/modificar/${servicioId}`, datos);
+  actualizar(servicioId: number, datos: ServicioPayload): Observable<string> {
+    const { nombre, descripcion, duracion, precio, fotoPerfil } = datos;
+    return this.http.patch(`${this.api.baseUrl}/servicios/modificar/${servicioId}`, {
+      nombre, descripcion, duracion, precio, fotoUrl: fotoPerfil,
+    }, { responseType: 'text' });
   }
 //DELETE
   eliminar(servicioId: number): Observable<void> {

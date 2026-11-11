@@ -18,7 +18,7 @@ describe('Editar servicio', () => {
   beforeEach(async () => {
     TestBed.resetTestingModule();
     vi.resetAllMocks();
-    api.obtenerPorId.mockReturnValue(of({ id: 9, nombre: 'Corte', descripcion: 'desc', duracion: 30, precio: 100, fotoPerfil: 'http://x' }));
+    api.obtenerPorId.mockReturnValue(of({ id: 9, nombre: 'Corte', descripcion: 'Descripción clásica', duracion: 30, precio: 100, fotoPerfil: 'http://x' }));
     await TestBed.configureTestingModule({
       imports: [EditarServicioPage],
       providers: [
@@ -40,14 +40,14 @@ describe('Editar servicio', () => {
   });
 
   it('bloquea el envío cuando el nombre no cumple la validación', () => {
-    page.model.set({ nombre: '', descripcion: 'desc', duracion: 30, precio: 100, fotoPerfil: '' });
+    page.model.set({ nombre: '', descripcion: 'Descripción clásica', duracion: 30, precio: 100, fotoPerfil: '' });
     page.onSubmit(new Event('submit', { cancelable: true }));
     expect(api.actualizar).not.toHaveBeenCalled();
   });
 
   it('envía los cambios actualizados', () => {
     api.actualizar.mockReturnValue(of({ id: 9, nombre: 'Corte XL' } as any));
-    page.model.set({ nombre: 'Corte XL', descripcion: 'desc', duracion: 45, precio: 120, fotoPerfil: 'http://x' });
+    page.model.set({ nombre: 'Corte XL', descripcion: 'Descripción clásica', duracion: 45, precio: 120, fotoPerfil: 'http://x' });
     fixture.detectChanges();
     page.onSubmit(new Event('submit', { cancelable: true }));
     expect(api.actualizar).toHaveBeenCalledWith(9, expect.objectContaining({ nombre: 'Corte XL', duracion: 45 }));
@@ -55,15 +55,15 @@ describe('Editar servicio', () => {
   });
 
   it('muestra error si falla la actualización', () => {
-    api.actualizar.mockReturnValue(throwError(() => ({ error: { message: 'No encontrado' } })));
-    page.model.set({ nombre: 'Corte', descripcion: 'desc', duracion: 30, precio: 100, fotoPerfil: '' });
+    api.actualizar.mockReturnValue(throwError(() => ({ error: { message: 'detalle interno' } })));
+    page.model.set({ nombre: 'Corte', descripcion: 'Descripción clásica', duracion: 30, precio: 100, fotoPerfil: '' });
     fixture.detectChanges();
     page.onSubmit(new Event('submit', { cancelable: true }));
-    expect(page.error()).toBe('No encontrado');
+    expect(page.error()).toContain('No pudimos actualizar');
   });
 
   it('pide confirmación al cancelar con cambios', () => {
-    page.model.set({ nombre: 'Cambiado', descripcion: 'desc', duracion: 30, precio: 100, fotoPerfil: '' });
+    page.model.set({ nombre: 'Cambiado', descripcion: 'Descripción clásica', duracion: 30, precio: 100, fotoPerfil: '' });
     fixture.detectChanges();
     page.cancelar();
     expect(page.confirmarDescarte()).toBe(true);
@@ -75,7 +75,7 @@ describe('Editar servicio', () => {
   });
 
   it('descarta cambios al confirmar', () => {
-    page.model.set({ nombre: 'Cambiado', descripcion: 'desc', duracion: 30, precio: 100, fotoPerfil: '' });
+    page.model.set({ nombre: 'Cambiado', descripcion: 'Descripción clásica', duracion: 30, precio: 100, fotoPerfil: '' });
     fixture.detectChanges();
     page.cancelar();
     page.confirmarDescartar();
