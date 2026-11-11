@@ -48,5 +48,10 @@ describe('MisSucursales', () => {
     fixture.detectChanges();
 
     expect(host.textContent).toContain('Enviar solicitudes de empleo');
+
+    const verTurnos = Array.from(host.querySelectorAll<HTMLAnchorElement>('a')).find(
+      (enlace) => enlace.textContent?.includes('Ver turnos'),
+    );
+    expect(verTurnos?.getAttribute('href')).toBe('/mis-sucursales/5/turnos');
   });
 });
