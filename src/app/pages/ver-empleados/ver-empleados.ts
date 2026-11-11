@@ -1,13 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { EmpleadoDTO } from '../../models/empleado';
 import { empleadoService } from '../../services/empleado-service';
 
 @Component({
   selector: 'app-ver-empleados',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './ver-empleados.html',
   styleUrl: './ver-empleados.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -6,7 +6,7 @@
   @else if (empleados().length === 0) { <p>No hay empleados.</p> }
   @else {
     <ul>
-      @for (e of empleados(); track e.id) { <li>{{ e.nombre }} {{ e.apellido }}</li> }
+      @for (e of empleados(); track e.id) { <li><a [routerLink]="['/sucursal', sucursalId, 'empleado', e.id]">{{ e.nombre }} {{ e.apellido }}</a></li> }
     </ul>
   }
 </section>
