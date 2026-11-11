@@ -75,9 +75,9 @@
 .sucursal {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   width: 100%;
-  padding: 18px;
+  padding: 22px;
   border: 1px solid rgba(247, 198, 90, 0.32);
   border-radius: 16px;
   background:
@@ -110,11 +110,11 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
   overflow: hidden;
   border: 1px solid rgba(247, 198, 90, 0.24);
-  border-radius: 16px;
+  border-radius: 18px;
   background: rgba(247, 198, 90, 0.08);
   color: var(--accent);
 }
@@ -126,7 +126,7 @@
 }
 
 .sucursal__placeholder {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 700;
   line-height: 1;
 }
@@ -141,7 +141,7 @@
 .sucursal__copy strong {
   overflow: hidden;
   color: var(--text);
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 600;
   letter-spacing: -0.02em;
   text-overflow: ellipsis;
@@ -150,16 +150,16 @@
 
 .sucursal__categoria {
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 14px;
 }
 
 .sucursal__rating {
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
   color: var(--text);
-  font-size: 12.5px;
+  font-size: 14px;
 }
 
 .sucursal__rating-icono {
@@ -169,15 +169,16 @@
 
 .sucursal__muted {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .sucursal__dias {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.4;
 }
 
@@ -198,7 +199,7 @@
   gap: 7px;
   flex-shrink: 0;
   color: var(--accent);
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -396,6 +397,37 @@
   to {
     background-position: -200% 0;
   }
+}
+
+.sucursal__abejas {
+  display: inline-flex;
+  gap: 1px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.abeja {
+  display: inline-block;
+  line-height: 1;
+}
+
+.dia {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #4a4a4a;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dia--abierto {
+  color: var(--accent);
+  background: rgba(247, 198, 90, 0.16);
 }
 
 @media (max-width: 640px) {

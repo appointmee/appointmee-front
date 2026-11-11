@@ -111,6 +111,27 @@ export class TurnosAsignados {
     return sucursal.nombre.trim().charAt(0).toUpperCase() || '🐝';
   }
 
+  protected abejas(sucursal: SucursalMiniDTO): number {
+    const puntuacion = sucursal.puntuacion;
+    if (puntuacion === null || puntuacion === undefined) return 0;
+    return Math.max(0, Math.min(5, Math.floor(puntuacion)));
+  }
+
+  protected diasSemana(sucursal: SucursalMiniDTO): readonly { codigo: string; abierto: boolean }[] {
+    const abiertos = new Set(
+      (sucursal.diasApertura ?? []).map((dia) => dia?.toUpperCase?.() ?? ''),
+    );
+    return [
+      { codigo: 'LU', abierto: abiertos.has('MONDAY') },
+      { codigo: 'MA', abierto: abiertos.has('TUESDAY') },
+      { codigo: 'MI', abierto: abiertos.has('WEDNESDAY') },
+      { codigo: 'JU', abierto: abiertos.has('THURSDAY') },
+      { codigo: 'VI', abierto: abiertos.has('FRIDAY') },
+      { codigo: 'SA', abierto: abiertos.has('SATURDAY') },
+      { codigo: 'DO', abierto: abiertos.has('SUNDAY') },
+    ];
+  }
+
   protected fotoVisible(sucursal: SucursalMiniDTO): string | null {
     const foto = sucursal.fotoPerfil?.trim();
     return foto && !this.fotosFallidas().has(foto) ? foto : null;
