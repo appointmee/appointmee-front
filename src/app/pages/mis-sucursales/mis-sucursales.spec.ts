@@ -130,4 +130,37 @@ describe('MisSucursales', () => {
     expect(host.textContent).toContain('Ya formás parte del equipo de esta sucursal.');
     expect(host.textContent).not.toContain('Agregarme como empleado');
   });
+
+  it('muestra el error inline si falla la incorporación', () => {
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/listar/propias'))
+      .flush([{ id: 5, nombre: 'Sucursal Uno', categoria: 'BARBERIA', fotoPerfil: null, puntuacion: 4, cantidadPuntuaciones: 2 }]);
+
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    Array.from(host.querySelectorAll<HTMLButtonElement>('button'))
+      .find((button) => button.textContent?.includes('Gestionar'))
+      ?.click();
+    fixture.detectChanges();
+
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/5/empleados'))
+      .flush([]);
+    backend
+      .expectOne((request) => request.url.endsWith('/solicitudes-empleado/enviadas/sucursal/5'))
+      .flush([]);
+    fixture.detectChanges();
+
+    Array.from(host.querySelectorAll<HTMLButtonElement>('button'))
+      .find((button) => button.textContent?.includes('Agregarme como empleado'))
+      ?.click();
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/5/convertirme-empleado'))
+      .flush('Error interno', { status: 500, statusText: 'Server Error' });
+    fixture.detectChanges();
+
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain(
+      'No pudimos agregarte como empleado.',
+    );
+  });
 });
