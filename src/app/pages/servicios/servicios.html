@@ -10,37 +10,57 @@
     </nav>
 
     <header class="servicios__header">
-      <span class="eyebrow">
-        <span class="eyebrow__dot" aria-hidden="true"></span>
-        Reserva de turno
-      </span>
-      <h1 id="servicios-titulo">Elegí tu servicio</h1>
+      <div class="servicios__intro">
+        <span class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true"></span>
+          Reserva de turno
+        </span>
+        <h1 id="servicios-titulo">Seleccionar servicio</h1>
+
+        @if (!sinContexto) {
+          <p class="paso" aria-label="Paso 1 de 3: elegir servicio">
+            <span class="paso__numero" aria-hidden="true">1</span>
+            <span class="paso__texto">Paso 1 de 3 · Servicio</span>
+            <span class="paso__track" aria-hidden="true"><span class="paso__progress"></span></span>
+          </p>
+        }
+      </div>
 
       @if (!sinContexto) {
-        <p class="servicios__sucursal">
-          <span class="servicios__sucursal-label">Sucursal</span>
-          <strong>{{ nombreSucursal() }}</strong>
-        </p>
+        @if (resumenSucursal(); as resumen) {
+          <aside class="sucursal-resumen" aria-label="Resumen de la sucursal">
+            <p class="sucursal-resumen__nombre">{{ resumen.nombre }}</p>
 
-        <p class="paso" aria-label="Paso 1 de 3: elegir servicio">
-          <span class="paso__numero" aria-hidden="true">1</span>
-          <span class="paso__texto">Paso 1 de 3 — Servicio</span>
-          <span class="paso__track" aria-hidden="true"><span class="paso__progress"></span></span>
-        </p>
+            @if (resumen.tieneResenas) {
+              <p class="sucursal-resumen__rating">
+                <span class="sr-only">
+                  Puntuación promedio {{ resumen.puntuacion }}, basada en
+                  {{ resumen.resenas }}.
+                </span>
+                <span class="sucursal-resumen__abejas" aria-hidden="true">
+                  @for (abeja of resumen.abejas; track $index) {
+                    <span class="sucursal-resumen__abeja">🐝</span>
+                  }
+                </span>
+                <span class="sucursal-resumen__puntos" aria-hidden="true">
+                  {{ resumen.puntuacion }}
+                </span>
+                <span class="sucursal-resumen__resenas" aria-hidden="true">
+                  ({{ resumen.resenas }})
+                </span>
+              </p>
+            } @else {
+              <p class="sucursal-resumen__sin-resenas">
+                {{ resumen.hayDatosSucursal ? 'Sin reseñas todavía' : 'Sin datos de reseñas' }}
+              </p>
+            }
+          </aside>
+        }
       }
     </header>
 
-    @if (contextoInvalido()) {
-      <div class="estado estado--contexto" role="alert">
-        <span class="estado__icon" aria-hidden="true">!</span>
-        <h2>La selección anterior ya no está disponible</h2>
-        <p>Elegí un servicio vigente para continuar con la reserva.</p>
-        <a class="boton boton--ghost" [routerLink]="detalleUrl()">Volver al detalle</a>
-      </div>
-    }
-
     @if (sinContexto) {
-      <div class="estado estado--contexto" role="alert">
+      <div class="estado estado--contexto" role="alert" aria-live="assertive" aria-atomic="true">
         <span class="estado__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M12 9v4M12 17h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
@@ -53,99 +73,239 @@
         </p>
         <a class="boton" routerLink="/">Volver al Home</a>
       </div>
-    } @else if (cargando()) {
-      <div class="grid" aria-busy="true" aria-live="polite">
-        <span class="sr-only">Cargando servicios…</span>
-        @for (item of [1, 2, 3, 4, 5, 6]; track item) {
-          <article class="card card--skeleton" aria-hidden="true">
-            <div class="card__media skeleton"></div>
-            <div class="card__body">
-              <div class="skeleton skeleton--line"></div>
-              <div class="skeleton skeleton--line skeleton--short"></div>
-              <div class="skeleton skeleton--line skeleton--shorter"></div>
-              <div class="skeleton skeleton--meta"></div>
-            </div>
-          </article>
-        }
-      </div>
-    } @else if (error()) {
-      <div class="estado estado--error" role="alert">
-        <span class="estado__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-          </svg>
-        </span>
-        <h2>No pudimos cargar los servicios</h2>
-        <p>{{ error() }}</p>
-        <div class="estado__acciones">
-          @if (requiereLogin()) {
-            <a class="boton" routerLink="/login">Iniciar sesión</a>
-          } @else if (!requiereRolCliente()) {
-            <button class="boton" type="button" [disabled]="reintentando()" (click)="reintentar()">
-              {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
-            </button>
-          }
-          <a class="boton boton--ghost" [routerLink]="detalleUrl()">Volver al detalle</a>
-        </div>
-      </div>
-    } @else if (servicios().length === 0) {
-      <div class="estado estado--vacio" role="status">
-        <span class="estado__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M4 7h16M4 12h10M4 17h7M17 14v6M14 17h6" />
-          </svg>
-        </span>
-        <h2>Esta sucursal todavía no tiene servicios disponibles</h2>
-        <p>Volvé al detalle de la sucursal para consultar más adelante.</p>
-        <a class="boton" [routerLink]="detalleUrl()">Volver al detalle</a>
-      </div>
     } @else {
-      <div class="grid" aria-live="polite">
-        @for (servicio of servicios(); track trackById($index, servicio); let i = $index) {
-          <article class="card" [class.card--seleccionada]="servicioSeleccionadoId() === servicio.id" [style.--i]="i">
-            <div class="card__media">
-              <img
-                [src]="foto(servicio)"
-                [alt]="servicio.nombre"
-                loading="lazy"
-                decoding="async"
-                (error)="onImageError($event)"
-              />
-            </div>
-            <div class="card__body">
-              <h2 class="card__name">{{ servicio.nombre }}</h2>
-              @if (servicio.descripcion) {
-                <p class="card__descripcion">{{ servicio.descripcion }}</p>
-              }
-              <div class="card__meta">
-                <span class="card__duracion">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                  </svg>
-                  {{ formatDuracion(servicio.duracion) }}
-                </span>
-                <span class="card__precio">{{ formatPrecio(servicio.precio) }}</span>
+      @if (avisoPreseleccion()) {
+        <div class="aviso-preseleccion" role="status" aria-live="polite" aria-atomic="true">
+          <span class="aviso-preseleccion__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </span>
+          <p>{{ avisoPreseleccion() }}</p>
+        </div>
+      }
+
+      @if (sinConexion() && !cargando() && !error()) {
+        <div class="aviso-conexion" role="alert" aria-live="assertive" aria-atomic="true">
+          <span class="aviso-conexion__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M2 2 22 22M8.5 8.5A10.9 10.9 0 0 1 12 8c4 0 7.4 2 9 5M5 13c1-1.4 2.4-2.4 4-3M8.5 16.5a4.5 4.5 0 0 1 7 0M12 20h.01" />
+            </svg>
+          </span>
+          <div class="aviso-conexion__texto">
+            <strong>Sin conexión a internet</strong>
+            <p>Revisá tu conexión y reintentá. Podés seguir viendo lo que ya está cargado.</p>
+          </div>
+          <button
+            class="boton boton--compacto"
+            type="button"
+            [disabled]="reintentando()"
+            [attr.aria-busy]="reintentando()"
+            (click)="reintentar()"
+          >
+            {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+          </button>
+        </div>
+      }
+
+      @if (cargando()) {
+        <div class="lista" aria-busy="true">
+          <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            Cargando servicios…
+          </span>
+          @for (item of [1, 2, 3, 4]; track item) {
+            <article class="card card--skeleton" aria-hidden="true">
+              <div class="card__media skeleton"></div>
+              <div class="card__body">
+                <div class="skeleton skeleton--line"></div>
+                <div class="skeleton skeleton--line skeleton--short"></div>
+                <div class="skeleton skeleton--line skeleton--shorter"></div>
+                <div class="skeleton skeleton--meta"></div>
               </div>
+            </article>
+          }
+        </div>
+      } @else if (error()) {
+        <div class="estado estado--error" role="alert" aria-live="assertive" aria-atomic="true">
+          <span class="estado__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </span>
+          <h2>{{ sinConexion() ? 'Sin conexión a internet' : 'No pudimos cargar los servicios' }}</h2>
+          <p>{{ error() }}</p>
+          <div class="estado__acciones">
+            @if (requiereLogin()) {
+              <a class="boton" routerLink="/login">Iniciar sesión</a>
+            } @else if (!requiereRolCliente()) {
               <button
-                class="card__select"
+                dsButton
+                class="boton"
                 type="button"
-                [attr.aria-pressed]="servicioSeleccionadoId() === servicio.id"
-                (click)="seleccionarServicio(servicio.id)"
+                [disabled]="reintentando()"
+                [attr.aria-busy]="reintentando()"
+                (click)="reintentar()"
               >
-                {{ servicioSeleccionadoId() === servicio.id ? 'Servicio elegido' : 'Elegir servicio' }}
+                {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
               </button>
-            </div>
-          </article>
-        }
-      </div>
-      <div class="servicios__acciones">
-        <button class="boton" type="button" [disabled]="servicioSeleccionadoId() === null" (click)="continuarConProfesional()">
-          Continuar con profesional
-        </button>
-        <button class="boton boton--ghost" type="button" (click)="cancelarReserva()">
-          Cancelar reserva
-        </button>
-      </div>
+            }
+            <a class="boton boton--ghost" [routerLink]="detalleUrl()">Volver al detalle</a>
+          </div>
+          <span class="sr-only" role="status" aria-live="polite">
+            @if (reintentando()) {
+              Reintentando la carga de servicios…
+            }
+          </span>
+        </div>
+      } @else if (servicios().length === 0) {
+        <div class="estado estado--vacio" role="status" aria-live="polite">
+          <span class="estado__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 7h16M4 12h10M4 17h7M17 14v6M14 17h6" />
+            </svg>
+          </span>
+          <h2>Esta sucursal todavía no tiene servicios disponibles</h2>
+          <p>Volvé al detalle de la sucursal para consultar más adelante.</p>
+          <a class="boton" [routerLink]="detalleUrl()">Volver al detalle</a>
+        </div>
+      } @else {
+        <p class="sr-only" role="status" aria-live="polite">{{ resumenServicios() }}</p>
+
+        <div class="lista" role="radiogroup" aria-labelledby="servicios-titulo">
+          @for (servicio of servicios(); track trackById($index, servicio); let i = $index) {
+            <article
+              class="card"
+              [class.card--seleccionada]="estaSeleccionado(servicio)"
+              [class.card--deshabilitada]="seleccionDeshabilitada()"
+              [style.--i]="i"
+            >
+              <div class="card__media">
+                <img
+                  [src]="foto(servicio)"
+                  [alt]="servicio.nombre"
+                  loading="lazy"
+                  decoding="async"
+                  referrerpolicy="no-referrer"
+                  (error)="onImageError($event)"
+                />
+              </div>
+
+              <div class="card__body">
+                <div class="card__top">
+                  <h2 class="card__name">{{ servicio.nombre }}</h2>
+                  <span class="card__precio">{{ formatPrecio(servicio.precio) }}</span>
+                </div>
+
+                @if (servicio.descripcion) {
+                  <p
+                    #descripcionServicio
+                    class="card__descripcion"
+                    [class.card__descripcion--colapsada]="!estaDescripcionExpandida(servicio.id)"
+                    [attr.data-descripcion-id]="servicio.id"
+                    [id]="'servicio-descripcion-' + servicio.id"
+                  >
+                    {{ servicio.descripcion }}
+                  </p>
+
+                  @if (descripcionDesbordada(servicio)) {
+                    <button
+                      class="card__toggle"
+                      type="button"
+                      [attr.aria-expanded]="estaDescripcionExpandida(servicio.id)"
+                      [attr.aria-controls]="'servicio-descripcion-' + servicio.id"
+                      (click)="alternarDescripcion(servicio.id)"
+                    >
+                      {{ estaDescripcionExpandida(servicio.id) ? 'Ver menos' : 'Ver más' }}
+                      <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        [attr.transform]="
+                          estaDescripcionExpandida(servicio.id) ? 'rotate(180 12 12)' : null
+                        "
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </button>
+                  }
+                } @else {
+                  <p class="card__descripcion card__descripcion--vacia">
+                    Sin descripción disponible.
+                  </p>
+                }
+
+                <div class="card__meta">
+                  <span class="card__duracion">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    {{ formatDuracion(servicio.duracion) }}
+                  </span>
+
+                  @if (estaSeleccionado(servicio)) {
+                    <span class="card__elegido" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path d="m5 12 5 5 9-10" />
+                      </svg>
+                      Seleccionado
+                    </span>
+                  }
+                </div>
+              </div>
+
+              @if (estaSeleccionado(servicio)) {
+                <span class="card__check" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="m5 12 5 5 9-10" />
+                  </svg>
+                </span>
+              }
+
+              <button
+                class="card__seleccion"
+                type="button"
+                role="radio"
+                [attr.aria-checked]="estaSeleccionado(servicio)"
+                [attr.aria-label]="'Seleccionar ' + servicio.nombre"
+                [attr.tabindex]="esOpcionEnfocable(servicio) ? 0 : -1"
+                [attr.data-servicio-id]="servicio.id"
+                [disabled]="seleccionDeshabilitada()"
+                (click)="seleccionar(servicio)"
+                (keydown)="onTeclaOpcion($event, servicio)"
+              ></button>
+            </article>
+          }
+        </div>
+
+        <footer class="acciones">
+          <div class="acciones__resumen" role="status" aria-live="polite" aria-atomic="true">
+            @if (resumenSeleccion(); as resumen) {
+              <p class="acciones__resumen-linea">
+                <span class="acciones__resumen-etiqueta">Servicio seleccionado:</span>
+                <strong>{{ resumen.nombre }}</strong>
+              </p>
+              <p class="acciones__resumen-meta">
+                <span>{{ resumen.duracion }}</span>
+                <span class="acciones__resumen-separador" aria-hidden="true">·</span>
+                <span>{{ resumen.precio }}</span>
+              </p>
+            } @else {
+              <p class="acciones__resumen-linea">Elegí un servicio para continuar.</p>
+            }
+          </div>
+
+          <button
+            dsButton
+            variant="primary"
+            class="boton boton--empleado"
+            type="button"
+            [disabled]="!puedeContinuar() || navegando()"
+            [attr.aria-busy]="navegando()"
+            (click)="continuar()"
+          >
+            Siguiente
+          </button>
+        </footer>
+      }
     }
   </div>
 </section>

@@ -234,7 +234,7 @@
 .breadcrumb__separator {
   display: inline-flex;
   flex-shrink: 0;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--muted);
 }
 
 .breadcrumb__separator svg {
@@ -757,6 +757,15 @@
 .btn--primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 22px 46px rgba(247, 198, 90, 0.3);
+}
+
+/* El botón de reserva conserva su degradado amarillo y sólo gana brillo. */
+.panel--reserva .btn--primary:hover:not(:disabled),
+.detalle__cta-mobile .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ffe6a6, #f9d371 55%, #eab84a);
+  box-shadow:
+    0 22px 52px rgba(247, 198, 90, 0.42),
+    0 0 24px rgba(255, 221, 143, 0.24);
 }
 
 .btn--primary:active {

@@ -61,6 +61,32 @@ describe('Autenticación e interceptor', () => {
     backend.expectOne(url).flush({}, { status: 401, statusText: 'Unauthorized' });
   }
 
+  it('una contraseña actual incorrecta del backend anterior no renueva ni cierra la sesión', async () => {
+    sesion();
+    await router.navigateByUrl('/private');
+    let error: unknown;
+    auth.cambiarPassword('incorrecta', 'NuevaClave123!').subscribe({ error: cause => error = cause });
+    const request = backend.expectOne(`${API_URL}/auth/change-password`);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-viejo');
+    request.flush('Contraseña actual incorrecta', { status: 401, statusText: 'Unauthorized' });
+    backend.expectNone(`${API_URL}/auth/refresh`);
+    expect(error).toBeDefined();
+    expect(localStorage.getItem('token')).toBe('access-viejo');
+    expect(localStorage.getItem('refreshToken')).toBe('refresh-viejo');
+    expect(router.url).toBe('/private');
+  });
+
+  it('un access realmente vencido al cambiar contraseña sigue renovándose', () => {
+    sesion();
+    auth.cambiarPassword('Actual123!', 'NuevaClave123!').subscribe();
+    rechazar(`${API_URL}/auth/change-password`);
+    backend.expectOne(`${API_URL}/auth/refresh`).flush(tokens);
+    const request = backend.expectOne(`${API_URL}/auth/change-password`);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-nuevo');
+    request.flush({ message: 'Actualizada' });
+    expect(localStorage.getItem('token')).toBeNull();
+  });
+
   it('login usa el contrato real, guarda ambos tokens y carga el perfil', () => {
     auth.login('ana@example.com', 'Password123!').subscribe();
     const login = backend.expectOne(`${API_URL}/auth/login`);
@@ -82,8 +108,12 @@ describe('Autenticación e interceptor', () => {
       'https://example.com/data',
       'http://localhost.example.com:8080/data',
       `${API_URL}/auth/login`,
+      `${API_URL}/sucursales/listar/filtrar`,
+      `${API_URL}/servicios/listar/sucursal/7`,
+      `${API_URL}/turnos/disponibilidad/empleado/9/servicio/3`,
+      `${API_URL}/observabilidad/error`,
     ]) {
-      http.get(url).subscribe();
+      (url.endsWith('/observabilidad/error') ? http.post(url, { screen: 'error' }) : http.get(url)).subscribe();
       const request = backend.expectOne(url);
       expect(request.request.headers.has('Authorization')).toBe(false);
       request.flush({});

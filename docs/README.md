@@ -15,6 +15,13 @@ Guía técnica y funcional del proyecto. Se documenta el estado observado en el 
 9. [Recursos y gestión del proyecto](09-recursos-y-gestion.md)
 10. [Diagramas](diagramas/README.md)
 
+## Referencias técnicas del frontend
+
+- [Arquitectura y rutas](arquitectura.md)
+- [Contratos API consumidos](contratos-api.md)
+- [Infraestructura y operación](infraestructura.md)
+- [Pendientes y decisiones](pendientes.md)
+
 ## Fuentes y alcance de verificación
 
 - [Frontend](https://github.com/appointmee/appointmee-front): rutas, servicios HTTP, modelos, configuración y despliegue.

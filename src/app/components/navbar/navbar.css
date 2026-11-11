@@ -123,6 +123,7 @@
 .nav {
   display: flex;
   align-items: center;
+  margin-left: auto;
 }
 
 .nav__list {
@@ -340,7 +341,7 @@
 }
 
 .search__input::placeholder {
-  color: #6f7a8c;
+  color: var(--muted);
   transition:
     color 0.2s,
     transform 0.2s;
@@ -403,41 +404,6 @@
   align-items: center;
   gap: 8px;
   margin-left: auto;
-}
-
-.icon-btn {
-  display: none;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: rgba(255, 255, 255, 0.035);
-  color: var(--muted);
-  cursor: pointer;
-  transition:
-    color 0.2s,
-    border-color 0.2s,
-    background 0.2s,
-    transform 0.25s var(--ease);
-}
-
-.icon-btn svg {
-  transition: transform 0.25s var(--ease);
-}
-
-.icon-btn:hover {
-  color: var(--text);
-  border-color: rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.07);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(247, 198, 90, 0.12);
-}
-
-.search-trigger:hover svg {
-  color: var(--accent);
-  transform: scale(1.2) rotate(-10deg);
 }
 
 .profile {
@@ -786,7 +752,7 @@
 
 .sheet__label {
   margin: 6px 8px 8px;
-  color: #6f7a8c;
+  color: var(--muted);
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.16em;
@@ -890,7 +856,7 @@
 }
 
 .sheet__chevron {
-  color: #5f6978;
+  color: var(--muted);
   transition:
     transform 0.25s var(--ease),
     color 0.2s;
@@ -938,10 +904,8 @@
   transform: translateX(3px) scale(1.1);
 }
 
-.icon-btn:active,
 .burger:active,
 .profile__trigger:active,
-.search__clear:active,
 .sheet__logout:active {
   transform: scale(0.94);
 }
@@ -961,21 +925,10 @@
   stroke-linejoin: round;
 }
 
-.search__icon {
-  width: 17px;
-  height: 17px;
-}
-
 .profile__chevron,
 .sheet__chevron {
   width: 14px;
   height: 14px;
-}
-
-.search__clear svg {
-  width: 14px;
-  height: 14px;
-  transition: transform 0.25s var(--ease);
 }
 
 .menu__link svg {
@@ -985,12 +938,10 @@
 
 .brand:focus-visible,
 .nav__link:focus-visible,
-.icon-btn:focus-visible,
 .profile__trigger:focus-visible,
 .menu__link:focus-visible,
 .burger:focus-visible,
 .sheet__link:focus-visible,
-.search__clear:focus-visible,
 .sheet__logout:focus-visible {
   outline: 2px solid rgba(247, 198, 90, 0.72);
   outline-offset: 2px;
@@ -1095,44 +1046,6 @@
   }
 }
 
-@media (max-width: 1240px) {
-  .navbar__search-wrap {
-    position: absolute;
-    top: calc(100% - 2px);
-    right: 0;
-    left: 0;
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: rgba(13, 17, 23, 0.98);
-    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-8px);
-    pointer-events: none;
-    transition:
-      opacity 0.22s,
-      transform 0.22s var(--ease),
-      visibility 0.22s;
-  }
-
-  .navbar__search-wrap.is-open {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-
-  .navbar__search-wrap .search {
-    height: 46px;
-  }
-
-  .search-trigger {
-    display: grid;
-  }
-}
-
 @media (max-width: 1024px) {
   .nav,
   .profile {
@@ -1143,13 +1056,6 @@
     display: flex;
   }
 
-  .search__hint {
-    display: none;
-  }
-
-  .search__input {
-    padding-right: 42px;
-  }
 }
 
 @media (max-width: 640px) {
@@ -1296,7 +1202,7 @@
 
 .sheet__loading {
   margin: 8px 4px 4px;
-  color: #6f7a8c;
+  color: var(--muted);
   font-family: var(--mono);
   font-size: 11.5px;
 }
@@ -1309,8 +1215,7 @@ input:focus-visible {
 }
 
 @media (max-width: 1024px) {
-  /* En mobile el navbar se prioriza: logo + búsqueda + menú hamburguesa.
-     Las CTAs de cuenta viven dentro del menú. */
+  /* En mobile las CTAs de cuenta viven dentro del menú. */
   .navbar__cta {
     display: none;
   }
@@ -1319,24 +1224,6 @@ input:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
     animation: none;
-  }
-}
-
-/* ── Búsqueda centrada en desktop (>1240px) ────────────────────────────────
-   El buscador absorbe el espacio libre entre los links y las acciones,
-   y su input queda centrado. En ≤1240px sigue siendo overlay desplegable. */
-@media (min-width: 1241px) {
-  .navbar__search-wrap {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    width: auto;
-    margin-left: 8px;
-  }
-
-  .navbar__search-wrap .search {
-    width: 100%;
-    max-width: 360px;
   }
 }
 

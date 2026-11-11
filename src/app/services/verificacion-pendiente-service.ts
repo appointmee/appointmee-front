@@ -22,8 +22,8 @@ export class verificacionPendienteService {
     // Un email escrito a mano no concede permiso para verificar una cuenta.
   }
 
-  //sincroniza el estado que devuelve el backend con el de storage 
-  
+  //sincroniza el estado que devuelve el backend con el de storage
+
   aplicarEstado(estado: EstadoVerificacion): void {
     const datos = this.leer();
     if (!datos) return;

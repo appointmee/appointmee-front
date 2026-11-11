@@ -12,6 +12,7 @@ import { NotFoundPage } from './pages/no-encontrada/no-encontrada';
 import { Sucursales } from './pages/sucursales/sucursales';
 import { NavigationHistory } from './navigation-history';
 import { Reporte404 } from './pages/no-encontrada/reporte-404';
+import { ReporteError } from './pages/error/reporte-error';
 
 @Component({
   standalone: true,
@@ -42,6 +43,7 @@ describe('US-ERR-03 recovery flows', () => {
         provideHttpClient(withInterceptors([apiErrorInterceptor])),
         provideHttpClientTesting(),
         { provide: Reporte404, useValue: { registrar: () => undefined } },
+        { provide: ReporteError, useValue: { registrar: () => undefined } },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(TestShell);
@@ -58,8 +60,11 @@ describe('US-ERR-03 recovery flows', () => {
     await router.navigateByUrl(origin);
     fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);
+    fixture.detectChanges();
 
-    const failedList = backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'));
+    const failedList = backend.expectOne((request) =>
+      request.url.endsWith('/sucursales/listar/filtrar'),
+    );
     expect(failedList.request.params.get('nombre')).toBe('Flores');
     expect(failedList.request.params.get('categoria')).toBe('CAFE');
     failedList.flush({}, { status: 503, statusText: 'Unavailable' });
@@ -80,6 +85,7 @@ describe('US-ERR-03 recovery flows', () => {
     fixture.detectChanges();
     expect(router.url).toBe(origin);
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);
+    fixture.detectChanges();
     const retriedList = backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'));
     expect(retriedList.request.params.get('nombre')).toBe('Flores');
     expect(retriedList.request.params.get('categoria')).toBe('CAFE');
@@ -87,24 +93,32 @@ describe('US-ERR-03 recovery flows', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((shell.querySelector<HTMLInputElement>('input[type="search"]'))?.value).toBe('Flores');
+    expect(shell.querySelector<HTMLInputElement>('input[type="search"]')?.value).toBe('Flores');
     expect(shell.querySelector('[aria-pressed="true"]')?.textContent?.trim()).toBe('Cafe');
   });
 
   it('returns to the previous internal route after a failure instead of looping to its failed origin', async () => {
     await router.navigateByUrl('/');
+    await fixture.whenStable();
+    // La home carga su propio listado de sucursales al inicializarse.
+    backend.match(() => true).forEach((req) => req.flush([]));
     await router.navigateByUrl('/sucursales');
     fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush([]);
+    fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'))
       .flush({}, { status: 500, statusText: 'Server Error' });
     await fixture.whenStable();
     fixture.detectChanges();
     expect(router.url).toBe('/error');
 
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.error-card__actions button:not(.error-button--primary)')!.click();
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('.error-card__actions button:not(.error-button--primary)')!
+      .click();
     await fixture.whenStable();
     expect(router.url).toBe('/');
+    // Al volver a la home se vuelve a cargar su listado.
+    backend.match(() => true).forEach((req) => req.flush([]));
   });
 
   it('takes a 401 through login and returns to the filtered source route', async () => {
@@ -115,12 +129,18 @@ describe('US-ERR-03 recovery flows', () => {
     await router.navigateByUrl(origin);
     fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);
+    fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'))
       .flush({}, { status: 401, statusText: 'Unauthorized' });
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(router.parseUrl(router.url).root.children['primary'].segments.map((segment) => segment.path).join('/')).toBe('login');
+    expect(
+      router
+        .parseUrl(router.url)
+        .root.children['primary'].segments.map((segment) => segment.path)
+        .join('/'),
+    ).toBe('login');
     expect(router.parseUrl(router.url).queryParams['returnTo']).toBe(origin);
     const element = fixture.nativeElement as HTMLElement;
     const email = element.querySelector<HTMLInputElement>('input[type="email"]')!;
@@ -129,15 +149,22 @@ describe('US-ERR-03 recovery flows', () => {
     email.dispatchEvent(new Event('input'));
     password.value = 'safe-password';
     password.dispatchEvent(new Event('input'));
-    element.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    element
+      .querySelector('form')!
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
-    backend.expectOne('http://localhost:8080/auth/login').flush({ token: 'fresh-token', refreshToken: 'fresh-refresh', expiresIn: 900 });
-    backend.expectOne('http://localhost:8080/usuarios/me').flush({ id: 7, roles: ['CLIENTE'], fotoPerfil: null });
+    backend
+      .expectOne('http://localhost:8080/auth/login')
+      .flush({ token: 'fresh-token', refreshToken: 'fresh-refresh', expiresIn: 900 });
+    backend
+      .expectOne('http://localhost:8080/usuarios/me')
+      .flush({ id: 7, roles: ['CLIENTE'], fotoPerfil: null });
     await fixture.whenStable();
     fixture.detectChanges();
 
     expect(router.url).toBe(origin);
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);
+    fixture.detectChanges();
     const restoredList = backend.expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'));
     expect(restoredList.request.params.get('nombre')).toBe('Flores');
     expect(restoredList.request.params.get('categoria')).toBe('CAFE');

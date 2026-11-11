@@ -1,3 +1,5 @@
+import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { Component, inject, signal } from '@angular/core';
 import { FormField, email, form, required } from '@angular/forms/signals';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -5,7 +7,7 @@ import { authService } from '../../services/auth-service';
 
 @Component({
   selector: 'app-forgot-password',
-  imports: [FormField, RouterLink],
+  imports: [DsInputComponent, DsButtonComponent, FormField, RouterLink],
   templateUrl: './forgot-password.html',
   styleUrl: '../login/login.css',
 })

@@ -1,3 +1,4 @@
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -17,9 +18,7 @@ import { EquipoSucursal } from '../../components/equipo-sucursal/equipo-sucursal
 import { ReseniasSucursal } from '../../components/resenias-sucursal/resenias-sucursal';
 import { apiErrorsService } from '../../http/api-errors-service';
 import { SucursalDetalleDTO } from '../../models/sucursal';
-import { authService } from '../../services/auth-service';
 import { sucursalService } from '../../services/sucursal-service';
-import { reservaContextoService } from '../../services/reserva-contexto-service';
 
 type CargaResultado =
   | { readonly estado: 'ok'; readonly sucursal: SucursalDetalleDTO }
@@ -42,7 +41,7 @@ const LARGO_DESCRIPCION_COLGADA = 280;
 
 @Component({
   selector: 'app-sucursal-detalle',
-  imports: [ErrorPage, EquipoSucursal, ReseniasSucursal, RouterLink],
+  imports: [DsButtonComponent, ErrorPage, EquipoSucursal, ReseniasSucursal, RouterLink],
   templateUrl: './sucursal-detalle.html',
   styleUrl: './sucursal-detalle.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,10 +50,8 @@ export class SucursalDetalle {
   private readonly service = inject(sucursalService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly auth = inject(authService);
   private readonly title = inject(Title);
   private readonly apiErrors = inject(apiErrorsService);
-  private readonly reservaContexto = inject(reservaContextoService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly placeholderImage = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -251,20 +248,9 @@ export class SucursalDetalle {
 
     this.avisoRol.set(null);
 
-    if (this.auth.autenticado() && !this.auth.tieneAlgunRol('CLIENTE')) {
-      this.avisoRol.set(
-        'Tu cuenta no tiene el rol Cliente, necesario para reservar. Ingresá con una cuenta de cliente para continuar.',
-      );
-      return;
-    }
-
-    const contexto = this.reservaContexto.leer(sucursal.id);
-    const destino = `/sucursal/${sucursal.id}/servicios${contexto ? `?servicioId=${contexto.servicioId}` : ''}`;
+    const destino = `/sucursal/${sucursal.id}/servicios`;
     this.navegando.set(true);
-
-    const navegacion = this.auth.autenticado()
-      ? this.router.navigateByUrl(destino)
-      : this.router.navigate(['/login'], { queryParams: { returnTo: destino } });
+    const navegacion = this.router.navigateByUrl(destino);
 
     void navegacion.then((navego) => {
       if (!navego) {

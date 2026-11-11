@@ -1,3 +1,4 @@
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -27,7 +28,7 @@ const ESCALA_TEXTO: Readonly<Record<number, string>> = {
 
 @Component({
   selector: 'app-resenias-sucursal',
-  imports: [RouterLink],
+  imports: [DsButtonComponent, RouterLink],
   templateUrl: './resenias-sucursal.html',
   styleUrl: './resenias-sucursal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,0 +1,394 @@
+:host {
+  display: block;
+}
+
+.gestion {
+  min-height: calc(100dvh - var(--nav-h));
+  padding: calc(var(--nav-h) + 40px) 24px 80px;
+}
+
+.gestion__inner {
+  display: grid;
+  gap: 28px;
+  width: min(100% - 48px, 1180px);
+  margin: 0 auto;
+}
+
+.gestion__header {
+  display: grid;
+  justify-items: start;
+  gap: 13px;
+  max-width: 760px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 16px 7px 12px;
+  border: 1px solid rgba(247, 198, 90, 0.22);
+  border-radius: 999px;
+  background: rgba(247, 198, 90, 0.08);
+  color: #e7d9aa;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.eyebrow__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+h1 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  line-height: 1.1;
+}
+
+.gestion__header p {
+  color: var(--muted);
+  max-width: 60ch;
+}
+
+.migas {
+  display: flex;
+}
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+}
+
+.volver:hover {
+  color: var(--text);
+}
+
+.volver svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.panel {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(13, 17, 23, 0.72);
+}
+
+.panel__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.panel__eyebrow {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.panel__contador {
+  min-width: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  text-align: center;
+  font-weight: 600;
+}
+
+.gestion__opcion,
+.gestion__enviadas {
+  display: grid;
+  gap: 16px;
+}
+
+.gestion__opcion h3,
+.gestion__enviadas h3 {
+  font-size: 1.15rem;
+}
+
+.gestion__opcion p {
+  color: var(--muted);
+}
+
+.busqueda {
+  display: grid;
+  gap: 12px;
+}
+
+.busqueda__label {
+  font-weight: 600;
+}
+
+.busqueda__fila {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.busqueda__input {
+  flex: 1 1 260px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.busqueda__error {
+  color: var(--danger);
+  margin: 0;
+}
+
+.busqueda__seleccionado {
+  color: var(--muted);
+  margin: 0;
+}
+
+.destinatario {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.destinatario--seleccionado {
+  border-color: rgba(247, 198, 90, 0.45);
+  background: var(--accent-soft);
+}
+
+.destinatario__avatar {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.destinatario__datos {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+}
+
+.destinatario__email {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.sucursal-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sucursal-card__info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sucursal-card__avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.sucursal-card h3 {
+  margin: 0 0 4px;
+}
+
+.sucursal-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.lista {
+  display: grid;
+  gap: 14px;
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+}
+
+.boton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.boton--principal {
+  background: var(--accent);
+  color: #1a1405;
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.boton--ghost {
+  background: transparent;
+}
+
+.aviso {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.aviso--exito {
+  border-color: rgba(120, 220, 140, 0.35);
+  background: rgba(120, 220, 140, 0.08);
+}
+
+.aviso--error {
+  border-color: rgba(255, 122, 122, 0.35);
+  background: rgba(255, 122, 122, 0.08);
+}
+
+.estado {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 32px 18px;
+  text-align: center;
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+}
+
+.estado__icono svg {
+  width: 34px;
+  height: 34px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.estado--error {
+  color: var(--danger);
+}
+
+.ver-mas {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-strong);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ver-mas svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.solicitud-skeleton {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.skeleton {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.12), rgba(255,255,255,.06));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.skeleton--avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+}
+
+.skeleton--short {
+  width: 60%;
+}
+
+.solicitud__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(26, 20, 5, 0.35);
+  border-top-color: #1a1405;
+  border-radius: 999px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .sucursal-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .busqueda__fila {
+    flex-direction: column;
+  }
+}
