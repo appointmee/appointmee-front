@@ -189,6 +189,34 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'turnos-asignados',
+    canActivate: [authGuard],
+    title: 'AppointMee | Turnos asignados',
+    data: {
+      title: 'Turnos asignados',
+      roles: ['EMPLEADO'],
+      description: 'Consultá los turnos que tenés asignados en tus sucursales.',
+    },
+    loadComponent: () =>
+      import('./pages/turnos-asignados/turnos-asignados').then(
+        (module) => module.TurnosAsignados,
+      ),
+  },
+  {
+    path: 'turnos-asignados/:sucursalId',
+    canActivate: [authGuard],
+    title: 'AppointMee | Turnos asignados de la sucursal',
+    data: {
+      title: 'Turnos asignados',
+      roles: ['EMPLEADO'],
+      description: 'Consultá tus turnos asignados en una de tus sucursales.',
+    },
+    loadComponent: () =>
+      import(
+        './pages/turnos-asignados-sucursal/turnos-asignados-sucursal'
+      ).then((module) => module.TurnosAsignadosSucursal),
+  },
+  {
     path: 'solicitudes/empleo/enviadas/:sucursalId',
     canActivate: [authGuard],
     title: 'AppointMee | Solicitudes de empleo enviadas',
