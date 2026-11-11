@@ -87,11 +87,7 @@
           <ul class="lista">
             @for (empleado of empleados(); track trackById($index, empleado)) {
               <li class="empleado">
-                <a
-                  class="empleado__enlace"
-                  [routerLink]="['/mis-sucursales', sucursalId, 'empleado', empleado.id]"
-                  [attr.aria-label]="'Ver detalle de ' + nombreCompleto(empleado)"
-                >
+                <div class="empleado__contenido">
                   <img
                     class="empleado__foto"
                     [src]="foto(empleado)"
@@ -120,19 +116,11 @@
                         }
                       </span>
                       <span class="empleado__resenias">{{ cantidadResenias(empleado) }}</span>
-                      <span class="sr-only">
-                        Puntuación promedio {{ puntuacionTexto(empleado) }},
-                        {{ cantidadResenias(empleado) }}.
-                      </span>
                     } @else {
                       <span class="empleado__sin-puntuacion">Sin puntuaciones</span>
                     }
                   </div>
-
-                  <svg class="empleado__chevron" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="m9 6 6 6-6 6" />
-                  </svg>
-                </a>
+                </div>
               </li>
             }
           </ul>

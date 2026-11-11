@@ -189,20 +189,6 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'mis-sucursales/:sucursalId/empleado/:empleadoId',
-    canActivate: [authGuard],
-    title: 'AppointMee | Detalle del empleado',
-    data: {
-      title: 'Detalle del empleado',
-      roles: ['EMPLEADOR'],
-      description: 'Consultá los datos y la puntuación promedio de un empleado de tu sucursal.',
-    },
-    loadComponent: () =>
-      import('./pages/empleado-detalle/empleado-detalle').then(
-        (module) => module.EmpleadoDetalle,
-      ),
-  },
-  {
     path: 'mis-sucursales/:sucursalId/solicitudes',
     canActivate: [authGuard],
     title: 'AppointMee | Solicitudes de la sucursal',
