@@ -4,8 +4,10 @@ import { Observable } from 'rxjs';
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import {
   DisponibilidadDTO,
+  EstadoTurno,
   TurnoClienteDetalleDTO,
   TurnoCrearDTO,
+  TurnoEmpleadorDetalleDTO,
   TurnoMiniDTO,
 } from '../models/turno';
 import { backendService } from './backend-service';
@@ -38,6 +40,28 @@ export class turnoService {
   detallePropio(turnoId: number): Observable<TurnoClienteDetalleDTO> {
     return this.http.get<TurnoClienteDetalleDTO>(
       `${this.api.baseUrl}/turnos/propios/detalles/${turnoId}`,
+      { context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true) },
+    );
+  }
+
+  /** GET /turnos/de-sucursal/{sucursalId}. El estado es obligatorio en el backend. */
+  turnosDeSucursal(
+    sucursalId: number,
+    estadoTurno: EstadoTurno,
+  ): Observable<TurnoMiniDTO[]> {
+    return this.http.get<TurnoMiniDTO[]>(
+      `${this.api.baseUrl}/turnos/de-sucursal/${sucursalId}`,
+      {
+        params: { estadoTurno },
+        context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+      },
+    );
+  }
+
+  /** GET /turnos/de-sucursal/detalles/{turnoId} (TurnoResponseDTO). */
+  detalleDeSucursal(turnoId: number): Observable<TurnoEmpleadorDetalleDTO> {
+    return this.http.get<TurnoEmpleadorDetalleDTO>(
+      `${this.api.baseUrl}/turnos/de-sucursal/detalles/${turnoId}`,
       { context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true) },
     );
   }

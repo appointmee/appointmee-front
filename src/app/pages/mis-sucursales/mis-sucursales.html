@@ -68,7 +68,17 @@
             <span class="panel__eyebrow">Sucursal seleccionada</span>
             <h2 id="sucursal-gestion-titulo">{{ sucursal.nombre }}</h2>
           </div>
-          <a class="boton boton--ghost" [routerLink]="['/sucursal', sucursal.id]">Ver sucursal</a>
+          <div class="panel__acciones">
+            <a
+              class="boton boton--principal"
+              [routerLink]="['/mis-sucursales', sucursal.id, 'turnos']"
+            >
+              Ver turnos
+            </a>
+            <a class="boton boton--ghost" [routerLink]="['/sucursal', sucursal.id]">
+              Ver sucursal
+            </a>
+          </div>
         </header>
 
         <div class="gestion__opcion">

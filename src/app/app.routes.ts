@@ -175,6 +175,20 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'mis-sucursales/:sucursalId/turnos',
+    canActivate: [authGuard],
+    title: 'AppointMee | Turnos de la sucursal',
+    data: {
+      title: 'Turnos de la sucursal',
+      roles: ['EMPLEADOR'],
+      description: 'Consultá y supervisá el historial de turnos de tu sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/turnos-sucursal/turnos-sucursal').then(
+        (module) => module.TurnosSucursal,
+      ),
+  },
+  {
     path: 'solicitudes/empleo/enviadas/:sucursalId',
     canActivate: [authGuard],
     title: 'AppointMee | Solicitudes de empleo enviadas',

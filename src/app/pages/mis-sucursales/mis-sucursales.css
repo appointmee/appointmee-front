@@ -97,6 +97,13 @@ h1 {
   gap: 16px;
 }
 
+.panel__acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .panel__eyebrow {
   color: var(--muted);
   font-size: 12px;
@@ -390,5 +397,10 @@ h1 {
   }
   .busqueda__fila {
     flex-direction: column;
+  }
+  .panel__acciones {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
   }
 }
