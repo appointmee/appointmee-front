@@ -1,6 +1,7 @@
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { EmpleadoDTO } from '../models/empleado';
 import { backendService } from './backend-service';
@@ -47,9 +48,21 @@ export class empleadoService {
   }
 
   //DELETE
+  /**
+   * Quita al empleado del equipo de la sucursal (`/sucursales/{id}/empleados/
+   * eliminar/{empleadoId}`). El error se deja en manos de la pantalla para que
+   * pueda mostrarse inline sin navegar a la vista de error.
+   */
   eliminar(sucursalId: number, empleadoId: number): Observable<void> {
-    return this.http.delete<void>(
-      `${this.api.baseUrl}/sucursales/${sucursalId}/empleados/${empleadoId}`,
-    );
+    return this.http
+      .delete(
+        `${this.api.baseUrl}/sucursales/${sucursalId}/empleados/eliminar/${empleadoId}`,
+        {
+          observe: 'response',
+          responseType: 'text',
+          context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+        },
+      )
+      .pipe(map(() => undefined));
   }
 }
