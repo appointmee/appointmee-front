@@ -12,6 +12,10 @@ function isValidTerm(value: string): boolean {
   return value.length === 0 || value.length >= 2;
 }
 
+/**
+ * Centraliza el texto del buscador de sucursales: espera 350 ms al escribir,
+ * permite confirmar antes con Enter y conserva los demás filtros de la URL.
+ */
 @Injectable({ providedIn: 'root' })
 export class BranchSearch {
   private readonly router = inject(Router);
@@ -46,6 +50,7 @@ export class BranchSearch {
       });
   }
 
+  /** Confirma de inmediato el término actual sin esperar el debounce. */
   submit(): void {
     const term = normalizeTerm(this.search.value);
     this.term.set(this.search.value);
@@ -53,6 +58,7 @@ export class BranchSearch {
     this.submitted.next(term);
   }
 
+  /** Vacía el campo y quita `busqueda` de la URL sin modificar otros filtros. */
   clear(): void {
     this.search.setValue('', { emitEvent: false });
     this.term.set('');

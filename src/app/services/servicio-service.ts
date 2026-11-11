@@ -6,38 +6,38 @@ import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import { ServicioDTO, ServicioPayload } from '../models/servicio';
 import { backendService } from './backend-service';
 
-//CRUD SEVICIOS
+/** Acceso HTTP al catálogo de servicios y a sus operaciones de edición. */
 
 @Injectable({ providedIn: 'root' })
 export class servicioService {
   private readonly api = inject(backendService);
   private readonly http = inject(HttpClient);
 
-  //GET
+  /** Lista los servicios visibles para la sucursal, con errores manejados por la pantalla. */
   listarPorSucursal(idSucursal: number): Observable<ServicioDTO[]> {
     return this.http.get<ServicioDTO[]>(
       `${this.api.baseUrl}/servicios/listar/sucursal/${idSucursal}`,
       { context: this.contextoSinAvisoGlobal() },
     );
   }
-// GET
+  /** Obtiene un servicio para una vista de detalle o edición. */
   obtenerPorId(servicioId: number): Observable<ServicioDTO> {
     return this.http.get<ServicioDTO>(`${this.api.baseUrl}/servicios/${servicioId}`);
   }
-  //POST
+  /** Envía al backend los datos validados de un nuevo servicio. */
   crear(datos: ServicioPayload): Observable<ServicioDTO> {
     return this.http.post<ServicioDTO>(`${this.api.baseUrl}/servicios`, datos);
   }
-//PUT
+  /** Actualiza los datos editables de un servicio existente. */
   actualizar(servicioId: number, datos: ServicioPayload): Observable<ServicioDTO> {
     return this.http.put<ServicioDTO>(`${this.api.baseUrl}/servicios/${servicioId}`, datos);
   }
-//DELETE
+  /** Solicita la eliminación del servicio; el backend define su persistencia. */
   eliminar(servicioId: number): Observable<void> {
     return this.http.delete<void>(`${this.api.baseUrl}/servicios/${servicioId}`);
   }
 
-  // esto sirve para hacer que el handler global lo ignore
+  /** Deja que la pantalla presente el error inline sin duplicar el aviso global. */
   private contextoSinAvisoGlobal(): HttpContext {
     return new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true);
   }

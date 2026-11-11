@@ -6,16 +6,14 @@ import { EmpleadoDTO } from '../models/empleado';
 import { backendService } from './backend-service';
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 
-/**
- *  Crud de Empleado/Profesional
- */
+/** Acceso HTTP a empleados asociados a una sucursal y a sus operaciones de gestión. */
 
 @Injectable({ providedIn: 'root' })
 export class empleadoService {
   private readonly api = inject(backendService);
   private readonly http = inject(HttpClient);
 
-  //GET
+  /** Lista los profesionales disponibles para reservar en la sucursal indicada. */
   listarPorSucursal(sucursalId: number): Observable<EmpleadoDTO[]> {
     return this.http.get<EmpleadoDTO[]>(
       `${this.api.baseUrl}/sucursales/${sucursalId}/elegir-empleado`,
@@ -23,7 +21,7 @@ export class empleadoService {
     );
   }
 
-  //POST
+  /** Crea un empleado asociado a la sucursal; la autorización la valida el backend. */
   crear(
     sucursalId: number,
     datos: { nombre: string; apellido: string; urlFotoPerfil: string | null },
@@ -34,7 +32,7 @@ export class empleadoService {
     );
   }
 
-  //PUT
+  /** Actualiza los datos básicos de un empleado de la sucursal. */
   actualizar(
     sucursalId: number,
     empleadoId: number,
@@ -46,7 +44,7 @@ export class empleadoService {
     );
   }
 
-  //DELETE
+  /** Solicita la baja de un empleado en la sucursal. */
   eliminar(sucursalId: number, empleadoId: number): Observable<void> {
     return this.http.delete<void>(
       `${this.api.baseUrl}/sucursales/${sucursalId}/empleados/${empleadoId}`,
