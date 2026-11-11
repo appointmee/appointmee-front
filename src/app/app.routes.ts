@@ -145,6 +145,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/mis-turnos/mis-turnos').then((module) => module.MisTurnos),
   },
   {
+    path: 'mis-turnos/:id',
+    canActivate: [authGuard],
+    title: 'AppointMee | Detalle de Turno',
+    loadComponent: () => import('./pages/mis-turnos-detalle/mis-turnos-detalle').then((module) => module.MisTurnosDetalle),
+  },
+  {
     path: 'mis-sucursales',
     canActivate: [authGuard],
     title: 'AppointMee | Mis Sucursales',

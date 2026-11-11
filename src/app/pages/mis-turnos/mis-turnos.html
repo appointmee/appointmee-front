@@ -19,9 +19,7 @@
     <ul class="mis-turnos__lista">
       @for (turno of turnos(); track turno.id) {
         <li class="mis-turnos__item">
-          <span class="mis-turnos__servicio">{{ turno.nombreServicio }}</span>
-          <span class="mis-turnos__fecha">{{ turno.fechaTurno }}</span>
-          <span class="mis-turnos__estado-turno">{{ turno.estadoTurno }}</span>
+          <a [routerLink]="['/mis-turnos', turno.id]">{{ turno.nombreServicio }} — {{ turno.fechaTurno }} ({{ turno.estadoTurno }})</a>
         </li>
       }
     </ul>

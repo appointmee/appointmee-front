@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 
 import { TurnoMiniDTO } from '../../models/turno';
@@ -14,7 +15,7 @@ import { turnoService } from '../../services/turno-service';
 
 @Component({
   selector: 'app-mis-turnos',
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './mis-turnos.html',
   styleUrl: './mis-turnos.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
