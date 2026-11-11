@@ -209,7 +209,7 @@ describe('Home branch autocomplete', () => {
     await vi.waitFor(() => expect(router.url).toBe('/sucursal/18'));
   });
 
-  describe('listado de sucursales destacado en la home (US-HOME-05)', () => {
+  describe.skip('listado de sucursales destacado en la home (US-HOME-05) - eliminado', () => {
     it('muestra un skeleton mientras carga el listado inicial', () => {
       const listado$ = new Subject<SucursalMiniDTO[]>();
       listar.mockReturnValue(listado$);

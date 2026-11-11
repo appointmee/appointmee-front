@@ -11,15 +11,17 @@ import { VerificacionEmailModel } from '../../models/auth';
 import { ApiError } from '../../http/api-errors-service';
 import { verificacionPendienteService } from '../../services/verificacion-pendiente-service';
 import { authService } from '../../services/auth-service';
+import { CambiarPassword } from '../../components/cambiar-password/cambiar-password';
 
 @Component({
-  imports: [DsInputComponent, DsButtonComponent],
+  imports: [DsInputComponent, DsButtonComponent, CambiarPassword],
   selector: 'app-configuracion',
   templateUrl: './configuracion.html',
   styleUrl: './configuracion.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Configuracion implements OnInit {
+  seccion = signal<'verificacion' | 'password'>('verificacion');
 
   auth = inject(authService);
   private router = inject(Router);

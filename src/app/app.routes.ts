@@ -24,15 +24,50 @@ export const routes: Routes = [
     redirectTo: 'sucursales',
   },
   {
+    path: 'sucursal/:sucursalId/servicios/:servicioId/empleados',
+    title: 'AppointMee | Elegir empleado',
+    data: {
+      title: 'Elegir empleado',
+      description: 'Elegí al profesional que realizará el servicio reservado.',
+    },
+    loadComponent: () =>
+      import('./pages/elegir-empleado/elegir-empleado').then(
+        (module) => module.ElegirEmpleado,
+      ),
+  },
+  {
+    path: 'sucursal/:sucursalId/servicios/:servicioId/turnos/pago',
+    title: 'AppointMee | Enlace de pago',
+    data: {
+      title: 'Enlace de pago',
+      description: 'Completá el pago para confirmar tu turno.',
+    },
+    loadComponent: () =>
+      import('./pages/pago-turno/pago-turno').then((module) => module.PagoTurno),
+  },
+  {
+    path: 'pago/resultado',
+    title: 'AppointMee | Resultado del pago',
+    loadComponent: () =>
+      import('./pages/resultado-pago/resultado-pago').then(
+        (module) => module.ResultadoPago,
+      ),
+  },
+  {
     path: 'sucursal/:sucursalId/servicios/:servicioId/turnos',
-    title: 'AppointMee | Elegir turno · Temporal',
-    loadComponent: () => import('./pages/elegir-turno/elegir-turno').then(module => module.ElegirTurno),
+    title: 'AppointMee | Seleccionar día y horario',
+    data: {
+      title: 'Seleccionar día y horario',
+      description: 'Elegí el día y el horario disponible para tu turno.',
+    },
+    loadComponent: () =>
+      import('./pages/elegir-turno/elegir-turno').then((module) => module.ElegirTurno),
   },
   {
     path: 'sucursal/:sucursalId/servicios',
-    title: 'AppointMee | Elegir servicio',
+    title: 'AppointMee | Seleccionar servicio',
     data: {
-      title: 'Elegir servicio',
+      title: 'Seleccionar servicio',
       description: 'Elegí el servicio que querés reservar en esta sucursal.',
     },
     loadComponent: () =>
@@ -40,9 +75,9 @@ export const routes: Routes = [
   },
   {
     path: 'servicios',
-    title: 'AppointMee | Elegir servicio',
+    title: 'AppointMee | Seleccionar servicio',
     data: {
-      title: 'Elegir servicio',
+      title: 'Seleccionar servicio',
       description: 'Elegí el servicio que querés reservar en esta sucursal.',
     },
     loadComponent: () =>

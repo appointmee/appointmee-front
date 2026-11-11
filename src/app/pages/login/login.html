@@ -18,13 +18,18 @@
   >
     <h1 id="login-titulo" class="login__titulo">Iniciar sesión</h1>
     <p class="login__sub">Ingresá a tu cuenta de AppointMee.</p>
+    @if (passwordActualizada()) {
+      <p class="login__success" role="status" aria-live="polite">{{ passwordDesdeAjustes()
+        ? 'Tu contraseña se actualizó. Iniciá sesión nuevamente por seguridad'
+        : 'Tu contraseña se actualizó. Ya podés iniciar sesión' }}</p>
+    }
 
     @if (resumenErrores().length) {
       <div class="login__summary" role="alert" aria-live="assertive">
         <p>Corregí los siguientes campos:</p>
         <ul>
           @for (error of resumenErrores(); track error.id) {
-            <li><a [href]="'#' + error.id">{{ error.label }}: {{ error.message }}</a></li>
+            <li>{{ error.label }}: {{ error.message }}</li>
           }
         </ul>
       </div>

@@ -32,7 +32,8 @@ export class Reporte404 {
     if (typeof window === 'undefined') return null;
     const host = window.location.hostname;
     if (host === 'localhost' || host === '127.0.0.1') return this.backend.baseUrl;
-    return 'https://appointmee-vcs2.onrender.com';
+    // IMPORTANTE: si cambia la URL pública del backend, actualizar esta URL.
+    return 'https://tiny-files-lead.loca.lt';
   }
 
   private referrerSinQuery(referrer: string | null): string | null {

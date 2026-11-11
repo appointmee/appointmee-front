@@ -3,7 +3,7 @@ import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField, form, maxLength, minLength, pattern, required } from '@angular/forms/signals';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { timer } from 'rxjs';
 
 import { ApiError } from '../../http/api-errors-service';
@@ -20,6 +20,7 @@ import { consumeResetPasswordToken } from '../../security/reset-password-token';
 })
 export class ResetPasswordPage {
   private auth = inject(authService);
+  private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   private token = consumeResetPasswordToken();
 
@@ -83,7 +84,7 @@ export class ResetPasswordPage {
         },
         error: (error: ApiError) => {
           this.verificandoEnlace.set(false);
-          if ([400, 401, 403, 410].includes(error.status)) {
+          if ([400, 401, 403, 404, 410].includes(error.status)) {
             this.invalidarEnlace();
           } else {
             this.errorValidacion.set(true);
@@ -123,6 +124,7 @@ export class ResetPasswordPage {
           this.completado.set(true);
           this.token = '';
           this.passwordModel.set({ password: '', confirmarPassword: '' });
+          void this.router.navigate(['/login'], { replaceUrl: true, state: { passwordActualizada: true } });
         },
         error: (error: ApiError) => {
           this.cargando.set(false);
@@ -138,7 +140,7 @@ export class ResetPasswordPage {
           this.puedeReintentar.set(error.status === 0 || error.status >= 500);
           this.mensaje.set(error.status === 429
             ? 'Demasiados intentos. Esperá un momento antes de reintentar.'
-            : 'No pudimos confirmar el cambio. Volvé a escribir ambas contraseñas para reintentar. Si el enlace ya se utilizó, intentá iniciar sesión o pedí uno nuevo.');
+            : 'No pudimos confirmar el cambio. Volvé a escribir ambas contraseñas para reintentar.');
           this.passwordForm.password().focusBoundControl();
         },
       });

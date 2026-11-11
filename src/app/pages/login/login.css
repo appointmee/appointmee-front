@@ -83,6 +83,15 @@
   font-size: 12.5px;
 }
 
+.login__success {
+  padding: var(--space-3);
+  border: 1px solid var(--success);
+  border-radius: var(--radius-md);
+  color: var(--success);
+  background: var(--success-soft);
+  line-height: 1.5;
+}
+
 .login__submit {
   width: 100%;
   padding: 12px 18px;

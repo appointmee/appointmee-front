@@ -176,6 +176,9 @@ async function mockApi(page: Page, loginIsUnverified = false): Promise<string[]>
     if (method === 'POST' && path === '/auth/reset-password') {
       return reply(route, 200, { message: 'Contraseña restablecida correctamente.' });
     }
+    if (method === 'POST' && path === '/auth/change-password') {
+      return reply(route, 200, { message: 'Contraseña modificada.' });
+    }
     if (method === 'GET' && path === '/usuarios/me') return reply(route, 200, usuario);
     if (method === 'GET' && path === '/sucursales/categorias') return reply(route, 200, ['PELUQUERIA']);
     if (method === 'GET' && path === '/sucursales/listar') return reply(route, 200, [sucursal]);
@@ -251,10 +254,63 @@ test('recuperación valida el enlace y mantiene el token fuera de URL e historia
   await page.getByLabel('Nueva contraseña', { exact: true }).fill('NuevaClave123!');
   await page.getByLabel('Confirmar nueva contraseña').fill('NuevaClave123!');
   await page.getByRole('button', { name: 'Guardar nueva contraseña' }).click();
-  await expect(page.getByRole('heading', { name: 'Contraseña restablecida' })).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByText('Tu contraseña se actualizó. Ya podés iniciar sesión', { exact: true })).toBeVisible();
 
   expect(unexpected).toEqual([]);
   expect(consoleErrors).toEqual([]);
+});
+
+for (const status of [400, 401]) {
+test(`Ajustes conserva la sesión ante contraseña actual incorrecta ${status} y sale al guardar`, async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const unexpected = await mockApi(page);
+  let intento = 0;
+  await page.route(`${api}/auth/change-password`, route => {
+    if (route.request().method() === 'OPTIONS') return reply(route, 204, null);
+    intento++;
+    return intento === 1
+      ? reply(route, status, status === 401 ? 'Contraseña actual incorrecta' : { code: 'CURRENT_PASSWORD_INVALID', message: 'La contraseña actual es incorrecta.' })
+      : reply(route, 200, { message: 'Actualizada' });
+  });
+  await page.goto('/login?returnTo=%2Fconfiguracion');
+  await page.getByLabel('Email', { exact: true }).fill('ana@example.com');
+  await page.getByLabel('Contraseña', { exact: true }).fill('Clave123!');
+  await page.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
+  await expect(page).toHaveURL(/\/configuracion$/);
+  await page.getByRole('button', { name: 'Cambiar contraseña', exact: true }).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/cambiar-password-mobile.png', fullPage: true });
+  for (let index = 0; index < 2; index++) {
+    await page.getByLabel('Contraseña actual', { exact: true }).fill('Clave123!');
+    await page.getByLabel('Nueva contraseña', { exact: true }).fill('NuevaClave123!');
+    await page.getByLabel('Confirmar nueva contraseña', { exact: true }).fill('NuevaClave123!');
+    await page.getByRole('button', { name: 'Guardar nueva contraseña', exact: true }).click();
+    if (index === 0) {
+      await expect(page.getByText('La contraseña actual es incorrecta.', { exact: true })).toBeVisible();
+      await expect(page).toHaveURL(/\/configuracion$/);
+      await expect(page.getByLabel('Contraseña actual', { exact: true })).toHaveValue('');
+    }
+  }
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByText('Tu contraseña se actualizó. Iniciá sesión nuevamente por seguridad', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('token'))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem('refreshToken'))).toBeNull();
+  expect(unexpected).toEqual([]);
+});
+}
+
+test('un enlace inválido o utilizado muestra el error sin ofrecer otro enlace', async ({ page }) => {
+  await mockApi(page);
+  await page.route(`${api}/auth/reset-password/validate`, route => {
+    if (route.request().method() === 'OPTIONS') return reply(route, 204, null);
+    return reply(route, 200, { valido: false, expiresInSeconds: 0 });
+  });
+  await page.goto('/reset-password#token=fragment_token_1234567890123');
+  await expect(page.getByRole('alert')).toContainText('ya fue utilizado');
+  await expect(page.locator('input')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /nuevo enlace/i })).toHaveCount(0);
+  await expect(page.locator('a[href="/olvide-mi-contrasena"]')).toHaveCount(0);
 });
 
 test('recuperación de contraseña responde con mensaje genérico', async ({ page }) => {
@@ -281,18 +337,21 @@ test('búsqueda conserva el término y muestra resultados sin errores de consola
   expect(consoleErrors).toEqual([]);
 });
 
-test('detalle permite elegir un servicio y consultar horarios sin errores de consola', async ({ page }) => {
+test('detalle permite seleccionar un servicio sin errores de consola', async ({ page }) => {
   const consoleErrors = watchConsole(page);
   const unexpected = await mockApi(page);
   await page.goto('/sucursal/1');
   await expect(page.getByRole('heading', { name: 'Sucursal Demo' })).toBeVisible();
   await page.getByRole('button', { name: 'Reservar turno en Sucursal Demo' }).click();
   await expect(page).toHaveURL(/\/sucursal\/1\/servicios$/);
+  await expect(page.getByRole('heading', { name: 'Seleccionar servicio' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Corte de cabello' })).toBeVisible();
-  await page.getByRole('link', { name: 'Elegir horario para Corte de cabello' }).click();
 
-  await expect(page).toHaveURL(/\/sucursal\/1\/servicios\/3\/turnos$/);
-  await expect(page.getByRole('button', { name: 'Elegir 09:00 del 2030-12-20' })).toBeVisible();
+  const empleado = page.getByRole('button', { name: 'Seleccionar empleado' });
+  await expect(empleado).toBeDisabled();
+  await page.getByRole('button', { name: 'Seleccionar Corte de cabello' }).click();
+  await expect(empleado).toBeEnabled();
+  await expect(page).toHaveURL(/\/sucursal\/1\/servicios$/);
   expect(unexpected).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });
