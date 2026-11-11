@@ -1,0 +1,95 @@
+:host { display: block; }
+
+/*
+  Sección "Eliminar cuenta" de Ajustes. Replica el recuadro de las demás
+  secciones de la pantalla (mismo borde, radio, fondo y espaciado) y el
+  recuadro informativo interior de "Verificar cuenta".
+*/
+.eliminar-cuenta {
+  margin-top: 24px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.eliminar-cuenta__cabecera { margin-bottom: 28px; }
+
+.eliminar-cuenta h2 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 20px;
+}
+
+.eliminar-cuenta__cabecera p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Recuadro informativo: mismo borde y radio que los avisos de Ajustes. */
+.eliminar-cuenta__aviso {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.eliminar-cuenta__aviso p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.eliminar-cuenta__aviso strong { color: var(--danger); }
+
+.eliminar-cuenta__error { margin: 16px 0 0; color: #ff9d9d; font-size: 13px; }
+.eliminar-cuenta__exito { margin: 16px 0 0; color: #9be2b2; font-size: 13px; }
+
+/*
+  Botón rojo: replica el diseño de "Cancelar turno" (turno-detalle-modal.css)
+  y de "Eliminar" en el listado de empleados (empleados-sucursal.css).
+*/
+.eliminar-cuenta__boton {
+  margin-top: 20px;
+  background: rgba(255, 122, 122, 0.16);
+  color: #ffb0b0;
+  border-color: rgba(255, 122, 122, 0.32);
+}
+
+.eliminar-cuenta__boton:hover:not(:disabled) {
+  background: rgba(255, 122, 122, 0.26);
+  border-color: rgba(255, 122, 122, 0.45);
+}
+
+.eliminar-cuenta__boton:disabled { opacity: 0.45; }
+
+/* Diálogos de confirmación. */
+.eliminar-cuenta__dialogo-titulo {
+  margin: 0 0 var(--space-2);
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.eliminar-cuenta__dialogo-texto {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.eliminar-cuenta__dialogo-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: flex-end;
+  margin-top: var(--space-4);
+}
+
+@media (max-width: 600px) {
+  .eliminar-cuenta { padding: 20px; }
+  .eliminar-cuenta__boton { width: 100%; }
+}
