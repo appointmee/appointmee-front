@@ -175,6 +175,20 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'mis-sucursales/:sucursalId/servicios/nuevo',
+    canActivate: [authGuard],
+    title: 'AppointMee | Crear servicio',
+    data: {
+      title: 'Crear servicio',
+      roles: ['EMPLEADOR'],
+      description: 'Creá un nuevo servicio para tu sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/crear-servicio/crear-servicio').then(
+        (module) => module.CrearServicioPage,
+      ),
+  },
+  {
     path: 'mis-sucursales/:sucursalId/turnos',
     canActivate: [authGuard],
     title: 'AppointMee | Turnos de la sucursal',

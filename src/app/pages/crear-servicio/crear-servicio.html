@@ -1,0 +1,68 @@
+<section class="crear-servicio" aria-labelledby="crear-titulo">
+  <header class="crear-servicio__header">
+    <h1 id="crear-titulo">Crear servicio</h1>
+    <p>Completá los datos del nuevo servicio.</p>
+  </header>
+
+  @if (exito()) {
+    <div class="aviso aviso--exito" role="status" aria-live="polite">{{ exito() }}</div>
+  }
+  @if (error()) {
+    <div class="aviso aviso--error" role="alert">{{ error() }}</div>
+  }
+
+  <form (submit)="onSubmit($event)" novalidate>
+    <div class="campo">
+      <label for="nombre">Nombre</label>
+      <ds-input>
+        <input #dsNativeControl id="nombre" type="text" autocomplete="off"
+               [formField]="formulario.nombre" aria-describedby="nombre-error" />
+      </ds-input>
+      @if (formulario.nombre().touched() && formulario.nombre().invalid()) {
+        <p id="nombre-error" class="error" role="alert">{{ formulario.nombre().errors()[0]?.message }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="descripcion">Descripción</label>
+      <ds-input>
+        <input #dsNativeControl id="descripcion" type="text"
+               [formField]="formulario.descripcion" />
+      </ds-input>
+    </div>
+
+    <div class="campo">
+      <label for="duracion">Duración (minutos)</label>
+      <ds-input>
+        <input #dsNativeControl id="duracion" type="number"
+               [formField]="formulario.duracion" aria-describedby="duracion-error" />
+      </ds-input>
+      @if (formulario.duracion().touched() && formulario.duracion().invalid()) {
+        <p id="duracion-error" class="error" role="alert">{{ formulario.duracion().errors()[0]?.message }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="precio">Precio</label>
+      <ds-input>
+        <input #dsNativeControl id="precio" type="number"
+               [formField]="formulario.precio" />
+      </ds-input>
+    </div>
+
+    <div class="campo">
+      <label for="fotoPerfil">Foto (URL)</label>
+      <ds-input>
+        <input #dsNativeControl id="fotoPerfil" type="url"
+               [formField]="formulario.fotoPerfil" />
+      </ds-input>
+    </div>
+
+    <div class="acciones">
+      <a routerLink="/mis-sucursales" class="boton boton--secundario">Cancelar</a>
+      <button dsButton type="submit" [disabled]="cargando()" [attr.aria-busy]="cargando()">
+        {{ cargando() ? 'Creando…' : 'Crear servicio' }}
+      </button>
+    </div>
+  </form>
+</section>
