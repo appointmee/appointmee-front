@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { servicioService } from '../../services/servicio-service';
+import { AuthService } from '../../services/auth-service';
 
 @Component({
   selector: 'app-eliminar-servicio',
@@ -13,11 +14,13 @@ import { servicioService } from '../../services/servicio-service';
 })
 export class EliminarServicio {
   private readonly api = inject(servicioService);
+  protected readonly auth = inject(AuthService);
 
   servicioId: number | null = null;
   protected readonly eliminando = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly exito = signal<string | null>(null);
+  protected puedeEliminar(): boolean { return this.auth.tieneAlgunRol('EMPLEADOR','ADMINISTRADOR'); }
 
   protected eliminar(): void {
     if (!this.servicioId) {

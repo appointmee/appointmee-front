@@ -3,5 +3,5 @@
   @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
   @if (exito()) { <p class="exito" role="status">{{ exito() }}</p> }
   <label>Servicio ID <input type="number" [(ngModel)]="servicioId" name="servicioId" /></label>
-  <button type="button" (click)="eliminar()" [disabled]="eliminando()" [attr.aria-busy]="eliminando()">Eliminar</button>
+  <button type="button" (click)="eliminar()" [disabled]="eliminando() || !puedeEliminar()" [attr.aria-busy]="eliminando()">Eliminar</button>
 </section>
