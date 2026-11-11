@@ -19,23 +19,15 @@ import {
   switchMap,
 } from 'rxjs';
 
+import { TurnoDetalleModal } from '../../components/turno-detalle-modal/turno-detalle-modal';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
-import {
-  DsModalComponent,
-  DsSelectComponent,
-} from '../../shared/ui/misc/misc.component';
-import { humanizarCategoria } from '../../models/solicitud-empleado';
+import { DsSelectComponent } from '../../shared/ui/misc/misc.component';
 import { SucursalDetalleDTO } from '../../models/sucursal';
-import {
-  EstadoTurno,
-  TurnoEmpleadorDetalleDTO,
-  TurnoMiniDTO,
-} from '../../models/turno';
+import { EstadoTurno, TurnoMiniDTO } from '../../models/turno';
 import { sucursalService } from '../../services/sucursal-service';
 import { turnoService } from '../../services/turno-service';
 
 const ESTADO_INICIAL: EstadoTurno = 'CONFIRMADO';
-const LIMITE_RESENIA = 220;
 
 type ResultadoLista =
   | {
@@ -49,7 +41,7 @@ type ResultadoLista =
       readonly error: unknown;
     };
 
-type ContextoError = 'lista' | 'detalle' | 'sucursal';
+type ContextoError = 'lista' | 'sucursal';
 
 interface OpcionEstado {
   readonly valor: EstadoTurno;
@@ -83,7 +75,7 @@ interface PartesFecha {
 
 @Component({
   selector: 'app-turnos-sucursal',
-  imports: [DsButtonComponent, DsModalComponent, DsSelectComponent, RouterLink],
+  imports: [DsButtonComponent, DsSelectComponent, RouterLink, TurnoDetalleModal],
   templateUrl: './turnos-sucursal.html',
   styleUrl: './turnos-sucursal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -94,10 +86,6 @@ export class TurnosSucursal {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly recargar = new Subject<EstadoTurno>();
-  private readonly formatoMoneda = new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-  });
 
   private readonly sucursalId = Number(
     this.route.snapshot.paramMap.get('sucursalId') ?? '',
@@ -105,9 +93,7 @@ export class TurnosSucursal {
   private readonly sucursalValida =
     Number.isInteger(this.sucursalId) && this.sucursalId > 0;
 
-  private detalleSub?: Subscription;
   private sucursalSub?: Subscription;
-  private revision = 0;
 
   protected readonly estados = ESTADOS;
   protected readonly estado = signal<EstadoTurno>(ESTADO_INICIAL);
@@ -119,16 +105,8 @@ export class TurnosSucursal {
   protected readonly sucursal = signal<SucursalDetalleDTO | null>(null);
   protected readonly sucursalCargando = signal(true);
   protected readonly sucursalError = signal<string | null>(null);
-  private readonly fotoSucursalFallida = signal<string | null>(null);
 
   protected readonly turnoSeleccionado = signal<TurnoMiniDTO | null>(null);
-  protected readonly detalle = signal<TurnoEmpleadorDetalleDTO | null>(null);
-  protected readonly detalleCargando = signal(false);
-  protected readonly detalleError = signal<string | null>(null);
-  protected readonly detalleReintentando = signal(false);
-  private readonly fotoEmpleadoFallida = signal<string | null>(null);
-
-  protected readonly reseniaExpandida = signal(false);
 
   protected readonly nombreSucursal = computed(
     () => this.sucursal()?.nombre ?? `Sucursal #${this.sucursalId}`,
@@ -137,90 +115,6 @@ export class TurnosSucursal {
   protected readonly etiquetaEstadoSeleccionado = computed(
     () => ETIQUETAS_ESTADO[this.estado()],
   );
-
-  protected readonly detalleTitulo = computed(
-    () =>
-      this.detalle()?.servicio.nombre ??
-      this.turnoSeleccionado()?.nombreServicio ??
-      'Detalle del turno',
-  );
-
-  protected readonly detalleEstado = computed<EstadoTurno | null>(
-    () =>
-      this.detalle()?.estadoTurno ??
-      this.turnoSeleccionado()?.estadoTurno ??
-      null,
-  );
-
-  protected readonly finDetalle = computed(() => {
-    const detalle = this.detalle();
-    return detalle
-      ? this.sumarMinutos(detalle.fechaTurno, detalle.servicio.duracion)
-      : '—';
-  });
-
-  protected readonly fotoSucursal = computed(() => {
-    const foto = this.sucursal()?.fotoPerfil?.trim();
-    return foto && foto !== this.fotoSucursalFallida() ? foto : null;
-  });
-
-  protected readonly categoriaSucursal = computed(() =>
-    humanizarCategoria(this.sucursal()?.categoria),
-  );
-
-  protected readonly puntuacionSucursal = computed(
-    () => this.sucursal()?.puntuacion ?? 0,
-  );
-
-  protected readonly cantidadReseniasSucursal = computed(
-    () => this.sucursal()?.cantidadPuntuaciones ?? 0,
-  );
-
-  protected readonly textoReseniasSucursal = computed(() =>
-    this.cantidadReseniasSucursal() === 1
-      ? '1 reseña'
-      : `${this.cantidadReseniasSucursal()} reseñas`,
-  );
-
-  protected readonly abejasSucursal = computed(() => {
-    const puntuacion = Math.round(this.puntuacionSucursal());
-    return [1, 2, 3, 4, 5].map((posicion) => posicion <= puntuacion);
-  });
-
-  protected readonly fotoEmpleado = computed(() => {
-    const foto = this.detalle()?.empleado.urlFotoPerfil?.trim();
-    return foto && foto !== this.fotoEmpleadoFallida() ? foto : null;
-  });
-
-  protected readonly inicialesEmpleado = computed(() => {
-    const empleado = this.detalle()?.empleado;
-    const iniciales = [empleado?.nombre, empleado?.apellido]
-      .map((parte) => parte?.trim().charAt(0) ?? '')
-      .join('')
-      .toUpperCase();
-    return iniciales || '👤';
-  });
-
-  protected readonly resenia = computed(() => this.detalle()?.resenia ?? null);
-  protected readonly comentarioResenia = computed(
-    () => this.resenia()?.comentario?.trim() ?? '',
-  );
-  protected readonly reseniaLarga = computed(
-    () => this.comentarioResenia().length > LIMITE_RESENIA,
-  );
-  protected readonly comentarioVisible = computed(() => {
-    const comentario = this.comentarioResenia();
-    if (!comentario) return '';
-    if (!this.reseniaLarga() || this.reseniaExpandida()) return comentario;
-    return `${comentario.slice(0, LIMITE_RESENIA).trimEnd()}…`;
-  });
-  protected readonly puntuacionResenia = computed(
-    () => this.resenia()?.puntuacion ?? null,
-  );
-  protected readonly abejasResenia = computed(() => {
-    const puntuacion = this.resenia()?.puntuacion ?? 0;
-    return [1, 2, 3, 4, 5].map((posicion) => posicion <= puntuacion);
-  });
 
   constructor() {
     if (!this.sucursalValida) {
@@ -275,40 +169,11 @@ export class TurnosSucursal {
   }
 
   protected abrirDetalle(turno: TurnoMiniDTO): void {
-    this.detalleSub?.unsubscribe();
-    const revision = ++this.revision;
-
     this.turnoSeleccionado.set(turno);
-    this.detalle.set(null);
-    this.detalleError.set(null);
-    this.detalleCargando.set(true);
-    this.detalleReintentando.set(false);
-    this.reseniaExpandida.set(false);
-    this.fotoEmpleadoFallida.set(null);
-
-    this.cargarDetalle(turno.id, revision);
   }
 
   protected cerrarDetalle(): void {
-    this.cancelarDetalle();
     this.turnoSeleccionado.set(null);
-    this.detalle.set(null);
-    this.detalleError.set(null);
-    this.detalleCargando.set(false);
-    this.detalleReintentando.set(false);
-    this.reseniaExpandida.set(false);
-    this.fotoEmpleadoFallida.set(null);
-  }
-
-  protected reintentarDetalle(): void {
-    const turno = this.turnoSeleccionado();
-    if (!turno || this.detalleCargando() || this.detalleReintentando()) return;
-    this.detalleReintentando.set(true);
-    this.cargarDetalle(turno.id, this.revision);
-  }
-
-  protected alternarResenia(): void {
-    this.reseniaExpandida.update((expandida) => !expandida);
   }
 
   protected etiquetaEstado(estado: EstadoTurno | null | undefined): string {
@@ -319,34 +184,14 @@ export class TurnosSucursal {
     return estado ? estado.toLowerCase().replaceAll('_', '-') : 'desconocido';
   }
 
-  protected formatearFecha(valor: string | null | undefined): string {
-    const partes = this.partesFecha(valor);
-    if (!partes) return '—';
-    return `${this.dosDigitos(partes.dia)}/${this.dosDigitos(partes.mes)}/${partes.anio}`;
-  }
-
   protected formatearFechaHora(valor: string | null | undefined): string {
     const partes = this.partesFecha(valor);
     if (!partes) return '—';
-    return `${this.formatearFecha(valor)} · ${this.dosDigitos(partes.hora)}:${this.dosDigitos(partes.minuto)}`;
-  }
-
-  protected formatearPrecio(valor: number | string | null | undefined): string {
-    if (valor === null || valor === undefined || valor === '') return 'A consultar';
-    const numero = typeof valor === 'string' ? Number(valor.replace(',', '.')) : valor;
-    return Number.isFinite(numero) ? this.formatoMoneda.format(numero) : 'A consultar';
+    return `${this.dosDigitos(partes.dia)}/${this.dosDigitos(partes.mes)}/${partes.anio} · ${this.dosDigitos(partes.hora)}:${this.dosDigitos(partes.minuto)}`;
   }
 
   protected ariaLabelTurno(turno: TurnoMiniDTO): string {
     return `${turno.nombreServicio}, ${this.formatearFechaHora(turno.fechaTurno)}, ${this.etiquetaEstado(turno.estadoTurno)}`;
-  }
-
-  protected onFotoSucursalError(foto: string): void {
-    this.fotoSucursalFallida.set(foto);
-  }
-
-  protected onFotoEmpleadoError(foto: string): void {
-    this.fotoEmpleadoFallida.set(foto);
   }
 
   private aplicarLista(resultado: ResultadoLista): void {
@@ -368,38 +213,12 @@ export class TurnosSucursal {
     this.reintentando.set(false);
   }
 
-  private cargarDetalle(id: number, revision: number): void {
-    this.detalleSub?.unsubscribe();
-    this.detalleError.set(null);
-
-    this.detalleSub = this.turnosApi
-      .detalleDeSucursal(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (detalle) => {
-          if (revision !== this.revision) return;
-          this.detalle.set(detalle);
-          this.detalleCargando.set(false);
-          this.detalleReintentando.set(false);
-          this.detalleError.set(null);
-          this.reseniaExpandida.set(false);
-        },
-        error: (error: unknown) => {
-          if (revision !== this.revision) return;
-          this.detalleCargando.set(false);
-          this.detalleReintentando.set(false);
-          this.detalleError.set(this.mensajeError(error, 'detalle'));
-        },
-      });
-  }
-
   private cargarSucursal(): void {
     if (!this.sucursalValida) return;
 
     this.sucursalSub?.unsubscribe();
     this.sucursalError.set(null);
     this.sucursalCargando.set(true);
-    this.fotoSucursalFallida.set(null);
 
     this.sucursalSub = this.sucursalesApi
       .obtenerPorId(this.sucursalId, true)
@@ -431,9 +250,6 @@ export class TurnosSucursal {
         : 'No tenés permisos para consultar esta información.';
     }
     if (status === 404) {
-      if (contexto === 'detalle') {
-        return 'No encontramos el detalle de este turno.';
-      }
       if (contexto === 'sucursal') {
         return 'No encontramos la sucursal solicitada.';
       }
@@ -442,33 +258,7 @@ export class TurnosSucursal {
     if (contexto === 'lista') {
       return 'No pudimos cargar los turnos de la sucursal. Probá de nuevo en unos segundos.';
     }
-    if (contexto === 'detalle') {
-      return 'No pudimos cargar el detalle del turno. Probá de nuevo en unos segundos.';
-    }
     return 'No pudimos cargar los datos de la sucursal. Probá de nuevo en unos segundos.';
-  }
-
-  private sumarMinutos(valor: string, minutos: number): string {
-    const partes = this.partesFecha(valor);
-    if (!partes) return '—';
-
-    const duracion = Number.isFinite(minutos) ? Math.max(0, Math.trunc(minutos)) : 0;
-    const fecha = new Date(
-      partes.anio,
-      partes.mes - 1,
-      partes.dia,
-      partes.hora,
-      partes.minuto,
-      partes.segundo,
-    );
-    fecha.setMinutes(fecha.getMinutes() + duracion);
-
-    const dia = this.dosDigitos(fecha.getDate());
-    const mes = this.dosDigitos(fecha.getMonth() + 1);
-    const anio = fecha.getFullYear();
-    const hora = this.dosDigitos(fecha.getHours());
-    const minuto = this.dosDigitos(fecha.getMinutes());
-    return `${dia}/${mes}/${anio} · ${hora}:${minuto}`;
   }
 
   private timestamp(valor: string): number {
@@ -509,11 +299,5 @@ export class TurnosSucursal {
 
   private esEstadoValido(valor: string): valor is EstadoTurno {
     return ESTADOS.some((opcion) => opcion.valor === valor);
-  }
-
-  private cancelarDetalle(): void {
-    this.detalleSub?.unsubscribe();
-    this.detalleSub = undefined;
-    this.revision++;
   }
 }

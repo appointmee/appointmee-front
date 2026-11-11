@@ -58,6 +58,23 @@ export class turnoService {
     );
   }
 
+  /**
+   * GET /turnos/de-sucursal/{sucursalId}/propios.
+   * Turnos del empleado autenticado en la sucursal, filtrados por estado.
+   */
+  turnosAsignadosDeSucursal(
+    sucursalId: number,
+    estadoTurno: EstadoTurno,
+  ): Observable<TurnoMiniDTO[]> {
+    return this.http.get<TurnoMiniDTO[]>(
+      `${this.api.baseUrl}/turnos/de-sucursal/${sucursalId}/propios`,
+      {
+        params: { estadoTurno },
+        context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+      },
+    );
+  }
+
   /** GET /turnos/de-sucursal/detalles/{turnoId} (TurnoResponseDTO). */
   detalleDeSucursal(turnoId: number): Observable<TurnoEmpleadorDetalleDTO> {
     return this.http.get<TurnoEmpleadorDetalleDTO>(
