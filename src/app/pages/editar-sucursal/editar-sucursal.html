@@ -1,0 +1,12 @@
+<section class="editar-sucursal">
+  <h1>Editar sucursal</h1>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (exito()) { <p class="exito" role="status">{{ exito() }}</p> }
+  <label>Sucursal ID <input type="number" [(ngModel)]="sucursalId" name="sucursalId" (change)="cargar()" /></label>
+  <form (ngSubmit)="guardar()">
+    <label>Nombre <input [(ngModel)]="nombre" name="nombre" /></label>
+    <label>Dirección <input [(ngModel)]="direccion" name="direccion" /></label>
+    <label>Categoría <input [(ngModel)]="categoria" name="categoria" /></label>
+    <button type="submit" [disabled]="guardando()" [attr.aria-busy]="guardando()">Guardar</button>
+  </form>
+</section>
