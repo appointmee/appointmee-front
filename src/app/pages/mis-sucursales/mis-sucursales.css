@@ -95,6 +95,14 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
+}
+
+.panel__acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .panel__eyebrow {
@@ -275,6 +283,7 @@ h1 {
   color: var(--text);
   cursor: pointer;
   font: inherit;
+   text-decoration: none;
 }
 
 .boton:disabled {
@@ -409,5 +418,11 @@ h1 {
   }
   .busqueda__fila {
     flex-direction: column;
+  }
+
+  .panel__acciones {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
   }
 }
