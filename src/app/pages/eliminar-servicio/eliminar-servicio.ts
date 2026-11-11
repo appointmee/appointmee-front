@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ServicioDTO } from '../../models/servicio';
 import { servicioService } from '../../services/servicio-service';
-import { AuthService } from '../../services/auth-service';
+import { authService } from '../../services/auth-service';
 
 @Component({
   selector: 'app-eliminar-servicio',
@@ -15,7 +15,7 @@ import { AuthService } from '../../services/auth-service';
 })
 export class EliminarServicio {
   private readonly api = inject(servicioService);
-  protected readonly auth = inject(AuthService);
+  protected readonly auth = inject(authService);
 
   sucursalId: number | null = null;
   servicioId: number | null = null;
