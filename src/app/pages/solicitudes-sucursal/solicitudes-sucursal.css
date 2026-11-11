@@ -257,7 +257,8 @@ h1 {
   background: transparent;
 }
 
-.volver-gestor {
+.volver-gestor,
+.volver-gestor:visited {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -266,7 +267,7 @@ h1 {
   border: 2px solid var(--accent);
   border-radius: 14px;
   background: transparent;
-  color: var(--accent);
+  color: #fff !important;
   cursor: pointer;
   font: inherit;
   font-size: var(--font-size-md);

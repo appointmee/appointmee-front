@@ -411,7 +411,8 @@ h1 {
   }
 }
 
-.volver-gestor {
+.volver-gestor,
+.volver-gestor:visited {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -420,7 +421,7 @@ h1 {
   border: 2px solid var(--accent);
   border-radius: 14px;
   background: transparent;
-  color: var(--accent);
+  color: #fff !important;
   cursor: pointer;
   font: inherit;
   font-size: var(--font-size-md);
@@ -463,7 +464,7 @@ h1 {
 }
 
 .gestor__rating {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 }
 
 .gestor__rating {
@@ -477,7 +478,7 @@ h1 {
 .gestor__abejas {
   display: inline-flex;
   gap: 2px;
-  font-size: 1.1rem;
+  font-size: 1.5rem;
 }
 
 .abeja--vacia {
@@ -487,11 +488,28 @@ h1 {
 
 .gestor__puntuacion {
   color: var(--muted);
+  font-size: 1.5rem;
 }
 
 .gestor__cabecera {
   display: grid;
-  gap: 6px;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 48px;
+  row-gap: 6px;
+}
+
+.gestor__cabecera .eyebrow {
+  grid-column: 1 / -1;
+}
+
+.gestor__cabecera h1 {
+  grid-column: 1;
+}
+
+.gestor__cabecera .gestor__rating {
+  grid-column: 2;
+  justify-self: end;
 }
 
 .gestor__cabecera h2 {
