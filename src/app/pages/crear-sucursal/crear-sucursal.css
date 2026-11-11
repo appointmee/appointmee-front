@@ -2,9 +2,23 @@
 .crear-sucursal__header h1 { margin: 0 0 .25rem; }
 .campo { margin-bottom: 1rem; display: flex; flex-direction: column; gap: .25rem; }
 .campo label { font-weight: 600; }
-.error { color: #b00020; font-size: .875rem; margin: 0; }
+.error { color: var(--danger); font-size: .875rem; margin: 0; }
 .aviso { padding: .75rem 1rem; border-radius: .5rem; margin-bottom: 1rem; }
 .aviso--exito { background: #e6f4ea; color: #1e4620; }
 .aviso--error { background: #fdecea; color: #5f2120; }
 .acciones { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1.5rem; }
 .boton--secundario { text-decoration: none; padding: .5rem 1rem; border: 1px solid #ccc; border-radius: .5rem; }
+/* Mejoras de diseño (tokens) */
+section { max-width: 720px; margin: 0 auto; padding: var(--space-6); }
+h1 { font-size: var(--font-size-xl); margin: 0 0 var(--space-4); color: var(--text); }
+label { display: grid; gap: var(--space-1); font-size: var(--font-size-sm); color: var(--muted); }
+input, textarea { padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font: inherit; }
+input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+button { padding: var(--space-2) var(--space-4); border: 0; border-radius: var(--radius-md); background: var(--accent); color: var(--on-accent); font-weight: 600; cursor: pointer; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+.error { color: var(--danger); background: rgba(255,122,122,0.1); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); }
+.exito { color: var(--success); background: var(--success-soft); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); }
+.campo-error { color: var(--danger); font-size: var(--font-size-xs); }
+.resumen { border: 1px solid var(--danger); padding: var(--space-3); border-radius: var(--radius-md); margin-bottom: var(--space-4); }
+.acciones { display: flex; gap: var(--space-2); }
+ul { padding-left: var(--space-4); }

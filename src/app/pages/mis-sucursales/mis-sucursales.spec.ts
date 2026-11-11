@@ -1,9 +1,11 @@
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { MisSucursales } from './mis-sucursales';
+import { authService } from '../../services/auth-service';
 
 describe('MisSucursales', () => {
   let fixture: ComponentFixture<MisSucursales>;
@@ -12,7 +14,15 @@ describe('MisSucursales', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MisSucursales],
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: authService,
+          useValue: { perfil: signal({ id: 7, email: 'empleador@ejemplo.com' }) },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MisSucursales);
@@ -41,6 +51,11 @@ describe('MisSucursales', () => {
     gestionar?.click();
     fixture.detectChanges();
 
+    const empleados = backend.expectOne((request) =>
+      request.url.endsWith('/sucursales/5/empleados'),
+    );
+    empleados.flush([]);
+
     const enviadas = backend.expectOne((request) =>
       request.url.endsWith('/solicitudes-empleado/enviadas/sucursal/5'),
     );
@@ -48,18 +63,71 @@ describe('MisSucursales', () => {
     fixture.detectChanges();
 
     expect(host.textContent).toContain('Enviar solicitudes de empleo');
+  });
 
-    const verTurnos = Array.from(host.querySelectorAll<HTMLAnchorElement>('a')).find(
-      (enlace) => enlace.textContent?.includes('Ver turnos'),
-    );
-    expect(verTurnos?.getAttribute('href')).toBe('/mis-sucursales/5/turnos');
+  it('permite agregarse al equipo y confirma el resultado inline', () => {
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/listar/propias'))
+      .flush([{ id: 5, nombre: 'Sucursal Uno', categoria: 'BARBERIA', fotoPerfil: null, puntuacion: 4, cantidadPuntuaciones: 2 }]);
 
-    const verSucursal = Array.from(host.querySelectorAll<HTMLAnchorElement>('a')).find(
-      (enlace) => enlace.textContent?.includes('Ver sucursal'),
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    Array.from(host.querySelectorAll<HTMLButtonElement>('button'))
+      .find((button) => button.textContent?.includes('Gestionar'))
+      ?.click();
+    fixture.detectChanges();
+
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/5/empleados'))
+      .flush([]);
+    backend
+      .expectOne((request) => request.url.endsWith('/solicitudes-empleado/enviadas/sucursal/5'))
+      .flush([]);
+    fixture.detectChanges();
+
+    Array.from(host.querySelectorAll<HTMLButtonElement>('button'))
+      .find((button) => button.textContent?.includes('Agregarme como empleado'))
+      ?.click();
+    const agregarme = backend.expectOne((request) =>
+      request.url.endsWith('/sucursales/5/convertirme-empleado'),
     );
-    expect(verSucursal?.getAttribute('href')).toBe('/sucursal/5');
-    expect(verTurnos?.classList.contains('boton--principal')).toBe(true);
-    expect(verSucursal?.classList.contains('boton--principal')).toBe(true);
-    expect(verSucursal?.classList.contains('boton--ghost')).toBe(false);
+    expect(agregarme.request.method).toBe('PATCH');
+    agregarme.flush('Ahora sos empleado de la sucursal');
+    fixture.detectChanges();
+
+    expect(host.textContent).toContain('Ya formás parte del equipo de esta sucursal.');
+    expect(host.textContent).not.toContain('Agregarme como empleado');
+  });
+
+  it('oculta la acción si ya forma parte del equipo', () => {
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/listar/propias'))
+      .flush([{ id: 5, nombre: 'Sucursal Uno', categoria: 'BARBERIA', fotoPerfil: null, puntuacion: 4, cantidadPuntuaciones: 2 }]);
+
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    Array.from(host.querySelectorAll<HTMLButtonElement>('button'))
+      .find((button) => button.textContent?.includes('Gestionar'))
+      ?.click();
+    fixture.detectChanges();
+
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/5/empleados'))
+      .flush([
+        {
+          id: 7,
+          nombre: 'Empleador',
+          apellido: 'Ejemplo',
+          email: 'empleador@ejemplo.com',
+          urlFotoPerfil: null,
+        },
+      ]);
+    backend
+      .expectOne((request) => request.url.endsWith('/solicitudes-empleado/enviadas/sucursal/5'))
+      .flush([]);
+    fixture.detectChanges();
+
+    expect(host.textContent).toContain('Ya formás parte del equipo de esta sucursal.');
+    expect(host.textContent).not.toContain('Agregarme como empleado');
   });
 });

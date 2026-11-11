@@ -36,6 +36,10 @@ npx ng test --watch=false # suite completa
 **Nunca trabajar directamente sobre `main` ni sobre `develop`.** Cada historia, fix,
 documentación o refactor debe tener su propia rama y, cuando corresponda, su PR.
 
+**Toda rama nueva debe partir de `origin/develop` actualizado**, incluidas las ramas de
+historias, fixes, documentación y refactors. No crear ramas nuevas desde otra rama de
+trabajo ni desde `main`.
+
 Antes de modificar archivos:
 
 1. Revisar el estado real del repositorio:
@@ -123,10 +127,13 @@ feat(servicios): mejorar estados de carga, error y sin conexión
 test(servicios): cubrir estados y reintentos de US-SERV-06
 ```
 
-## 4. Tests: obligatorios, más de 60 y sin romper la suite
+## 4. Tests: obligatorios y 100% en verde
 
-La suite completa debe mantenerse **por encima de 60 tests** (al 2026-11-06 tiene 110).
-Un PR no debe reducir ese número. Cada comportamiento nuevo debe sumar tests.
+La suite completa debe ejecutarse antes de dar por terminada una tarea y debe quedar
+**100% verde: todos los tests ejecutados y cero fallas**. No afirmar que los tests están
+correctos si no se ejecutó la suite completa. Mantener la suite por encima de 60 tests
+(al 2026-11-06 tenía 110); un PR no debe reducir ese número. Cada comportamiento nuevo
+debe sumar tests.
 
 Reglas:
 
@@ -139,7 +146,8 @@ Reglas:
 - Restaurar mocks, timers, spies y propiedades modificadas (`navigator.onLine`, etc.).
 - Un test que falla no se “arregla” ocultándolo: se corrige el código o el test.
 - Si la suite ya viene roja desde `develop`, reproducir la falla en un worktree limpio
-  sobre `origin/develop` y reportarlo por separado. No mezclar el baseline roto con el PR.
+  sobre `origin/develop` y corregirla antes de cerrar la tarea; no contar una falla
+  preexistente como suite verde.
 - Cobertura objetivo: **>= 60 %** cuando se mida cobertura. Si la herramienta no está
   configurada, indicarlo en el PR y no afirmar una cobertura que no se midió.
 
@@ -264,8 +272,7 @@ Una tarea está terminada solo cuando:
 - La rama existe, sale de `origin/develop` y no mezcla historias ajenas.
 - La funcionalidad cumple todos los criterios de aceptación.
 - Hay tests nuevos para el comportamiento y los casos de error/edge relevantes.
-- La suite completa tiene **más de 60 tests** y pasa (o se documentó una falla
-  preexistente de `develop` con evidencia).
+- La suite completa tiene **más de 60 tests**, se ejecutó y pasa al **100%**, con cero fallas.
 - `npx ng build` pasa.
 - Los commits están separados por funcionalidad.
 - El PR apunta a `develop` y su descripción incluye qué cambió, cómo se probó y riesgos.

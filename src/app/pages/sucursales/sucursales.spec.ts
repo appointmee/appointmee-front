@@ -64,7 +64,7 @@ describe('Sucursales', () => {
 
   it('ignora una categoría inválida sin enviarla al backend', async () => {
     const fixture = await create('/sucursales?categoria=INEXISTENTE');
-    expect(filtrar).toHaveBeenCalledWith(null, '');
+    expect(filtrar).toHaveBeenCalledWith(null, null);
     expect(fixture.nativeElement.querySelector('.categoria-chip').getAttribute('aria-pressed')).toBe('true');
   });
 
@@ -72,7 +72,7 @@ describe('Sucursales', () => {
     categorias.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
     const fixture = await create('/sucursales?categoria=SPA');
     fixture.detectChanges();
-    expect(filtrar).toHaveBeenCalledWith(null, '');
+    expect(filtrar).toHaveBeenCalledWith(null, null);
     expect(fixture.nativeElement.querySelectorAll('.categoria-chip')).toHaveLength(1);
     expect(fixture.nativeElement.querySelector('.categorias__aviso').textContent).toContain('No pudimos cargar las categorías');
     expect(fixture.nativeElement.querySelector('.card')).toBeTruthy();
@@ -146,7 +146,7 @@ describe('Sucursales', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain(
-      'No encontramos sucursales para tu búsqueda.',
+      'No encontramos sucursales para «Inexistente».',
     );
     expect(fixture.nativeElement.querySelector('.search__input')).toBeTruthy();
   });

@@ -1,0 +1,8 @@
+<section class="agregarme-empleado">
+  <h1>Agregarme como empleado</h1>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (exito()) { <p class="exito" role="status">{{ exito() }}</p> }
+  <label>Sucursal ID <input type="number" [(ngModel)]="sucursalId" name="sucursalId" /></label>
+  <label>Email <input [(ngModel)]="email" name="email" /></label>
+  <button type="button" (click)="enviar()" [disabled]="guardando()" [attr.aria-busy]="guardando()">Enviar</button>
+</section>
