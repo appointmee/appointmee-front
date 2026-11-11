@@ -24,6 +24,7 @@ export class EditarSucursal {
   protected readonly cargando = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly exito = signal<string | null>(null);
+  protected readonly erroresCampos = signal<Record<string,string>>({});
 
   protected cargar(): void {
     if (!this.sucursalId) return;
@@ -43,6 +44,10 @@ export class EditarSucursal {
   }
 
   protected guardar(): void {
+    const errores: Record<string,string> = {};
+    if (!this.nombre.trim()) errores['nombre']='El nombre es obligatorio.';
+    this.erroresCampos.set(errores);
+    if (Object.keys(errores).length) { this.error.set('Revisá los campos marcados.'); return; }
     if (!this.sucursalId || !this.nombre.trim()) {
       this.error.set('Completá los campos obligatorios.');
       return;
@@ -64,5 +69,13 @@ export class EditarSucursal {
         this.error.set('No se pudo actualizar la sucursal.');
       },
     });
+  }
+
+  protected tieneErrores(): boolean { return Object.keys(this.erroresCampos()).length > 0; }
+  protected listaErrores(): [string,string][] { return Object.entries(this.erroresCampos()); }
+  protected errorDe(campo: string): string | null { return this.erroresCampos()[campo] ?? null; }
+
+  protected descartar(): void {
+    if (window.confirm('¿Descartar los cambios?')) { this.cargar(); }
   }
 }

@@ -2,11 +2,23 @@
   <h1>Editar sucursal</h1>
   @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
   @if (exito()) { <p class="exito" role="status">{{ exito() }}</p> }
+  @if (tieneErrores()) {
+    <div class="resumen" role="alert">
+      <p>Corregí los siguientes campos:</p>
+      <ul>@for (e of listaErrores(); track e[0]) { <li>{{ e[1] }}</li> }</ul>
+    </div>
+  }
   <label>Sucursal ID <input type="number" [(ngModel)]="sucursalId" name="sucursalId" (change)="cargar()" /></label>
   <form (ngSubmit)="guardar()">
-    <label>Nombre <input [(ngModel)]="nombre" name="nombre" /></label>
+    <label>Nombre
+      <input [(ngModel)]="nombre" name="nombre" [attr.aria-invalid]="!!errorDe('nombre')" />
+      @if (errorDe('nombre')) { <span class="campo-error">{{ errorDe('nombre') }}</span> }
+    </label>
     <label>Dirección <input [(ngModel)]="direccion" name="direccion" /></label>
     <label>Categoría <input [(ngModel)]="categoria" name="categoria" /></label>
-    <button type="submit" [disabled]="guardando()" [attr.aria-busy]="guardando()">Guardar</button>
+    <div class="acciones">
+      <button type="submit" [disabled]="guardando()" [attr.aria-busy]="guardando()">Guardar</button>
+      <button type="button" (click)="descartar()">Descartar</button>
+    </div>
   </form>
 </section>
