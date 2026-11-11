@@ -454,7 +454,11 @@ h1 {
 }
 
 .gestor__cabecera h1 {
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-size: clamp(2.4rem, 4vw, 3.2rem);
+}
+
+.gestor__rating {
+  font-size: 1.25rem;
 }
 
 .gestor__rating {
