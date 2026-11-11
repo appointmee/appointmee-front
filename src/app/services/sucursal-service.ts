@@ -5,8 +5,6 @@ import { backendService } from './backend-service';
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import { SucursalDetalleDTO, SucursalMiniDTO, SucursalPayload } from '../models/sucursal';
 
-// CRUD SUCURSAL
-
 /**
  * Devuelve un HttpContext que silencia el manejo global de errores para que la
  * pantalla consumidora presente su propio estado de error inline (sin navegar a
@@ -83,17 +81,22 @@ export class sucursalService {
     });
   }
 
-  //POST
   crear(datos: SucursalPayload): Observable<SucursalDetalleDTO> {
-    return this.http.post<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales`, datos);
+    return this.http.post<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales`, datos, {
+      context: contextoSilenciado(true),
+    });
   }
-//PUT
+
   actualizar(idSucursal: number, datos: SucursalPayload): Observable<SucursalDetalleDTO> {
-    return this.http.put<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales/${idSucursal}`, datos);
+    return this.http.put<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales/${idSucursal}`, datos, {
+      context: contextoSilenciado(true),
+    });
   }
-  //DELETE
+
   eliminar(idSucursal: number): Observable<void> {
-    return this.http.delete<void>(`${this.api.baseUrl}/sucursales/${idSucursal}`);
+    return this.http.delete<void>(`${this.api.baseUrl}/sucursales/${idSucursal}`, {
+      context: contextoSilenciado(true),
+    });
   }
 
   private contextoSinAvisoGlobal(): HttpContext {
