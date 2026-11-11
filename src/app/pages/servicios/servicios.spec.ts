@@ -65,6 +65,7 @@ describe('US-SERV-02 · Seleccionar servicio', () => {
   let backend: HttpTestingController;
 
   beforeEach(async () => {
+    sessionStorage.clear();
     await TestBed.configureTestingModule({
       imports: [TestShell],
       providers: [
@@ -90,6 +91,7 @@ describe('US-SERV-02 · Seleccionar servicio', () => {
   afterEach(() => {
     fixture.destroy();
     backend.verify();
+    sessionStorage.clear();
     vi.restoreAllMocks();
   });
 

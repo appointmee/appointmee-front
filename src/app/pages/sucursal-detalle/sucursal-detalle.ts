@@ -17,6 +17,7 @@ import { ErrorPage } from '../error/error';
 import { EquipoSucursal } from '../../components/equipo-sucursal/equipo-sucursal';
 import { ReseniasSucursal } from '../../components/resenias-sucursal/resenias-sucursal';
 import { apiErrorsService } from '../../http/api-errors-service';
+import { reservaContextoService } from '../../services/reserva-contexto-service';
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import { sucursalService } from '../../services/sucursal-service';
 
@@ -52,6 +53,7 @@ export class SucursalDetalle {
   private readonly router = inject(Router);
   private readonly title = inject(Title);
   private readonly apiErrors = inject(apiErrorsService);
+  private readonly reservaContexto = inject(reservaContextoService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly placeholderImage = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -248,7 +250,14 @@ export class SucursalDetalle {
 
     this.avisoRol.set(null);
 
-    const destino = `/sucursal/${sucursal.id}/servicios`;
+    const contexto = this.reservaContexto.obtener();
+    const servicioId =
+      contexto !== null && contexto.sucursalId === sucursal.id ? contexto.servicioId : null;
+    this.reservaContexto.guardar(sucursal.id, servicioId);
+
+    const destino = servicioId
+      ? `/sucursal/${sucursal.id}/servicios/${servicioId}/turnos`
+      : `/sucursal/${sucursal.id}/servicios`;
     this.navegando.set(true);
     const navegacion = this.router.navigateByUrl(destino);
 
