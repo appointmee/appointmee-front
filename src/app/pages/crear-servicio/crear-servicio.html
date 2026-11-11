@@ -1,0 +1,13 @@
+<section class="crear-servicio">
+  <h1>Crear servicio</h1>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (exito()) { <p class="exito" role="status">{{ exito() }}</p> }
+  <form (ngSubmit)="guardar()">
+    <label>Sucursal ID <input type="number" [(ngModel)]="sucursalId" name="sucursalId" /></label>
+    <label>Nombre <input [(ngModel)]="nombre" name="nombre" /></label>
+    <label>Descripción <textarea [(ngModel)]="descripcion" name="descripcion"></textarea></label>
+    <label>Duración (min) <input type="number" [(ngModel)]="duracion" name="duracion" /></label>
+    <label>Precio <input type="number" [(ngModel)]="precio" name="precio" /></label>
+    <button type="submit" [disabled]="guardando()" [attr.aria-busy]="guardando()">Guardar</button>
+  </form>
+</section>
