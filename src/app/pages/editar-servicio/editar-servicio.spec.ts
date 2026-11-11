@@ -39,8 +39,10 @@ describe('Editar servicio', () => {
     expect(page.original()?.nombre).toBe('Corte');
   });
 
-  it('no envía si no hay cambios? envía igual tras editar', () => {
-    // mark touched not needed
+  it('bloquea el envío cuando el nombre no cumple la validación', () => {
+    page.model.set({ nombre: '', descripcion: 'desc', duracion: 30, precio: 100, fotoPerfil: '' });
+    page.onSubmit(new Event('submit', { cancelable: true }));
+    expect(api.actualizar).not.toHaveBeenCalled();
   });
 
   it('envía los cambios actualizados', () => {

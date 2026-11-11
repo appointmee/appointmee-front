@@ -3,7 +3,7 @@ import { DsInputComponent } from '../../shared/ui/input/input.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField, form, min, minLength, required } from '@angular/forms/signals';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { ServicioDTO, ServicioPayload } from '../../models/servicio';
@@ -19,7 +19,7 @@ interface EditarServicioModel {
 
 @Component({
   selector: 'app-editar-servicio',
-  imports: [DsButtonComponent, DsInputComponent, FormField, RouterLink],
+  imports: [DsButtonComponent, DsInputComponent, FormField],
   templateUrl: './editar-servicio.html',
   styleUrl: './editar-servicio.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
