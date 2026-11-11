@@ -1,0 +1,59 @@
+<section class="gestionar-sucursales" aria-labelledby="gestionar-sucursales-titulo">
+  <a class="gestionar-sucursales__volver" [routerLink]="esAdmin() ? ['/admin'] : ['/mis-sucursales']">
+    {{ esAdmin() ? 'Volver al panel' : 'Volver a mis sucursales' }}
+  </a>
+  <header>
+    <h1 id="gestionar-sucursales-titulo">Eliminar sucursales</h1>
+    <p>{{ esAdmin() ? 'Administrá las sucursales activas del sistema.' : 'Administrá tus sucursales propias.' }}</p>
+  </header>
+
+  @if (exito()) { <p class="gestionar-sucursales__exito" role="status" aria-live="polite">{{ exito() }}</p> }
+  @if (error()) {
+    <div class="gestionar-sucursales__error" role="alert">
+      <p>{{ error() }}</p>
+      <button dsButton type="button" variant="secondary" [disabled]="cargando()" [attr.aria-busy]="cargando()" (click)="cargar()">
+        {{ cargando() ? 'Reintentando…' : 'Reintentar' }}
+      </button>
+    </div>
+  }
+
+  @if (cargando()) {
+    <p class="gestionar-sucursales__estado" role="status" aria-live="polite" aria-busy="true">Cargando sucursales…</p>
+  } @else if (sucursales().length === 0 && !error()) {
+    <div class="gestionar-sucursales__estado" role="status" aria-live="polite">
+      <h2>No hay sucursales activas</h2>
+      <p>Las sucursales que podés administrar aparecerán acá.</p>
+    </div>
+  } @else {
+    <ul class="gestionar-sucursales__lista" aria-label="Sucursales disponibles para administrar">
+      @for (sucursal of sucursales(); track sucursal.id) {
+        <li>
+          <div>
+            <h2>{{ sucursal.nombre }}</h2>
+            <p>{{ sucursal.categoria }}</p>
+          </div>
+          <button dsButton type="button" variant="secondary" [disabled]="eliminandoId() !== null"
+            (click)="pedirConfirmacion(sucursal)">Eliminar {{ sucursal.nombre }}</button>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (pendiente(); as sucursal) {
+    <div class="gestionar-sucursales__fondo" (click)="cancelar()">
+      <section class="gestionar-sucursales__dialogo" role="alertdialog" aria-modal="true"
+        aria-labelledby="confirmar-eliminar-sucursal-titulo" aria-describedby="confirmar-eliminar-sucursal-texto"
+        (click)="$event.stopPropagation()">
+        <h2 id="confirmar-eliminar-sucursal-titulo">¿Eliminar «{{ sucursal.nombre }}»?</h2>
+        <p id="confirmar-eliminar-sucursal-texto">La sucursal dejará de aparecer como activa y sus servicios no estarán disponibles para nuevas reservas.</p>
+        <div class="gestionar-sucursales__acciones">
+          <button dsButton type="button" variant="secondary" autofocus [disabled]="eliminandoId() !== null" (click)="cancelar()">Cancelar</button>
+          <button dsButton type="button" variant="primary" [disabled]="eliminandoId() !== null"
+            [attr.aria-busy]="eliminandoId() === sucursal.id" (click)="confirmar()">
+            {{ eliminandoId() === sucursal.id ? 'Eliminando…' : 'Sí, eliminar' }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+</section>

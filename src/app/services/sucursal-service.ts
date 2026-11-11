@@ -101,9 +101,17 @@ export class sucursalService {
     });
   }
 
-  eliminar(idSucursal: number): Observable<void> {
-    return this.http.delete<void>(`${this.api.baseUrl}/sucursales/${idSucursal}`, {
+  eliminar(idSucursal: number): Observable<string> {
+    return this.http.delete(`${this.api.baseUrl}/sucursales/eliminar/${idSucursal}`, {
       context: contextoSilenciado(true),
+      responseType: 'text',
+    });
+  }
+
+  eliminarPropia(idSucursal: number): Observable<string> {
+    return this.http.delete(`${this.api.baseUrl}/sucursales/borrar-sucursal-propia/${idSucursal}`, {
+      context: contextoSilenciado(true),
+      responseType: 'text',
     });
   }
 

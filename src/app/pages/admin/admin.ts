@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 
 import {
@@ -30,7 +31,7 @@ type ResultadoLista =
 
 @Component({
   selector: 'app-admin',
-  imports: [DsButtonComponent, SolicitudEmpleadorCard],
+  imports: [DsButtonComponent, SolicitudEmpleadorCard, RouterLink],
   templateUrl: './admin.html',
   styleUrl: './admin.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
