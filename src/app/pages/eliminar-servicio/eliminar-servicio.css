@@ -1,3 +1,3 @@
-.eliminar-servicio { padding: 1rem; }
-.error { color: #b00020; }
-.exito { color: #1b5e20; }
+.eliminar-servicio { padding: var(--space-4); }
+.error { color: var(--danger); }
+.exito { color: var(--success); }
