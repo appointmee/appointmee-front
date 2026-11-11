@@ -9,11 +9,15 @@
     @if (auth.autenticado()) {
       <button dsButton type="button" class="ajustes__pestana" [class.ajustes__pestana--activa]="seccion() === 'password'"
         [attr.aria-pressed]="seccion() === 'password'" (click)="seccion.set('password')">Cambiar contraseña</button>
+      <button dsButton type="button" class="ajustes__pestana" [class.ajustes__pestana--activa]="seccion() === 'eliminar'"
+        [attr.aria-pressed]="seccion() === 'eliminar'" (click)="seccion.set('eliminar')">Eliminar cuenta</button>
     }
   </nav>
 
   @if (seccion() === 'password' && auth.autenticado()) {
     <app-cambiar-password />
+  } @else if (seccion() === 'eliminar') {
+    <app-eliminar-cuenta />
   } @else {
   <section class="verificacion" aria-labelledby="verificacion-titulo">
     <div class="verificacion__cabecera">

@@ -1,0 +1,75 @@
+<section class="eliminar-cuenta" aria-labelledby="eliminar-cuenta-titulo">
+  <div class="eliminar-cuenta__cabecera">
+    <h2 id="eliminar-cuenta-titulo">Eliminar cuenta</h2>
+    <p>Si ya no usás AppointMee, podés eliminar tu cuenta de forma permanente.</p>
+  </div>
+
+  <div class="eliminar-cuenta__aviso">
+    <p>
+      <strong>AVISO:</strong>
+      Una vez una cuenta es eliminada, un administrador puede reactivarla, pero no es un proceso
+      garantizado y llevará mucho tiempo
+    </p>
+  </div>
+
+  @if (exito()) {
+    <p class="eliminar-cuenta__exito" role="status">{{ exito() }}</p>
+  }
+  @if (error()) {
+    <p class="eliminar-cuenta__error" role="alert">{{ error() }}</p>
+  }
+
+  <button
+    dsButton
+    class="eliminar-cuenta__boton"
+    type="button"
+    [disabled]="!puedeEliminar()"
+    (clicked)="solicitarEliminacion()"
+  >
+    {{ eliminando() ? 'Eliminando…' : 'Eliminar cuenta' }}
+  </button>
+</section>
+
+<ds-modal
+  [open]="confirmacionAbierta()"
+  ariaLabelledby="eliminar-cuenta-confirmacion-titulo"
+  (close)="cancelarConfirmacion()"
+>
+  <h2 id="eliminar-cuenta-confirmacion-titulo" class="eliminar-cuenta__dialogo-titulo">
+    Eliminar cuenta
+  </h2>
+  <p class="eliminar-cuenta__dialogo-texto">¿Estás seguro de eliminar la cuenta?</p>
+
+  <div class="eliminar-cuenta__dialogo-acciones">
+    <button dsButton type="button" (clicked)="cancelarConfirmacion()">Cancelar</button>
+    <button dsButton variant="danger" type="button" (clicked)="confirmarPrimerPaso()">
+      Sí, eliminar
+    </button>
+  </div>
+</ds-modal>
+
+<ds-modal
+  [open]="confirmacionFinalAbierta()"
+  ariaLabelledby="eliminar-cuenta-confirmacion-final-titulo"
+  (close)="cancelarConfirmacionFinal()"
+>
+  <h2 id="eliminar-cuenta-confirmacion-final-titulo" class="eliminar-cuenta__dialogo-titulo">
+    Confirmación final
+  </h2>
+  <p class="eliminar-cuenta__dialogo-texto">
+    Este puede ser un procedimiento permanente, ¿estás seguro de continuar?
+  </p>
+
+  <div class="eliminar-cuenta__dialogo-acciones">
+    <button dsButton type="button" (clicked)="cancelarConfirmacionFinal()">Cancelar</button>
+    <button
+      dsButton
+      variant="danger"
+      type="button"
+      [loading]="eliminando()"
+      (clicked)="confirmarEliminacion()"
+    >
+      {{ eliminando() ? 'Eliminando…' : 'Sí, continuar' }}
+    </button>
+  </div>
+</ds-modal>
