@@ -235,6 +235,11 @@ describe('TurnosSucursal', () => {
     expect(textoDialogo()).toContain('Ana Pérez');
     expect(textoDialogo()).toContain('ana@example.com');
     expect(textoDialogo()).toContain('Luis Gómez');
+    expect(textoDialogo()).toContain('4.5 de 5');
+    expect(textoDialogo()).toContain('12 reseñas');
+    expect(
+      html.querySelector('[role="dialog"] a[href="/sucursal/7"]')?.textContent,
+    ).toContain('Ver sucursal');
     expect(textoDialogo()).toContain('05/11/2026');
     expect(textoDialogo()).toContain('12/11/2026 · 23:30');
     expect(textoDialogo()).toContain('13/11/2026 · 00:15');

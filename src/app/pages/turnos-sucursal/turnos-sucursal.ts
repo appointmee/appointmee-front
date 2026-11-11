@@ -168,6 +168,25 @@ export class TurnosSucursal {
     humanizarCategoria(this.sucursal()?.categoria),
   );
 
+  protected readonly puntuacionSucursal = computed(
+    () => this.sucursal()?.puntuacion ?? 0,
+  );
+
+  protected readonly cantidadReseniasSucursal = computed(
+    () => this.sucursal()?.cantidadPuntuaciones ?? 0,
+  );
+
+  protected readonly textoReseniasSucursal = computed(() =>
+    this.cantidadReseniasSucursal() === 1
+      ? '1 reseña'
+      : `${this.cantidadReseniasSucursal()} reseñas`,
+  );
+
+  protected readonly abejasSucursal = computed(() => {
+    const puntuacion = Math.round(this.puntuacionSucursal());
+    return [1, 2, 3, 4, 5].map((posicion) => posicion <= puntuacion);
+  });
+
   protected readonly fotoEmpleado = computed(() => {
     const foto = this.detalle()?.empleado.urlFotoPerfil?.trim();
     return foto && foto !== this.fotoEmpleadoFallida() ? foto : null;

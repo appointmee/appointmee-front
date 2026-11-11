@@ -263,6 +263,7 @@ h1 {
   color: var(--text);
   cursor: pointer;
   font: inherit;
+  text-decoration: none;
 }
 
 .boton:disabled {

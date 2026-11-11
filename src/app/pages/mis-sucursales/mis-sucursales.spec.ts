@@ -53,5 +53,13 @@ describe('MisSucursales', () => {
       (enlace) => enlace.textContent?.includes('Ver turnos'),
     );
     expect(verTurnos?.getAttribute('href')).toBe('/mis-sucursales/5/turnos');
+
+    const verSucursal = Array.from(host.querySelectorAll<HTMLAnchorElement>('a')).find(
+      (enlace) => enlace.textContent?.includes('Ver sucursal'),
+    );
+    expect(verSucursal?.getAttribute('href')).toBe('/sucursal/5');
+    expect(verTurnos?.classList.contains('boton--principal')).toBe(true);
+    expect(verSucursal?.classList.contains('boton--principal')).toBe(true);
+    expect(verSucursal?.classList.contains('boton--ghost')).toBe(false);
   });
 });

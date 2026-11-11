@@ -686,6 +686,7 @@
 .sucursal {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 13px;
   min-width: 0;
 }
@@ -725,10 +726,35 @@
   font-weight: 600;
 }
 
+.sucursal__rating {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.sucursal__abejas {
+  display: inline-flex;
+  gap: 1px;
+  margin-right: 3px;
+  font-size: 12px;
+  line-height: 1;
+}
+
 .sucursal__muted {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.4;
+}
+
+.sucursal__accion {
+  flex-shrink: 0;
+  margin-left: auto;
+  min-height: 36px;
+  padding: 8px 13px;
+  font-size: 12px;
 }
 
 .sucursal--skeleton {
@@ -993,6 +1019,11 @@
   .detalle__fallback {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .sucursal__accion {
+    width: 100%;
+    margin-left: 0;
   }
 
   .resenia__cabecera {

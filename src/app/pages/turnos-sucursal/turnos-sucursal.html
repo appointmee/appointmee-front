@@ -270,6 +270,19 @@
 
                 <div class="sucursal__copy">
                   <strong>{{ local.nombre }}</strong>
+                  <span class="sucursal__rating">
+                    <span class="sucursal__abejas" aria-hidden="true">
+                      @for (llena of abejasSucursal(); track $index) {
+                        <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
+                      }
+                    </span>
+                    <span>{{ puntuacionSucursal().toFixed(1) }} de 5</span>
+                    <span class="sucursal__muted">· {{ textoReseniasSucursal() }}</span>
+                  </span>
+                  <span class="sr-only">
+                    Puntuación {{ puntuacionSucursal().toFixed(1) }} de 5 sobre
+                    {{ textoReseniasSucursal() }}
+                  </span>
                   <span class="sucursal__muted">
                     {{ categoriaSucursal() }}
                     @if (local.direccion) {
@@ -280,6 +293,14 @@
                     <span class="sucursal__muted">Tel. {{ local.telefono }}</span>
                   }
                 </div>
+
+                <a
+                  class="boton-secundario sucursal__accion"
+                  [routerLink]="['/sucursal', local.id]"
+                  (click)="cerrarDetalle()"
+                >
+                  Ver sucursal
+                </a>
               </div>
             } @else {
               <div class="detalle__fallback" role="status">
