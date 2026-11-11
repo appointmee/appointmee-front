@@ -2,7 +2,7 @@
 .crear-sucursal__header h1 { margin: 0 0 .25rem; }
 .campo { margin-bottom: 1rem; display: flex; flex-direction: column; gap: .25rem; }
 .campo label { font-weight: 600; }
-.error { color: #b00020; font-size: .875rem; margin: 0; }
+.error { color: var(--danger); font-size: .875rem; margin: 0; }
 .aviso { padding: .75rem 1rem; border-radius: .5rem; margin-bottom: 1rem; }
 .aviso--exito { background: #e6f4ea; color: #1e4620; }
 .aviso--error { background: #fdecea; color: #5f2120; }

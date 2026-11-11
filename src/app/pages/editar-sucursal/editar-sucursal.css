@@ -1,4 +1,4 @@
-.editar-sucursal { padding: 1rem; }
-.editar-sucursal form { display: grid; gap: .5rem; max-width: 480px; }
-.error { color: #b00020; }
-.exito { color: #1b5e20; }
+.editar-sucursal { padding: var(--space-4); }
+.editar-sucursal form { display: grid; gap: var(--space-2); max-width: 480px; }
+.error { color: var(--danger); }
+.exito { color: var(--success); }
