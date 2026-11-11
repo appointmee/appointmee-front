@@ -58,7 +58,7 @@ export class Sucursales {
 
   protected readonly searchTerm = signal(this.initialSearch);
   protected readonly selectedCategory = signal<string | null>(this.initialCategory);
-  protected readonly terminoAplicado = signal(terminoDeBusqueda(this.initialSearch));
+  protected readonly terminoAplicado = signal(this.terminoParaConsulta(this.initialSearch));
   protected readonly sucursales = signal<SucursalMiniDTO[]>([]);
   protected readonly categorias = signal<string[]>([]);
   protected readonly avisoCategorias = signal<string | null>(null);
@@ -71,11 +71,16 @@ export class Sucursales {
 
   protected readonly terminoMuyCorto = computed(() => {
     const termino = normalizarTerminoBusqueda(this.searchTerm());
-    return termino.length > 0 && termino.length < MIN_CARACTERES_BUSQUEDA;
+    return (
+      termino.length > 0 &&
+      termino.length < MIN_CARACTERES_BUSQUEDA &&
+      !/^\d+$/.test(termino)
+    );
   });
 
   private readonly busqueda$ = new Subject<SolicitudBusqueda>();
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private routeQueryParamsInicializados = false;
   private ultimaSolicitud: { clave: string; termino: string; categoria: string | null } | null = null;
 
   constructor() {
@@ -126,15 +131,22 @@ export class Sucursales {
           this.categorias.set(cats ?? []);
           this.selectedCategory.set(this.validarCategoria(this.route.snapshot.queryParamMap.get('categoria')));
           this.categoriasCargadas.set(true);
+          if (this.routeQueryParamsInicializados) {
+            this.ejecutarBusqueda({ actualizarUrl: false });
+          }
         },
         error: () => {
           this.avisoCategorias.set('No pudimos cargar las categorías. Podés ver todas las sucursales.');
           this.selectedCategory.set(null);
           this.categoriasCargadas.set(true);
+          if (this.routeQueryParamsInicializados) {
+            this.ejecutarBusqueda({ actualizarUrl: false });
+          }
         },
       });
 
     this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((qp) => {
+      this.routeQueryParamsInicializados = true;
       const busqueda = qp['busqueda'] ?? '';
       if (busqueda !== this.searchTerm()) {
         this.searchTerm.set(busqueda);
@@ -148,6 +160,7 @@ export class Sucursales {
 
       // Al volver atrás o recargar, la URL manda: se aplica sin volver a escribirla.
       this.searchTerm.set(busqueda);
+      if (!this.categoriasCargadas()) return;
       this.ejecutarBusqueda({ actualizarUrl: false, forzar: true });
     });
 
@@ -171,7 +184,7 @@ export class Sucursales {
       return;
     }
 
-    if (termino.length < MIN_CARACTERES_BUSQUEDA) {
+    if (termino.length < MIN_CARACTERES_BUSQUEDA && !/^\d+$/.test(termino)) {
       return;
     }
 
@@ -192,7 +205,7 @@ export class Sucursales {
       return;
     }
 
-    if (termino.length < MIN_CARACTERES_BUSQUEDA) {
+    if (termino.length < MIN_CARACTERES_BUSQUEDA && !/^\d+$/.test(termino)) {
       return;
     }
 
@@ -272,7 +285,7 @@ export class Sucursales {
     opciones: { actualizarUrl?: boolean; forzar?: boolean } = {},
   ): void {
     const { actualizarUrl = true, forzar = false } = opciones;
-    const termino = terminoDeBusqueda(this.searchTerm());
+    const termino = this.terminoParaConsulta(this.searchTerm());
     const categoria = this.selectedCategory();
     const clave = this.claveSolicitud(termino, categoria);
 
@@ -308,6 +321,11 @@ export class Sucursales {
 
   private claveSolicitud(termino: string, categoria: string | null): string {
     return `${claveComparacionBusqueda(termino)}|${categoria ?? ''}`;
+  }
+
+  private terminoParaConsulta(valor: string): string {
+    const normalizado = normalizarTerminoBusqueda(valor);
+    return /^\d+$/.test(normalizado) ? normalizado : terminoDeBusqueda(normalizado);
   }
 
   private cancelarDebounce(): void {
