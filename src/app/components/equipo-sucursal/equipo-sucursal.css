@@ -373,3 +373,23 @@
     animation: none;
   }
 }
+
+/* Enlace al detalle del empleado */
+
+.equipo-card__enlace {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 16px;
+}
+
+.equipo-card__enlace:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* La acción de eliminar debe quedar por encima del enlace de la tarjeta. */
+.equipo-card__eliminar {
+  position: relative;
+  z-index: 1;
+}

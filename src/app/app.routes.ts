@@ -127,6 +127,18 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'sucursal/:sucursalId/empleado/:empleadoId',
+    title: 'AppointMee | Profesional',
+    data: {
+      title: 'Profesional',
+      description: 'Consultá el detalle de un profesional de la sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/empleado-detalle/empleado-detalle').then(
+        (module) => module.EmpleadoDetalle,
+      ),
+  },
+  {
     path: 'sucursal/:id',
     title: 'AppointMee | Sucursal',
     loadComponent: () =>

@@ -1,0 +1,149 @@
+<section class="pagina">
+  <div class="pagina__inner">
+    <a class="volver" [routerLink]="volverLink()">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M19 12H5M11 18l-6-6 6-6" />
+      </svg>
+      Volver al equipo
+    </a>
+
+    @if (loading()) {
+      <div class="perfil perfil--skeleton" aria-hidden="true">
+        <span class="skeleton skeleton--avatar"></span>
+        <div class="perfil__datos">
+          <span class="skeleton skeleton--line skeleton--eyebrow"></span>
+          <span class="skeleton skeleton--line skeleton--title"></span>
+          <span class="skeleton skeleton--line skeleton--short"></span>
+        </div>
+      </div>
+
+      <article class="panel panel--skeleton" aria-hidden="true">
+        <span class="skeleton skeleton--line skeleton--panel-title"></span>
+        <span class="skeleton skeleton--line"></span>
+        <span class="skeleton skeleton--line skeleton--short"></span>
+      </article>
+
+      <span class="sr-only" role="status">Cargando el detalle del profesional…</span>
+    } @else if (sucursalNoEncontrada()) {
+      <div class="estado" role="alert">
+        <h1>No encontramos esta sucursal</h1>
+        <p>La sucursal que buscás no existe o ya no está disponible.</p>
+        <div class="estado__acciones">
+          <a class="btn btn--primary" routerLink="/sucursales">Ver sucursales</a>
+        </div>
+      </div>
+    } @else if (error()) {
+      <div class="estado" role="alert">
+        <h1>No pudimos mostrar al profesional</h1>
+        <p>{{ error() }}</p>
+        <div class="estado__acciones">
+          <button dsButton class="btn btn--primary" type="button" (click)="reintentar()">
+            Reintentar
+          </button>
+          <a class="btn btn--ghost" [routerLink]="volverLink()">Volver al equipo</a>
+        </div>
+      </div>
+    } @else if (empleadoNoEncontrado()) {
+      <div class="estado" role="status">
+        <h1>No encontramos a este profesional</h1>
+        <p>
+          Puede que ya no forme parte del equipo
+          @if (sucursal(); as s) {
+            de <strong>{{ s.nombre }}</strong>
+          }
+          .
+        </p>
+        <div class="estado__acciones">
+          <a class="btn btn--primary" [routerLink]="volverLink()">Ver todo el equipo</a>
+        </div>
+      </div>
+    } @else if (empleado(); as e) {
+      <header class="perfil">
+        <img
+          class="perfil__avatar"
+          [src]="e.urlFotoPerfil || placeholderAvatar"
+          [alt]="'Fotografía de ' + nombreCompleto()"
+          loading="lazy"
+          decoding="async"
+          referrerpolicy="no-referrer"
+          (error)="onImageError($event)"
+        />
+
+        <div class="perfil__datos">
+          <span class="eyebrow">
+            <span class="eyebrow__dot" aria-hidden="true"></span>
+            Profesional
+          </span>
+
+          <h1>{{ nombreCompleto() }}</h1>
+
+          @if (sucursal(); as s) {
+            <p class="perfil__sucursal">
+              Parte del equipo de
+              <a [routerLink]="['/sucursal', s.id]">{{ s.nombre }}</a>
+            </p>
+          }
+
+          @if (tienePuntuacion()) {
+            <div class="rating">
+              <span class="rating__bees" aria-hidden="true">
+                @for (llena of abejas(); track $index) {
+                  <span class="bee" [class.bee--vacia]="!llena">🐝</span>
+                }
+              </span>
+              <span class="rating__promedio">{{ puntuacion() }}<span>/5</span></span>
+              <span class="rating__etiqueta">{{ etiqueta() }}</span>
+              <span class="rating__cantidad">{{ reseniasTexto() }}</span>
+              <span class="sr-only">
+                Puntuación promedio {{ puntuacion() }} de 5 sobre {{ cantidad() }} reseñas
+              </span>
+            </div>
+          } @else {
+            <p class="rating rating--vacio">Sin puntuaciones todavía</p>
+          }
+        </div>
+      </header>
+
+      <article class="panel" aria-labelledby="detalle-profesional-titulo">
+        <header class="panel__head">
+          <div>
+            <span class="panel__eyebrow">Detalle</span>
+            <h2 id="detalle-profesional-titulo">Sobre {{ e.nombre }}</h2>
+          </div>
+        </header>
+
+        <p class="panel__texto">
+          {{ nombreCompleto() }} forma parte del equipo
+          @if (sucursal(); as s) {
+            de <strong>{{ s.nombre }}</strong>
+          }
+          y atiende en esta sucursal.
+        </p>
+
+        <dl class="datos">
+          <div class="datos__item">
+            <dt>Puntuación promedio</dt>
+            <dd>
+              {{ tienePuntuacion() ? puntuacion() + ' de 5' : 'Sin puntuaciones' }}
+            </dd>
+          </div>
+          <div class="datos__item">
+            <dt>Reseñas recibidas</dt>
+            <dd>{{ cantidad() }}</dd>
+          </div>
+        </dl>
+
+        <div class="panel__acciones">
+          @if (sucursal(); as s) {
+            <a class="btn btn--primary" [routerLink]="['/sucursal', s.id, 'servicios']">
+              Reservar un turno
+            </a>
+            <a class="btn" [routerLink]="['/sucursal', s.id, 'equipo']">
+              Ver todo el equipo
+            </a>
+          }
+        </div>
+      </article>
+    }
+  </div>
+</section>

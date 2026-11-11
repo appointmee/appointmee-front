@@ -31,6 +31,12 @@
     <div class="equipo__lista">
       @for (empleado of visibles(); track empleado.id) {
         <article class="equipo-card">
+          <a
+            class="equipo-card__enlace"
+            [routerLink]="['/sucursal', sucursalId(), 'empleado', empleado.id]"
+            [attr.aria-label]="'Ver detalle de ' + nombreCompleto(empleado)"
+          ></a>
+
           <img
             class="equipo-card__avatar"
             [src]="empleado.urlFotoPerfil || placeholderAvatar"
