@@ -81,6 +81,38 @@
           </div>
         </header>
 
+        <div class="gestion__auto-incorporacion">
+          <div>
+            <h3>Atender servicios en tu sucursal</h3>
+            <p>Agregate al equipo para poder atender los servicios de esta sucursal.</p>
+          </div>
+
+          @if (yaEsEmpleado()) {
+            <div class="aviso aviso--exito" role="status" aria-live="polite">
+              <p>Ya formás parte del equipo de esta sucursal.</p>
+            </div>
+          } @else {
+            @if (errorAgregarme()) {
+              <p class="busqueda__error" role="alert">{{ errorAgregarme() }}</p>
+            }
+
+            <button
+              class="boton boton--principal"
+              type="button"
+              [disabled]="verificandoEmpleado() || agregandome()"
+              (click)="agregarmeComoEmpleado()"
+            >
+              @if (verificandoEmpleado()) {
+                Comprobando…
+              } @else if (agregandome()) {
+                Agregándote…
+              } @else {
+                Agregarme como empleado
+              }
+            </button>
+          }
+        </div>
+
         <div class="gestion__opcion">
           <h3>Enviar solicitudes de empleo</h3>
           <p>

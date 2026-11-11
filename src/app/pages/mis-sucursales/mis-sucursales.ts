@@ -20,6 +20,7 @@ import {
   humanizarCategoria,
 } from '../../models/solicitud-empleado';
 import { SucursalMiniDTO } from '../../models/sucursal';
+import { authService } from '../../services/auth-service';
 import { solicitudEmpleadoService } from '../../services/solicitud-empleado-service';
 import { sucursalService } from '../../services/sucursal-service';
 
@@ -35,6 +36,7 @@ const SOLICITUDES_VISIBLES = 3;
 export class MisSucursales {
   private readonly sucursalesApi = inject(sucursalService);
   private readonly solicitudesApi = inject(solicitudEmpleadoService);
+  private readonly auth = inject(authService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly recargar = new Subject<void>();
 
@@ -44,6 +46,10 @@ export class MisSucursales {
   protected readonly reintentandoSucursales = signal(false);
 
   protected readonly sucursalSeleccionadaId = signal<number | null>(null);
+  protected readonly verificandoEmpleado = signal(false);
+  protected readonly yaEsEmpleado = signal(false);
+  protected readonly agregandome = signal(false);
+  protected readonly errorAgregarme = signal<string | null>(null);
 
   protected readonly email = signal('');
 
@@ -110,12 +116,42 @@ export class MisSucursales {
   protected seleccionarSucursal(id: number): void {
     this.sucursalSeleccionadaId.set(id);
     this.limpiarFormulario();
+    this.limpiarEstadoEmpleado();
+    this.verificandoEmpleado.set(true);
+    this.cargarEstadoEmpleado(id);
     this.cargarEnviadas(id);
   }
 
   protected volverALista(): void {
     this.sucursalSeleccionadaId.set(null);
     this.limpiarFormulario();
+    this.limpiarEstadoEmpleado();
+  }
+
+  protected agregarmeComoEmpleado(): void {
+    const sucursalId = this.sucursalSeleccionadaId();
+    if (sucursalId === null || this.agregandome() || this.yaEsEmpleado()) return;
+
+    this.agregandome.set(true);
+    this.errorAgregarme.set(null);
+
+    this.sucursalesApi
+      .convertirmeEnEmpleado(sucursalId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.agregandome.set(false);
+          this.yaEsEmpleado.set(true);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.agregandome.set(false);
+          if (error.status === 409) {
+            this.yaEsEmpleado.set(true);
+            return;
+          }
+          this.errorAgregarme.set(mensajeErrorSolicitudEmpleado(error, 'auto-incorporacion'));
+        },
+      });
   }
 
   protected enviarSolicitud(): void {
@@ -172,6 +208,40 @@ export class MisSucursales {
           this.reintentandoEnviadas.set(false);
         },
       });
+  }
+
+  private cargarEstadoEmpleado(sucursalId: number): void {
+    this.sucursalesApi
+      .listarEmpleados(sucursalId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (empleados) => {
+          if (this.sucursalSeleccionadaId() !== sucursalId) return;
+          const perfil = this.auth.perfil();
+          this.yaEsEmpleado.set(
+            empleados.some(
+              (empleado) =>
+                empleado.id === perfil?.id ||
+                empleado.email.trim().toLowerCase() === perfil?.email?.trim().toLowerCase(),
+            ),
+          );
+          this.verificandoEmpleado.set(false);
+        },
+        error: () => {
+          if (this.sucursalSeleccionadaId() !== sucursalId) return;
+          this.verificandoEmpleado.set(false);
+          this.errorAgregarme.set(
+            'No pudimos comprobar si ya formás parte del equipo. Podés intentar agregarte; el sistema evitará duplicados.',
+          );
+        },
+      });
+  }
+
+  private limpiarEstadoEmpleado(): void {
+    this.verificandoEmpleado.set(false);
+    this.yaEsEmpleado.set(false);
+    this.agregandome.set(false);
+    this.errorAgregarme.set(null);
   }
 
   private limpiarFormulario(): void {

@@ -95,6 +95,7 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .panel__acciones {
@@ -125,6 +126,25 @@ h1 {
 .gestion__enviadas {
   display: grid;
   gap: 16px;
+}
+
+.gestion__auto-incorporacion {
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.gestion__auto-incorporacion h3 {
+  font-size: 1.15rem;
+}
+
+.gestion__auto-incorporacion > div > p {
+  margin-top: 6px;
+  color: var(--muted);
 }
 
 .gestion__opcion h3,
@@ -263,7 +283,7 @@ h1 {
   color: var(--text);
   cursor: pointer;
   font: inherit;
-  text-decoration: none;
+   text-decoration: none;
 }
 
 .boton:disabled {
@@ -399,6 +419,7 @@ h1 {
   .busqueda__fila {
     flex-direction: column;
   }
+
   .panel__acciones {
     align-items: stretch;
     flex-direction: column;
