@@ -19,6 +19,7 @@ La tabla siguiente registra únicamente llamadas encontradas en `src/app/service
 | `POST` | `/auth/verify-email` | Validar código de email |
 | `POST` | `/auth/complete-verification` | Completar sesión verificada |
 | `GET` | `/usuarios/me` | Obtener perfil de sesión |
+| `DELETE` | `/usuarios/borrar-cuenta` | Eliminar la cuenta propia; exige dos confirmaciones en la UI |
 | `GET` | `/sucursales/listar` | Listar sucursales |
 | `GET` | `/sucursales/listar/filtrar` | Filtrar por `categoria` y/o `nombre` |
 | `GET` | `/sucursales/categorias` | Listar categorías |
