@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { EmpleadoDTO } from '../../models/empleado';
 import { empleadoService } from '../../services/empleado-service';
-import { AuthService } from '../../services/auth-service';
+import { authService } from "../../services/auth-service";
 
 @Component({
   selector: 'app-eliminar-empleado',
@@ -15,7 +15,7 @@ import { AuthService } from '../../services/auth-service';
 })
 export class EliminarEmpleado {
   private readonly api = inject(empleadoService);
-  protected readonly auth = inject(AuthService);
+  protected readonly auth = inject(authService);
 
   sucursalId: number | null = null;
   protected readonly empleados = signal<readonly EmpleadoDTO[]>([]);
