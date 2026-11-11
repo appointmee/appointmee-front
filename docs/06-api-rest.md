@@ -29,6 +29,7 @@ La tabla siguiente registra únicamente llamadas encontradas en `src/app/service
 | `POST`, `PUT`, `DELETE` | `/servicios`, `/servicios/{servicioId}` | Crear, actualizar y eliminar servicio |
 | `GET` | `/sucursales/{sucursalId}/elegir-empleado` | Listar profesionales de una sucursal |
 | `POST`, `PUT`, `DELETE` | `/sucursales/{sucursalId}/empleados`, `.../empleados/{empleadoId}` | Operaciones de empleado |
+| `DELETE` | `/sucursales/{sucursalId}/empleados/eliminar/{empleadoId}` | Quitar al empleado del equipo de la sucursal |
 | `GET` | `/turnos/disponibilidad/empleado/{empleadoId}/servicio/{servicioId}` | Consultar disponibilidad |
 | `POST` | `/turnos/registrar` | Registrar turno; payload `{ fechaHora, empleadoId, servicioId }` |
 | `GET` | `/sucursales/{sucursalId}/resenias` | Listar reseñas |

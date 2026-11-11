@@ -19,6 +19,8 @@ import {
   combinarEmpleadosSucursal,
 } from '../../models/empleado';
 import { UsuarioResponseDTO } from '../../models/usuario';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
+import { DsModalComponent } from '../../shared/ui/misc/misc.component';
 import { authService } from '../../services/auth-service';
 import { empleadoService } from '../../services/empleado-service';
 import { sucursalService } from '../../services/sucursal-service';
@@ -39,10 +41,12 @@ type Resultado<T> =
  * equipo de la sucursal en forma de lista: los datos principales salen de
  * `/sucursales/{id}/empleados` (`UsuarioResponseDTO`) y la puntuación promedio
  * de `/sucursales/{id}/elegir-empleado`, combinando ambos por identificador.
+ * El empleador también puede quitar a un empleado del equipo desde el mismo
+ * listado, con una confirmación previa.
  */
 @Component({
   selector: 'app-empleados-sucursal',
-  imports: [RouterLink],
+  imports: [DsButtonComponent, DsModalComponent, RouterLink],
   templateUrl: './empleados-sucursal.html',
   styleUrl: './empleados-sucursal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -72,6 +76,13 @@ export class EmpleadosSucursal {
   protected readonly yaEsEmpleado = signal(false);
   protected readonly agregandome = signal(false);
   protected readonly errorAgregarme = signal<string | null>(null);
+
+  /** Empleado pendiente de confirmar en el diálogo de eliminación. */
+  protected readonly empleadoAEliminar = signal<EmpleadoSucursalDTO | null>(null);
+  /** Bloquea el inicio de otra eliminación mientras hay una en curso. */
+  protected readonly eliminando = signal(false);
+  protected readonly exitoEliminacion = signal<string | null>(null);
+  protected readonly errorEliminacion = signal<string | null>(null);
 
   /** El equipo puede ser extenso: se informa cuántos hay en total. */
   protected readonly totalEmpleados = computed(() => this.empleados().length);
@@ -184,6 +195,55 @@ export class EmpleadosSucursal {
           this.errorAgregarme.set(
             mensajeErrorSolicitudEmpleado(error, 'auto-incorporacion'),
           );
+        },
+      });
+  }
+
+  /** Abre la confirmación de eliminación para el empleado elegido. */
+  protected solicitarEliminacion(empleado: EmpleadoSucursalDTO): void {
+    if (this.eliminando() || this.empleadoAEliminar()) return;
+
+    this.exitoEliminacion.set(null);
+    this.errorEliminacion.set(null);
+    this.empleadoAEliminar.set(empleado);
+  }
+
+  /** Cierra la confirmación sin eliminar a nadie. */
+  protected cancelarEliminacion(): void {
+    if (this.eliminando()) return;
+
+    this.empleadoAEliminar.set(null);
+  }
+
+  /** Ejecuta la eliminación confirmada y actualiza el listado. */
+  protected confirmarEliminacion(): void {
+    const empleado = this.empleadoAEliminar();
+    if (!empleado || this.eliminando()) return;
+
+    this.eliminando.set(true);
+    this.errorEliminacion.set(null);
+
+    this.empleadosApi
+      .eliminar(this.sucursalId, empleado.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.eliminando.set(false);
+          this.empleadoAEliminar.set(null);
+          // El listado se actualiza en el lugar: el empleado deja de aparecer
+          // sin tener que recargar la página.
+          const lista = this.empleados().filter((item) => item.id !== empleado.id);
+          this.empleados.set(lista);
+          this.actualizarMembresia(lista);
+          this.exitoEliminacion.set(
+            `Eliminamos a ${this.nombreCompleto(empleado)} de la sucursal.`,
+          );
+        },
+        error: (error: HttpErrorResponse) => {
+          this.eliminando.set(false);
+          this.empleadoAEliminar.set(null);
+          // El empleado se mantiene en el listado cuando la eliminación falla.
+          this.errorEliminacion.set(this.mensajeErrorEliminacion(error));
         },
       });
   }
@@ -305,5 +365,29 @@ export class EmpleadosSucursal {
     }
 
     return 'No pudimos cargar los empleados de esta sucursal. Intentá de nuevo en unos segundos.';
+  }
+
+  private mensajeErrorEliminacion(error: HttpErrorResponse): string {
+    if (error.status === 401) {
+      return 'Tu sesión expiró. Iniciá sesión nuevamente para eliminar empleados.';
+    }
+
+    if (error.status === 403) {
+      return 'Solo el empleador de esta sucursal puede eliminar empleados.';
+    }
+
+    if (error.status === 404) {
+      return 'No encontramos al empleado que querés eliminar.';
+    }
+
+    if (error.status === 409) {
+      return 'Ese empleado ya no forma parte del equipo de la sucursal.';
+    }
+
+    if (error.status === 0) {
+      return 'No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.';
+    }
+
+    return 'No pudimos eliminar al empleado. Intentá de nuevo en unos segundos.';
   }
 }

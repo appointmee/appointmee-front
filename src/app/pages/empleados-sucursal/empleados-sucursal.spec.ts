@@ -294,7 +294,7 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
 
     const css = estilosRegistrados();
 
-    expect(css).toMatch(/--fila-alto:\s*116px/);
+    expect(css).toMatch(/--fila-alto:\s*140px/);
     expect(css).toMatch(/max-height:\s*calc\(5\s*\*\s*var\(--fila-alto\)\)/);
     expect(css).toMatch(/overflow-y:\s*auto/);
   });
@@ -378,8 +378,12 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
 
     const scroll = host.querySelector<HTMLElement>('.empleados__scroll');
     expect(scroll?.querySelectorAll('a').length).toBe(0);
-    expect(scroll?.querySelectorAll('button').length).toBe(0);
     expect(scroll?.querySelectorAll('.empleado__enlace').length).toBe(0);
+
+    // La única acción de la fila es la eliminación: no hay acciones para
+    // seleccionar al empleado ni para abrir su detalle.
+    expect(scroll?.querySelectorAll('button.empleado__eliminar').length).toBe(2);
+    expect(scroll?.querySelectorAll('button:not(.empleado__eliminar)').length).toBe(0);
   });
 
   it('no repite el texto de la puntuación porque ya se ve en las abejas y el número', async () => {
@@ -389,5 +393,211 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     fixture.detectChanges();
 
     expect(texto(host)).not.toContain('Puntuación promedio');
+  });
+
+  describe('SCRUM-269 · Eliminar empleados de la sucursal', () => {
+    function botonesEliminar(host: HTMLElement): HTMLButtonElement[] {
+      return Array.from(host.querySelectorAll<HTMLButtonElement>('button.empleado__eliminar'));
+    }
+
+    function dialogo(): HTMLElement | null {
+      return (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+        'ds-modal .ds-modal',
+      );
+    }
+
+    function botonesDelDialogo(): HTMLButtonElement[] {
+      return Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+          'ds-modal button',
+        ),
+      );
+    }
+
+    function botonConfirmar(): HTMLButtonElement | null {
+      return (
+        (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+          'ds-modal .eliminar__confirmar',
+        ) ?? null
+      );
+    }
+
+    it('muestra un botón de eliminar en cada fila, debajo de las reseñas', async () => {
+      const host = await abrir();
+      responderListado();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const botones = botonesEliminar(host);
+      expect(botones.length).toBe(2);
+
+      const primera = filas(host)[0];
+      const rating = primera.querySelector<HTMLElement>('.empleado__rating');
+      const boton = primera.querySelector<HTMLButtonElement>('button.empleado__eliminar');
+
+      // El botón vive en la columna de reseñas y puntuación, debajo de ellas.
+      expect(rating?.contains(boton as HTMLElement)).toBe(true);
+      expect(boton?.getAttribute('aria-label')).toBe('Eliminar a Ana Gómez de la sucursal');
+    });
+
+    it('replica el diseño del botón "Finalizar turno" con la paleta roja', async () => {
+      await abrir();
+      responderListado();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const css = estilosRegistrados();
+
+      // Mismas propiedades que "Finalizar turno" (turno-detalle-modal.css),
+      // con un tamaño compacto para no comer altura de la fila.
+      expect(css).toMatch(/\.empleado__eliminar[^{]*\{[^}]*min-width:\s*96px/);
+      expect(css).toMatch(/\.empleado__eliminar[^{]*\{[^}]*background:\s*rgba\(255, 122, 122, 0\.16\)/);
+      expect(css).toMatch(
+        /\.empleado__eliminar[^{]*\{[^}]*border-color:\s*rgba\(255, 122, 122, 0\.32\)/,
+      );
+      expect(css).toMatch(/\.empleado__eliminar[^{]*:disabled[^{]*\{[^}]*opacity:\s*0\.45/);
+      expect(css).toMatch(
+        /\.empleado__eliminar[^{]*:hover:not\(:disabled\)[^{]*\{[^}]*background:\s*rgba\(255, 122, 122, 0\.26\)/,
+      );
+
+      // Se apoya en el mismo botón del sistema de diseño que "Finalizar turno",
+      // pero en su tamaño compacto.
+      const boton = botonesEliminar(fixture.nativeElement)[0];
+      expect(boton.classList.contains('ds-btn')).toBe(true);
+      expect(boton.classList.contains('ds-btn--sm')).toBe(true);
+    });
+
+    it('pide confirmación identificando al empleado antes de eliminar', async () => {
+      const host = await abrir();
+      responderListado();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      botonesEliminar(host)[0].click();
+      fixture.detectChanges();
+
+      const modal = dialogo();
+      expect(modal).toBeTruthy();
+      expect(texto(modal as HTMLElement)).toContain(
+        '¿Estás seguro de que deseas eliminar a Ana Gómez de la sucursal?',
+      );
+
+      // Todavía no se eliminó a nadie.
+      backend.expectNone((request) => request.method === 'DELETE');
+      expect(filas(host).length).toBe(2);
+    });
+
+    it('no elimina a nadie cuando se cancela la confirmación', async () => {
+      const host = await abrir();
+      responderListado();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      botonesEliminar(host)[0].click();
+      fixture.detectChanges();
+
+      const cancelar = botonesDelDialogo().find((boton) =>
+        boton.textContent?.includes('Cancelar'),
+      );
+      cancelar?.click();
+      fixture.detectChanges();
+
+      expect(dialogo()).toBeNull();
+      backend.expectNone((request) => request.method === 'DELETE');
+      expect(filas(host).length).toBe(2);
+    });
+
+    it('elimina al empleado con el endpoint existente y actualiza el listado', async () => {
+      const host = await abrir();
+      responderListado();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      botonesEliminar(host)[0].click();
+      fixture.detectChanges();
+      botonConfirmar()?.click();
+      fixture.detectChanges();
+
+      const peticion = backend.expectOne(
+        (request) =>
+          request.method === 'DELETE' &&
+          request.url.endsWith('/sucursales/7/empleados/eliminar/10'),
+      );
+      peticion.flush('Se eliminó al empleado correctamente');
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      // El empleado eliminado deja de aparecer sin recargar la página.
+      const lista = filas(host);
+      expect(lista.length).toBe(1);
+      expect(texto(host)).not.toContain('ana@ejemplo.com');
+      expect(host.querySelector('.panel__contador')?.textContent?.trim()).toBe('1');
+
+      // Y se informa el resultado de la operación.
+      const aviso = host.querySelector<HTMLElement>('.aviso--exito');
+      expect(aviso?.textContent).toContain('Eliminamos a Ana Gómez de la sucursal.');
+      expect(aviso?.getAttribute('role')).toBe('status');
+    });
+
+    it('no permite eliminaciones simultáneas sobre el mismo empleado', async () => {
+      const host = await abrir();
+      responderListado();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      botonesEliminar(host)[0].click();
+      fixture.detectChanges();
+      botonConfirmar()?.click();
+      fixture.detectChanges();
+
+      // Con la eliminación en curso no se puede volver a disparar.
+      expect(botonConfirmar()?.disabled).toBe(true);
+      botonConfirmar()?.click();
+      botonesEliminar(host)[0].click();
+      fixture.detectChanges();
+
+      const peticiones = backend.match((request) => request.method === 'DELETE');
+      expect(peticiones.length).toBe(1);
+      expect(peticiones[0].request.url).toContain('/sucursales/7/empleados/eliminar/10');
+
+      peticiones[0].flush('Se eliminó al empleado correctamente');
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(filas(host).length).toBe(1);
+    });
+
+    it('conserva al empleado en el listado y avisa cuando la eliminación falla', async () => {
+      const host = await abrir();
+      responderListado();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      botonesEliminar(host)[0].click();
+      fixture.detectChanges();
+      botonConfirmar()?.click();
+      fixture.detectChanges();
+
+      backend
+        .expectOne(
+          (request) =>
+            request.method === 'DELETE' &&
+            request.url.endsWith('/sucursales/7/empleados/eliminar/10'),
+        )
+        .flush('Error', { status: 500, statusText: 'Error' });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      // El empleado sigue en el listado y el error se muestra inline.
+      expect(filas(host).length).toBe(2);
+      expect(texto(host)).toContain('ana@ejemplo.com');
+
+      const error = host.querySelector<HTMLElement>('.aviso--error');
+      expect(error?.textContent).toContain('No pudimos eliminar al empleado');
+      expect(error?.getAttribute('role')).toBe('alert');
+
+      // La pantalla no navega a la vista de error: el error se resuelve inline.
+      expect(router.url).toBe(RUTA_BASE);
+    });
   });
 });

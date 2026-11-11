@@ -26,6 +26,18 @@
         }
       </header>
 
+      @if (exitoEliminacion()) {
+        <div class="aviso aviso--exito" role="status" aria-live="polite">
+          <p>{{ exitoEliminacion() }}</p>
+        </div>
+      }
+
+      @if (errorEliminacion()) {
+        <div class="aviso aviso--error" role="alert">
+          <p class="aviso__error">{{ errorEliminacion() }}</p>
+        </div>
+      }
+
       @if (cargando()) {
         <div class="empleados__scroll" aria-busy="true">
           <span class="sr-only" role="status" aria-live="polite">Cargando empleados…</span>
@@ -118,6 +130,20 @@
                     } @else {
                       <span class="empleado__sin-puntuacion">Sin puntuaciones</span>
                     }
+
+                    <button
+                      dsButton
+                      size="sm"
+                      class="empleado__eliminar"
+                      type="button"
+                      [disabled]="eliminando()"
+                      [attr.aria-label]="
+                        'Eliminar a ' + nombreCompleto(empleado) + ' de la sucursal'
+                      "
+                      (clicked)="solicitarEliminacion(empleado)"
+                    >
+                      Eliminar
+                    </button>
                   </div>
                 </div>
               </li>
@@ -167,4 +193,39 @@
       }
     </section>
   </div>
+
+  <ds-modal
+    [open]="empleadoAEliminar() !== null"
+    ariaLabelledby="eliminar-empleado-titulo"
+    (close)="cancelarEliminacion()"
+  >
+    @if (empleadoAEliminar(); as empleado) {
+      <h2 id="eliminar-empleado-titulo" class="eliminar__titulo">Eliminar del equipo</h2>
+      <p class="eliminar__texto">
+        ¿Estás seguro de que deseas eliminar a
+        <strong>{{ nombreCompleto(empleado) }}</strong> de la sucursal?
+      </p>
+
+      <div class="eliminar__acciones">
+        <button
+          dsButton
+          type="button"
+          [disabled]="eliminando()"
+          (clicked)="cancelarEliminacion()"
+        >
+          Cancelar
+        </button>
+        <button
+          dsButton
+          variant="danger"
+          class="eliminar__confirmar"
+          type="button"
+          [loading]="eliminando()"
+          (clicked)="confirmarEliminacion()"
+        >
+          {{ eliminando() ? 'Eliminando…' : 'Sí, eliminar' }}
+        </button>
+      </div>
+    }
+  </ds-modal>
 </section>
