@@ -31,7 +31,7 @@ export class CrearServicio {
 
   @ViewChild('primerInvalido') primerInvalido?: ElementRef<HTMLInputElement>;
 
-  protected guardar(form: NgForm): void {
+  protected guardar(form?: NgForm): void {
     const errores: Record<string, string> = {};
     if (!this.sucursalId) errores['sucursalId'] = 'La sucursal es obligatoria.';
     if (!this.nombre.trim()) errores['nombre'] = 'El nombre es obligatorio.';
