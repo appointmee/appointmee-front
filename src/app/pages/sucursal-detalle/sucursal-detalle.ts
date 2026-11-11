@@ -97,18 +97,54 @@ export class SucursalDetalle {
     }
 
     const fallidas = this.imagenesFallidas();
-    const candidatas = [actual.fotoPerfil, ...(actual.imagenes ?? [])].flatMap((url) =>
-      typeof url === 'string' && url.trim() ? [url.trim()] : [],
+    const adicionales = (Array.isArray(actual.imagenes) ? actual.imagenes : []).flatMap((imagen, indice) => {
+      if (typeof imagen === 'string') {
+        return { url: imagen, alt: `Foto ${indice + 1} de ${actual.nombre}` };
+      }
+
+      if (!imagen || typeof imagen !== 'object') {
+        return [];
+      }
+
+      return {
+        url: imagen.url,
+        alt:
+          (typeof imagen.descripcion === 'string' && imagen.descripcion.trim()) ||
+          `Foto ${indice + 1} de ${actual.nombre}`,
+      };
+    });
+    const candidatas = [
+      { url: actual.fotoPerfil, alt: `Foto de perfil de ${actual.nombre}` },
+      ...adicionales,
+    ].flatMap(({ url, alt }) =>
+      typeof url === 'string' && url.trim() ? [{ url: url.trim(), alt }] : [],
     );
-    return [...new Set(candidatas)].filter((url) => !fallidas.has(url));
+
+    return [...new Map(candidatas.map((imagen) => [imagen.url, imagen])).values()].filter(
+      (imagen) => !fallidas.has(imagen.url),
+    );
   });
 
   protected readonly imagenPrincipal = computed(() => {
     const imagenes = this.imagenesGaleria();
     const seleccionada = this.imagenSeleccionada();
     return (
-      (seleccionada && imagenes.includes(seleccionada) ? seleccionada : imagenes[0]) ??
+      (seleccionada && imagenes.some((imagen) => imagen.url === seleccionada)
+        ? seleccionada
+        : imagenes[0]?.url) ??
       this.placeholderImage
+    );
+  });
+
+  protected readonly altImagenPrincipal = computed(() => {
+    const principal = this.imagenPrincipal();
+    if (principal === this.placeholderImage) {
+      return `No hay imágenes disponibles para ${this.sucursal()?.nombre ?? 'esta sucursal'}`;
+    }
+
+    return (
+      this.imagenesGaleria().find((imagen) => imagen.url === principal)?.alt ??
+      `Foto de ${this.sucursal()?.nombre ?? 'la sucursal'}`
     );
   });
 
@@ -250,7 +286,7 @@ export class SucursalDetalle {
       return;
     }
 
-    const imagenes = this.imagenesGaleria();
+    const imagenes = this.imagenesGaleria().map((imagen) => imagen.url);
     if (imagenes.length < 2) {
       return;
     }

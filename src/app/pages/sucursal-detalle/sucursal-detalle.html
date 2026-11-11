@@ -80,7 +80,7 @@
       <img
         class="detalle__hero-img"
         [src]="imagenPrincipal()"
-        [alt]="imagenPrincipal() === placeholderImage ? 'No hay imágenes disponibles para ' + s.nombre : 'Foto ' + (imagenesGaleria().indexOf(imagenPrincipal()) + 1) + ' de ' + s.nombre"
+        [alt]="altImagenPrincipal()"
         width="1600"
         height="700"
         fetchpriority="high"
@@ -165,23 +165,23 @@
           [attr.aria-label]="'Galería de imágenes de ' + s.nombre"
           (keydown)="moverGaleria($event)"
         >
-          @for (imagen of imagenesGaleria(); track imagen; let indice = $index) {
+          @for (imagen of imagenesGaleria(); track imagen.url; let indice = $index) {
             <button
               class="detalle__miniatura"
               type="button"
-              [class.detalle__miniatura--activa]="imagenPrincipal() === imagen"
-              [attr.aria-label]="'Mostrar imagen ' + (indice + 1) + ' de ' + imagenesGaleria().length + ' de ' + s.nombre"
-              [attr.aria-pressed]="imagenPrincipal() === imagen"
-              (click)="seleccionarImagen(imagen)"
+              [class.detalle__miniatura--activa]="imagenPrincipal() === imagen.url"
+              [attr.aria-label]="'Mostrar ' + imagen.alt + ' (' + (indice + 1) + ' de ' + imagenesGaleria().length + ')'"
+              [attr.aria-pressed]="imagenPrincipal() === imagen.url"
+              (click)="seleccionarImagen(imagen.url)"
             >
               <img
-                [src]="imagen"
-                [alt]="'Foto ' + (indice + 1) + ' de ' + s.nombre"
+                [src]="imagen.url"
+                [alt]="imagen.alt"
                 width="160"
                 height="100"
                 loading="lazy"
                 decoding="async"
-                (error)="onImageError(imagen)"
+                (error)="onImageError(imagen.url)"
               />
             </button>
           }

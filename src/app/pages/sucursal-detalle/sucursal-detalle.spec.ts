@@ -147,7 +147,7 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
     expect(miniaturas).toHaveLength(2);
     expect(miniaturas[0].getAttribute('aria-pressed')).toBe('true');
     expect(miniaturas[1].getAttribute('aria-pressed')).toBe('false');
-    expect(miniaturas[1].getAttribute('aria-label')).toContain('Mostrar imagen 2 de 2');
+    expect(miniaturas[1].getAttribute('aria-label')).toContain('Mostrar Foto 2 de Sucursal Flores');
     expect(miniaturas[1].querySelector('img')?.getAttribute('loading')).toBe('lazy');
 
     miniaturas[1].click();
@@ -156,6 +156,31 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
     expect(principal?.getAttribute('src')).toBe('https://imagenes.example/sucursal-2.jpg');
     expect(miniaturas[0].getAttribute('aria-pressed')).toBe('false');
     expect(miniaturas[1].getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('usa la descripción de cada imagen cuando el DTO la incluye', async () => {
+    const host = await abrirConSucursal({
+      ...SUCURSAL,
+      imagenes: [
+        {
+          url: 'https://imagenes.example/fachada.jpg',
+          descripcion: 'Fachada principal con entrada de vidrio',
+        },
+        'https://imagenes.example/segunda.jpg',
+      ],
+    });
+    const principal = host.querySelector<HTMLImageElement>('.detalle__hero-img');
+    const miniaturas = host.querySelectorAll<HTMLButtonElement>('.detalle__miniatura');
+
+    expect(miniaturas[0].querySelector('img')?.getAttribute('alt')).toBe(
+      'Fachada principal con entrada de vidrio',
+    );
+    miniaturas[0].click();
+    fixture.detectChanges();
+    expect(principal?.getAttribute('alt')).toBe('Fachada principal con entrada de vidrio');
+    expect(miniaturas[0].getAttribute('aria-label')).toContain(
+      'Fachada principal con entrada de vidrio',
+    );
   });
 
   it('permite recorrer las miniaturas con flechas y mueve el foco', async () => {

@@ -13,6 +13,11 @@ export interface SucursalMiniDTO {
   readonly diasApertura?: readonly string[];
 }
 
+export interface SucursalImagenDTO {
+  readonly url: string;
+  readonly descripcion?: string | null;
+}
+
 export interface SucursalDetalleDTO {
   readonly id: number;
   readonly nombre: string;
@@ -27,7 +32,7 @@ export interface SucursalDetalleDTO {
   readonly puntuacion: number | null;
   readonly cantidadPuntuaciones: number | null;
   readonly fotoPerfil: string | null;
-  readonly imagenes?: readonly string[] | null;
+  readonly imagenes?: readonly (string | SucursalImagenDTO)[] | null;
 }
 
 export interface SucursalPayload {
