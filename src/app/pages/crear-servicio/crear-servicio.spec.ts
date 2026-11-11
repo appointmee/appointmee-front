@@ -32,6 +32,14 @@ describe('Crear servicio', () => {
   });
   afterEach(() => TestBed.resetTestingModule());
 
+  function completarFormulario(): void {
+    page.model.set({
+      nombre: 'Corte clásico', descripcion: 'Corte de cabello tradicional', duracion: 30,
+      precio: 1000, fotoPerfil: 'https://example.com/servicio.jpg',
+    });
+    fixture.detectChanges();
+  }
+
   it('no envía el formulario si el nombre está vacío', () => {
     page.onSubmit(new Event('submit', { cancelable: true }));
     expect(api.crear).not.toHaveBeenCalled();
@@ -44,28 +52,25 @@ describe('Crear servicio', () => {
   });
 
   it('envía los datos y redirige al éxito', async () => {
-    api.crear.mockReturnValue(of({ id: 1, nombre: 'Corte' } as any));
-    page.model.set({ nombre: 'Corte', descripcion: 'desc', duracion: 30, precio: 100, fotoPerfil: '' });
-    fixture.detectChanges();
+    api.crear.mockReturnValue(of('Se creó el servicio'));
+    completarFormulario();
     page.onSubmit(new Event('submit', { cancelable: true }));
-    expect(api.crear).toHaveBeenCalledWith(expect.objectContaining({ sucursalId: 5, nombre: 'Corte', duracion: 30 }));
+    expect(api.crear).toHaveBeenCalledWith(expect.objectContaining({ sucursalId: 5, nombre: 'Corte clásico', duracion: 30, precio: 1000, fotoPerfil: 'https://example.com/servicio.jpg' }));
     expect(page.exito()).toBeTruthy();
   });
 
   it('muestra error si falla la creación', () => {
-    api.crear.mockReturnValue(throwError(() => ({ error: { message: 'Nombre duplicado' } })));
-    page.model.set({ nombre: 'Corte', descripcion: '', duracion: 30, precio: null, fotoPerfil: '' });
-    fixture.detectChanges();
+    api.crear.mockReturnValue(throwError(() => ({ error: { message: 'backend detail' } })));
+    completarFormulario();
     page.onSubmit(new Event('submit', { cancelable: true }));
-    expect(page.error()).toBe('Nombre duplicado');
+    expect(page.error()).toContain('No pudimos crear');
   });
 
   it('conserva los valores ingresados ante error', () => {
     api.crear.mockReturnValue(throwError(() => new Error('fail')));
-    page.model.set({ nombre: 'Corte', descripcion: 'desc', duracion: 30, precio: 100, fotoPerfil: '' });
-    fixture.detectChanges();
+    completarFormulario();
     page.onSubmit(new Event('submit', { cancelable: true }));
-    expect(page.model().nombre).toBe('Corte');
-    expect(page.model().descripcion).toBe('desc');
+    expect(page.model().nombre).toBe('Corte clásico');
+    expect(page.model().descripcion).toBe('Corte de cabello tradicional');
   });
 });

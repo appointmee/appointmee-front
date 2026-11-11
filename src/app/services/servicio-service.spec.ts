@@ -33,8 +33,16 @@ describe('servicioService mutations', () => {
 
     const request = http.expectOne(request => request.url.endsWith('/servicios/crear'));
     expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual(payload);
-    request.flush({ id: 1 });
+    expect(request.request.body).toEqual({
+      sucursalId: payload.sucursalId,
+      nombre: payload.nombre,
+      descripcion: payload.descripcion,
+      duracion: payload.duracion,
+      precio: payload.precio,
+      fotoUrl: payload.fotoPerfil,
+    });
+    expect(request.request.body).not.toHaveProperty('fotoPerfil');
+    request.flush('Se creó el servicio');
   });
 
   it('actualiza un servicio mediante PATCH y su ruta real', () => {
@@ -42,7 +50,13 @@ describe('servicioService mutations', () => {
 
     const request = http.expectOne(request => request.url.endsWith('/servicios/modificar/9'));
     expect(request.request.method).toBe('PATCH');
-    expect(request.request.body).toEqual(payload);
-    request.flush({ id: 9 });
+    expect(request.request.body).toEqual({
+      nombre: payload.nombre,
+      descripcion: payload.descripcion,
+      duracion: payload.duracion,
+      precio: payload.precio,
+      fotoUrl: payload.fotoPerfil,
+    });
+    request.flush('Se modificó el servicio');
   });
 });

@@ -2,9 +2,8 @@ import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { DsInputComponent } from '../../shared/ui/input/input.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormField, form, min, minLength, required } from '@angular/forms/signals';
+import { FormField, form, max, maxLength, min, minLength, pattern, required } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { HttpErrorResponse } from '@angular/common/http';
 
 import { ServicioPayload } from '../../models/servicio';
 import { servicioService } from '../../services/servicio-service';
@@ -46,9 +45,20 @@ export class CrearServicioPage {
 
   formulario = form(this.model, (campos) => {
     required(campos.nombre, { message: 'Ingresá el nombre del servicio.' });
-    minLength(campos.nombre, 2, { message: 'El nombre es muy corto.' });
+    minLength(campos.nombre, 4, { message: 'Usá al menos 4 caracteres.' });
+    maxLength(campos.nombre, 60, { message: 'Usá como máximo 60 caracteres.' });
+    pattern(campos.nombre, /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s,-]+$/, { message: 'El nombre solo puede tener letras y espacios.' });
+    required(campos.descripcion, { message: 'Ingresá una descripción.' });
+    minLength(campos.descripcion, 10, { message: 'La descripción debe tener al menos 10 caracteres.' });
+    maxLength(campos.descripcion, 500, { message: 'La descripción no puede superar 500 caracteres.' });
     required(campos.duracion, { message: 'Ingresá la duración en minutos.' });
-    min(campos.duracion, 1, { message: 'La duración debe ser mayor a 0.' });
+    min(campos.duracion, 30, { message: 'La duración mínima es 30 minutos.' });
+    max(campos.duracion, 360, { message: 'La duración máxima es 360 minutos.' });
+    required(campos.precio, { message: 'Ingresá el precio del servicio.' });
+    min(campos.precio, 0.01, { message: 'El precio mínimo es 0,01.' });
+    max(campos.precio, 999999.99, { message: 'El precio máximo es 999999,99.' });
+    required(campos.fotoPerfil, { message: 'Ingresá la URL de la foto del servicio.' });
+    pattern(campos.fotoPerfil, /^https?:\/\/\S+$/, { message: 'Ingresá una URL válida.' });
   });
 
   onSubmit(event: Event): void {
@@ -58,7 +68,10 @@ export class CrearServicioPage {
     if (this.formulario().invalid()) {
       const primerCampoInvalido = [
         this.formulario.nombre,
+        this.formulario.descripcion,
         this.formulario.duracion,
+        this.formulario.precio,
+        this.formulario.fotoPerfil,
       ].find(campo => campo().invalid());
       primerCampoInvalido?.().focusBoundControl();
       return;
@@ -75,10 +88,10 @@ export class CrearServicioPage {
     const datos: ServicioPayload = {
       sucursalId: this.sucursalId,
       nombre: this.model().nombre.trim(),
-      descripcion: this.model().descripcion.trim() || null,
-      duracion: this.model().duracion ?? 30,
+      descripcion: this.model().descripcion.trim(),
+      duracion: this.model().duracion ?? 0,
       precio: this.model().precio,
-      fotoPerfil: this.model().fotoPerfil.trim() || null,
+      fotoPerfil: this.model().fotoPerfil.trim(),
     };
 
     this.api
@@ -90,10 +103,9 @@ export class CrearServicioPage {
           this.exito.set('Servicio creado correctamente.');
           void this.router.navigateByUrl('/mis-sucursales');
         },
-        error: (err: HttpErrorResponse) => {
+        error: () => {
           this.cargando.set(false);
-          const msg = (err.error as { message?: string } | null)?.message || 'No pudimos crear el servicio. Intentá de nuevo.';
-          this.error.set(msg);
+          this.error.set('No pudimos crear el servicio. Revisá los datos e intentá nuevamente.');
         },
       });
   }

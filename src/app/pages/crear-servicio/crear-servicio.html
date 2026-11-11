@@ -11,51 +11,72 @@
     <div class="aviso aviso--error" role="alert">{{ error() }}</div>
   }
 
-  <form (submit)="onSubmit($event)" novalidate>
+  <form (submit)="onSubmit($event)" novalidate [attr.aria-busy]="cargando()">
+    @if (formulario().touched() && formulario().invalid()) {
+      <div class="aviso aviso--error" role="alert" aria-labelledby="errores-servicio-titulo">
+        <h2 id="errores-servicio-titulo">Revisá estos campos:</h2>
+        <ul>
+          @if (formulario.nombre().invalid()) { <li><a href="#nombre" (click)="formulario.nombre().focusBoundControl()">Nombre: {{ formulario.nombre().errors()[0]?.message }}</a></li> }
+          @if (formulario.descripcion().invalid()) { <li><a href="#descripcion" (click)="formulario.descripcion().focusBoundControl()">Descripción: {{ formulario.descripcion().errors()[0]?.message }}</a></li> }
+          @if (formulario.duracion().invalid()) { <li><a href="#duracion" (click)="formulario.duracion().focusBoundControl()">Duración: {{ formulario.duracion().errors()[0]?.message }}</a></li> }
+          @if (formulario.precio().invalid()) { <li><a href="#precio" (click)="formulario.precio().focusBoundControl()">Precio: {{ formulario.precio().errors()[0]?.message }}</a></li> }
+          @if (formulario.fotoPerfil().invalid()) { <li><a href="#fotoPerfil" (click)="formulario.fotoPerfil().focusBoundControl()">Foto: {{ formulario.fotoPerfil().errors()[0]?.message }}</a></li> }
+        </ul>
+      </div>
+    }
     <div class="campo">
       <label for="nombre">Nombre</label>
       <ds-input>
         <input #dsNativeControl id="nombre" type="text" autocomplete="off"
-               [formField]="formulario.nombre" aria-describedby="nombre-error" />
+                [formField]="formulario.nombre" [attr.aria-invalid]="formulario.nombre().touched() && formulario.nombre().invalid()" aria-describedby="nombre-error" />
       </ds-input>
-      @if (formulario.nombre().touched() && formulario.nombre().invalid()) {
-        <p id="nombre-error" class="error" role="alert">{{ formulario.nombre().errors()[0]?.message }}</p>
-      }
+       <div id="nombre-error" class="error" aria-live="polite">
+         @if (formulario.nombre().touched()) { @for (error of formulario.nombre().errors(); track error.kind) { <p>{{ error.message }}</p> } }
+       </div>
     </div>
 
     <div class="campo">
       <label for="descripcion">Descripción</label>
       <ds-input>
         <input #dsNativeControl id="descripcion" type="text"
-               [formField]="formulario.descripcion" />
+                [formField]="formulario.descripcion" [attr.aria-invalid]="formulario.descripcion().touched() && formulario.descripcion().invalid()" aria-describedby="descripcion-error" />
       </ds-input>
+      <div id="descripcion-error" class="error" aria-live="polite">
+        @if (formulario.descripcion().touched()) { @for (error of formulario.descripcion().errors(); track error.kind) { <p>{{ error.message }}</p> } }
+      </div>
     </div>
 
     <div class="campo">
       <label for="duracion">Duración (minutos)</label>
       <ds-input>
         <input #dsNativeControl id="duracion" type="number"
-               [formField]="formulario.duracion" aria-describedby="duracion-error" />
+                [formField]="formulario.duracion" [attr.aria-invalid]="formulario.duracion().touched() && formulario.duracion().invalid()" aria-describedby="duracion-error" />
       </ds-input>
-      @if (formulario.duracion().touched() && formulario.duracion().invalid()) {
-        <p id="duracion-error" class="error" role="alert">{{ formulario.duracion().errors()[0]?.message }}</p>
-      }
+       <div id="duracion-error" class="error" aria-live="polite">
+         @if (formulario.duracion().touched()) { @for (error of formulario.duracion().errors(); track error.kind) { <p>{{ error.message }}</p> } }
+       </div>
     </div>
 
     <div class="campo">
       <label for="precio">Precio</label>
       <ds-input>
         <input #dsNativeControl id="precio" type="number"
-               [formField]="formulario.precio" />
+                [formField]="formulario.precio" [attr.aria-invalid]="formulario.precio().touched() && formulario.precio().invalid()" aria-describedby="precio-error" />
       </ds-input>
+      <div id="precio-error" class="error" aria-live="polite">
+        @if (formulario.precio().touched()) { @for (error of formulario.precio().errors(); track error.kind) { <p>{{ error.message }}</p> } }
+      </div>
     </div>
 
     <div class="campo">
       <label for="fotoPerfil">Foto (URL)</label>
       <ds-input>
         <input #dsNativeControl id="fotoPerfil" type="url"
-               [formField]="formulario.fotoPerfil" />
+                [formField]="formulario.fotoPerfil" [attr.aria-invalid]="formulario.fotoPerfil().touched() && formulario.fotoPerfil().invalid()" aria-describedby="foto-error" />
       </ds-input>
+      <div id="foto-error" class="error" aria-live="polite">
+        @if (formulario.fotoPerfil().touched()) { @for (error of formulario.fotoPerfil().errors(); track error.kind) { <p>{{ error.message }}</p> } }
+      </div>
     </div>
 
     <div class="acciones">
