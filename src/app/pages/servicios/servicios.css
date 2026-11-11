@@ -276,6 +276,11 @@
   box-shadow: none;
 }
 
+.card--seleccionado {
+  border-color: rgba(247, 198, 90, 0.55);
+  box-shadow: 0 0 0 1px rgba(247, 198, 90, 0.35), 0 30px 60px rgba(0, 0, 0, 0.45);
+}
+
 .card__media {
   position: relative;
   width: calc(100% - 28px);
@@ -717,6 +722,18 @@
   color: var(--muted);
   font-size: 13.5px;
   line-height: 1.5;
+}
+
+.servicios__resumen {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.estado__reintento {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .boton--compacto {

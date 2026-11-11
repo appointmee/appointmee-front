@@ -10,52 +10,23 @@
     </nav>
 
     <header class="servicios__header">
-      <div class="servicios__intro">
-        <span class="eyebrow">
-          <span class="eyebrow__dot" aria-hidden="true"></span>
-          Reserva de turno
-        </span>
-        <h1 id="servicios-titulo">Seleccionar servicio</h1>
-
-        @if (!sinContexto) {
-          <p class="paso" aria-label="Paso 1 de 3: elegir servicio">
-            <span class="paso__numero" aria-hidden="true">1</span>
-            <span class="paso__texto">Paso 1 de 3 · Servicio</span>
-            <span class="paso__track" aria-hidden="true"><span class="paso__progress"></span></span>
-          </p>
-        }
-      </div>
+      <span class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Reserva de turno
+      </span>
+      <h1 id="servicios-titulo">Elegí tu servicio</h1>
 
       @if (!sinContexto) {
-        @if (resumenSucursal(); as resumen) {
-          <aside class="sucursal-resumen" aria-label="Resumen de la sucursal">
-            <p class="sucursal-resumen__nombre">{{ resumen.nombre }}</p>
+        <p class="servicios__sucursal">
+          <span class="servicios__sucursal-label">Sucursal</span>
+          <strong>{{ nombreSucursal() }}</strong>
+        </p>
 
-            @if (resumen.tieneResenas) {
-              <p class="sucursal-resumen__rating">
-                <span class="sr-only">
-                  Puntuación promedio {{ resumen.puntuacion }}, basada en
-                  {{ resumen.resenas }}.
-                </span>
-                <span class="sucursal-resumen__abejas" aria-hidden="true">
-                  @for (abeja of resumen.abejas; track $index) {
-                    <span class="sucursal-resumen__abeja">🐝</span>
-                  }
-                </span>
-                <span class="sucursal-resumen__puntos" aria-hidden="true">
-                  {{ resumen.puntuacion }}
-                </span>
-                <span class="sucursal-resumen__resenas" aria-hidden="true">
-                  ({{ resumen.resenas }})
-                </span>
-              </p>
-            } @else {
-              <p class="sucursal-resumen__sin-resenas">
-                {{ resumen.hayDatosSucursal ? 'Sin reseñas todavía' : 'Sin datos de reseñas' }}
-              </p>
-            }
-          </aside>
-        }
+        <p class="paso" aria-label="Paso 1 de 3: elegir servicio">
+          <span class="paso__numero" aria-hidden="true">1</span>
+          <span class="paso__texto">Paso 1 de 3 — Servicio</span>
+          <span class="paso__track" aria-hidden="true"><span class="paso__progress"></span></span>
+        </p>
       }
     </header>
 
@@ -74,17 +45,6 @@
         <a class="boton" routerLink="/">Volver al Home</a>
       </div>
     } @else {
-      @if (avisoPreseleccion()) {
-        <div class="aviso-preseleccion" role="status" aria-live="polite" aria-atomic="true">
-          <span class="aviso-preseleccion__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
-          </span>
-          <p>{{ avisoPreseleccion() }}</p>
-        </div>
-      }
-
       @if (sinConexion() && !cargando() && !error()) {
         <div class="aviso-conexion" role="alert" aria-live="assertive" aria-atomic="true">
           <span class="aviso-conexion__icon" aria-hidden="true">
@@ -109,11 +69,11 @@
       }
 
       @if (cargando()) {
-        <div class="lista" aria-busy="true">
+        <div class="grid" aria-busy="true">
           <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
             Cargando servicios…
           </span>
-          @for (item of [1, 2, 3, 4]; track item) {
+          @for (item of [1, 2, 3, 4, 5, 6]; track item) {
             <article class="card card--skeleton" aria-hidden="true">
               <div class="card__media skeleton"></div>
               <div class="card__body">
@@ -126,36 +86,27 @@
           }
         </div>
       } @else if (error()) {
-        <div class="estado estado--error" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="estado estado--error" role="alert" aria-live="assertive">
           <span class="estado__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
               <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>
           </span>
-          <h2>{{ sinConexion() ? 'Sin conexión a internet' : 'No pudimos cargar los servicios' }}</h2>
+          <h2>No pudimos cargar los servicios</h2>
           <p>{{ error() }}</p>
           <div class="estado__acciones">
             @if (requiereLogin()) {
               <a class="boton" routerLink="/login">Iniciar sesión</a>
             } @else if (!requiereRolCliente()) {
-              <button
-                dsButton
-                class="boton"
-                type="button"
-                [disabled]="reintentando()"
-                [attr.aria-busy]="reintentando()"
-                (click)="reintentar()"
-              >
+              <button dsButton class="boton" type="button" [disabled]="reintentando()" [attr.aria-busy]="reintentando()" (click)="reintentar()">
                 {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
               </button>
             }
             <a class="boton boton--ghost" [routerLink]="detalleUrl()">Volver al detalle</a>
           </div>
-          <span class="sr-only" role="status" aria-live="polite">
-            @if (reintentando()) {
-              Reintentando la carga de servicios…
-            }
-          </span>
+          @if (reintentando()) {
+            <p class="estado__reintento" role="status" aria-live="polite">Reintentando la carga de servicios…</p>
+          }
         </div>
       } @else if (servicios().length === 0) {
         <div class="estado estado--vacio" role="status" aria-live="polite">
@@ -169,16 +120,10 @@
           <a class="boton" [routerLink]="detalleUrl()">Volver al detalle</a>
         </div>
       } @else {
-        <p class="sr-only" role="status" aria-live="polite">{{ resumenServicios() }}</p>
-
-        <div class="lista" role="radiogroup" aria-labelledby="servicios-titulo">
+        <p class="servicios__resumen" role="status">{{ resumenServicios() }}</p>
+        <div class="grid" aria-live="polite">
           @for (servicio of servicios(); track trackById($index, servicio); let i = $index) {
-            <article
-              class="card"
-              [class.card--seleccionada]="estaSeleccionado(servicio)"
-              [class.card--deshabilitada]="seleccionDeshabilitada()"
-              [style.--i]="i"
-            >
+            <article class="card" [style.--i]="i" [class.card--seleccionado]="servicio.id === servicioIdSeleccionado()">
               <div class="card__media">
                 <img
                   [src]="foto(servicio)"
@@ -189,50 +134,11 @@
                   (error)="onImageError($event)"
                 />
               </div>
-
               <div class="card__body">
-                <div class="card__top">
-                  <h2 class="card__name">{{ servicio.nombre }}</h2>
-                  <span class="card__precio">{{ formatPrecio(servicio.precio) }}</span>
-                </div>
-
+                <h2 class="card__name">{{ servicio.nombre }}</h2>
                 @if (servicio.descripcion) {
-                  <p
-                    #descripcionServicio
-                    class="card__descripcion"
-                    [class.card__descripcion--colapsada]="!estaDescripcionExpandida(servicio.id)"
-                    [attr.data-descripcion-id]="servicio.id"
-                    [id]="'servicio-descripcion-' + servicio.id"
-                  >
-                    {{ servicio.descripcion }}
-                  </p>
-
-                  @if (descripcionDesbordada(servicio)) {
-                    <button
-                      class="card__toggle"
-                      type="button"
-                      [attr.aria-expanded]="estaDescripcionExpandida(servicio.id)"
-                      [attr.aria-controls]="'servicio-descripcion-' + servicio.id"
-                      (click)="alternarDescripcion(servicio.id)"
-                    >
-                      {{ estaDescripcionExpandida(servicio.id) ? 'Ver menos' : 'Ver más' }}
-                      <svg
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                        [attr.transform]="
-                          estaDescripcionExpandida(servicio.id) ? 'rotate(180 12 12)' : null
-                        "
-                      >
-                        <path d="m6 9 6 6 6-6" />
-                      </svg>
-                    </button>
-                  }
-                } @else {
-                  <p class="card__descripcion card__descripcion--vacia">
-                    Sin descripción disponible.
-                  </p>
+                  <p class="card__descripcion">{{ servicio.descripcion }}</p>
                 }
-
                 <div class="card__meta">
                   <span class="card__duracion">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -240,71 +146,20 @@
                     </svg>
                     {{ formatDuracion(servicio.duracion) }}
                   </span>
-
-                  @if (estaSeleccionado(servicio)) {
-                    <span class="card__elegido" aria-hidden="true">
-                      <svg viewBox="0 0 24 24">
-                        <path d="m5 12 5 5 9-10" />
-                      </svg>
-                      Seleccionado
-                    </span>
-                  }
+                  <span class="card__precio">{{ formatPrecio(servicio.precio) }}</span>
                 </div>
+                <a
+                  class="boton"
+                  (click)="elegirServicio($event, servicio.id)"
+                  [attr.aria-label]="'Elegir horario para ' + servicio.nombre"
+                  [attr.aria-pressed]="servicio.id === servicioIdSeleccionado()"
+                >
+                  Elegir turno
+                </a>
               </div>
-
-              @if (estaSeleccionado(servicio)) {
-                <span class="card__check" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <path d="m5 12 5 5 9-10" />
-                  </svg>
-                </span>
-              }
-
-              <button
-                class="card__seleccion"
-                type="button"
-                role="radio"
-                [attr.aria-checked]="estaSeleccionado(servicio)"
-                [attr.aria-label]="'Seleccionar ' + servicio.nombre"
-                [attr.tabindex]="esOpcionEnfocable(servicio) ? 0 : -1"
-                [attr.data-servicio-id]="servicio.id"
-                [disabled]="seleccionDeshabilitada()"
-                (click)="seleccionar(servicio)"
-                (keydown)="onTeclaOpcion($event, servicio)"
-              ></button>
             </article>
           }
         </div>
-
-        <footer class="acciones">
-          <div class="acciones__resumen" role="status" aria-live="polite" aria-atomic="true">
-            @if (resumenSeleccion(); as resumen) {
-              <p class="acciones__resumen-linea">
-                <span class="acciones__resumen-etiqueta">Servicio seleccionado:</span>
-                <strong>{{ resumen.nombre }}</strong>
-              </p>
-              <p class="acciones__resumen-meta">
-                <span>{{ resumen.duracion }}</span>
-                <span class="acciones__resumen-separador" aria-hidden="true">·</span>
-                <span>{{ resumen.precio }}</span>
-              </p>
-            } @else {
-              <p class="acciones__resumen-linea">Elegí un servicio para continuar.</p>
-            }
-          </div>
-
-          <button
-            dsButton
-            variant="primary"
-            class="boton boton--empleado"
-            type="button"
-            [disabled]="!puedeContinuar() || navegando()"
-            [attr.aria-busy]="navegando()"
-            (click)="continuar()"
-          >
-            Siguiente
-          </button>
-        </footer>
       }
     }
   </div>
