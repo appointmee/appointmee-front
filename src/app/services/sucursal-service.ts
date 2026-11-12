@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { backendService } from './backend-service';
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
-import { SucursalDetalleDTO, SucursalMiniDTO, SucursalPayload } from '../models/sucursal';
+import { SucursalCrearPayload, SucursalDetalleDTO, SucursalMiniDTO, SucursalModificarPayload } from '../models/sucursal';
 import { UsuarioResponseDTO } from '../models/usuario';
 
 export interface SucursalGaleriaImagenDTO {
@@ -146,18 +146,30 @@ export class sucursalService {
   }
 
   /** Crea una sucursal y silencia el interceptor para mostrar errores junto al formulario. */
-  crear(datos: SucursalPayload): Observable<string> {
+  crear(datos: SucursalCrearPayload): Observable<string> {
     return this.http.post(`${this.api.baseUrl}/sucursales/crear`, datos, {
       context: contextoSilenciado(true),
       responseType: 'text',
     });
   }
 
-  /** Actualiza la información editable de una sucursal existente. */
-  actualizar(idSucursal: number, datos: SucursalPayload): Observable<SucursalDetalleDTO> {
-    return this.http.put<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales/${idSucursal}`, datos, {
-      context: contextoSilenciado(true),
-    });
+  /**
+   * Actualiza la información editable de una sucursal existente.
+   *
+   * El backend expone `PATCH /sucursales/modificar/{sucursalId}` y solo
+   * aplica los campos que llegan en la petición: los que no se envían
+   * conservan su valor actual (incluida la foto, si no se manda `fotoUrl`).
+   * Responde con un texto plano, por eso se pide `responseType: 'text'`.
+   */
+  actualizar(idSucursal: number, datos: SucursalModificarPayload): Observable<string> {
+    return this.http.patch(
+      `${this.api.baseUrl}/sucursales/modificar/${idSucursal}`,
+      datos,
+      {
+        context: contextoSilenciado(true),
+        responseType: 'text',
+      },
+    );
   }
 
   /** Solicita la baja lógica; la autorización de propiedad se verifica en el backend. */

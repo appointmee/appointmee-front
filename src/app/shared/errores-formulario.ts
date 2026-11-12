@@ -10,11 +10,32 @@
 /** Campos del formulario de servicio que muestran su propio error debajo del control. */
 export const CAMPOS_SERVICIO = ['nombre', 'descripcion', 'duracion', 'precio', 'foto'] as const;
 
+/** Campos del formulario de sucursal que muestran su propio error debajo del control. */
+export const CAMPOS_SUCURSAL = [
+  'nombre',
+  'direccion',
+  'telefono',
+  'descripcion',
+  'categoria',
+  'horaApertura',
+  'horaCierre',
+  'diasApertura',
+  'foto',
+] as const;
+
 export interface ErroresFormulario {
   /** Mensaje por campo, listo para pintarse debajo del control. */
   readonly campos: Record<string, string>;
   /** Mensaje general para el banner superior del formulario. */
   readonly general: string | null;
+}
+
+/** Ajustes del formulario al que se mapean los errores del backend. */
+export interface OpcionesErroresFormulario {
+  /** Campos del formulario que muestran su propio error debajo del control. */
+  readonly campos?: readonly string[];
+  /** Traduce la clave de un campo del backend al nombre del control del formulario. */
+  readonly normalizar?: (campo: string) => string;
 }
 
 /**
@@ -44,6 +65,21 @@ function normalizarCampo(campo: string): string {
   return campo;
 }
 
+/** Traduce la clave de un campo del backend al control del formulario de sucursal. */
+export function normalizarCampoSucursal(campo: string): string {
+  const clave = campo.toLowerCase();
+  if (clave.includes('nombre')) return 'nombre';
+  if (clave.includes('direc')) return 'direccion';
+  if (clave.includes('telef')) return 'telefono';
+  if (clave.includes('desc')) return 'descripcion';
+  if (clave.includes('categor')) return 'categoria';
+  if (clave.includes('apertura')) return 'horaApertura';
+  if (clave.includes('cierre')) return 'horaCierre';
+  if (clave.includes('dia')) return 'diasApertura';
+  if (clave.includes('foto')) return 'foto';
+  return campo;
+}
+
 /**
  * Separa los errores del backend en los que corresponden a un campo del
  * formulario y los que deben mostrarse en el banner general.
@@ -54,11 +90,14 @@ function normalizarCampo(campo: string): string {
 export function mapearErroresFormulario(
   err: unknown,
   mensajePorEstado: (status: number) => string,
+  opciones: OpcionesErroresFormulario = {},
 ): ErroresFormulario {
   const error = err as { status?: number; error?: unknown; fields?: unknown } | null;
   const backendErrors: Record<string, string> = {};
   let general: string | null = null;
   const status = Number(error?.status ?? 0);
+  const camposFormulario = opciones.campos ?? CAMPOS_SERVICIO;
+  const normalizar = opciones.normalizar ?? normalizarCampo;
 
   const body = cuerpoDelError(error?.error);
   if (error?.fields && typeof error.fields === 'object') {
@@ -124,8 +163,8 @@ export function mapearErroresFormulario(
   if (Object.keys(backendErrors).length) {
     const mensajesGenerales: string[] = [];
     for (const [campo, mensaje] of Object.entries(backendErrors)) {
-      const clave = normalizarCampo(campo);
-      if ((CAMPOS_SERVICIO as readonly string[]).includes(clave)) {
+      const clave = normalizar(campo);
+      if ((camposFormulario as readonly string[]).includes(clave)) {
         campos[clave] = mensaje;
       } else {
         // No hay campo en el formulario que lo muestre: va al banner general.

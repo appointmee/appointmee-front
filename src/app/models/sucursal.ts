@@ -63,3 +63,40 @@ export interface SucursalPayload {
   readonly diasApertura: readonly string[] | null;
   readonly fotoPerfil: string | null;
 }
+
+/**
+ * Datos que acepta `POST /sucursales/crear` (SucursalCrearDTO del backend).
+ * La foto viaja como `fotoUrl` porque es la URL que devuelve el upload.
+ */
+export interface SucursalCrearPayload {
+  readonly nombre: string;
+  readonly direccion: string | null;
+  readonly telefono: string | null;
+  readonly descripcion: string | null;
+  readonly categoriaId: number;
+  readonly horaApertura: string | null;
+  readonly horaCierre: string | null;
+  readonly diasApertura: readonly string[];
+  readonly fotoUrl: string;
+  readonly fotoPublicId: string | null;
+}
+
+/**
+ * Datos que acepta `PATCH /sucursales/modificar/{sucursalId}`
+ * (SucursalModificarDTO del backend).
+ *
+ * El backend solo aplica los campos que llegan: `fotoUrl` viaja únicamente
+ * cuando se elige una imagen nueva, para que la foto vigente se conserve.
+ */
+export interface SucursalModificarPayload {
+  readonly nombre: string;
+  readonly direccion: string | null;
+  readonly telefono: string | null;
+  readonly descripcion: string | null;
+  readonly categoriaId: number;
+  readonly horaApertura: string | null;
+  readonly horaCierre: string | null;
+  readonly diasApertura: readonly string[];
+  readonly fotoUrl?: string | null;
+  readonly fotoPublicId?: string | null;
+}
