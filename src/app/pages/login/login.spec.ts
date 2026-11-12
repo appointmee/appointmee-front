@@ -57,6 +57,21 @@ describe('Login con Signal Forms', () => {
     expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain('Tu contraseña se actualizó. Iniciá sesión nuevamente por seguridad');
   });
 
+  it('muestra el mensaje de sesión expirada conservando el destino de retorno', () => {
+    fixture.destroy();
+    Object.defineProperty(TestBed.inject(ActivatedRoute), 'snapshot', {
+      configurable: true,
+      value: { queryParamMap: convertToParamMap({ returnTo: '/perfil', expired: '1' }) },
+    });
+    fixture = TestBed.createComponent(LoginPage);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.login__error')?.textContent).toContain(
+      'Tu sesión expiró. Iniciá sesión para continuar.',
+    );
+    expect(TestBed.inject(ActivatedRoute).snapshot.queryParamMap.get('returnTo')).toBe('/perfil');
+  });
+
   function enviar() {
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     fixture.detectChanges();

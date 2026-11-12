@@ -8,6 +8,7 @@ import { authService } from '../services/auth-service';
 import { verificacionService } from '../services/verificacion-service';
 import { backendService } from '../services/backend-service';
 import { apiErrorInterceptor } from '../http/api-errors-service';
+import { reservaContextoService } from '../services/reserva-contexto-service';
 import { authInterceptor } from './auth-interceptor';
 
 @Component({ template: '' })
@@ -50,11 +51,13 @@ describe('Autenticación e interceptor', () => {
   afterEach(() => {
     backend.verify();
     localStorage.clear();
+    vi.useRealTimers();
   });
 
   function sesion() {
     localStorage.setItem('token', 'access-viejo');
     localStorage.setItem('refreshToken', 'refresh-viejo');
+    localStorage.setItem('appointmee.sesion-iniciada-en', String(Date.now()));
   }
 
   function rechazar(url: string) {
@@ -165,6 +168,8 @@ describe('Autenticación e interceptor', () => {
     expect(localStorage.getItem('refreshToken')).toBeNull();
     expect(router.url).toContain('/login?');
     expect(router.url).toContain('returnTo=%2Fprivate%3Ftab%3Dhistory');
+    expect(router.url).toContain('expired=1');
+    expect(router.url).not.toContain('expired-token');
   });
 
   it('un fallo de red del refresh conserva las credenciales', () => {
@@ -178,6 +183,7 @@ describe('Autenticación e interceptor', () => {
 
   it('restaura desde refresh cuando falta el access', () => {
     localStorage.setItem('refreshToken', 'refresh-viejo');
+    localStorage.setItem('appointmee.sesion-iniciada-en', String(Date.now()));
     auth.inicializar().subscribe();
     expect(auth.restaurando()).toBe(true);
     backend.expectOne(`${API_URL}/auth/refresh`).flush(tokens);
@@ -185,14 +191,89 @@ describe('Autenticación e interceptor', () => {
     expect(auth.autenticado()).toBe(true);
   });
 
+  it('restaura usuario y roles con GET /usuarios/me antes de mostrar la sesión', () => {
+    localStorage.setItem('token', 'access-viejo');
+    localStorage.setItem('refreshToken', 'refresh-viejo');
+    localStorage.setItem('email', 'ana@example.com');
+    localStorage.setItem('appointmee.sesion-iniciada-en', String(Date.now()));
+
+    auth.inicializar().subscribe();
+    expect(auth.restaurando()).toBe(true);
+    expect(auth.autenticado()).toBe(false);
+    const request = backend.expectOne(`${API_URL}/usuarios/me`);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-viejo');
+    request.flush(perfil);
+
+    expect(auth.restaurando()).toBe(false);
+    expect(auth.autenticado()).toBe(true);
+    expect(auth.perfil()).toEqual({ ...perfil, email: 'ana@example.com' });
+    expect(auth.tieneAlgunRol('CLIENTE')).toBe(true);
+  });
+
+  it('solicita login al restaurar una sesión que superó las 24 horas', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-12T12:00:00.000Z'));
+    localStorage.setItem('token', 'access-viejo');
+    localStorage.setItem('refreshToken', 'refresh-viejo');
+    localStorage.setItem(
+      'appointmee.sesion-iniciada-en',
+      String(Date.now() - 24 * 60 * 60 * 1000),
+    );
+
+    auth.inicializar().subscribe();
+
+    expect(auth.visitante()).toBe(true);
+    expect(auth.expirado()).toBe(true);
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('refreshToken')).toBeNull();
+    backend.expectNone(`${API_URL}/usuarios/me`);
+    backend.expectNone(`${API_URL}/auth/refresh`);
+  });
+
+  it('exige login al restaurar credenciales heredadas sin fecha de inicio', () => {
+    localStorage.setItem('token', 'access-heredado');
+    localStorage.setItem('refreshToken', 'refresh-heredado');
+
+    auth.inicializar().subscribe();
+
+    expect(auth.visitante()).toBe(true);
+    expect(auth.expirado()).toBe(true);
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('refreshToken')).toBeNull();
+    expect(localStorage.getItem('appointmee.sesion-iniciada-en')).toBeNull();
+    backend.expectNone(`${API_URL}/usuarios/me`);
+    backend.expectNone(`${API_URL}/auth/refresh`);
+  });
+
+  it('cierra una sesión activa al cumplir las 24 horas y conserva la ruta', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-12T12:00:00.000Z'));
+    sesion();
+    auth.inicializar().subscribe();
+    backend.expectOne(`${API_URL}/usuarios/me`).flush(perfil);
+    await router.navigateByUrl('/private?tab=history');
+
+    await vi.advanceTimersByTimeAsync(24 * 60 * 60 * 1000);
+    await vi.waitFor(() => expect(router.url).toContain('/login?'));
+
+    expect(auth.visitante()).toBe(true);
+    expect(router.url).toContain('returnTo=%2Fprivate%3Ftab%3Dhistory');
+    expect(router.url).toContain('expired=1');
+    expect(localStorage.getItem('token')).toBeNull();
+  });
+
   it('logout llama al servidor y limpia la sesión', () => {
     sesion();
+    const reserva = TestBed.inject(reservaContextoService);
+    reserva.guardar(7, 3);
     auth.logout().subscribe();
     const logout = backend.expectOne(`${API_URL}/auth/logout`);
     expect(logout.request.headers.get('Authorization')).toBe('Bearer access-viejo');
     logout.flush({});
     expect(auth.visitante()).toBe(true);
     expect(localStorage.getItem('refreshToken')).toBeNull();
+    expect(reserva.obtener()).toBeNull();
+    expect(sessionStorage.getItem('appointmee.reserva-contexto.v1')).toBeNull();
   });
 
   it('logout con access vencido renueva antes de revocar en el servidor', () => {
@@ -214,6 +295,25 @@ describe('Autenticación e interceptor', () => {
     auth.limpiarSesion();
     me.flush(perfil);
     expect(auth.autenticado()).toBe(false);
+  });
+
+  it('sincroniza el cierre de sesión de otra pestaña y conserva la ruta de retorno', async () => {
+    sesion();
+    localStorage.setItem('email', 'ana@example.com');
+    auth.validarToken().subscribe();
+    backend.expectOne(`${API_URL}/usuarios/me`).flush(perfil);
+    await router.navigateByUrl('/private?tab=history');
+
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: 'token', oldValue: 'access-viejo', newValue: null }),
+    );
+    await vi.waitFor(() => expect(router.url).toContain('/login?'));
+
+    expect(auth.visitante()).toBe(true);
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('refreshToken')).toBeNull();
+    expect(router.url).toContain('returnTo=%2Fprivate%3Ftab%3Dhistory');
+    expect(router.url).not.toContain('access-viejo');
   });
 
   it('una petición anónima no intenta refresh ni fuerza navegación', () => {
