@@ -147,4 +147,20 @@ describe('Navegación de sucursales desde Home', () => {
     expect(fixture.nativeElement.textContent).toContain('Iniciar sesión');
     expect(fixture.nativeElement.textContent).toContain('Crear cuenta');
   });
+
+  it('Home usa el mismo navbar global que Sucursales, sin renderizar uno propio', async () => {
+    await router.navigateByUrl('/');
+    const homeFixture = TestBed.createComponent(Home);
+    const navbarFixture = TestBed.createComponent(Navbar);
+    homeFixture.detectChanges();
+    navbarFixture.detectChanges();
+
+    expect(homeFixture.nativeElement.querySelector('.landing-nav')).toBeNull();
+    const navbarEnHome = navbarFixture.nativeElement.querySelector('header.navbar').outerHTML;
+
+    await router.navigateByUrl('/sucursales');
+    navbarFixture.detectChanges();
+
+    expect(navbarFixture.nativeElement.querySelector('header.navbar').outerHTML).toBe(navbarEnHome);
+  });
 });

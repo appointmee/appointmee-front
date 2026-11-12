@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   computed,
   inject,
   signal,
@@ -28,6 +29,7 @@ import {
 } from '../../shared/ui/misc/misc.component';
 import { EstadoTurno, TurnoClienteDetalleDTO, TurnoMiniDTO } from '../../models/turno';
 import { SucursalMiniDTO } from '../../models/sucursal';
+import { reseniaService } from '../../services/resenia-service';
 import { servicioService } from '../../services/servicio-service';
 import { sucursalService } from '../../services/sucursal-service';
 import { turnoService } from '../../services/turno-service';
@@ -62,6 +64,19 @@ const ETIQUETAS_ESTADO: Readonly<Record<EstadoTurno, string>> = {
   PAGO_RECHAZADO: 'Pago rechazado',
 };
 
+/** La reseña del turno se publica con una puntuación de 1 a 5 abejas. */
+const PUNTUACIONES = [1, 2, 3, 4, 5] as const;
+const COMENTARIO_MINIMO = 9;
+const COMENTARIO_MAXIMO = 400;
+
+const ERRORES_PUNTUACION = {
+  obligatoria: 'Elegí una puntuación de 1 a 5 abejas.',
+} as const;
+
+const ERRORES_COMENTARIO = {
+  minimo: `Si escribís un comentario, debe tener al menos ${COMENTARIO_MINIMO} caracteres.`,
+} as const;
+
 interface PartesFecha {
   readonly anio: number;
   readonly mes: number;
@@ -82,7 +97,9 @@ export class MisTurnos {
   private readonly turnosApi = inject(turnoService);
   private readonly serviciosApi = inject(servicioService);
   private readonly sucursalesApi = inject(sucursalService);
+  private readonly reseniasApi = inject(reseniaService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly recargar = new Subject<void>();
   private readonly formatoMoneda = new Intl.NumberFormat('es-AR', {
     style: 'currency',
@@ -110,6 +127,18 @@ export class MisTurnos {
   protected readonly sucursalCargando = signal(false);
   protected readonly sucursalError = signal<string | null>(null);
   private readonly fotoSucursalFallida = signal<string | null>(null);
+
+  protected readonly puntuaciones = PUNTUACIONES;
+  protected readonly reseniaAbierta = signal(false);
+  protected readonly reseniaConfirmacion = signal(false);
+  protected readonly reseniaPuntuacion = signal<number | null>(null);
+  protected readonly reseniaComentario = signal('');
+  protected readonly reseniaIntentada = signal(false);
+  protected readonly reseniaEnviando = signal(false);
+  protected readonly reseniaError = signal<string | null>(null);
+  protected readonly reseniaExito = signal<string | null>(null);
+  protected readonly comentarioMinimo = COMENTARIO_MINIMO;
+  protected readonly comentarioMaximo = COMENTARIO_MAXIMO;
 
   protected readonly turnosFiltrados = computed(() => {
     const filtro = this.filtro();
@@ -147,6 +176,53 @@ export class MisTurnos {
     const puntuacion = Math.round(this.puntuacionSucursal());
     return [1, 2, 3, 4, 5].map((posicion) => posicion <= puntuacion);
   });
+
+  protected readonly reseniaDetalle = computed(() => this.detalle()?.resenia ?? null);
+
+  /** Un turno ya está reseñado si el listado o el detalle traen una puntuación. */
+  protected readonly detalleReseniado = computed(() => {
+    const turno = this.turnoSeleccionado();
+    return this.reseniaDetalle() !== null || (turno?.puntuacion ?? null) !== null;
+  });
+
+  protected readonly puedeReseniarDetalle = computed(
+    () => this.detalleEstado() === 'REALIZADO' && !this.detalleReseniado(),
+  );
+
+  protected readonly abejasReseniaDetalle = computed(() => {
+    const puntuacion = this.reseniaDetalle()?.puntuacion ?? 0;
+    return PUNTUACIONES.map((posicion) => posicion <= puntuacion);
+  });
+
+  protected readonly comentarioCaracteres = computed(
+    () => this.reseniaComentario().length,
+  );
+
+  protected readonly errorPuntuacion = computed(() =>
+    this.reseniaIntentada() && this.reseniaPuntuacion() === null
+      ? ERRORES_PUNTUACION.obligatoria
+      : null,
+  );
+
+  protected readonly errorComentario = computed(() => {
+    if (!this.reseniaIntentada()) return null;
+    const texto = this.reseniaComentario().trim();
+    return texto.length > 0 && texto.length < COMENTARIO_MINIMO
+      ? ERRORES_COMENTARIO.minimo
+      : null;
+  });
+
+  protected readonly reseniaValida = computed(() => {
+    const texto = this.reseniaComentario().trim();
+    return (
+      this.reseniaPuntuacion() !== null &&
+      (texto.length === 0 || texto.length >= COMENTARIO_MINIMO)
+    );
+  });
+
+  protected readonly reseniaComentarioPreview = computed(
+    () => this.reseniaComentario().trim(),
+  );
 
   constructor() {
     this.recargar
@@ -219,6 +295,125 @@ export class MisTurnos {
     this.cargarSucursal(detalle, this.detalleRevision);
   }
 
+  /** Solo los turnos realizados y todavía sin reseña se pueden reseñar. */
+  protected puedeReseniar(turno: TurnoMiniDTO | null | undefined): boolean {
+    return turno?.estadoTurno === 'REALIZADO' && turno.puntuacion === null;
+  }
+
+  protected turnoReseniado(turno: TurnoMiniDTO | null | undefined): boolean {
+    return turno?.estadoTurno === 'REALIZADO' && turno.puntuacion !== null;
+  }
+
+  protected abrirResenia(): void {
+    const turno = this.turnoSeleccionado();
+    if (
+      !turno ||
+      !this.puedeReseniar(turno) ||
+      !this.puedeReseniarDetalle() ||
+      this.detalle()?.resenia
+    )
+      return;
+
+    this.reseniaPuntuacion.set(null);
+    this.reseniaComentario.set('');
+    this.reseniaIntentada.set(false);
+    this.reseniaEnviando.set(false);
+    this.reseniaError.set(null);
+    this.reseniaConfirmacion.set(false);
+    this.reseniaAbierta.set(true);
+  }
+
+  protected cancelarResenia(): void {
+    if (this.reseniaEnviando()) return;
+    this.cerrarResenia();
+    this.cerrarDetalle();
+  }
+
+  protected abrirConfirmacionResenia(): void {
+    if (this.reseniaEnviando()) return;
+
+    this.reseniaIntentada.set(true);
+    this.reseniaError.set(null);
+
+    if (!this.reseniaValida()) {
+      this.enfocarPrimerCampoInvalido();
+      return;
+    }
+
+    this.reseniaConfirmacion.set(true);
+  }
+
+  /** Vuelve al formulario conservando la puntuación y el comentario elegidos. */
+  protected volverAFormularioResenia(): void {
+    if (this.reseniaEnviando()) return;
+    this.reseniaError.set(null);
+    this.reseniaConfirmacion.set(false);
+  }
+
+  protected confirmarPublicacionResenia(): void {
+    const turno = this.turnoSeleccionado();
+    const puntuacion = this.reseniaPuntuacion();
+    if (!turno || puntuacion === null || this.reseniaEnviando()) return;
+
+    const comentario = this.reseniaComentario().trim();
+    this.reseniaEnviando.set(true);
+    this.reseniaError.set(null);
+
+    this.reseniasApi
+      .crearParaTurno(turno.id, {
+        puntuacion,
+        comentario: comentario === '' ? null : comentario,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (respuesta) => {
+          this.reseniaEnviando.set(false);
+          this.reseniaConfirmacion.set(false);
+          this.reseniaAbierta.set(false);
+          this.reseniaIntentada.set(false);
+          this.reseniaPuntuacion.set(null);
+          this.reseniaComentario.set('');
+          this.turnos.update((turnos) =>
+            turnos.map((item) =>
+              item.id === turno.id ? { ...item, puntuacion } : item,
+            ),
+          );
+          this.reseniaExito.set(
+            typeof respuesta === 'string' && respuesta.trim() !== ''
+              ? respuesta
+              : 'Reseña publicada correctamente.',
+          );
+          this.cerrarDetalle();
+        },
+        error: (error: unknown) => {
+          this.reseniaEnviando.set(false);
+          this.reseniaError.set(this.mensajeErrorResenia(error));
+        },
+      });
+  }
+
+  protected enfocarPuntuacion(): void {
+    this.host.nativeElement
+      .querySelector<HTMLInputElement>('input[name="resenia-puntuacion"]')
+      ?.focus();
+  }
+
+  protected enfocarComentario(): void {
+    this.host.nativeElement
+      .querySelector<HTMLTextAreaElement>('#resenia-comentario')
+      ?.focus();
+  }
+
+  protected seleccionarPuntuacion(valor: number): void {
+    if (this.reseniaEnviando()) return;
+    this.reseniaPuntuacion.set(valor);
+  }
+
+  protected actualizarComentario(event: Event): void {
+    const valor = (event.target as HTMLTextAreaElement).value;
+    this.reseniaComentario.set(valor.slice(0, COMENTARIO_MAXIMO));
+  }
+
   protected etiquetaEstado(estado: EstadoTurno | null | undefined): string {
     return estado ? ETIQUETAS_ESTADO[estado] : 'Sin estado';
   }
@@ -246,7 +441,8 @@ export class MisTurnos {
   }
 
   protected ariaLabelTurno(turno: TurnoMiniDTO): string {
-    return `${turno.nombreServicio}, ${this.formatearFechaHora(turno.fechaTurno)}, ${this.etiquetaEstado(turno.estadoTurno)}`;
+    const reseniado = this.turnoReseniado(turno) ? ', reseñado' : '';
+    return `${turno.nombreServicio}, ${this.formatearFechaHora(turno.fechaTurno)}, ${this.etiquetaEstado(turno.estadoTurno)}${reseniado}`;
   }
 
   protected onFotoSucursalError(foto: string): void {
@@ -395,6 +591,66 @@ export class MisTurnos {
       return 'No pudimos cargar el detalle del turno. Probá de nuevo en unos segundos.';
     }
     return 'No pudimos cargar los datos de la sucursal. Probá de nuevo en unos segundos.';
+  }
+
+  private mensajeErrorResenia(error: unknown): string {
+    const status =
+      error instanceof HttpErrorResponse
+        ? error.status
+        : (error as { status?: number } | null)?.status;
+    const cuerpo =
+      error instanceof HttpErrorResponse
+        ? error.error
+        : (error as { error?: unknown } | null)?.error;
+
+    if (typeof cuerpo === 'string' && cuerpo.trim() !== '') return cuerpo;
+
+    const cuerpoObjeto =
+      cuerpo && typeof cuerpo === 'object'
+        ? (cuerpo as { mensaje?: unknown; message?: unknown })
+        : null;
+    const mensajeBackend =
+      typeof cuerpoObjeto?.mensaje === 'string'
+        ? cuerpoObjeto.mensaje
+        : typeof cuerpoObjeto?.message === 'string'
+          ? cuerpoObjeto.message
+          : '';
+    if (mensajeBackend.trim() !== '') return mensajeBackend;
+
+    if (status === 0) {
+      return 'No pudimos conectarnos. Revisá tu conexión e intentá nuevamente.';
+    }
+    if (status === 403) {
+      return 'No tenés permisos para publicar esta reseña.';
+    }
+    if (status === 404) {
+      return 'No encontramos el turno para publicar la reseña.';
+    }
+    if (status === 409) {
+      return 'El turno ya fue reseñado o todavía no está realizado.';
+    }
+    if (status === 400) {
+      return 'Revisá la puntuación y el comentario ingresados.';
+    }
+    return 'No pudimos publicar tu reseña. Probá de nuevo en unos segundos.';
+  }
+
+  private enfocarPrimerCampoInvalido(): void {
+    if (this.reseniaPuntuacion() === null) {
+      this.enfocarPuntuacion();
+      return;
+    }
+    this.enfocarComentario();
+  }
+
+  private cerrarResenia(): void {
+    this.reseniaAbierta.set(false);
+    this.reseniaConfirmacion.set(false);
+    this.reseniaIntentada.set(false);
+    this.reseniaEnviando.set(false);
+    this.reseniaError.set(null);
+    this.reseniaPuntuacion.set(null);
+    this.reseniaComentario.set('');
   }
 
   private sumarMinutos(valor: string, minutos: number): string {

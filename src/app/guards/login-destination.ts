@@ -1,17 +1,15 @@
 import { Router, UrlTree } from '@angular/router';
 
-export function destinoDespuesDelLogin(router: Router, returnTo: string | null, roles: readonly string[] = []): UrlTree {
+export function destinoDespuesDelLogin(router: Router, returnTo: string | null): UrlTree {
   if (esReturnToInternoValido(returnTo, router)) {
     // parseUrl conserva query string y hash del destino.
     return router.parseUrl(returnTo as string);
   }
 
 
-  if (roles.includes('ADMINISTRADOR')) return router.parseUrl('/admin');
-  if (roles.includes('CLIENTE')) return router.parseUrl('/sucursales');
-  if (roles.includes('EMPLEADOR')) return router.parseUrl('/mis-sucursales');
-  if (roles.includes('EMPLEADO')) return router.parseUrl('/mis-turnos');
-
+  // El destino inicial después del login es el menú público de sucursales,
+  // independientemente del rol. Los accesos restringidos siguen protegidos
+  // por authGuard y sus validaciones de rol.
   return router.parseUrl('/sucursales');
 }
 

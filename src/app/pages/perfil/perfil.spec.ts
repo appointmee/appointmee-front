@@ -51,6 +51,12 @@ function texto(host: HTMLElement): string {
   return (host.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
 
+function estilosRegistrados(): string {
+  return Array.from(document.querySelectorAll('style'))
+    .map((style) => style.textContent ?? '')
+    .join('\n');
+}
+
 describe('US-PER-02 · Ver el perfil del usuario autenticado', () => {
   let fixture: ComponentFixture<Perfil>;
   let backend: HttpTestingController;
@@ -196,6 +202,25 @@ describe('US-PER-02 · Ver el perfil del usuario autenticado', () => {
     expect(texto(host())).not.toContain('333');
     expect(texto(host())).not.toContain('444');
     expect(title.setTitle).toHaveBeenCalledWith('AppointMee | Mi Perfil');
+  });
+
+  it('refuerza la jerarquía visual del resumen y las tarjetas de sucursal', () => {
+    crear();
+    responderPerfil(
+      perfil({ sucursalesEmpleado: [sucursal(111, 'Sucursal Norte')] }),
+    );
+
+    const css = estilosRegistrados();
+    expect(host().querySelector('.perfil__resumen')).not.toBeNull();
+    expect(css).toMatch(
+      /\.perfil__resumen[^{}]*\{[^}]*background:\s*color-mix\(in srgb, var\(--surface\) 72%, transparent\)/,
+    );
+    expect(css).toMatch(/\.perfil__resumen[^{}]*\{[^}]*backdrop-filter:\s*blur\(12px\)/);
+    expect(css).toMatch(/\.panel__head[^{}]*\{[^}]*border-bottom:\s*1px solid var\(--line\)/);
+    expect(css).toMatch(/\.sucursal[^{}]*\{[^}]*box-shadow:\s*var\(--shadow-sm\)/);
+    expect(css).toMatch(
+      /\.sucursal[^{}]*:hover[^{}]*\{[^}]*transform:\s*translateY\(-2px\)/,
+    );
   });
 
   it('muestra los estados vacíos de ambas secciones cuando no hay sucursales', () => {

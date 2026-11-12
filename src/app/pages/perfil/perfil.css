@@ -41,7 +41,7 @@
   padding: clamp(24px, 4vw, 42px);
   overflow: hidden;
   isolation: isolate;
-  border: 1px solid rgba(247, 198, 90, 0.2);
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
   border-radius: 26px;
   background:
     radial-gradient(620px circle at 8% 0%, rgba(247, 198, 90, 0.16), transparent 62%),
@@ -193,11 +193,16 @@
 
 .perfil__resumen {
   display: grid;
-  flex: 0 1 260px;
-  gap: 16px;
+  flex: 0 1 310px;
+  gap: 14px;
   min-width: 0;
-  padding-left: clamp(0px, 2vw, 30px);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--line));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  box-shadow: var(--shadow-sm);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 .perfil__resumen-item {
@@ -258,7 +263,7 @@
   min-width: 0;
   height: 100%;
   padding: clamp(20px, 3vw, 28px);
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--line));
   border-radius: 22px;
   background:
     radial-gradient(520px circle at 0% 0%, rgba(247, 198, 90, 0.08), transparent 60%),
@@ -276,6 +281,8 @@
   display: flex;
   align-items: center;
   gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
 }
 
 .panel__head > div {
@@ -412,19 +419,22 @@
   align-items: center;
   gap: 16px;
   padding: 12px;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--text) 9%, transparent);
   border-radius: 17px;
-  background: rgba(255, 255, 255, 0.022);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  box-shadow: var(--shadow-sm);
   transition:
     transform 0.25s var(--ease),
     border-color 0.25s var(--ease),
-    background 0.25s var(--ease);
+    background 0.25s var(--ease),
+    box-shadow 0.25s var(--ease);
 }
 
 .sucursal:hover {
-  transform: translateY(-1px);
-  border-color: rgba(247, 198, 90, 0.24);
-  background: rgba(247, 198, 90, 0.035);
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+  box-shadow: var(--shadow-md);
 }
 
 .sucursal__foto {
@@ -432,9 +442,10 @@
   width: 84px;
   aspect-ratio: 1;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
   border-radius: 13px;
-  background: #0b0e14;
+  background: var(--page-bg);
+  box-shadow: var(--shadow-sm);
 }
 
 .sucursal__foto img {
@@ -857,7 +868,8 @@
 .sucursal--skeleton:hover {
   transform: none;
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.022);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  box-shadow: var(--shadow-sm);
 }
 
 /* =========================================================
@@ -900,10 +912,7 @@
 
   .perfil__resumen {
     width: 100%;
-    padding-top: 18px;
-    padding-left: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    border-left: 0;
+    padding: 16px;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 }
