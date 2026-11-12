@@ -351,7 +351,10 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     expect(css).toMatch(/\.panel[^{]*\{[^}]*border:\s*1px solid var\(--line\)/);
     expect(css).toMatch(/\.panel[^{]*\{[^}]*border-radius:\s*var\(--radius-lg\)/);
     expect(css).toMatch(/\.panel[^{]*\{[^}]*box-shadow:\s*var\(--shadow-sm\)/);
-    expect(css).toMatch(/\.panel[^{]*\{[^}]*background:\s*transparent/);
+    expect(css).toMatch(
+      /\.panel[^{]*\{[^}]*background:\s*color-mix\(in srgb, var\(--surface\) 64%, transparent\)/,
+    );
+    expect(css).toMatch(/\.panel[^{]*\{[^}]*backdrop-filter:\s*blur\(12px\)/);
   });
 
   it('ubica la auto-incorporación junto a volver al gestor', async () => {

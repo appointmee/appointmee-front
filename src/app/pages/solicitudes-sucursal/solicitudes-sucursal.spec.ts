@@ -60,7 +60,10 @@ describe('SolicitudesSucursal', () => {
     const css = Array.from(document.querySelectorAll('style'))
       .map((style) => style.textContent ?? '')
       .join('\n');
-    expect(css).toMatch(/\.panel[^{]*\{[^}]*background:\s*transparent/);
+    expect(css).toMatch(
+      /\.panel[^{]*\{[^}]*background:\s*color-mix\(in srgb, var\(--surface\) 64%, transparent\)/,
+    );
+    expect(css).toMatch(/\.panel[^{]*\{[^}]*backdrop-filter:\s*blur\(12px\)/);
 
     fondo?.dispatchEvent(new Event('error'));
     fixture.detectChanges();
