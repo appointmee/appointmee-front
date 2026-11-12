@@ -312,10 +312,15 @@ h1 {
   list-style: none;
 }
 
+.lista--cargando {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+}
+
 ul.lista {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
 }
 
+.lista--cargando .sucursal-card,
 ul.lista .sucursal-card {
   aspect-ratio: 1;
   flex-direction: column;
@@ -323,6 +328,14 @@ ul.lista .sucursal-card {
   justify-content: space-between;
   padding: 0;
   overflow: hidden;
+}
+
+.lista--cargando .sucursal-card--skeleton {
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  pointer-events: none;
 }
 
 .sucursal-card__accion {
@@ -515,9 +528,19 @@ ul.lista .sucursal-card {
 }
 
 .skeleton--avatar {
-  width: 42px;
-  height: 42px;
+  width: 52px;
+  height: 52px;
   border-radius: 999px;
+}
+
+.skeleton--line {
+  width: min(72%, 180px);
+  height: 14px;
+}
+
+.skeleton--line-corta {
+  width: min(48%, 120px);
+  height: 10px;
 }
 
 .skeleton--short {
@@ -547,14 +570,15 @@ ul.lista .sucursal-card {
 
 .volver-gestor,
 .volver-gestor:visited {
+  margin-top: calc(-1 * var(--space-3));
   display: inline-flex;
   align-items: center;
   gap: 10px;
   min-height: 48px;
   padding: 0 20px;
-  border: 2px solid var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
   border-radius: 14px;
-  background: transparent;
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
   color: #fff !important;
   cursor: pointer;
   font: inherit;
@@ -562,6 +586,9 @@ ul.lista .sucursal-card {
   font-weight: 700;
   text-decoration: none;
   width: fit-content;
+  position: relative;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 .volver-gestor:hover {
@@ -605,7 +632,7 @@ ul.lista .sucursal-card {
   gap: var(--space-2);
   flex-wrap: wrap;
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 1;
   justify-self: end;
   color: var(--muted);
   font-size: var(--font-size-sm);
@@ -626,11 +653,6 @@ ul.lista .sucursal-card {
   color: var(--muted);
 }
 
-.gestor__cabecera .eyebrow {
-  grid-column: 1 / -1;
-  grid-row: 1;
-}
-
 .gestor__cabecera h2 {
   font-size: 1.5rem;
 }
@@ -642,6 +664,7 @@ ul.lista .sucursal-card {
 }
 
 .tarjeta {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -651,11 +674,13 @@ ul.lista .sucursal-card {
   padding: var(--space-6);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
   color: var(--text);
   text-align: left;
   text-decoration: none;
   cursor: pointer;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   transition:
     transform 0.15s var(--ease),
     box-shadow 0.15s var(--ease),
@@ -695,10 +720,45 @@ ul.lista .sucursal-card {
   outline-offset: 3px;
 }
 
+.volver-gestor:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.tarjeta::after,
+.volver-gestor::after {
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 68%, var(--surface));
+  border-radius: inherit;
+  clip-path: inset(100% 0 0);
+  content: '';
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 32%, transparent));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    clip-path 280ms var(--ease),
+    opacity 280ms var(--ease);
+}
+
+.tarjeta:hover::after,
+.tarjeta:focus-visible::after,
+.volver-gestor:hover::after,
+.volver-gestor:focus-visible::after {
+  clip-path: inset(0);
+  opacity: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tarjeta,
-  .sucursal-card {
+  .sucursal-card,
+  .tarjeta::after,
+  .volver-gestor::after {
     transition: none;
+  }
+
+  .skeleton {
+    animation: none;
   }
 }
 

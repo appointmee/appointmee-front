@@ -11,12 +11,13 @@
     }
 
     @if (cargandoSucursales()) {
-      <div class="lista" aria-busy="true" aria-live="polite">
+      <div class="lista lista--cargando" aria-busy="true" aria-live="polite">
         <span class="sr-only">Cargando tus sucursales…</span>
         @for (item of [1, 2, 3]; track item) {
-          <div class="sucursal-card" aria-hidden="true">
+          <div class="sucursal-card sucursal-card--skeleton" aria-hidden="true">
             <span class="skeleton skeleton--avatar"></span>
             <span class="skeleton skeleton--line"></span>
+            <span class="skeleton skeleton--line skeleton--line-corta"></span>
           </div>
         }
       </div>
@@ -166,7 +167,6 @@
                   <span class="sucursal-card__categoria">{{ humanizarCategoria(sucursal.categoria) }}</span>
                 </span>
               </span>
-              <span class="sr-only">Gestionar</span>
             </button>
           </li>
         }
