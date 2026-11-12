@@ -2,7 +2,6 @@
   <div class="mis-turnos__inner">
     <header class="mis-turnos__header">
       <span class="eyebrow">
-        <span class="eyebrow__dot" aria-hidden="true"></span>
         Tu agenda
       </span>
       <h1 id="mis-turnos-titulo">Mis turnos</h1>
@@ -50,6 +49,13 @@
           </button>
         }
       </div>
+
+      @if (reseniaExito(); as mensaje) {
+        <div class="aviso aviso--exito" role="status" aria-live="polite">
+          <span class="aviso__icono" aria-hidden="true">🐝</span>
+          <p>{{ mensaje }}</p>
+        </div>
+      }
 
       @if (cargando() && turnos().length === 0) {
         <div class="lista lista--skeleton" aria-busy="true" aria-live="polite">
@@ -146,6 +152,14 @@
                     </span>
 
                     <span class="turno__meta">
+                      @if (turnoReseniado(turno)) {
+                        <span
+                          class="reseniado-chip"
+                          [attr.aria-label]="'Reseña publicada con ' + turno.puntuacion + ' de 5 abejas'"
+                        >
+                          <span aria-hidden="true">🐝</span> Reseñado
+                        </span>
+                      }
                       <span class="estado-chip" [class]="'estado-chip estado-chip--' + claseEstado(turno.estadoTurno)">
                         {{ etiquetaEstado(turno.estadoTurno) }}
                       </span>
@@ -164,7 +178,7 @@
   </div>
 
   <ds-modal
-    [open]="turnoSeleccionado() !== null"
+    [open]="turnoSeleccionado() !== null && !reseniaAbierta()"
     ariaLabelledby="detalle-turno-titulo"
     maxWidth="680px"
     (close)="cerrarDetalle()"
@@ -341,24 +355,293 @@
           </section>
 
           <footer class="detalle__acciones">
-            <div class="detalle__resenia-copy">
-              <strong>Reseñar</strong>
-              <p id="detalle-resenia-ayuda">
-                La opción para dejar una reseña va a estar disponible próximamente.
-              </p>
-            </div>
-            <button
-              dsButton
-              class="boton"
-              type="button"
-              [disabled]="true"
-              aria-describedby="detalle-resenia-ayuda"
-            >
-              Reseñar
-            </button>
+            @if (detalleEstado() === 'REALIZADO') {
+              @if (detalleReseniado()) {
+                <div class="detalle__resenia-copy">
+                  <strong>Reseña publicada</strong>
+                  <p>Ya dejaste tu reseña de este turno.</p>
+                  @if (reseniaDetalle(); as resenia) {
+                    <span
+                      class="detalle__resenia-rating"
+                      [attr.aria-label]="'Puntuación ' + (resenia.puntuacion ?? 0) + ' de 5 abejas'"
+                    >
+                      <span class="sucursal__abejas" aria-hidden="true">
+                        @for (llena of abejasReseniaDetalle(); track $index) {
+                          <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
+                        }
+                      </span>
+                      @if (resenia.comentario) {
+                        <span class="detalle__resenia-comentario">{{ resenia.comentario }}</span>
+                      }
+                    </span>
+                  }
+                </div>
+                <span class="reseniado-chip">
+                  <span aria-hidden="true">🐝</span> Reseñado
+                </span>
+              } @else {
+                <div class="detalle__resenia-copy">
+                  <strong>Reseñar</strong>
+                  <p>Contanos cómo fue tu experiencia con este turno.</p>
+                </div>
+                <button dsButton class="boton" type="button" (click)="abrirResenia()">
+                  Reseñar
+                </button>
+              }
+            } @else {
+              <div class="detalle__resenia-copy">
+                <strong>Reseñar</strong>
+                <p id="detalle-resenia-ayuda">
+                  Podés dejar tu reseña cuando el turno figure como realizado.
+                </p>
+              </div>
+              <button
+                dsButton
+                class="boton"
+                type="button"
+                [disabled]="true"
+                aria-describedby="detalle-resenia-ayuda"
+              >
+                Reseñar
+              </button>
+            }
           </footer>
         </div>
       }
+    </article>
+  </ds-modal>
+
+  <ds-modal
+    [open]="reseniaAbierta() && !reseniaConfirmacion()"
+    ariaLabelledby="resenar-turno-titulo"
+    maxWidth="560px"
+    (close)="cancelarResenia()"
+  >
+    <form class="resenia" (submit)="$event.preventDefault(); abrirConfirmacionResenia()" novalidate>
+      <header class="resenia__cabecera">
+        <div class="resenia__titulo">
+          <span class="detalle__eyebrow">Tu experiencia</span>
+          <h2 id="resenar-turno-titulo">Reseñar turno</h2>
+          <p class="resenia__subtitulo">
+            {{ detalleTitulo() }} · {{ formatearFechaHora(turnoSeleccionado()?.fechaTurno) }}
+          </p>
+        </div>
+        <button
+          class="detalle__cerrar"
+          type="button"
+          aria-label="Cerrar reseña"
+          [disabled]="reseniaEnviando()"
+          (click)="cancelarResenia()"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </header>
+
+      <div class="resenia__intro">
+        <span class="resenia__bee" aria-hidden="true">🐝</span>
+        <p>
+          ¿Cómo fue tu experiencia? Tu puntuación ayuda a otros clientes a elegir mejor
+          su próxima visita.
+        </p>
+      </div>
+
+      @if (errorPuntuacion() || errorComentario()) {
+        <div class="resenia__resumen" role="alert">
+          <p>Revisá estos datos antes de continuar:</p>
+          <ul>
+            @if (errorPuntuacion(); as error) {
+              <li>
+                <button type="button" (click)="enfocarPuntuacion()">{{ error }}</button>
+              </li>
+            }
+            @if (errorComentario(); as error) {
+              <li>
+                <button type="button" (click)="enfocarComentario()">{{ error }}</button>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      <fieldset
+        class="resenia__puntuacion"
+        [attr.aria-invalid]="errorPuntuacion() ? 'true' : null"
+        [attr.aria-describedby]="
+          errorPuntuacion()
+            ? 'resenia-puntuacion-ayuda resenia-puntuacion-error'
+            : 'resenia-puntuacion-ayuda'
+        "
+      >
+        <legend>
+          Puntuación <span class="resenia__obligatorio">(obligatoria)</span>
+        </legend>
+        <div class="resenia__abejas" role="radiogroup" aria-label="Puntuación del turno">
+          @for (valor of puntuaciones; track valor) {
+            <label
+              class="resenia-bee"
+              [class.resenia-bee--llena]="(reseniaPuntuacion() ?? 0) >= valor"
+            >
+              <input
+                class="resenia-bee__input"
+                type="radio"
+                name="resenia-puntuacion"
+                [value]="valor"
+                [checked]="reseniaPuntuacion() === valor"
+                [attr.aria-describedby]="
+                  errorPuntuacion()
+                    ? 'resenia-puntuacion-ayuda resenia-puntuacion-error'
+                    : 'resenia-puntuacion-ayuda'
+                "
+                (change)="seleccionarPuntuacion(valor)"
+              />
+              <span class="resenia-bee__emoji" aria-hidden="true">🐝</span>
+              <span class="sr-only">{{ valor }} {{ valor === 1 ? 'abeja' : 'abejas' }}</span>
+            </label>
+          }
+        </div>
+        <p id="resenia-puntuacion-ayuda" class="resenia__ayuda">
+          Elegí de 1 a 5 abejas. La puntuación es obligatoria.
+        </p>
+        @if (errorPuntuacion(); as error) {
+          <p id="resenia-puntuacion-error" class="resenia__error">{{ error }}</p>
+        }
+      </fieldset>
+
+      <div class="resenia__campo">
+        <label for="resenia-comentario">
+          Comentario <span class="resenia__opcional">(opcional)</span>
+        </label>
+        <textarea
+          id="resenia-comentario"
+          class="resenia__textarea"
+          rows="4"
+          [value]="reseniaComentario()"
+          [attr.maxlength]="comentarioMaximo"
+          [attr.aria-invalid]="errorComentario() ? 'true' : null"
+          [attr.aria-describedby]="
+            errorComentario()
+              ? 'resenia-comentario-ayuda resenia-comentario-error'
+              : 'resenia-comentario-ayuda'
+          "
+          (input)="actualizarComentario($event)"
+        ></textarea>
+        <div
+          class="resenia__contador"
+          [class.resenia__contador--limite]="comentarioCaracteres() >= comentarioMaximo"
+        >
+          <span id="resenia-comentario-ayuda" class="resenia__ayuda">
+            Mínimo {{ comentarioMinimo }} caracteres si escribís un comentario. Máximo
+            {{ comentarioMaximo }}.
+          </span>
+          <span class="resenia__contador-valor" aria-hidden="true">
+            {{ comentarioCaracteres() }} / {{ comentarioMaximo }}
+          </span>
+        </div>
+        <span class="sr-only">
+          {{ comentarioCaracteres() }} de {{ comentarioMaximo }} caracteres utilizados.
+        </span>
+        @if (errorComentario(); as error) {
+          <p id="resenia-comentario-error" class="resenia__error">{{ error }}</p>
+        }
+      </div>
+
+      <footer class="resenia__acciones">
+        <button
+          dsButton
+          class="boton-secundario"
+          type="button"
+          [disabled]="reseniaEnviando()"
+          (click)="cancelarResenia()"
+        >
+          Cancelar
+        </button>
+        <button dsButton class="boton" type="submit">Confirmar reseña</button>
+      </footer>
+    </form>
+  </ds-modal>
+
+  <ds-modal
+    [open]="reseniaConfirmacion()"
+    ariaLabelledby="confirmar-resenia-titulo"
+    maxWidth="480px"
+    (close)="volverAFormularioResenia()"
+  >
+    <article class="confirmacion">
+      <header class="confirmacion__cabecera">
+        <span class="confirmacion__icono" aria-hidden="true">🐝</span>
+        <div>
+          <span class="detalle__eyebrow">Un último paso</span>
+          <h2 id="confirmar-resenia-titulo">¿Publicar tu reseña?</h2>
+        </div>
+      </header>
+
+      <p class="confirmacion__texto">
+        Tu reseña de <strong>{{ detalleTitulo() }}</strong> se va a publicar en la
+        sucursal. Después de confirmarla no vas a poder editarla.
+      </p>
+
+      <div class="confirmacion__resumen">
+        <div class="confirmacion__fila">
+          <span class="confirmacion__etiqueta">Puntuación</span>
+          <span
+            class="confirmacion__abejas"
+            [attr.aria-label]="(reseniaPuntuacion() ?? 0) + ' de 5 abejas'"
+          >
+            @for (valor of puntuaciones; track valor) {
+              <span
+                class="abeja"
+                [class.abeja--vacia]="(reseniaPuntuacion() ?? 0) < valor"
+                aria-hidden="true"
+                >🐝</span
+              >
+            }
+          </span>
+        </div>
+        <div class="confirmacion__fila confirmacion__fila--comentario">
+          <span class="confirmacion__etiqueta">Comentario</span>
+          @if (reseniaComentarioPreview(); as comentario) {
+            <p class="confirmacion__comentario">{{ comentario }}</p>
+          } @else {
+            <p class="confirmacion__comentario confirmacion__comentario--vacio">
+              Sin comentario
+            </p>
+          }
+        </div>
+      </div>
+
+      @if (reseniaError(); as error) {
+        <div class="resenia__error-general" role="alert">
+          <strong>No pudimos publicar tu reseña</strong>
+          <p>{{ error }}</p>
+          <p class="resenia__error-ayuda">
+            Tus datos siguen cargados. Podés intentar de nuevo.
+          </p>
+        </div>
+      }
+
+      <footer class="resenia__acciones">
+        <button
+          dsButton
+          class="boton-secundario"
+          type="button"
+          [disabled]="reseniaEnviando()"
+          (click)="volverAFormularioResenia()"
+        >
+          Volver atrás
+        </button>
+        <button
+          dsButton
+          class="boton"
+          type="button"
+          [loading]="reseniaEnviando()"
+          [disabled]="reseniaEnviando()"
+          (click)="confirmarPublicacionResenia()"
+        >
+          {{ reseniaEnviando() ? 'Publicando…' : 'Confirmar publicación' }}
+        </button>
+      </footer>
     </article>
   </ds-modal>
 </section>

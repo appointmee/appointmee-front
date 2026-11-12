@@ -109,6 +109,9 @@ export class DsModalComponent implements AfterViewChecked, OnDestroy {
   private isOpen = false;
   @Input() set open(value: boolean) {
     if (value && !this.isOpen) {
+      // Un modal apilado pudo quedar inert por otro modal abierto antes.
+      // Al abrirse debe poder recibir foco y eventos.
+      this.host.nativeElement.removeAttribute('inert');
       this.previouslyFocused = document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;

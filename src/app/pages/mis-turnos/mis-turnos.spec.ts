@@ -28,7 +28,7 @@ const TURNOS = [
     nombreServicio: 'Arreglo de barba',
     fechaTurno: '2026-11-12T11:15:00',
     estadoTurno: 'REALIZADO',
-    puntuacion: 4,
+    puntuacion: null,
   },
 ] as const;
 
@@ -40,6 +40,22 @@ const DETALLE = {
   servicio: { id: 5, nombre: 'Corte de pelo', precio: '12500.00', duracion: 45 },
   cliente: { nombre: 'Luis', apellido: 'Gómez' },
   resenia: null,
+} as const;
+
+const DETALLE_REALIZADO = {
+  ...DETALLE,
+  estadoTurno: 'REALIZADO',
+} as const;
+
+const RESENIA = {
+  puntuacion: 5,
+  comentario: 'Excelente atención',
+  fechaResenia: '2026-11-12T12:00:00',
+} as const;
+
+const DETALLE_RESENIADO = {
+  ...DETALLE_REALIZADO,
+  resenia: RESENIA,
 } as const;
 
 const SERVICIO = {
@@ -95,9 +111,13 @@ describe('Mis Turnos', () => {
     return Array.from(html.querySelectorAll<HTMLButtonElement>('button.turno'));
   }
 
-  async function abrirDetalle(id = 1): Promise<void> {
+  async function abrirDetalleDe(
+    nombreServicio: string,
+    id: number,
+    detalle: object = DETALLE,
+  ): Promise<void> {
     const boton = botonesTurno().find((elemento) =>
-      elemento.getAttribute('aria-label')?.includes('Corte de pelo'),
+      elemento.getAttribute('aria-label')?.includes(nombreServicio),
     );
     expect(boton).toBeTruthy();
     boton!.click();
@@ -105,7 +125,7 @@ describe('Mis Turnos', () => {
 
     backend
       .expectOne((request) => request.url.endsWith(`/turnos/propios/detalles/${id}`))
-      .flush(DETALLE);
+      .flush(detalle);
     fixture.detectChanges();
 
     backend
@@ -123,6 +143,62 @@ describe('Mis Turnos', () => {
       .flush(SERVICIOS_SUCURSAL);
     fixture.detectChanges();
     await fixture.whenStable();
+  }
+
+  async function abrirDetalle(id = 1): Promise<void> {
+    await abrirDetalleDe('Corte de pelo', id);
+  }
+
+  function botonPorTexto(texto: string, scope: ParentNode = html): HTMLButtonElement {
+    const boton = Array.from(scope.querySelectorAll<HTMLButtonElement>('button')).find(
+      (elemento) => elemento.textContent?.includes(texto),
+    );
+    expect(boton).toBeTruthy();
+    return boton!;
+  }
+
+  function dialogo(): HTMLElement {
+    return html.querySelector('[role="dialog"]') as HTMLElement;
+  }
+
+  async function abrirModalResenia(): Promise<HTMLElement> {
+    await abrirDetalleDe('Arreglo de barba', 3, DETALLE_REALIZADO);
+    const resenar = botonPorTexto('Reseñar', dialogo());
+    expect(resenar.disabled).toBe(false);
+    resenar.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return dialogo();
+  }
+
+  function seleccionarAbeja(valor: number): void {
+    const radio = html.querySelector<HTMLInputElement>(
+      `input[name="resenia-puntuacion"][value="${valor}"]`,
+    );
+    expect(radio).toBeTruthy();
+    radio!.checked = true;
+    radio!.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
+  function escribirComentario(texto: string): void {
+    const textarea = html.querySelector<HTMLTextAreaElement>('#resenia-comentario');
+    expect(textarea).toBeTruthy();
+    textarea!.value = texto;
+    textarea!.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
+  async function abrirConfirmacionPublicacion(
+    puntuacion = 4,
+    comentario = '',
+  ): Promise<HTMLElement> {
+    seleccionarAbeja(puntuacion);
+    if (comentario) escribirComentario(comentario);
+    botonPorTexto('Confirmar reseña', dialogo()).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return dialogo();
   }
 
   it('carga todos los turnos y los ordena del más reciente al más antiguo', () => {
@@ -279,5 +355,242 @@ describe('Mis Turnos', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
     expect(html.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('abre el modal de reseña con cinco abejas accesibles y puntuación obligatoria', async () => {
+    flushLista();
+    const modal = await abrirModalResenia();
+
+    expect(modal.getAttribute('aria-labelledby')).toBe('resenar-turno-titulo');
+    expect(modal.querySelector('h2')?.textContent?.trim()).toBe('Reseñar turno');
+
+    const radios = Array.from(
+      modal.querySelectorAll<HTMLInputElement>('input[name="resenia-puntuacion"]'),
+    );
+    expect(radios).toHaveLength(5);
+    expect(radios.map((radio) => radio.type)).toEqual(Array(5).fill('radio'));
+    expect(radios.map((radio) => radio.value)).toEqual(['1', '2', '3', '4', '5']);
+    expect(radios[0].getAttribute('aria-describedby')).toContain(
+      'resenia-puntuacion-ayuda',
+    );
+    expect(radios[0].closest('label')?.textContent).toContain('1 abeja');
+    expect(modal.textContent).toContain('1 abeja');
+    expect(modal.textContent).toContain('5 abejas');
+    expect(modal.querySelector('legend')?.textContent).toContain('Puntuación');
+    expect(modal.querySelector('legend')?.textContent).toContain('obligatoria');
+
+    const textarea = modal.querySelector<HTMLTextAreaElement>('#resenia-comentario');
+    expect(textarea?.getAttribute('maxlength')).toBe('400');
+    expect(modal.textContent).toContain('Mínimo 9 caracteres');
+    expect(modal.textContent).toContain('0 / 400');
+
+    botonPorTexto('Confirmar reseña', modal).click();
+    fixture.detectChanges();
+
+    expect(modal.querySelector('.resenia__puntuacion')?.getAttribute('aria-invalid')).toBe(
+      'true',
+    );
+    expect(modal.textContent).toContain('Elegí una puntuación de 1 a 5 abejas.');
+    expect(document.activeElement).toBe(radios[0]);
+    expect(dialogo()).toBe(modal);
+  });
+
+  it('valida el comentario opcional y conserva los valores al volver desde la confirmación', async () => {
+    flushLista();
+    await abrirModalResenia();
+
+    seleccionarAbeja(4);
+    escribirComentario('Corto');
+    botonPorTexto('Confirmar reseña').click();
+    fixture.detectChanges();
+
+    expect(html.textContent).toContain('al menos 9 caracteres');
+    expect(
+      dialogo().querySelector<HTMLTextAreaElement>('#resenia-comentario')?.value,
+    ).toBe('Corto');
+
+    escribirComentario('Excelente atención');
+    expect(html.textContent).toContain('18 / 400');
+    botonPorTexto('Confirmar reseña').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const confirmacion = dialogo();
+    expect(confirmacion.getAttribute('aria-labelledby')).toBe('confirmar-resenia-titulo');
+    expect(confirmacion.textContent).toContain('¿Publicar tu reseña?');
+    expect(confirmacion.textContent).toContain('Excelente atención');
+    expect(
+      confirmacion.querySelector('.confirmacion__abejas')?.getAttribute('aria-label'),
+    ).toBe('4 de 5 abejas');
+
+    botonPorTexto('Volver atrás', confirmacion).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const formulario = dialogo();
+    expect(formulario.getAttribute('aria-labelledby')).toBe('resenar-turno-titulo');
+    expect(
+      formulario.querySelector<HTMLInputElement>('input[value="4"]')?.checked,
+    ).toBe(true);
+    expect(
+      formulario.querySelector<HTMLTextAreaElement>('#resenia-comentario')?.value,
+    ).toBe('Excelente atención');
+  });
+
+  it('publica la reseña, cierra los modales y marca el turno como reseñado', async () => {
+    flushLista();
+    await abrirModalResenia();
+    const confirmacion = await abrirConfirmacionPublicacion(5);
+
+    botonPorTexto('Confirmar publicación', confirmacion).click();
+    const peticion = backend.expectOne(
+      (request) =>
+        request.url.endsWith('/turnos/3/resenia') && request.method === 'POST',
+    );
+    expect(peticion.request.body).toEqual({ puntuacion: 5, comentario: null });
+    peticion.flush('Reseña guardada correctamente');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(html.querySelector('[role="dialog"]')).toBeNull();
+    expect(html.querySelector('.aviso--exito')?.textContent).toContain(
+      'Reseña guardada correctamente',
+    );
+
+    const turno = botonesTurno().find((boton) =>
+      boton.textContent?.includes('Arreglo de barba'),
+    );
+    expect(turno?.textContent).toContain('Reseñado');
+    expect(turno?.getAttribute('aria-label')).toContain('reseñado');
+
+    await abrirDetalleDe('Arreglo de barba', 3, DETALLE_RESENIADO);
+    const detalle = dialogo();
+    expect(detalle.textContent).toContain('Reseña publicada');
+    expect(detalle.textContent).toContain('Excelente atención');
+    expect(
+      Array.from(detalle.querySelectorAll('button')).some(
+        (boton) => boton.textContent?.trim() === 'Reseñar',
+      ),
+    ).toBe(false);
+  });
+
+  it('muestra un turno ya reseñado y evita publicar una segunda reseña', async () => {
+    flushLista([{ ...TURNOS[2], puntuacion: 5 }]);
+    const turno = botonesTurno().find((boton) =>
+      boton.textContent?.includes('Arreglo de barba'),
+    );
+    expect(turno?.textContent).toContain('Reseñado');
+
+    await abrirDetalleDe('Arreglo de barba', 3, DETALLE_RESENIADO);
+    const detalle = dialogo();
+    expect(detalle.textContent).toContain('Reseña publicada');
+    expect(
+      Array.from(detalle.querySelectorAll('button')).some(
+        (boton) => boton.textContent?.trim() === 'Reseñar',
+      ),
+    ).toBe(false);
+  });
+
+  it('mantiene la confirmación abierta ante un error de red y permite reintentar', async () => {
+    flushLista();
+    await abrirModalResenia();
+    const confirmacion = await abrirConfirmacionPublicacion(3, 'Muy buena experiencia');
+
+    botonPorTexto('Confirmar publicación', confirmacion).click();
+    const primera = backend.expectOne((request) =>
+      request.url.endsWith('/turnos/3/resenia'),
+    );
+    primera.flush(null, { status: 0, statusText: 'Error de red' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const conError = dialogo();
+    expect(conError.getAttribute('aria-labelledby')).toBe('confirmar-resenia-titulo');
+    expect(conError.textContent).toContain('No pudimos conectarnos');
+    expect(conError.textContent).toContain('Tus datos siguen cargados');
+    expect(botonPorTexto('Volver atrás', conError).disabled).toBe(false);
+
+    botonPorTexto('Confirmar publicación', conError).click();
+    const segunda = backend.expectOne((request) =>
+      request.url.endsWith('/turnos/3/resenia'),
+    );
+    expect(segunda.request.body).toEqual({
+      puntuacion: 3,
+      comentario: 'Muy buena experiencia',
+    });
+    segunda.flush('Reseña guardada correctamente');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(html.querySelector('[role="dialog"]')).toBeNull();
+    expect(html.querySelector('.aviso--exito')?.textContent).toContain(
+      'Reseña guardada correctamente',
+    );
+  });
+
+  it('muestra el error del servidor y conserva los datos al volver al formulario', async () => {
+    flushLista();
+    await abrirModalResenia();
+    const confirmacion = await abrirConfirmacionPublicacion(5, 'Una experiencia genial');
+
+    botonPorTexto('Confirmar publicación', confirmacion).click();
+    backend
+      .expectOne((request) => request.url.endsWith('/turnos/3/resenia'))
+      .flush('No se pudo guardar la reseña', { status: 500, statusText: 'Error' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(dialogo().textContent).toContain('No se pudo guardar la reseña');
+
+    botonPorTexto('Volver atrás', dialogo()).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const formulario = dialogo();
+    expect(
+      formulario.querySelector<HTMLInputElement>('input[value="5"]')?.checked,
+    ).toBe(true);
+    expect(
+      formulario.querySelector<HTMLTextAreaElement>('#resenia-comentario')?.value,
+    ).toBe('Una experiencia genial');
+  });
+
+  it('bloquea envíos duplicados mientras publica la reseña', async () => {
+    flushLista();
+    await abrirModalResenia();
+    const confirmacion = await abrirConfirmacionPublicacion(4);
+
+    botonPorTexto('Confirmar publicación', confirmacion).click();
+    fixture.detectChanges();
+
+    const peticion = backend.expectOne(
+      (request) =>
+        request.url.endsWith('/turnos/3/resenia') && request.method === 'POST',
+    );
+    const publicando = botonPorTexto('Publicando', dialogo());
+    expect(publicando.disabled).toBe(true);
+    expect(publicando.getAttribute('aria-busy')).toBe('true');
+
+    publicando.click();
+    fixture.detectChanges();
+    peticion.flush('Reseña guardada correctamente');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(html.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('cancela la reseña y vuelve al listado sin publicar', async () => {
+    flushLista();
+    await abrirModalResenia();
+
+    seleccionarAbeja(2);
+    escribirComentario('Comentario de prueba');
+    botonPorTexto('Cancelar', dialogo()).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(html.querySelector('[role="dialog"]')).toBeNull();
+    expect(html.textContent).toContain('Todos tus turnos');
   });
 });

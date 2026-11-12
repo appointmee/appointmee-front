@@ -62,9 +62,53 @@ describe('Sucursales', () => {
     expect(filtrar).toHaveBeenCalledWith('SPA', 'Centro');
   });
 
+  it('espera las categorías antes de buscar con los filtros iniciales de la URL', async () => {
+    const categoriasPendientes = new Subject<string[]>();
+    categorias.mockReturnValue(categoriasPendientes);
+    const fixture = await create('/sucursales?busqueda=Flores&categoria=CAFE');
+
+    expect(filtrar).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[aria-busy="true"]')).toBeTruthy();
+
+    categoriasPendientes.next(['CAFE']);
+    fixture.detectChanges();
+
+    expect(filtrar).toHaveBeenCalledOnce();
+    expect(filtrar).toHaveBeenCalledWith('CAFE', 'Flores');
+  });
+
+  it('ubica búsqueda y categorías en la barra lateral antes del listado', async () => {
+    const fixture = await create();
+    const sidebar = fixture.nativeElement.querySelector('aside.listado__sidebar') as HTMLElement;
+    const results = fixture.nativeElement.querySelector('.listado__results') as HTMLElement;
+
+    expect(sidebar.getAttribute('aria-label')).toBe('Filtros de sucursales');
+    expect(sidebar.querySelector('.search__input')).toBeTruthy();
+    expect(sidebar.querySelector('.categorias')).toBeTruthy();
+    expect(sidebar.compareDocumentPosition(results) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('abre y cierra el listado de categorías desde el botón responsive', async () => {
+    const fixture = await create();
+    const toggle = fixture.nativeElement.querySelector('.categorias__toggle') as HTMLButtonElement;
+    const listado = fixture.nativeElement.querySelector('#sucursales-categorias') as HTMLElement;
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(listado.classList.contains('categorias--abiertas')).toBe(true);
+
+    const spa = Array.from(listado.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'Spa');
+    spa?.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(listado.classList.contains('categorias--abiertas')).toBe(false);
+  });
+
   it('ignora una categoría inválida sin enviarla al backend', async () => {
     const fixture = await create('/sucursales?categoria=INEXISTENTE');
-    expect(filtrar).toHaveBeenCalledWith(null, '');
+    expect(filtrar).toHaveBeenCalledWith(null, null);
     expect(fixture.nativeElement.querySelector('.categoria-chip').getAttribute('aria-pressed')).toBe('true');
   });
 
@@ -72,7 +116,7 @@ describe('Sucursales', () => {
     categorias.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
     const fixture = await create('/sucursales?categoria=SPA');
     fixture.detectChanges();
-    expect(filtrar).toHaveBeenCalledWith(null, '');
+    expect(filtrar).toHaveBeenCalledWith(null, null);
     expect(fixture.nativeElement.querySelectorAll('.categoria-chip')).toHaveLength(1);
     expect(fixture.nativeElement.querySelector('.categorias__aviso').textContent).toContain('No pudimos cargar las categorías');
     expect(fixture.nativeElement.querySelector('.card')).toBeTruthy();
@@ -145,10 +189,14 @@ describe('Sucursales', () => {
     const fixture = await create('/sucursales?busqueda=Inexistente');
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain(
-      'No encontramos sucursales para tu búsqueda.',
+    expect(fixture.nativeElement.querySelector('.estado__vacio')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.estado__titulo').textContent).toContain(
+      'No encontramos sucursales para «Inexistente».',
     );
     expect(fixture.nativeElement.querySelector('.search__input')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('.estado__accion').textContent,
+    ).toContain('Limpiar búsqueda');
   });
 
   it('muestra error recuperable y reintenta con los mismos filtros', async () => {
@@ -176,5 +224,22 @@ describe('Sucursales', () => {
     expect(listar).toHaveBeenCalledOnce();
     expect(filtrar).not.toHaveBeenCalled();
     expect(fixture.nativeElement.querySelectorAll('.card')).toHaveLength(1);
+  });
+
+  it('permite buscar escribiendo un ID numérico de un dígito', async () => {
+    listar.mockReturnValue(of([CENTRO, { ...CENTRO, id: 2, categoria: 'BARBERIA' }]));
+    const fixture = await create();
+    vi.useFakeTimers();
+    const input = fixture.nativeElement.querySelector('.search__input') as HTMLInputElement;
+
+    input.value = '1';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(350);
+    fixture.detectChanges();
+
+    expect(listar).toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelectorAll('.card')).toHaveLength(1);
+    expect(fixture.nativeElement.querySelector('.search__hint--alerta')).toBeNull();
   });
 });

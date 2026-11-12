@@ -231,6 +231,20 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'mis-sucursales/:sucursalId/servicios',
+    canActivate: [authGuard],
+    title: 'AppointMee | Servicios de la sucursal',
+    data: {
+      title: 'Servicios',
+      roles: ['EMPLEADOR'],
+      description: 'Administrá los servicios de tu sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/servicios-sucursal/servicios-sucursal').then(
+        (module) => module.ServiciosSucursal,
+      ),
+  },
+  {
     path: 'turnos-asignados',
     canActivate: [authGuard],
     title: 'AppointMee | Turnos asignados',
@@ -277,9 +291,9 @@ export const routes: Routes = [
     title: 'AppointMee | Mi Perfil',
     data: {
       title: 'Mi Perfil',
-      description: 'Actualizá tus datos y mantené tu cuenta al día.',
+      description: 'Consultá tus datos y las sucursales donde participás.',
     },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () => import('./pages/perfil/perfil').then((module) => module.Perfil),
   },
   {
     path: 'solicitudes/todas',
