@@ -21,28 +21,6 @@
   max-width: 760px;
 }
 
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  padding: 7px 16px 7px 12px;
-  border: 1px solid rgba(247, 198, 90, 0.22);
-  border-radius: 999px;
-  background: rgba(247, 198, 90, 0.08);
-  color: #e7d9aa;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.eyebrow__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 6px rgba(247, 198, 90, 0.12);
-}
-
 .admin__header h1 {
   margin: 0;
   color: #f6f8fb;

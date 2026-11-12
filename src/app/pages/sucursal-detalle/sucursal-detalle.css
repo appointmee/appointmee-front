@@ -265,31 +265,6 @@
   margin: 0 auto;
 }
 
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  width: fit-content;
-  padding: 7px 16px 7px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(247, 198, 90, 0.28);
-  background: rgba(12, 15, 21, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #f0e2b6;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.eyebrow__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 6px rgba(247, 198, 90, 0.14);
-}
-
 .detalle__hero h1 {
   margin: 0;
   max-width: 16ch;

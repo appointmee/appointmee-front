@@ -12,7 +12,6 @@
 .reserva__header h1 { margin: 0; color: #f6f8fb; font-size: clamp(2rem, 5vw, 3.2rem); letter-spacing: -0.05em; }
 .reserva__header p { margin: 0; color: var(--muted); }
 .reserva__header strong { color: var(--text); }
-.eyebrow { color: var(--accent); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
 .paso { padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; }
 .profesionales { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
 .profesional { min-height: 100px; display: flex; align-items: center; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.03); color: var(--text); text-align: left; cursor: pointer; }
