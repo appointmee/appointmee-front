@@ -522,7 +522,7 @@ export class ElegirTurno {
     if (!this.auth.tieneAlgunRol('CLIENTE')) {
       this.sinPermisoReserva.set(true);
       this.aviso.set(
-        'Tu cuenta no tiene permiso para reservar. Necesitás el rol Cliente; podés seguir consultando los horarios.',
+        'No tenes permiso para reservar',
       );
       return;
     }
