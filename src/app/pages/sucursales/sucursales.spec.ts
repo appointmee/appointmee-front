@@ -225,4 +225,21 @@ describe('Sucursales', () => {
     expect(filtrar).not.toHaveBeenCalled();
     expect(fixture.nativeElement.querySelectorAll('.card')).toHaveLength(1);
   });
+
+  it('permite buscar escribiendo un ID numérico de un dígito', async () => {
+    listar.mockReturnValue(of([CENTRO, { ...CENTRO, id: 2, categoria: 'BARBERIA' }]));
+    const fixture = await create();
+    vi.useFakeTimers();
+    const input = fixture.nativeElement.querySelector('.search__input') as HTMLInputElement;
+
+    input.value = '1';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(350);
+    fixture.detectChanges();
+
+    expect(listar).toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelectorAll('.card')).toHaveLength(1);
+    expect(fixture.nativeElement.querySelector('.search__hint--alerta')).toBeNull();
+  });
 });

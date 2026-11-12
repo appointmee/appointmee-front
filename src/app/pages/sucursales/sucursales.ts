@@ -23,6 +23,7 @@ import {
   DEBOUNCE_BUSQUEDA_MS,
   MIN_CARACTERES_BUSQUEDA,
   claveComparacionBusqueda,
+  esTerminoNumerico,
   normalizarTerminoBusqueda,
   terminoDeBusqueda,
 } from '../../shared/busqueda-sucursales';
@@ -72,7 +73,11 @@ export class Sucursales {
 
   protected readonly terminoMuyCorto = computed(() => {
     const termino = normalizarTerminoBusqueda(this.searchTerm());
-    return termino.length > 0 && termino.length < MIN_CARACTERES_BUSQUEDA;
+    return (
+      termino.length > 0 &&
+      termino.length < MIN_CARACTERES_BUSQUEDA &&
+      !esTerminoNumerico(termino)
+    );
   });
 
   private readonly busqueda$ = new Subject<SolicitudBusqueda>();
@@ -191,7 +196,7 @@ export class Sucursales {
       return;
     }
 
-    if (termino.length < MIN_CARACTERES_BUSQUEDA) {
+    if (termino.length < MIN_CARACTERES_BUSQUEDA && !esTerminoNumerico(termino)) {
       return;
     }
 
@@ -212,7 +217,7 @@ export class Sucursales {
       return;
     }
 
-    if (termino.length < MIN_CARACTERES_BUSQUEDA) {
+    if (termino.length < MIN_CARACTERES_BUSQUEDA && !esTerminoNumerico(termino)) {
       return;
     }
 
@@ -347,7 +352,7 @@ export class Sucursales {
     nombre: string | null,
   ): Observable<SucursalMiniDTO[]> {
     const termino = normalizarTerminoBusqueda(nombre);
-    if (/^\d+$/.test(termino)) {
+    if (esTerminoNumerico(termino)) {
       return this.service.listar().pipe(
         map((lista) =>
           (lista ?? []).filter(
