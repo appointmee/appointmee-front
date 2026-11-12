@@ -20,8 +20,9 @@ export interface ServicioDTO {
 export interface ServicioPayload {
   readonly sucursalId: number;
   readonly nombre: string;
-  readonly descripcion: string | null;
+  readonly descripcion: string;
   readonly duracion: number;
-  readonly precio: number | string | null;
-  readonly fotoPerfil: string | null;
+  readonly precio: number | string;
+  readonly fotoUrl: string;
+  readonly fotoPublicId: string | null;
 }

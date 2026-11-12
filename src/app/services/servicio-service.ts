@@ -25,8 +25,15 @@ export class servicioService {
     return this.http.get<ServicioDTO>(`${this.api.baseUrl}/servicios/${servicioId}`);
   }
   /** Envía al backend los datos validados de un nuevo servicio. */
-  crear(datos: ServicioPayload): Observable<ServicioDTO> {
-    return this.http.post<ServicioDTO>(`${this.api.baseUrl}/servicios`, datos);
+  crear(datos: ServicioPayload): Observable<string> {
+    return this.http.post(
+      `${this.api.baseUrl}/servicios/crear`,
+      datos,
+      {
+        context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+        responseType: 'text',
+      },
+    );
   }
   /** Actualiza los datos editables de un servicio existente. */
   actualizar(servicioId: number, datos: ServicioPayload): Observable<ServicioDTO> {
