@@ -350,11 +350,60 @@
    ========================================================= */
 
 .sucursales {
+  --sucursal-alto: 110px;
+  --sucursal-separacion: 12px;
   display: grid;
-  gap: 12px;
+  gap: var(--sucursal-separacion);
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* Solo con más de 4 sucursales: la sección muestra 4 tarjetas y el resto
+   se recorre con scroll vertical. El alto base corresponde a una tarjeta
+   de 110px; en mobile se ajusta a 142px por el botón a ancho completo. */
+.sucursales--scroll {
+  max-height: calc(
+    4 * var(--sucursal-alto) + 3 * var(--sucursal-separacion)
+  );
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 6px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(247, 198, 90, 0.4) rgba(255, 255, 255, 0.04);
+}
+
+.sucursales--scroll::-webkit-scrollbar {
+  width: 9px;
+}
+
+.sucursales--scroll::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sucursales--scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(247, 198, 90, 0.4);
+  background-clip: content-box;
+}
+
+.sucursales--scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(247, 198, 90, 0.56);
+  background-clip: content-box;
+}
+
+.sucursales--scroll::-webkit-scrollbar-button {
+  display: none;
+}
+
+.sucursales--scroll:focus-visible {
+  outline: 2px solid rgba(247, 198, 90, 0.65);
+  outline-offset: 3px;
+  border-radius: 8px;
 }
 
 .sucursal {
@@ -884,6 +933,10 @@
   .panel {
     padding: 18px;
     border-radius: 19px;
+  }
+
+  .sucursales {
+    --sucursal-alto: 142px;
   }
 
   .sucursal {

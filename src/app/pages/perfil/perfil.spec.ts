@@ -382,4 +382,49 @@ describe('US-PER-02 · Ver el perfil del usuario autenticado', () => {
     expect(texto(tarjetas[1])).toContain('Sin reseñas');
     expect(tarjetas[1].querySelectorAll('.abeja--vacia')).toHaveLength(5);
   });
+
+  it('activa el scroll interno en las secciones con más de cuatro sucursales', () => {
+    sesion.roles = ['EMPLEADO', 'EMPLEADOR'];
+    const empleado = [1, 2, 3, 4, 5].map((id) => sucursal(id, `Empleado ${id}`));
+    const empleador = [11, 12, 13, 14, 15].map((id) => sucursal(id, `Empleador ${id}`));
+
+    crear();
+    responderPerfil(
+      perfil({ roles: ['EMPLEADO', 'EMPLEADOR'], sucursalesEmpleado: empleado }),
+    );
+    responderPropias(empleador);
+
+    const [panelEmpleado, panelEmpleador] = paneles();
+    const listaEmpleado = panelEmpleado.querySelector<HTMLElement>('.sucursales');
+    const listaEmpleador = panelEmpleador.querySelector<HTMLElement>('.sucursales');
+
+    for (const lista of [listaEmpleado, listaEmpleador]) {
+      expect(lista?.classList).toContain('sucursales--scroll');
+      expect(lista?.getAttribute('tabindex')).toBe('0');
+      expect(lista?.getAttribute('aria-label')).toContain('lista desplazable');
+      expect(lista?.querySelectorAll('.sucursal')).toHaveLength(5);
+    }
+  });
+
+  it('no activa el scroll interno cuando hay cuatro sucursales o menos', () => {
+    sesion.roles = ['EMPLEADO', 'EMPLEADOR'];
+    const empleado = [1, 2, 3, 4].map((id) => sucursal(id, `Empleado ${id}`));
+    const empleador = [11, 12, 13, 14].map((id) => sucursal(id, `Empleador ${id}`));
+
+    crear();
+    responderPerfil(
+      perfil({ roles: ['EMPLEADO', 'EMPLEADOR'], sucursalesEmpleado: empleado }),
+    );
+    responderPropias(empleador);
+
+    const [panelEmpleado, panelEmpleador] = paneles();
+    const listaEmpleado = panelEmpleado.querySelector<HTMLElement>('.sucursales');
+    const listaEmpleador = panelEmpleador.querySelector<HTMLElement>('.sucursales');
+
+    for (const lista of [listaEmpleado, listaEmpleador]) {
+      expect(lista?.classList).not.toContain('sucursales--scroll');
+      expect(lista?.getAttribute('tabindex')).toBeNull();
+      expect(lista?.getAttribute('aria-label')).toBeNull();
+    }
+  });
 });

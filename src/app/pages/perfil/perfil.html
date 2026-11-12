@@ -173,7 +173,17 @@
           </header>
 
           @if (sucursalesEmpleado().length) {
-            <ul class="sucursales" aria-live="polite">
+            <ul
+              class="sucursales"
+              [class.sucursales--scroll]="sucursalesEmpleado().length > 4"
+              [attr.tabindex]="sucursalesEmpleado().length > 4 ? 0 : null"
+              [attr.aria-label]="
+                sucursalesEmpleado().length > 4
+                  ? 'Sucursales como empleado, lista desplazable'
+                  : null
+              "
+              aria-live="polite"
+            >
               @for (sucursal of sucursalesEmpleado(); track sucursal.id) {
                 <li class="sucursal">
                   <span class="sucursal__foto">
@@ -309,7 +319,17 @@
               </span>
             </div>
           } @else if (sucursalesEmpleador().length) {
-            <ul class="sucursales" aria-live="polite">
+            <ul
+              class="sucursales"
+              [class.sucursales--scroll]="sucursalesEmpleador().length > 4"
+              [attr.tabindex]="sucursalesEmpleador().length > 4 ? 0 : null"
+              [attr.aria-label]="
+                sucursalesEmpleador().length > 4
+                  ? 'Sucursales como empleador, lista desplazable'
+                  : null
+              "
+              aria-live="polite"
+            >
               @for (sucursal of sucursalesEmpleador(); track sucursal.id) {
                 <li class="sucursal">
                   <span class="sucursal__foto">
