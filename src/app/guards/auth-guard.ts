@@ -10,7 +10,12 @@ export const authGuard: CanActivateFn = (route, state) => {
 
   // Destino del visitante cuando no tiene una sesión válida
 
-  const login = () => router.createUrlTree(['/login'], { queryParams: { returnTo: state.url } });
+  const login = () => router.createUrlTree(['/login'], {
+    queryParams: {
+      returnTo: state.url,
+      ...(auth.expirado() ? { expired: '1' } : {}),
+    },
+  });
 
   if (!auth.getAccessToken() && !auth.getRefreshToken()) return login();
 
