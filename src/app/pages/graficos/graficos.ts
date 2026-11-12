@@ -3,6 +3,12 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signa
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import type { Observable } from 'rxjs';
+import * as echarts from 'echarts/core';
+import type { EChartsOption } from 'echarts';
+import { BarChart, LineChart } from 'echarts/charts';
+import { AriaComponent, DataZoomComponent, GridComponent, LegendComponent, TooltipComponent } from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 
 import type {
   AgrupacionGrafico,
@@ -18,9 +24,20 @@ import { sucursalService } from '../../services/sucursal-service';
 
 type RolPanel = 'administrador' | 'empleador';
 
+const tokenDiseno = (nombre: string, alternativa: string): string => {
+  if (typeof document === 'undefined') return alternativa;
+  return getComputedStyle(document.documentElement).getPropertyValue(nombre).trim() || alternativa;
+};
+const ESTADO_SERIES: readonly EstadoTurnoGrafico[] = [
+  'PENDIENTE', 'CONFIRMADO', 'REALIZADO', 'CANCELADO', 'PAGO_RECHAZADO',
+];
+
+echarts.use([BarChart, LineChart, GridComponent, TooltipComponent, LegendComponent, DataZoomComponent, AriaComponent, CanvasRenderer]);
+
 @Component({
   selector: 'app-graficos',
-  imports: [RouterLink],
+  imports: [RouterLink, NgxEchartsDirective],
+  providers: [provideEchartsCore({ echarts })],
   templateUrl: './graficos.html',
   styleUrl: './graficos.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,6 +47,18 @@ export class Graficos {
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(estadisticasService);
   private readonly sucursalApi = inject(sucursalService);
+  private readonly coloresGrafico = [
+    tokenDiseno('--accent', '#f7c65a'),
+    tokenDiseno('--success-light', '#7ee2a8'),
+    tokenDiseno('--success-strong', '#22c55e'),
+    tokenDiseno('--danger', '#ff7a7a'),
+    tokenDiseno('--muted', '#98a2b3'),
+  ];
+  private readonly colorTexto = tokenDiseno('--text', '#eef2f7');
+  private readonly colorSecundario = tokenDiseno('--muted', '#98a2b3');
+  private readonly colorLinea = tokenDiseno('--line', 'rgba(255,255,255,.08)');
+  private readonly reduceMotion = typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
   protected readonly rol: RolPanel = this.route.snapshot.data['rolGrafico'] === 'empleador'
     ? 'empleador'
@@ -53,6 +82,56 @@ export class Graficos {
 
   protected readonly hayDatos = computed(() => this.adminDatos() !== null || this.empleadorDatos() !== null);
   protected readonly titulo = this.rol === 'administrador' ? 'Estadísticas de AppointMee' : 'Estadísticas de sucursal';
+
+  protected readonly turnosAdminOption = computed(() => this.opcionesTurnos(this.adminDatos()?.turnosPorPeriodo ?? []));
+  protected readonly turnosEmpleadorOption = computed(() => this.opcionesTurnos(this.empleadorDatos()?.turnosPorPeriodo ?? []));
+  protected readonly usuariosOption = computed<EChartsOption>(() => {
+    const filas = this.adminDatos()?.usuarios.nuevosPorPeriodo ?? [];
+    return {
+      ...this.baseOption(),
+      legend: { top: 0, textStyle: { color: this.colorTexto } },
+      grid: { left: 48, right: 24, top: 44, bottom: 62 },
+      xAxis: { type: 'category', data: filas.map((fila) => fila.periodo), axisLabel: { color: this.colorSecundario, rotate: 25 } },
+      yAxis: { type: 'value', minInterval: 1, axisLabel: { color: this.colorSecundario }, splitLine: { lineStyle: { color: this.colorLinea } } },
+      dataZoom: this.zoom(filas.length),
+      series: this.roles.map((rol) => ({
+        name: this.rolLabel(rol), type: 'line' as const, smooth: true, symbolSize: 7,
+        data: filas.map((fila) => fila.altasPorRol[rol] ?? 0),
+      })),
+    };
+  });
+  protected readonly sucursalesOption = computed<EChartsOption>(() => {
+    const filas = this.adminDatos()?.sucursales.nuevasPorPeriodo ?? [];
+    return {
+      ...this.baseOption(),
+      grid: { left: 48, right: 24, top: 24, bottom: 62 },
+      xAxis: { type: 'category', data: filas.map((fila) => fila.periodo), axisLabel: { color: this.colorSecundario, rotate: 25 } },
+      yAxis: { type: 'value', minInterval: 1, axisLabel: { color: this.colorSecundario }, splitLine: { lineStyle: { color: this.colorLinea } } },
+      dataZoom: this.zoom(filas.length),
+      series: [{ name: 'Nuevas sucursales', type: 'bar', data: filas.map((fila) => fila.nuevas), barMaxWidth: 34, itemStyle: { borderRadius: [6, 6, 0, 0] } }],
+    };
+  });
+  protected readonly demandaOption = computed<EChartsOption>(() => {
+    const filas = this.empleadorDatos()?.demandaPorServicio ?? [];
+    return {
+      ...this.baseOption(),
+      grid: { left: 120, right: 30, top: 20, bottom: 30 },
+      xAxis: { type: 'value', minInterval: 1, axisLabel: { color: this.colorSecundario }, splitLine: { lineStyle: { color: this.colorLinea } } },
+      yAxis: { type: 'category', data: filas.map((fila) => fila.servicio), axisLabel: { color: this.colorSecundario, width: 105, overflow: 'truncate' } },
+      series: [{ name: 'Turnos', type: 'bar', data: filas.map((fila) => fila.cantidad), barMaxWidth: 28, itemStyle: { borderRadius: [0, 6, 6, 0] } }],
+    };
+  });
+  protected readonly cancelacionesOption = computed<EChartsOption>(() => {
+    const filas = this.empleadorDatos()?.cancelaciones.porPeriodo ?? [];
+    return {
+      ...this.baseOption(),
+      grid: { left: 48, right: 24, top: 24, bottom: 62 },
+      xAxis: { type: 'category', data: filas.map((fila) => fila.periodo), axisLabel: { color: this.colorSecundario, rotate: 25 } },
+      yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: this.colorSecundario, formatter: '{value}%' }, splitLine: { lineStyle: { color: this.colorLinea } } },
+      dataZoom: this.zoom(filas.length),
+      series: [{ name: 'Tasa de cancelación', type: 'line', smooth: true, symbolSize: 7, data: filas.map((fila) => fila.tasa), areaStyle: { opacity: 0.14 } }],
+    };
+  });
 
   constructor() {
     if (this.rol === 'administrador') {
@@ -118,10 +197,6 @@ export class Graficos {
     this.empleadorDatos.set(null);
   }
 
-  protected totalTurnos(periodo: TurnosPeriodoGrafico): number {
-    return Object.values(periodo.estados).reduce((total, cantidad) => total + cantidad, 0);
-  }
-
   protected estadoLabel(estado: EstadoTurnoGrafico): string {
     return ({
       PENDIENTE: 'Pendientes', CONFIRMADO: 'Confirmados', REALIZADO: 'Realizados',
@@ -133,26 +208,33 @@ export class Graficos {
     return ({ CLIENTE: 'Clientes', EMPLEADOR: 'Empleadores', EMPLEADO: 'Empleados' })[rol];
   }
 
-  protected ancho(valor: number, maximo: number): number {
-    return maximo > 0 ? Math.max(valor > 0 ? 2 : 0, (valor / maximo) * 100) : 0;
+  private opcionesTurnos(filas: TurnosPeriodoGrafico[]): EChartsOption {
+    return {
+      ...this.baseOption(),
+      legend: { top: 0, textStyle: { color: this.colorTexto } },
+      grid: { left: 48, right: 24, top: 44, bottom: 62 },
+      xAxis: { type: 'category', data: filas.map((fila) => fila.periodo), axisLabel: { color: this.colorSecundario, rotate: 25 } },
+      yAxis: { type: 'value', minInterval: 1, axisLabel: { color: this.colorSecundario }, splitLine: { lineStyle: { color: this.colorLinea } } },
+      dataZoom: this.zoom(filas.length),
+      series: ESTADO_SERIES.map((estado) => ({
+        name: this.estadoLabel(estado), type: 'bar' as const, stack: 'turnos',
+        data: filas.map((fila) => fila.estados[estado] ?? 0), barMaxWidth: 38,
+      })),
+    };
   }
 
-  protected maxTurnos(): number {
-    const filas = this.adminDatos()?.turnosPorPeriodo ?? this.empleadorDatos()?.turnosPorPeriodo ?? [];
-    return Math.max(0, ...filas.map((fila) => this.totalTurnos(fila)));
+  private baseOption(): EChartsOption {
+    return {
+      color: this.coloresGrafico,
+      animation: !this.reduceMotion,
+      animationDuration: 500,
+      aria: { enabled: true, decal: { show: true } },
+      tooltip: { trigger: 'axis', confine: true },
+    };
   }
 
-  protected maxUsuarios(): number {
-    return Math.max(0, ...(this.adminDatos()?.usuarios.nuevosPorPeriodo ?? [])
-      .map((fila) => this.roles.reduce((sum, rol) => sum + (fila.altasPorRol[rol] ?? 0), 0)));
-  }
-
-  protected maxSucursales(): number {
-    return Math.max(0, ...(this.adminDatos()?.sucursales.nuevasPorPeriodo ?? []).map((fila) => fila.nuevas));
-  }
-
-  protected maxServicios(): number {
-    return Math.max(0, ...(this.empleadorDatos()?.demandaPorServicio ?? []).map((fila) => fila.cantidad));
+  private zoom(cantidad: number): EChartsOption['dataZoom'] {
+    return cantidad > 12 ? [{ type: 'inside', zoomOnMouseWheel: false }, { type: 'slider', height: 16, bottom: 8 }] : [];
   }
 
   private validarRango(): boolean {
