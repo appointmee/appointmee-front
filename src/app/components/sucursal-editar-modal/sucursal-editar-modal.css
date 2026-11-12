@@ -1,0 +1,46 @@
+:host {
+  display: contents;
+}
+
+h2 {
+  margin: 0 0 var(--space-4, 1rem);
+  color: var(--text);
+  font-size: clamp(1.25rem, 3vw, 1.6rem);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+/* Cancelar: botón secundario, con el mismo lenguaje visual del resto de la
+   aplicación. */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--space-4, 1rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 0.5rem);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  transition:
+    border-color 0.2s var(--ease),
+    background-color 0.2s var(--ease);
+}
+
+.boton:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.boton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boton {
+    transition: none;
+  }
+}

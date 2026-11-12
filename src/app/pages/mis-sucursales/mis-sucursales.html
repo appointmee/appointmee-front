@@ -136,16 +136,17 @@
             </svg>
           </a>
 
-          <a
+          <button
             class="tarjeta"
-            [routerLink]="['/sucursal', sucursal.id]"
+            type="button"
+            (click)="abrirDetalleSucursal()"
             aria-label="Sucursal"
           >
             <span class="tarjeta__titulo">Sucursal</span>
             <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
             </svg>
-          </a>
+          </button>
         </div>
       </section>
     } @else {
@@ -173,4 +174,10 @@
       </ul>
     }
   </div>
+
+  <app-sucursal-detalle-modal
+    [sucursalId]="detalleSucursalAbierto() ? sucursalSeleccionadaId() : null"
+    (cerrar)="cerrarDetalleSucursal()"
+    (modificado)="refrescarSucursales()"
+  />
 </section>

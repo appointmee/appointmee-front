@@ -1,0 +1,28 @@
+<ds-modal
+  [open]="abierto()"
+  (close)="solicitarCierre()"
+  ariaLabelledby="modificar-sucursal-titulo"
+  maxWidth="560px"
+>
+  <h2 id="modificar-sucursal-titulo">Modificar sucursal</h2>
+
+  <app-sucursal-form
+    idPrefijo="sucursal-editar"
+    modo="modificar"
+    [fotoRequerida]="false"
+    [confirmarDescarte]="true"
+    [valoresIniciales]="valoresFormulario()"
+    [fotoVigente]="fotoVigente()"
+    [errores]="erroresCampos()"
+    [errorGeneral]="errorGeneral()"
+    [enviando]="guardando()"
+    [textoEnviar]="'Modificar sucursal'"
+    [textoGuardando]="'Guardando…'"
+    (enviar)="onEnviar($event)"
+    (cancelar)="cerrarFormulario()"
+  >
+    <button type="button" class="boton boton--ghost" accionCancelar (click)="solicitarCierre()">
+      Cancelar
+    </button>
+  </app-sucursal-form>
+</ds-modal>

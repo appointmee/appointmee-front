@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -14,10 +15,11 @@ import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { humanizarCategoria } from '../../models/solicitud-empleado';
 import { SucursalMiniDTO } from '../../models/sucursal';
 import { sucursalService } from '../../services/sucursal-service';
+import { SucursalDetalleModal } from '../../components/sucursal-detalle-modal/sucursal-detalle-modal';
 
 @Component({
   selector: 'app-mis-sucursales',
-  imports: [RouterLink],
+  imports: [RouterLink, SucursalDetalleModal],
   templateUrl: './mis-sucursales.html',
   styleUrl: './mis-sucursales.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,6 +30,7 @@ export class MisSucursales {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly recargar = new Subject<void>();
+  private readonly detalleSucursal = viewChild(SucursalDetalleModal);
 
   protected readonly sucursales = signal<readonly SucursalMiniDTO[]>([]);
   protected readonly cargandoSucursales = signal(true);
@@ -35,6 +38,8 @@ export class MisSucursales {
   protected readonly reintentandoSucursales = signal(false);
 
   protected readonly sucursalSeleccionadaId = signal<number | null>(null);
+  /** El recuadro con los datos de la sucursal está abierto. */
+  protected readonly detalleSucursalAbierto = signal(false);
 
   protected readonly sucursalSeleccionada = computed(() =>
     this.sucursales().find((sucursal) => sucursal.id === this.sucursalSeleccionadaId()) ?? null,
@@ -105,6 +110,7 @@ export class MisSucursales {
 
   protected seleccionarSucursal(id: number): void {
     this.sucursalSeleccionadaId.set(id);
+    this.detalleSucursalAbierto.set(false);
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { sucursalId: id },
@@ -112,8 +118,32 @@ export class MisSucursales {
     });
   }
 
+  /** Abre el recuadro con los datos de la sucursal seleccionada. */
+  protected abrirDetalleSucursal(): void {
+    if (!this.sucursalSeleccionadaId()) return;
+    this.detalleSucursalAbierto.set(true);
+  }
+
+  /** Cierra el recuadro con los datos de la sucursal. */
+  protected cerrarDetalleSucursal(): void {
+    this.detalleSucursalAbierto.set(false);
+  }
+
+  /** La sucursal fue modificada: se refresca el listado para ver los cambios. */
+  protected refrescarSucursales(): void {
+    this.recargar.next();
+  }
+
   protected volverALista(): void {
+    // Si el formulario de modificación tiene cambios sin guardar, se pide
+    // confirmación antes de volver al listado y perderlos.
+    if (this.detalleSucursal()?.tieneCambiosSinGuardar()) {
+      this.detalleSucursal()?.solicitarCierreEdicion();
+      return;
+    }
+
     this.sucursalSeleccionadaId.set(null);
+    this.detalleSucursalAbierto.set(false);
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { sucursalId: null },
