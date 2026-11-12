@@ -1,0 +1,496 @@
+:host {
+  display: block;
+}
+
+.pagina {
+  min-height: calc(100dvh - var(--nav-h));
+  padding: calc(var(--nav-h) + 40px) 24px 80px;
+}
+
+.pagina__inner {
+  display: grid;
+  gap: 24px;
+  width: min(100% - 48px, 900px);
+  margin: 0 auto;
+}
+
+.pagina__header {
+  display: grid;
+  gap: 8px;
+}
+
+.eyebrow {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+h1 {
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+}
+
+.pagina__header p {
+  color: var(--muted);
+}
+
+.panel {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  border: 2px solid var(--accent);
+  border-radius: 20px;
+  background: rgba(13, 17, 23, 0.72);
+}
+
+.panel__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.panel__titulo {
+  font-size: var(--font-size-lg);
+}
+
+.panel__contador {
+  min-width: 28px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  text-align: center;
+  font-weight: 600;
+}
+
+/*
+ * El listado tiene su propio scroll: se muestran como máximo cinco empleados
+ * y, si la sucursal tiene más, se desplazan dentro del contenedor sin mover
+ * la sección de auto-incorporación.
+ */
+.empleados__scroll {
+  --fila-alto: 140px;
+
+  max-height: calc(5 * var(--fila-alto));
+  padding: 0 6px 0 2px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(247, 198, 90, 0.45) transparent;
+}
+
+.empleados__scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.empleados__scroll::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-full);
+  background: rgba(247, 198, 90, 0.35);
+}
+
+.empleados__scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lista {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.empleado {
+  position: relative;
+}
+
+/* Divisor amarillo que separa una fila de la siguiente a lo ancho completo. */
+.empleado:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.45;
+}
+
+.empleado__contenido {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: var(--fila-alto);
+  padding: var(--space-4) var(--space-4) var(--space-5);
+}
+
+.empleado__foto {
+  width: 62px;
+  height: 62px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line);
+  object-fit: cover;
+  background: var(--surface);
+}
+
+.empleado__body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.empleado__nombre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.empleado__apellido {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.empleado__email {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.empleado__rating {
+  display: grid;
+  justify-items: end;
+  gap: 3px;
+  text-align: right;
+}
+
+.empleado__puntuacion {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.empleado__abejas {
+  display: inline-flex;
+  gap: 2px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.abeja {
+  display: inline-block;
+  line-height: 1;
+}
+
+.abeja--vacia {
+  filter: grayscale(1);
+  opacity: 0.25;
+}
+
+.empleado__resenias,
+.empleado__sin-puntuacion {
+  color: var(--muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/*
+ * Botón de eliminación: replica el diseño del botón "Finalizar turno" del
+ * detalle de turnos (turno-detalle-modal.css) con la paleta roja de las
+ * acciones destructivas. Va debajo de las reseñas y la puntuación y usa el
+ * tamaño compacto del sistema de diseño para no comer altura de la fila.
+ */
+.empleado__eliminar {
+  min-width: 96px;
+  margin-top: var(--space-1);
+  background: rgba(255, 122, 122, 0.16);
+  color: #ffb0b0;
+  border-color: rgba(255, 122, 122, 0.32);
+}
+
+.empleado__eliminar:hover:not(:disabled) {
+  background: rgba(255, 122, 122, 0.26);
+  border-color: rgba(255, 122, 122, 0.45);
+}
+
+.empleado__eliminar:disabled {
+  opacity: 0.45;
+}
+
+.lista__ayuda {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+}
+
+.estado {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 28px 18px;
+  text-align: center;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.estado__icono svg {
+  width: 34px;
+  height: 34px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.estado--error {
+  color: var(--danger);
+}
+
+.estado p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.skeleton {
+  display: block;
+  height: 14px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.12), rgba(255,255,255,.06));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.skeleton--avatar {
+  width: 62px;
+  height: 62px;
+  border-radius: var(--radius-full);
+}
+
+.skeleton--nombre {
+  width: 45%;
+  height: 16px;
+}
+
+.skeleton--email {
+  width: 70%;
+}
+
+.empleado--skeleton {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+  min-height: var(--fila-alto);
+  padding: var(--space-4) var(--space-4) var(--space-5);
+}
+
+.empleado--skeleton .empleado__body {
+  display: grid;
+  gap: 10px;
+}
+
+.aviso {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.aviso--exito {
+  border-color: rgba(120, 220, 140, 0.35);
+  background: rgba(120, 220, 140, 0.08);
+}
+
+.aviso--error {
+  border-color: rgba(255, 122, 122, 0.35);
+  background: rgba(255, 122, 122, 0.08);
+}
+
+.aviso__error {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--font-size-sm);
+}
+
+/* Confirmación de eliminación de un empleado de la sucursal. */
+.eliminar__titulo {
+  margin: 0 0 var(--space-2);
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.eliminar__texto {
+  margin: 0 0 var(--space-4);
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.eliminar__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+.eliminar__confirmar {
+  min-width: 130px;
+}
+
+/* Auto-incorporación: versión compacta, siempre fuera del área desplazable. */
+.panel--auto {
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: 16px;
+}
+
+.auto__titulo {
+  font-size: var(--font-size-md);
+}
+
+.auto__descripcion {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+}
+
+.boton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.boton--principal {
+  background: var(--accent);
+  color: #1a1405;
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.boton--ghost {
+  background: transparent;
+}
+
+.auto__boton {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: var(--font-size-sm);
+  justify-self: start;
+}
+
+.volver-gestor,
+.volver-gestor:visited {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  background: transparent;
+  color: #fff !important;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.volver-gestor:hover {
+  background: var(--accent-soft);
+}
+
+.volver-gestor svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .pagina {
+    padding: calc(var(--nav-h) + 24px) 16px 56px;
+  }
+
+  .panel {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .empleados__scroll {
+    --fila-alto: 180px;
+  }
+
+  .empleado__foto,
+  .skeleton--avatar {
+    width: 52px;
+    height: 52px;
+  }
+
+  .empleado__contenido {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: var(--space-2);
+    column-gap: var(--space-3);
+    padding: var(--space-3) var(--space-3) var(--space-4);
+  }
+
+  .empleado__rating {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    text-align: left;
+  }
+
+  .empleado__eliminar {
+    min-width: 0;
+    margin-top: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

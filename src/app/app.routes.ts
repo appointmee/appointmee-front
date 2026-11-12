@@ -175,6 +175,34 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'mis-sucursales/:sucursalId/empleados',
+    canActivate: [authGuard],
+    title: 'AppointMee | Empleados de la sucursal',
+    data: {
+      title: 'Empleados',
+      roles: ['EMPLEADOR'],
+      description: 'Consultá el equipo de tu sucursal y agregate como empleado.',
+    },
+    loadComponent: () =>
+      import('./pages/empleados-sucursal/empleados-sucursal').then(
+        (module) => module.EmpleadosSucursal,
+      ),
+  },
+  {
+    path: 'mis-sucursales/:sucursalId/solicitudes',
+    canActivate: [authGuard],
+    title: 'AppointMee | Solicitudes de la sucursal',
+    data: {
+      title: 'Solicitudes',
+      roles: ['EMPLEADOR'],
+      description: 'Enviá y consultá las solicitudes de empleo de tu sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/solicitudes-sucursal/solicitudes-sucursal').then(
+        (module) => module.SolicitudesSucursal,
+      ),
+  },
+  {
     path: 'mis-sucursales/:sucursalId/turnos',
     canActivate: [authGuard],
     title: 'AppointMee | Turnos de la sucursal',
@@ -235,9 +263,9 @@ export const routes: Routes = [
     title: 'AppointMee | Mi Perfil',
     data: {
       title: 'Mi Perfil',
-      description: 'Actualizá tus datos y mantené tu cuenta al día.',
+      description: 'Consultá tus datos y las sucursales donde participás.',
     },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () => import('./pages/perfil/perfil').then((module) => module.Perfil),
   },
   {
     path: 'solicitudes/todas',

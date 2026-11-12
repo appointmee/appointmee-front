@@ -14,6 +14,7 @@ El interceptor envía Bearer en rutas privadas y omite las rutas que reconoce co
 | `POST /auth/refresh` | Público; el cliente lo llama automáticamente | `{ refreshToken: string }` | `Tokens` |
 | `POST /auth/logout` | Sesión, revocar refresh actual | `{}` | Sin contenido (`void`) |
 | `GET /usuarios/me` | Bearer, restaurar/cargar perfil | — | `{ id: number, roles: string[], fotoPerfil: string|null }` |
+| `DELETE /usuarios/borrar-cuenta` | Bearer, eliminar la cuenta propia (Ajustes → Eliminar cuenta) | — | Texto plano `"Se eliminó la cuenta"` |
 | `POST /auth/forgot-password` | Público | `{ email: string }` | `{ message: string }` |
 | `POST /auth/verification-status` | Público con ticket opcional | `{ email?: string }`; `X-Verification-Token` | `{ verificada, enviado, enviadoAhora: boolean, retryAfterSeconds, attemptsRemaining, expiresInSeconds: number }` |
 | `POST /auth/send-verification` | Público con ticket si existe | `{ email: string, reenviar: boolean }`; `X-Verification-Token` | `EstadoVerificacion` |
@@ -65,6 +66,7 @@ Los modelos completos están en `src/app/models/{auth,sucursal,servicio}.ts`. El
 - `403`: falta de permiso; el flujo de verificación contempla `EMAIL_NOT_VERIFIED` con `verificationToken` y opcionalmente `verificationExpiresIn`.
 - `409`: códigos reconocidos incluyen `EMAIL_ALREADY_EXISTS` y `SLOT_UNAVAILABLE`; otros se presentan como conflicto genérico.
 - `429`: el frontend entiende `Retry-After` como segundos o fecha HTTP, o `retryAfterSeconds` en el cuerpo.
+- `DELETE /usuarios/borrar-cuenta`: el backend responde con texto plano, por eso el cliente pide la respuesta como texto y no como JSON.
 - Error de verificación puede incluir códigos `EMAIL_ALREADY_VERIFIED`, `VERIFICATION_CODE_INVALID`, `VERIFICATION_CODE_EXPIRED`, `VERIFICATION_ATTEMPTS_EXCEEDED`, `attemptsRemaining` y `retryAfterSeconds`.
 - Fallos 0/500/502/503: mensajes seguros, reintento o pantalla inline según endpoint/contexto.
 

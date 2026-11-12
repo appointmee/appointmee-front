@@ -1,26 +1,26 @@
 <section class="gestion" aria-labelledby="gestion-titulo">
   <div class="gestion__inner">
-    <header class="gestion__header">
-      <span class="eyebrow">
-        <span class="eyebrow__dot" aria-hidden="true"></span>
-        Mis sucursales
-      </span>
-      <h1 id="gestion-titulo">Gestión de sucursales propias</h1>
-      <p>
-        Seleccioná una de tus sucursales para gestionar las solicitudes de incorporación de
-        empleados.
-      </p>
-      <a routerLink="/mis-sucursales/nueva" class="boton boton--primario">Crear sucursal</a>
-    </header>
+    @if (!sucursalSeleccionada()) {
+      <header class="gestion__header">
+        <span class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true"></span>
+          Mis sucursales
+        </span>
+        <h1 id="gestion-titulo">Gestión de sucursales propias</h1>
+        <p>
+          Seleccioná una de tus sucursales para acceder a las distintas secciones del gestor.
+        </p>
+        <a routerLink="/mis-sucursales/nueva" class="boton boton--primario">Crear sucursal</a>
+      </header>
+    }
 
     @if (cargandoSucursales()) {
       <div class="lista" aria-busy="true" aria-live="polite">
         <span class="sr-only">Cargando tus sucursales…</span>
         @for (item of [1, 2, 3]; track item) {
-          <div class="solicitud-skeleton" aria-hidden="true">
+          <div class="sucursal-card" aria-hidden="true">
             <span class="skeleton skeleton--avatar"></span>
             <span class="skeleton skeleton--line"></span>
-            <span class="skeleton skeleton--line skeleton--short"></span>
           </div>
         }
       </div>
@@ -50,169 +50,95 @@
           </svg>
         </span>
         <h3>Todavía no tenés sucursales propias</h3>
-        <p>Cuando crees una sucursal, vas a poder gestionar sus invitaciones desde acá.</p>
+        <p>Cuando crees una sucursal, vas a poder gestionarla desde acá.</p>
       </div>
     } @else if (sucursalSeleccionada(); as sucursal) {
-      <nav class="migas" aria-label="Navegación de sucursales">
-        <button class="volver" type="button" (click)="volverALista()">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M19 12H5M11 18l-6-6 6-6" />
-          </svg>
-          Volver a mis sucursales
-        </button>
-      </nav>
+      <button class="volver-gestor" type="button" (click)="volverALista()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M11 18l-6-6 6-6" />
+        </svg>
+        Volver a mis sucursales
+      </button>
 
-      <section class="panel" aria-labelledby="sucursal-gestion-titulo">
-        <header class="panel__cabecera">
-          <div>
-            <span class="panel__eyebrow">Sucursal seleccionada</span>
-            <h2 id="sucursal-gestion-titulo">{{ sucursal.nombre }}</h2>
-          </div>
-          <div class="panel__acciones">
-            <a
-              class="boton boton--principal"
-              [routerLink]="['/mis-sucursales', sucursal.id, 'turnos']"
-            >
-              Ver turnos
-            </a>
-            <a class="boton boton--principal" [routerLink]="['/sucursal', sucursal.id]">
-              Ver sucursal
-            </a>
+      <section class="gestor" aria-labelledby="gestor-titulo">
+        <header class="gestor__cabecera">
+          <span class="eyebrow">
+            <span class="eyebrow__dot" aria-hidden="true"></span>
+            Gestor de sucursal
+          </span>
+          <h1 id="gestor-titulo">{{ sucursal.nombre }}</h1>
+          <div class="gestor__rating" aria-label="Puntuación {{ puntuacion() }} de 5">
+            <span class="gestor__abejas" aria-hidden="true">
+              @for (llena of abejas(); track $index) {
+                <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
+              }
+            </span>
+            <span class="gestor__puntuacion">
+              {{ puntuacion() }}/5
+              @if (cantidadResenias() > 0) {
+                · {{ cantidadResenias() }} reseñas
+              } @else {
+                · Sin reseñas
+              }
+            </span>
           </div>
         </header>
 
-        <div class="gestion__opcion">
-          <h3>Enviar solicitudes de empleo</h3>
-          <p>
-            Invitá a una persona a incorporarse a {{ sucursal.nombre }} ingresando su correo
-            electrónico.
-          </p>
-
-          @if (exitoEnvio()) {
-            <div class="aviso aviso--exito" role="status" aria-live="polite">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m5 12 4 4L19 6" />
-              </svg>
-              <p>{{ exitoEnvio() }}</p>
-            </div>
-          }
-
-          <div class="busqueda">
-            <label class="busqueda__label" for="email-destinatario">Correo electrónico</label>
-            <div class="busqueda__fila">
-              <input
-                id="email-destinatario"
-                class="busqueda__input"
-                type="email"
-                [value]="email()"
-                (input)="email.set($any($event.target).value)"
-                placeholder="nombre@ejemplo.com"
-                [disabled]="enviando()"
-              />
-            </div>
-            <p class="busqueda__ayuda">
-              Ingresá el correo de la persona que querés invitar. El sistema va a validar los
-              datos al enviar la solicitud.
-            </p>
-          </div>
-
-          @if (errorEnvio()) {
-            <p class="busqueda__error" role="alert">{{ errorEnvio() }}</p>
-          }
-
+        <div class="gestor__tarjetas">
           <button
-            class="boton boton--principal"
             type="button"
-            [disabled]="enviando() || email().trim().length === 0"
-            (click)="enviarSolicitud()"
+            class="tarjeta"
+            aria-label="Servicios"
           >
-            @if (enviando()) {
-              <span class="solicitud__spinner" aria-hidden="true"></span>
-            }
-            {{ enviando() ? 'Enviando…' : 'Enviar solicitud de incorporación' }}
+            <span class="tarjeta__titulo">Servicios</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h10" />
+            </svg>
           </button>
-        </div>
 
-        <div class="gestion__enviadas">
-          <header class="panel__cabecera">
-            <div>
-              <span class="panel__eyebrow">Enviadas</span>
-              <h3>Solicitudes enviadas desde esta sucursal</h3>
-            </div>
-            @if (solicitudesEnviadas().length > 0) {
-              <span class="panel__contador" [attr.aria-label]="solicitudesEnviadas().length + ' invitaciones enviadas'">
-                {{ solicitudesEnviadas().length }}
-              </span>
-            }
-          </header>
+          <a
+            class="tarjeta"
+            [routerLink]="['/mis-sucursales', sucursal.id, 'empleados']"
+            aria-label="Empleados"
+          >
+            <span class="tarjeta__titulo">Empleados</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 0a4 4 0 1 0 0-8M22 21v-2a4 4 0 0 0-3-3.87" />
+            </svg>
+          </a>
 
-          @if (cargandoEnviadas()) {
-            <div class="lista" aria-busy="true" aria-live="polite">
-              <span class="sr-only">Cargando las solicitudes enviadas…</span>
-              @for (item of [1, 2, 3]; track item) {
-                <div class="solicitud-skeleton" aria-hidden="true">
-                  <span class="skeleton skeleton--avatar"></span>
-                  <span class="skeleton skeleton--line"></span>
-                  <span class="skeleton skeleton--line skeleton--short"></span>
-                </div>
-              }
-            </div>
-          } @else if (errorEnviadas() && solicitudesEnviadas().length === 0) {
-            <div class="estado estado--error" role="alert">
-              <span class="estado__icono" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                </svg>
-              </span>
-              <h3>No pudimos cargar las solicitudes enviadas</h3>
-              <p>{{ errorEnviadas() }}</p>
-              <button
-                class="boton boton--ghost"
-                type="button"
-                [disabled]="reintentandoEnviadas()"
-                (click)="reintentarEnviadas()"
-              >
-                {{ reintentandoEnviadas() ? 'Reintentando…' : 'Reintentar' }}
-              </button>
-            </div>
-          } @else if (solicitudesEnviadas().length === 0) {
-            <div class="estado estado--vacio" role="status">
-              <span class="estado__icono" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path d="M4 5h16v14H4zM8 9h8M8 13h5" />
-                </svg>
-              </span>
-              <h3>Todavía no enviaste invitaciones</h3>
-              <p>Cuando invites a alguien a sumarse al equipo, vas a poder seguir su estado desde acá.</p>
-            </div>
-          } @else {
-            @if (errorEnviadas()) {
-              <div class="aviso aviso--error" role="alert">
-                <p>{{ errorEnviadas() }}</p>
-                <button
-                  type="button"
-                  [disabled]="reintentandoEnviadas()"
-                  (click)="reintentarEnviadas()"
-                >
-                  {{ reintentandoEnviadas() ? 'Reintentando…' : 'Reintentar' }}
-                </button>
-              </div>
-            }
+          <a
+            class="tarjeta"
+            [routerLink]="['/mis-sucursales', sucursal.id, 'turnos']"
+            aria-label="Turnos"
+          >
+            <span class="tarjeta__titulo">Turnos</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" />
+            </svg>
+          </a>
 
-            <app-solicitud-empleado-lista
-              [solicitudes]="visiblesEnviadas()"
-              tipo="enviada"
-            />
+          <a
+            class="tarjeta"
+            [routerLink]="['/mis-sucursales', sucursal.id, 'solicitudes']"
+            aria-label="Solicitudes"
+          >
+            <span class="tarjeta__titulo">Solicitudes</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5" />
+            </svg>
+          </a>
 
-            @if (hayMasEnviadas()) {
-              <a class="ver-mas" [routerLink]="['/solicitudes/empleo/enviadas', sucursal.id]">
-                <span>Ver más solicitudes</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
-              </a>
-            }
-          }
+          <a
+            class="tarjeta"
+            [routerLink]="['/sucursal', sucursal.id]"
+            aria-label="Sucursal"
+          >
+            <span class="tarjeta__titulo">Sucursal</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
+            </svg>
+          </a>
         </div>
       </section>
     } @else {
@@ -225,7 +151,7 @@
               </span>
               <div>
                 <h3>{{ sucursal.nombre }}</h3>
-                <p>{{ humanizarCategoria(sucursal.categoria) }} · {{ sucursal.puntuacion ? (sucursal.puntuacion.toFixed(1).replace('.', ',') + ' de 5') : 'Sin reseñas' }}</p>
+                <p>{{ humanizarCategoria(sucursal.categoria) }}</p>
               </div>
             </div>
             <button class="boton boton--principal" type="button" (click)="seleccionarSucursal(sucursal.id)">

@@ -95,6 +95,7 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .panel__acciones {
@@ -125,6 +126,25 @@ h1 {
 .gestion__enviadas {
   display: grid;
   gap: 16px;
+}
+
+.gestion__auto-incorporacion {
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.gestion__auto-incorporacion h3 {
+  font-size: 1.15rem;
+}
+
+.gestion__auto-incorporacion > div > p {
+  margin-top: 6px;
+  color: var(--muted);
 }
 
 .gestion__opcion h3,
@@ -263,7 +283,7 @@ h1 {
   color: var(--text);
   cursor: pointer;
   font: inherit;
-  text-decoration: none;
+   text-decoration: none;
 }
 
 .boton:disabled {
@@ -391,6 +411,187 @@ h1 {
   }
 }
 
+.volver-gestor,
+.volver-gestor:visited {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  background: transparent;
+  color: #fff !important;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.volver-gestor:hover {
+  background: var(--accent-soft);
+}
+
+.volver-gestor svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gestor {
+  display: grid;
+  gap: 20px;
+}
+
+.gestor__cabecera {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.gestor__cabecera .eyebrow {
+  width: fit-content;
+}
+
+.gestor__cabecera h1 {
+  font-size: clamp(2.4rem, 4vw, 3.2rem);
+}
+
+.gestor__rating {
+  font-size: 1.5rem;
+}
+
+.gestor__rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--muted);
+}
+
+.gestor__abejas {
+  display: inline-flex;
+  gap: 2px;
+  font-size: 1.5rem;
+}
+
+.abeja--vacia {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
+.gestor__puntuacion {
+  color: var(--muted);
+  font-size: 1.5rem;
+}
+
+.gestor__cabecera {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 48px;
+  row-gap: 6px;
+}
+
+.gestor__cabecera .eyebrow {
+  grid-column: 1 / -1;
+}
+
+.gestor__cabecera h1 {
+  grid-column: 1;
+}
+
+.gestor__cabecera .gestor__rating {
+  grid-column: 2;
+  justify-self: end;
+}
+
+.gestor__cabecera h2 {
+  font-size: 1.5rem;
+}
+
+.gestor__tarjetas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+.tarjeta {
+  aspect-ratio: 1 / 1;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-items: start;
+  justify-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.15s var(--ease),
+    box-shadow 0.15s var(--ease),
+    background 0.15s var(--ease);
+}
+
+.tarjeta__titulo {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  text-align: center;
+}
+
+.tarjeta__icono {
+  width: 72px;
+  height: 72px;
+  stroke: var(--accent);
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  align-self: center;
+}
+
+.tarjeta:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tarjeta:active {
+  transform: translateY(0);
+}
+
+.tarjeta:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tarjeta {
+    transition: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .gestor__tarjetas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .gestor__tarjetas {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 720px) {
   .sucursal-card {
     flex-direction: column;
@@ -399,6 +600,7 @@ h1 {
   .busqueda__fila {
     flex-direction: column;
   }
+
   .panel__acciones {
     align-items: stretch;
     flex-direction: column;

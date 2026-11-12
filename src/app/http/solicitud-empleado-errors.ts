@@ -5,6 +5,7 @@ export type ContextoSolicitudEmpleado =
   | 'detalle'
   | 'resolucion'
   | 'envio'
+  | 'auto-incorporacion'
   | 'busqueda'
   | 'sucursales';
 
@@ -17,7 +18,11 @@ export function mensajeErrorSolicitudEmpleado(
   contexto: ContextoSolicitudEmpleado,
 ): string {
   const contextoBase =
-    contexto === 'busqueda' || contexto === 'sucursales' ? 'carga' : contexto;
+    contexto === 'busqueda' || contexto === 'sucursales'
+      ? 'carga'
+      : contexto === 'auto-incorporacion'
+        ? 'envio'
+        : contexto;
   const mensaje = mensajeErrorSolicitud(error, contextoBase);
 
   if (contexto === 'carga') {
@@ -30,6 +35,13 @@ export function mensajeErrorSolicitudEmpleado(
 
   if (contexto === 'sucursales') {
     return mensaje.replace('tus solicitudes', 'tus sucursales');
+  }
+
+  if (contexto === 'auto-incorporacion') {
+    if (mensaje === 'Revisá el comentario ingresado e intentá nuevamente.') {
+      return 'No pudimos agregarte como empleado. Revisá los datos e intentá nuevamente.';
+    }
+    return mensaje.replace('enviar la solicitud', 'agregarte como empleado');
   }
 
   return mensaje;

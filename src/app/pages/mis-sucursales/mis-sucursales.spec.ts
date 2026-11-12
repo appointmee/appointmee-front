@@ -1,9 +1,11 @@
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { MisSucursales } from './mis-sucursales';
+import { authService } from '../../services/auth-service';
 
 describe('MisSucursales', () => {
   let fixture: ComponentFixture<MisSucursales>;
@@ -12,7 +14,15 @@ describe('MisSucursales', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MisSucursales],
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: authService,
+          useValue: { perfil: signal({ id: 7, email: 'empleador@ejemplo.com' }) },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MisSucursales);
@@ -25,7 +35,7 @@ describe('MisSucursales', () => {
     fixture.destroy();
   });
 
-  it('carga las sucursales propias y permite gestionar una', () => {
+  it('carga las sucursales propias y muestra las 5 tarjetas al gestionar una', () => {
     const req = backend.expectOne((request) =>
       request.url.endsWith('/sucursales/listar/propias'),
     );
@@ -41,25 +51,10 @@ describe('MisSucursales', () => {
     gestionar?.click();
     fixture.detectChanges();
 
-    const enviadas = backend.expectOne((request) =>
-      request.url.endsWith('/solicitudes-empleado/enviadas/sucursal/5'),
-    );
-    enviadas.flush([]);
-    fixture.detectChanges();
-
-    expect(host.textContent).toContain('Enviar solicitudes de empleo');
-
-    const verTurnos = Array.from(host.querySelectorAll<HTMLAnchorElement>('a')).find(
-      (enlace) => enlace.textContent?.includes('Ver turnos'),
-    );
-    expect(verTurnos?.getAttribute('href')).toBe('/mis-sucursales/5/turnos');
-
-    const verSucursal = Array.from(host.querySelectorAll<HTMLAnchorElement>('a')).find(
-      (enlace) => enlace.textContent?.includes('Ver sucursal'),
-    );
-    expect(verSucursal?.getAttribute('href')).toBe('/sucursal/5');
-    expect(verTurnos?.classList.contains('boton--principal')).toBe(true);
-    expect(verSucursal?.classList.contains('boton--principal')).toBe(true);
-    expect(verSucursal?.classList.contains('boton--ghost')).toBe(false);
+    expect(host.textContent).toContain('Servicios');
+    expect(host.textContent).toContain('Empleados');
+    expect(host.textContent).toContain('Turnos');
+    expect(host.textContent).toContain('Solicitudes');
+    expect(host.textContent).toContain('Sucursal');
   });
 });

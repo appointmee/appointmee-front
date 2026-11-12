@@ -19,6 +19,7 @@ La tabla siguiente registra únicamente llamadas encontradas en `src/app/service
 | `POST` | `/auth/verify-email` | Validar código de email |
 | `POST` | `/auth/complete-verification` | Completar sesión verificada |
 | `GET` | `/usuarios/me` | Obtener perfil de sesión |
+| `DELETE` | `/usuarios/borrar-cuenta` | Eliminar la cuenta propia; exige dos confirmaciones en la UI |
 | `GET` | `/sucursales/listar` | Listar sucursales |
 | `GET` | `/sucursales/listar/filtrar` | Filtrar por `categoria` y/o `nombre` |
 | `GET` | `/sucursales/categorias` | Listar categorías |
@@ -29,6 +30,7 @@ La tabla siguiente registra únicamente llamadas encontradas en `src/app/service
 | `POST`, `PUT`, `DELETE` | `/servicios`, `/servicios/{servicioId}` | Crear, actualizar y eliminar servicio |
 | `GET` | `/sucursales/{sucursalId}/elegir-empleado` | Listar profesionales de una sucursal |
 | `POST`, `PUT`, `DELETE` | `/sucursales/{sucursalId}/empleados`, `.../empleados/{empleadoId}` | Operaciones de empleado |
+| `DELETE` | `/sucursales/{sucursalId}/empleados/eliminar/{empleadoId}` | Quitar al empleado del equipo de la sucursal |
 | `GET` | `/turnos/disponibilidad/empleado/{empleadoId}/servicio/{servicioId}` | Consultar disponibilidad |
 | `POST` | `/turnos/registrar` | Registrar turno; payload `{ fechaHora, empleadoId, servicioId }` |
 | `GET` | `/sucursales/{sucursalId}/resenias` | Listar reseñas |

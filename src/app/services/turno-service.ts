@@ -82,4 +82,24 @@ export class turnoService {
       { context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true) },
     );
   }
+
+  /** PATCH /turnos/finalizar/{turnoId}. Disponible para EMPLEADOR y EMPLEADO. */
+  finalizarTurno(turnoId: number): Observable<string> {
+    return this.http.patch(
+      `${this.api.baseUrl}/turnos/finalizar/${turnoId}`,
+      null,
+      {
+        context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+        responseType: 'text',
+      },
+    );
+  }
+
+  /** DELETE /turnos/cancelar/{turnoId}. Disponible únicamente para EMPLEADOR. */
+  cancelarTurno(turnoId: number): Observable<string> {
+    return this.http.delete(`${this.api.baseUrl}/turnos/cancelar/${turnoId}`, {
+      context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+      responseType: 'text',
+    });
+  }
 }

@@ -13,16 +13,17 @@ import { verificacionPendienteService } from '../../services/verificacion-pendie
 import { authService } from '../../services/auth-service';
 import { verificacionService } from '../../services/verificacion-service';
 import { CambiarPassword } from '../../components/cambiar-password/cambiar-password';
+import { EliminarCuenta } from '../../components/eliminar-cuenta/eliminar-cuenta';
 
 @Component({
-  imports: [DsInputComponent, DsButtonComponent, CambiarPassword],
+  imports: [DsInputComponent, DsButtonComponent, CambiarPassword, EliminarCuenta],
   selector: 'app-configuracion',
   templateUrl: './configuracion.html',
   styleUrl: './configuracion.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Configuracion implements OnInit {
-  seccion = signal<'verificacion' | 'password'>('verificacion');
+  seccion = signal<'verificacion' | 'password' | 'eliminar'>('verificacion');
 
   auth = inject(authService);
   private verificacion = inject(verificacionService);

@@ -36,7 +36,19 @@ export class reseniaService {
       { context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true) },
     );
   }
-//PUT
+
+  /**
+   * POST /turnos/{turnoId}/resenia (ReseniaCrearDTO del backend).
+   * Es el endpoint existente para publicar la reseña de un turno propio.
+   */
+  crearParaTurno(turnoId: number, datos: ReseniaPayload): Observable<string> {
+    return this.http.post(`${this.api.baseUrl}/turnos/${turnoId}/resenia`, datos, {
+      context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+      responseType: 'text',
+    });
+  }
+
+  //PUT
   actualizar(sucursalId: number, reseniaId: number, datos: ReseniaPayload): Observable<ReseniaDTO> {
     return this.http.put<ReseniaDTO>(
       `${this.api.baseUrl}/sucursales/${sucursalId}/resenias/${reseniaId}`,

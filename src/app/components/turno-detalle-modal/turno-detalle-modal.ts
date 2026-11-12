@@ -95,6 +95,9 @@ export class TurnoDetalleModal {
   readonly sucursalCargando = input(false);
   readonly sucursalError = input<string | null>(null);
 
+  /** Rol del usuario que visualiza el detalle. Determina las acciones disponibles. */
+  @Input() rol: 'EMPLEADO' | 'EMPLEADOR' = 'EMPLEADOR';
+
   @Output() readonly close = new EventEmitter<void>();
   @Output() readonly reintentarSucursal = new EventEmitter<void>();
 
@@ -103,6 +106,12 @@ export class TurnoDetalleModal {
   protected readonly detalleError = signal<string | null>(null);
   protected readonly detalleReintentando = signal(false);
   private readonly fotoSucursalFallida = signal<string | null>(null);
+
+  protected readonly procesandoAccion = signal(false);
+  protected readonly accionEnCurso = signal<'finalizar' | 'cancelar' | null>(null);
+  protected readonly confirmacion = signal<'finalizar' | 'cancelar' | null>(null);
+  protected readonly errorAccion = signal<string | null>(null);
+  protected readonly exitoAccion = signal<string | null>(null);
   private readonly fotoEmpleadoFallida = signal<string | null>(null);
 
   protected readonly reseniaExpandida = signal(false);
@@ -127,6 +136,32 @@ export class TurnoDetalleModal {
       ? this.sumarMinutos(detalle.fechaTurno, detalle.servicio.duracion)
       : '—';
   });
+
+  protected readonly puedeFinalizar = computed(() => {
+    const detalle = this.detalle();
+    if (!detalle || this.detalleEstado() !== 'CONFIRMADO') return false;
+    const finEstimado =
+      this.timestamp(detalle.fechaTurno) + detalle.servicio.duracion * 60_000;
+    return finEstimado <= Date.now();
+  });
+
+  protected readonly motivoFinalizar = computed(() => {
+    if (this.detalleEstado() !== 'CONFIRMADO') return 'El turno no está confirmado';
+    const detalle = this.detalle();
+    if (!detalle) return 'El turno aún no terminó';
+    const finEstimado =
+      this.timestamp(detalle.fechaTurno) + detalle.servicio.duracion * 60_000;
+    if (finEstimado > Date.now()) return 'El turno aún no terminó';
+    return null;
+  });
+
+  protected readonly puedeCancelar = computed(
+    () => this.detalleEstado() === 'CONFIRMADO',
+  );
+
+  protected readonly motivoCancelar = computed(() =>
+    this.detalleEstado() !== 'CONFIRMADO' ? 'El turno no está confirmado' : null,
+  );
 
   protected readonly fotoSucursal = computed(() => {
     const foto = this.sucursal()?.fotoPerfil?.trim();
@@ -212,6 +247,104 @@ export class TurnoDetalleModal {
     this.reseniaExpandida.update((expandida) => !expandida);
   }
 
+  protected solicitarFinalizar(): void {
+    if (
+      !this.puedeFinalizar() ||
+      this.procesandoAccion() ||
+      this.detalleCargando()
+    )
+      return;
+    this.errorAccion.set(null);
+    this.exitoAccion.set(null);
+    this.confirmacion.set('finalizar');
+  }
+
+  protected solicitarCancelar(): void {
+    if (
+      !this.puedeCancelar() ||
+      this.procesandoAccion() ||
+      this.detalleCargando()
+    )
+      return;
+    this.errorAccion.set(null);
+    this.exitoAccion.set(null);
+    this.confirmacion.set('cancelar');
+  }
+
+  protected cancelarConfirmacion(): void {
+    if (this.procesandoAccion()) return;
+    this.confirmacion.set(null);
+  }
+
+  protected confirmarAccion(): void {
+    const accion = this.confirmacion();
+    const detalle = this.detalle();
+    if (!accion || !detalle || this.procesandoAccion()) return;
+
+    this.procesandoAccion.set(true);
+    this.accionEnCurso.set(accion);
+    this.errorAccion.set(null);
+
+    const request$ =
+      accion === 'finalizar'
+        ? this.turnosApi.finalizarTurno(detalle.id)
+        : this.turnosApi.cancelarTurno(detalle.id);
+
+    request$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (respuesta) => {
+          this.procesandoAccion.set(false);
+          this.accionEnCurso.set(null);
+          this.confirmacion.set(null);
+          this.exitoAccion.set(
+            typeof respuesta === 'string' && respuesta.trim() !== ''
+              ? respuesta
+              : accion === 'finalizar'
+                ? 'Turno finalizado correctamente.'
+                : 'Turno cancelado correctamente.',
+          );
+          this.recargarDetalle();
+        },
+        error: (error: unknown) => {
+          this.procesandoAccion.set(false);
+          this.accionEnCurso.set(null);
+          this.confirmacion.set(null);
+          this.errorAccion.set(this.mensajeErrorAccion(error));
+        },
+      });
+  }
+
+  private recargarDetalle(): void {
+    const turno = this.turnoActual();
+    if (!turno) return;
+    this.detalleCargando.set(true);
+    this.detalleError.set(null);
+    this.cargarDetalle(turno.id, this.revision);
+  }
+
+  private mensajeErrorAccion(error: unknown): string {
+    const status =
+      error instanceof HttpErrorResponse
+        ? error.status
+        : (error as { status?: number } | null)?.status;
+    const cuerpo =
+      error instanceof HttpErrorResponse
+        ? error.error
+        : (error as { error?: unknown } | null)?.error;
+
+    if (typeof cuerpo === 'string' && cuerpo.trim() !== '') return cuerpo;
+    if (status === 0)
+      return 'No pudimos conectarnos. Revisá tu conexión e intentá nuevamente.';
+    if (status === 403) return 'No tenés permisos para realizar esta acción.';
+    if (status === 404) return 'No encontramos el turno.';
+    if (status === 409)
+      return typeof cuerpo === 'string' && cuerpo.trim() !== ''
+        ? cuerpo
+        : 'No se pudo completar la acción.';
+    return 'No pudimos completar la acción. Probá de nuevo en unos segundos.';
+  }
+
   protected etiquetaEstado(estado: EstadoTurno | null | undefined): string {
     return estado ? ETIQUETAS_ESTADO[estado] : 'Sin estado';
   }
@@ -256,6 +389,11 @@ export class TurnoDetalleModal {
     this.detalleReintentando.set(false);
     this.reseniaExpandida.set(false);
     this.fotoEmpleadoFallida.set(null);
+    this.procesandoAccion.set(false);
+    this.accionEnCurso.set(null);
+    this.confirmacion.set(null);
+    this.errorAccion.set(null);
+    this.exitoAccion.set(null);
 
     this.cargarDetalle(turno.id, revision);
   }
@@ -268,6 +406,11 @@ export class TurnoDetalleModal {
     this.detalleReintentando.set(false);
     this.reseniaExpandida.set(false);
     this.fotoEmpleadoFallida.set(null);
+    this.procesandoAccion.set(false);
+    this.accionEnCurso.set(null);
+    this.confirmacion.set(null);
+    this.errorAccion.set(null);
+    this.exitoAccion.set(null);
   }
 
   private cargarDetalle(id: number, revision: number): void {
@@ -354,6 +497,22 @@ export class TurnoDetalleModal {
 
   private dosDigitos(valor: number): string {
     return String(valor).padStart(2, '0');
+  }
+
+  private timestamp(valor: string | null | undefined): number {
+    const partes = this.partesFecha(valor);
+    if (partes) {
+      return new Date(
+        partes.anio,
+        partes.mes - 1,
+        partes.dia,
+        partes.hora,
+        partes.minuto,
+        partes.segundo,
+      ).getTime();
+    }
+    const fecha = valor ? Date.parse(valor) : NaN;
+    return Number.isNaN(fecha) ? 0 : fecha;
   }
 
   private cancelarDetalle(): void {

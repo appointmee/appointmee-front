@@ -325,4 +325,66 @@ describe('Ajustes · Verificar cuenta', () => {
     page.verificacionModel.update(datos => ({ ...datos, codigo: '012345' })); fixture.detectChanges();
     fixture.destroy(); vi.advanceTimersByTime(3000); expect(verificacion.verificarEmail).not.toHaveBeenCalled();
   });
+
+  describe('SCRUM-274 · Sección "Eliminar cuenta"', () => {
+    function pestanas(): HTMLButtonElement[] {
+      return Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('nav .ajustes__pestana'),
+      );
+    }
+
+    function abrirSesion(): void {
+      auth.autenticado.mockReturnValue(true);
+      auth.perfil.mockReturnValue({ email: 'cuenta@example.com' });
+      fixture.destroy();
+      fixture = TestBed.createComponent(Configuracion);
+      page = fixture.componentInstance;
+      fixture.detectChanges();
+    }
+
+    it('agrega la pestaña "Eliminar cuenta" junto a las secciones existentes', () => {
+      abrirSesion();
+
+      const etiquetas = pestanas().map((pestana) => pestana.textContent?.trim());
+      expect(etiquetas).toEqual(['Verificar cuenta', 'Cambiar contraseña', 'Eliminar cuenta']);
+    });
+
+    it('no muestra la sección a un visitante sin sesión', () => {
+      expect(pestanas().map((pestana) => pestana.textContent?.trim())).toEqual(['Verificar cuenta']);
+    });
+
+    it('muestra la sección con el aviso y el botón cuando se elige la pestaña', () => {
+      abrirSesion();
+
+      const pestana = pestanas().find((item) => item.textContent?.trim() === 'Eliminar cuenta');
+      pestana?.click();
+      fixture.detectChanges();
+
+      const seccion = (fixture.nativeElement as HTMLElement).querySelector('section.eliminar-cuenta');
+      expect(seccion).toBeTruthy();
+      expect(seccion?.querySelector('h2')?.textContent?.trim()).toBe('Eliminar cuenta');
+      expect(seccion?.textContent).toContain('AVISO:');
+      expect(seccion?.textContent).toContain(
+        'Una vez una cuenta es eliminada, un administrador puede reactivarla, pero no es un proceso garantizado y llevará mucho tiempo',
+      );
+      expect(seccion?.querySelector('button.eliminar-cuenta__boton')?.textContent?.trim()).toBe(
+        'Eliminar cuenta',
+      );
+
+      // Las secciones anteriores quedan intactas.
+      expect((fixture.nativeElement as HTMLElement).querySelector('section.verificacion')).toBeNull();
+      expect((fixture.nativeElement as HTMLElement).querySelector('app-cambiar-password')).toBeNull();
+    });
+
+    it('la pestaña activa se marca para "Eliminar cuenta"', () => {
+      abrirSesion();
+
+      const pestana = pestanas().find((item) => item.textContent?.trim() === 'Eliminar cuenta');
+      pestana?.click();
+      fixture.detectChanges();
+
+      expect(pestana?.getAttribute('aria-pressed')).toBe('true');
+      expect(pestana?.classList.contains('ajustes__pestana--activa')).toBe(true);
+    });
+  });
 });

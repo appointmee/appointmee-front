@@ -2,12 +2,13 @@ import { Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationError, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { Navbar } from './components/navbar/navbar';
+import { Footer } from './components/footer/footer';
 import { ApiErrors } from './http/api-errors';
 import { NavigationHistory } from './navigation-history';
 import { reservaContextoService } from './services/reserva-contexto-service';
 
 @Component({
-  imports: [RouterOutlet, RouterLink, Navbar],
+  imports: [RouterOutlet, RouterLink, Navbar, Footer],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
@@ -20,6 +21,7 @@ export class App {
 
   protected readonly rutaFallida = signal<string | null>(null);
   protected readonly reintentando = signal(false);
+  protected readonly mostrarFooter = signal(this.router.url.split(/[?#]/)[0] !== '/');
 
   constructor() {
     this.router.events.pipe(takeUntilDestroyed()).subscribe(event => {
@@ -27,6 +29,7 @@ export class App {
         this.rutaFallida.set(event.url);
         this.reintentando.set(false);
       } else if (event instanceof NavigationEnd) {
+        this.mostrarFooter.set(event.urlAfterRedirects.split(/[?#]/)[0] !== '/');
         this.rutaFallida.set(null);
         this.reintentando.set(false);
         if (!this.esRutaDeReserva(event.urlAfterRedirects)) {

@@ -1,0 +1,96 @@
+<footer class="site-footer" aria-label="Pie de página">
+  <div class="site-footer__inner">
+    <div class="site-footer__top">
+      <div class="site-footer__brand">
+        <a routerLink="/" class="site-footer__brand-link" aria-label="AppointMee - Inicio">
+          <img src="appointmee-logo.png" alt="" width="36" height="36" loading="lazy" />
+          <span>Appoint<span class="site-footer__accent">Mee</span></span>
+        </a>
+        <p>
+          Conectamos clientes con establecimientos para gestionar turnos de forma simple, rápida y
+          organizada.
+        </p>
+      </div>
+      <nav class="site-footer__links" aria-label="Navegación del pie de página">
+        <section aria-labelledby="footer-navigation-title">
+          <h2 id="footer-navigation-title">Navegación</h2>
+          <ul>
+            <li>
+              <a
+                routerLink="/"
+                routerLinkActive="site-footer__link--active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                ariaCurrentWhenActive="page"
+                >Inicio</a
+              >
+            </li>
+            <li>
+              <a
+                routerLink="/sucursales"
+                routerLinkActive="site-footer__link--active"
+                ariaCurrentWhenActive="page"
+                >Sucursales</a
+              >
+            </li>
+          </ul>
+        </section>
+        <section aria-labelledby="footer-information-title">
+          <h2 id="footer-information-title">Información</h2>
+          <ul>
+            <li>
+              <a routerLink="/" fragment="quienes-somos">¿Quiénes somos?</a>
+            </li>
+            <li>
+              <a routerLink="/" fragment="como-funciona">¿Cómo funciona?</a>
+            </li>
+          </ul>
+        </section>
+        <section aria-labelledby="footer-account-title">
+          <h2 id="footer-account-title">Cuenta</h2>
+          <ul>
+            @if (auth.visitante()) {
+              <li>
+                <a
+                  routerLink="/login"
+                  routerLinkActive="site-footer__link--active"
+                  ariaCurrentWhenActive="page"
+                  >Iniciar sesión</a
+                >
+              </li>
+              <li>
+                <a
+                  routerLink="/registrarme"
+                  routerLinkActive="site-footer__link--active"
+                  ariaCurrentWhenActive="page"
+                  >Crear cuenta</a
+                >
+              </li>
+            } @else if (auth.autenticado()) {
+              <li>
+                <a
+                  routerLink="/perfil"
+                  routerLinkActive="site-footer__link--active"
+                  ariaCurrentWhenActive="page"
+                  >Mi perfil</a
+                >
+              </li>
+              <li>
+                <a
+                  routerLink="/configuracion"
+                  routerLinkActive="site-footer__link--active"
+                  ariaCurrentWhenActive="page"
+                  >Configuración</a
+                >
+              </li>
+            } @else {
+              <li class="site-footer__loading" role="status">Restaurando sesión…</li>
+            }
+          </ul>
+        </section>
+      </nav>
+    </div>
+    <div class="site-footer__bottom">
+      <span>© {{ currentYear }} AppointMee. Todos los derechos reservados.</span>
+    </div>
+  </div>
+</footer>

@@ -87,7 +87,7 @@ export class TurnosSucursal {
   private readonly destroyRef = inject(DestroyRef);
   private readonly recargar = new Subject<EstadoTurno>();
 
-  private readonly sucursalId = Number(
+  protected readonly sucursalId = Number(
     this.route.snapshot.paramMap.get('sucursalId') ?? '',
   );
   private readonly sucursalValida =

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { backendService } from './backend-service';
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import { SucursalDetalleDTO, SucursalMiniDTO, SucursalPayload } from '../models/sucursal';
+import { UsuarioResponseDTO } from '../models/usuario';
 
 /**
  * Devuelve un HttpContext que silencia el manejo global de errores para que la
@@ -78,7 +79,22 @@ export class sucursalService {
     );
   }
 
-  /** Permite elegir si el error del detalle se maneja globalmente o en su propia pantalla. */
+  listarEmpleados(sucursalId: number): Observable<UsuarioResponseDTO[]> {
+    return this.http.get<UsuarioResponseDTO[]>(
+      `${this.api.baseUrl}/sucursales/${sucursalId}/empleados`,
+      { context: this.contextoSinAvisoGlobal() },
+    );
+  }
+
+  convertirmeEnEmpleado(sucursalId: number): Observable<string> {
+    return this.http.patch(
+      `${this.api.baseUrl}/sucursales/${sucursalId}/convertirme-empleado`,
+      {},
+      { context: this.contextoSinAvisoGlobal(), responseType: 'text' },
+    );
+  }
+
+   /** Permite elegir si el error del detalle se maneja globalmente o en su propia pantalla. */
   obtenerPorId(
     idSucursal: number,
     silenciarErroresGlobales = false,
