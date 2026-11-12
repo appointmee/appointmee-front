@@ -11,7 +11,7 @@ export class verificacionPendienteService {
   leer(): VerificacionPendiente | null { return this.storage.leer(); }
 
 
-  //  POST EMAIL
+  /** Guarda el contexto de verificación solo si el backend entregó un ticket válido. */
   guardarEmail(email: string, verificationToken?: string, expiresIn = 900): void {
     const normalizado = email.trim().toLowerCase();
     if (!normalizado) { this.limpiar(); return; }
@@ -22,8 +22,7 @@ export class verificacionPendienteService {
     // Un email escrito a mano no concede permiso para verificar una cuenta.
   }
 
-  //sincroniza el estado que devuelve el backend con el de storage
-
+  /** Copia los límites y vencimientos autoritativos del backend al estado local de interfaz. */
   aplicarEstado(estado: EstadoVerificacion): void {
     const datos = this.leer();
     if (!datos) return;
@@ -34,9 +33,10 @@ export class verificacionPendienteService {
       codigoVenceEn: estado.enviado ? Date.now() + estado.expiresInSeconds * 1000 : 0,
     });
   }
-// cada vez que el usuario se equivoca al ingresar el codibgo de verificacion lo registra (localmente)
-// y si falla 5 veces se bloquea la verificacion
-
+  /**
+   * Actualiza el contador local para feedback inmediato. El bloqueo real y la
+   * cantidad restante los determina el backend y se sincronizan con aplicarEstado.
+   */
   registrarError(attemptsRemaining?: number, retryAfterSeconds?: number): number {
     const datos = this.leer();
     if (!datos) return 0;
@@ -48,27 +48,25 @@ export class verificacionPendienteService {
   }
 
 
-  // Segundos que hacen falta para permitir reenviar la verificacion
-
+  /** Segundos restantes antes de habilitar el reenvío según el último estado conocido. */
   segundosParaReenvio(): number {
     return Math.max(0, Math.ceil(((this.leer()?.reenviarDesde ?? 0) - Date.now()) / 1000));
   }
 
-  //Marca el codigo como vencido
-
+  /** Oculta el código vencido en la interfaz sin borrar el ticket de verificación. */
   marcarCodigoVencido(): void {
     const datos = this.leer();
     if (datos) this.storage.guardar({ ...datos, codigoVenceEn: 0 });
   }
 
 
-  //Calcula los segundos que faltan para que venza el codigo de verificacion
+  /** Calcula cuánto falta para que venza el código, o cero si ya no está vigente. */
   segundosDeVigencia(): number {
     const venceEn = this.leer()?.codigoVenceEn ?? 0;
     return Math.max(0, Math.ceil((venceEn - Date.now()) / 1000));
   }
 
 
-  //limpia el token
+  /** Descarta el ticket y el resto del estado temporal de verificación. */
   limpiar(): void { this.storage.limpiar(); }
 }
