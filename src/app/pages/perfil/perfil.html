@@ -1,0 +1,390 @@
+<section class="perfil" aria-labelledby="perfil-titulo">
+  @if (cargando()) {
+    <h1 class="sr-only" id="perfil-titulo">Cargando tu perfil</h1>
+
+    <div class="perfil__inner perfil__inner--skeleton" aria-busy="true" aria-live="polite">
+      <div class="perfil__hero perfil__hero--skeleton" aria-hidden="true">
+        <div class="perfil__identidad">
+          <span class="skeleton skeleton--avatar"></span>
+          <div class="perfil__copy">
+            <span class="skeleton skeleton--eyebrow"></span>
+            <span class="skeleton skeleton--titulo"></span>
+            <span class="skeleton skeleton--media"></span>
+          </div>
+        </div>
+        <div class="perfil__resumen">
+          <span class="skeleton skeleton--media"></span>
+          <span class="skeleton skeleton--corta"></span>
+        </div>
+      </div>
+
+      <div class="perfil__secciones">
+        @for (panel of [1, 2]; track panel) {
+          <div class="panel panel--skeleton" aria-hidden="true">
+            <span class="skeleton skeleton--panel-titulo"></span>
+            <div class="sucursal sucursal--skeleton">
+              <span class="skeleton skeleton--foto"></span>
+              <span class="sucursal__contenido">
+                <span class="skeleton skeleton--nombre"></span>
+                <span class="skeleton skeleton--corta"></span>
+                <span class="skeleton skeleton--rating"></span>
+              </span>
+              <span class="skeleton skeleton--boton"></span>
+            </div>
+            <div class="sucursal sucursal--skeleton">
+              <span class="skeleton skeleton--foto"></span>
+              <span class="sucursal__contenido">
+                <span class="skeleton skeleton--nombre"></span>
+                <span class="skeleton skeleton--corta"></span>
+                <span class="skeleton skeleton--rating"></span>
+              </span>
+              <span class="skeleton skeleton--boton"></span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <span class="sr-only" role="status">Cargando la información de tu perfil…</span>
+  } @else if (error()) {
+    <div class="perfil__estado" role="alert">
+      <span class="perfil__estado-icon" aria-hidden="true">
+        @if (sinConexion()) {
+          <svg viewBox="0 0 24 24">
+            <path d="M2 2 22 22M8.5 8.5A10.9 10.9 0 0 1 12 8c4 0 7.4 2 9 5M5 13c1-1.4 2.4-2.4 4-3M8.5 16.5a4.5 4.5 0 0 1 7 0M12 20h.01" />
+          </svg>
+        } @else {
+          <svg viewBox="0 0 24 24">
+            <path d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3l-7.5-13.1a2 2 0 0 0-3.4 0Z" />
+          </svg>
+        }
+      </span>
+
+      <h1 id="perfil-titulo">
+        {{ sinConexion() ? 'No pudimos conectarnos' : 'No pudimos mostrar tu perfil' }}
+      </h1>
+      <p>{{ error() }}</p>
+
+      <div class="perfil__estado-acciones">
+        <button
+          dsButton
+          class="btn btn--primary"
+          type="button"
+          (click)="reintentarPerfil()"
+          [disabled]="reintentando()"
+          [loading]="reintentando()"
+          aria-label="Reintentar carga de tu perfil"
+        >
+          {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+        </button>
+        <a class="btn btn--ghost" routerLink="/">Volver al inicio</a>
+      </div>
+
+      <span class="sr-only" role="status" aria-live="polite">
+        @if (reintentando()) {
+          Reintentando la carga de tu perfil…
+        }
+      </span>
+    </div>
+  } @else if (perfil(); as datos) {
+    <div class="perfil__inner">
+      <header class="perfil__hero">
+        <div class="perfil__identidad">
+          <div class="perfil__avatar-marco">
+            @if (fotoPerfil(); as foto) {
+              <img
+                class="perfil__avatar"
+                [src]="foto"
+                [alt]="'Foto de perfil de ' + nombreCompleto()"
+                width="128"
+                height="128"
+                fetchpriority="high"
+                decoding="async"
+                referrerpolicy="no-referrer"
+                (error)="onFotoPerfilError()"
+              />
+            } @else {
+              <span class="perfil__avatar perfil__avatar--iniciales" aria-hidden="true">
+                {{ iniciales() }}
+              </span>
+            }
+          </div>
+
+          <div class="perfil__copy">
+            <span class="eyebrow">
+              <span class="eyebrow__dot" aria-hidden="true"></span>
+              Mi cuenta
+            </span>
+            <h1 id="perfil-titulo">{{ nombreCompleto() }}</h1>
+            <p class="perfil__email">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2 4h20v16H2zM2 6l10 7 10-7" />
+              </svg>
+              @if (email()) {
+                <a [href]="'mailto:' + email()">{{ email() }}</a>
+              } @else {
+                <span>Correo no informado</span>
+              }
+            </p>
+          </div>
+        </div>
+
+        <aside class="perfil__resumen" aria-label="Resumen de la cuenta">
+          <div class="perfil__resumen-item">
+            <span class="perfil__resumen-label">Miembro desde</span>
+            <span class="perfil__resumen-valor">{{ fechaCreacion() }}</span>
+          </div>
+
+          @if (datos.roles.length) {
+            <div class="perfil__resumen-item">
+              <span class="perfil__resumen-label">Roles</span>
+              <ul class="perfil__roles">
+                @for (rol of datos.roles; track rol) {
+                  <li>{{ humanizarCategoria(rol) }}</li>
+                }
+              </ul>
+            </div>
+          }
+        </aside>
+      </header>
+
+      <div class="perfil__secciones">
+        <section class="panel panel--empleado" aria-labelledby="empleado-titulo">
+          <header class="panel__head">
+            <span class="panel__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+              </svg>
+            </span>
+            <div>
+              <span class="panel__eyebrow">Como empleado</span>
+              <h2 id="empleado-titulo">Sucursales como empleado</h2>
+            </div>
+            <span
+              class="panel__count"
+              [attr.aria-label]="
+                sucursalesEmpleado().length === 1
+                  ? '1 sucursal como empleado'
+                  : sucursalesEmpleado().length + ' sucursales como empleado'
+              "
+            >
+              {{ sucursalesEmpleado().length }}
+            </span>
+          </header>
+
+          @if (sucursalesEmpleado().length) {
+            <ul class="sucursales" aria-live="polite">
+              @for (sucursal of sucursalesEmpleado(); track sucursal.id) {
+                <li class="sucursal">
+                  <span class="sucursal__foto">
+                    <img
+                      [src]="imagenSucursal(sucursal)"
+                      [alt]="altImagenSucursal(sucursal)"
+                      width="112"
+                      height="112"
+                      loading="lazy"
+                      decoding="async"
+                      referrerpolicy="no-referrer"
+                      (error)="onImagenSucursalError(sucursal)"
+                    />
+                  </span>
+
+                  <div class="sucursal__contenido">
+                    <h3 class="sucursal__nombre">{{ sucursal.nombre }}</h3>
+                    <p class="sucursal__categoria">
+                      {{ humanizarCategoria(sucursal.categoria) || 'Sucursal' }}
+                    </p>
+                    <div class="sucursal__rating">
+                      <span class="sucursal__abejas" aria-hidden="true">
+                        @for (llena of abejas(sucursal); track $index) {
+                          <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
+                        }
+                      </span>
+                      @if (tienePuntuaciones(sucursal)) {
+                        <span class="sucursal__valor">{{ puntuacion(sucursal).toFixed(1) }}</span>
+                        <span class="sucursal__resenias">
+                          ({{ cantidadResenias(sucursal) }}
+                          {{ cantidadResenias(sucursal) === 1 ? 'reseña' : 'reseñas' }})
+                        </span>
+                      } @else {
+                        <span class="sucursal__sin-resenias">Sin reseñas</span>
+                      }
+                      <span class="sr-only">{{ textoPuntuacion(sucursal) }}</span>
+                    </div>
+                  </div>
+
+                  <a
+                    class="btn btn--primary sucursal__accion"
+                    [routerLink]="['/sucursal', sucursal.id]"
+                    [attr.aria-label]="'Ver sucursal ' + sucursal.nombre"
+                  >
+                    Ver sucursal
+                  </a>
+                </li>
+              }
+            </ul>
+          } @else {
+            <div class="estado-vacio" role="status">
+              <span class="estado-vacio__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+                </svg>
+              </span>
+              <h3>Todavía no sos empleado de ninguna sucursal</h3>
+              <p>Cuando te incorpores al equipo de una sucursal, la vas a ver en esta sección.</p>
+            </div>
+          }
+        </section>
+
+        <section class="panel panel--empleador" aria-labelledby="empleador-titulo">
+          <header class="panel__head">
+            <span class="panel__icon panel__icon--empleador" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2ZM16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+              </svg>
+            </span>
+            <div>
+              <span class="panel__eyebrow">Como empleador</span>
+              <h2 id="empleador-titulo">Sucursales como empleador</h2>
+            </div>
+            @if (!cargandoSucursales() && !errorSucursales()) {
+              <span
+                class="panel__count"
+                [attr.aria-label]="
+                  sucursalesEmpleador().length === 1
+                    ? '1 sucursal como empleador'
+                    : sucursalesEmpleador().length + ' sucursales como empleador'
+                "
+              >
+                {{ sucursalesEmpleador().length }}
+              </span>
+            }
+          </header>
+
+          @if (cargandoSucursales()) {
+            <div class="sucursales" aria-busy="true" aria-live="polite">
+              @for (item of [1, 2]; track item) {
+                <div class="sucursal sucursal--skeleton" aria-hidden="true">
+                  <span class="skeleton skeleton--foto"></span>
+                  <span class="sucursal__contenido">
+                    <span class="skeleton skeleton--nombre"></span>
+                    <span class="skeleton skeleton--corta"></span>
+                    <span class="skeleton skeleton--rating"></span>
+                  </span>
+                  <span class="skeleton skeleton--boton"></span>
+                </div>
+              }
+            </div>
+            <span class="sr-only" role="status">Cargando tus sucursales como empleador…</span>
+          } @else if (errorSucursales()) {
+            <div class="panel__error" role="alert">
+              <span class="panel__error-icon" aria-hidden="true">
+                @if (sinConexionSucursales()) {
+                  <svg viewBox="0 0 24 24">
+                    <path d="M2 2 22 22M8.5 8.5A10.9 10.9 0 0 1 12 8c4 0 7.4 2 9 5M5 13c1-1.4 2.4-2.4 4-3M8.5 16.5a4.5 4.5 0 0 1 7 0M12 20h.01" />
+                  </svg>
+                } @else {
+                  <svg viewBox="0 0 24 24">
+                    <path d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3l-7.5-13.1a2 2 0 0 0-3.4 0Z" />
+                  </svg>
+                }
+              </span>
+              <h3>No pudimos cargar tus sucursales</h3>
+              <p>{{ errorSucursales() }}</p>
+              <button
+                dsButton
+                class="btn btn--primary"
+                type="button"
+                (click)="reintentarSucursales()"
+                [disabled]="reintentandoSucursales()"
+                [loading]="reintentandoSucursales()"
+                aria-label="Reintentar carga de tus sucursales como empleador"
+              >
+                {{ reintentandoSucursales() ? 'Reintentando…' : 'Reintentar' }}
+              </button>
+              <span class="sr-only" role="status" aria-live="polite">
+                @if (reintentandoSucursales()) {
+                  Reintentando la carga de tus sucursales…
+                }
+              </span>
+            </div>
+          } @else if (sucursalesEmpleador().length) {
+            <ul class="sucursales" aria-live="polite">
+              @for (sucursal of sucursalesEmpleador(); track sucursal.id) {
+                <li class="sucursal">
+                  <span class="sucursal__foto">
+                    <img
+                      [src]="imagenSucursal(sucursal)"
+                      [alt]="altImagenSucursal(sucursal)"
+                      width="112"
+                      height="112"
+                      loading="lazy"
+                      decoding="async"
+                      referrerpolicy="no-referrer"
+                      (error)="onImagenSucursalError(sucursal)"
+                    />
+                  </span>
+
+                  <div class="sucursal__contenido">
+                    <h3 class="sucursal__nombre">{{ sucursal.nombre }}</h3>
+                    <p class="sucursal__categoria">
+                      {{ humanizarCategoria(sucursal.categoria) || 'Sucursal' }}
+                    </p>
+                    <div class="sucursal__rating">
+                      <span class="sucursal__abejas" aria-hidden="true">
+                        @for (llena of abejas(sucursal); track $index) {
+                          <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
+                        }
+                      </span>
+                      @if (tienePuntuaciones(sucursal)) {
+                        <span class="sucursal__valor">{{ puntuacion(sucursal).toFixed(1) }}</span>
+                        <span class="sucursal__resenias">
+                          ({{ cantidadResenias(sucursal) }}
+                          {{ cantidadResenias(sucursal) === 1 ? 'reseña' : 'reseñas' }})
+                        </span>
+                      } @else {
+                        <span class="sucursal__sin-resenias">Sin reseñas</span>
+                      }
+                      <span class="sr-only">{{ textoPuntuacion(sucursal) }}</span>
+                    </div>
+                  </div>
+
+                  <a
+                    class="btn btn--primary sucursal__accion"
+                    [routerLink]="['/sucursal', sucursal.id]"
+                    [attr.aria-label]="'Ver sucursal ' + sucursal.nombre"
+                  >
+                    Ver sucursal
+                  </a>
+                </li>
+              }
+            </ul>
+          } @else if (esEmpleador()) {
+            <div class="estado-vacio" role="status">
+              <span class="estado-vacio__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
+                </svg>
+              </span>
+              <h3>Todavía no tenés sucursales como empleador</h3>
+              <p>Cuando crees tu primera sucursal, la vas a ver en esta sección.</p>
+              <a class="btn btn--ghost" routerLink="/mis-sucursales/nueva">Crear sucursal</a>
+            </div>
+          } @else {
+            <div class="estado-vacio" role="status">
+              <span class="estado-vacio__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
+                </svg>
+              </span>
+              <h3>Todavía no tenés sucursales como empleador</h3>
+              <p>
+                Cuando tu cuenta tenga el rol de empleador, tus sucursales van a aparecer acá.
+              </p>
+            </div>
+          }
+        </section>
+      </div>
+    </div>
+  }
+</section>
