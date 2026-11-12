@@ -1,0 +1,38 @@
+:host {
+  display: contents;
+}
+
+.eliminar__titulo {
+  margin: 0 0 var(--space-2, 0.5rem);
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.eliminar__texto {
+  margin: 0 0 var(--space-4, 1rem);
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Error de la eliminación: se muestra dentro del diálogo, sin salir de la
+   pantalla ni cambiar de ruta. */
+.eliminar__error {
+  margin: 0 0 var(--space-3, 0.75rem);
+  padding: var(--space-3, 0.75rem);
+  border: 1px solid rgba(255, 122, 122, 0.35);
+  border-radius: var(--radius-md, 0.5rem);
+  background: rgba(255, 122, 122, 0.08);
+  color: var(--danger);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.eliminar__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3, 0.75rem);
+  justify-content: flex-end;
+}

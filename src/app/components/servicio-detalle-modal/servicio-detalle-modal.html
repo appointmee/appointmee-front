@@ -111,6 +111,17 @@
       </div>
 
       <footer class="detalle__acciones">
+        @if (puedeEliminar()) {
+          <button
+            dsButton
+            variant="danger"
+            type="button"
+            class="detalle__boton detalle__boton--eliminar"
+            (click)="abrirEliminacion()"
+          >
+            Eliminar servicio
+          </button>
+        }
         <button
           dsButton
           variant="primary"
@@ -130,4 +141,11 @@
   [abierto]="editando()"
   (cerrar)="cerrarEdicion()"
   (actualizado)="onActualizado()"
+/>
+
+<app-servicio-eliminar-modal
+  [servicio]="servicio()"
+  [abierto]="confirmandoEliminacion()"
+  (cerrar)="onEliminacionCancelada()"
+  (eliminado)="onEliminado()"
 />

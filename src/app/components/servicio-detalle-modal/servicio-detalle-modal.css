@@ -199,6 +199,9 @@
 
 .detalle__acciones {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
   justify-content: flex-end;
   padding-top: var(--space-3, 0.75rem);
   border-top: 1px solid var(--line);
@@ -206,6 +209,22 @@
 
 .detalle__boton {
   min-width: 200px;
+}
+
+/* Botón de eliminación: rojo, con resplandor rojo al pasar el mouse. */
+.detalle__boton--eliminar {
+  transition:
+    box-shadow 0.2s var(--ease),
+    filter 0.2s var(--ease);
+}
+
+.detalle__boton--eliminar:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: 0 0 18px rgba(255, 122, 122, 0.55);
+}
+
+.detalle__boton--eliminar:focus-visible {
+  box-shadow: 0 0 14px rgba(255, 122, 122, 0.45);
 }
 
 /* Estado de error al cargar el detalle. */
@@ -298,8 +317,10 @@
     justify-content: stretch;
   }
 
+  /* Los dos botones siguen en la misma fila, uno al lado del otro. */
   .detalle__boton {
-    width: 100%;
+    flex: 1 1 0;
+    width: auto;
     min-width: 0;
   }
 }
@@ -310,6 +331,10 @@
   }
 
   .detalle__cerrar {
+    transition: none;
+  }
+
+  .detalle__boton--eliminar {
     transition: none;
   }
 }

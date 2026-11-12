@@ -16,9 +16,11 @@ import { Observable, Subject, of } from 'rxjs';
 import { catchError, map, startWith, switchMap } from 'rxjs/operators';
 
 import { ServicioDTO } from '../../models/servicio';
+import { authService } from '../../services/auth-service';
 import { servicioService } from '../../services/servicio-service';
 import { formatearDuracion } from '../../shared/duracion';
 import { ServicioEditarModal } from '../servicio-editar-modal/servicio-editar-modal';
+import { ServicioEliminarModal } from '../servicio-eliminar-modal/servicio-eliminar-modal';
 
 const FORMATO_PRECIO = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -43,17 +45,19 @@ type ResultadoDetalle =
  *
  * Consulta `GET /servicios/{servicioId}` y muestra nombre, descripción,
  * duración, precio, foto y puntuación. Desde acá se abre el formulario de
- * modificación, que queda por encima de este modal.
+ * modificación y la eliminación del servicio (US-SERV-03), que quedan por
+ * encima de este modal.
  */
 @Component({
   selector: 'app-servicio-detalle-modal',
-  imports: [DsButtonComponent, DsModalComponent, ServicioEditarModal],
+  imports: [DsButtonComponent, DsModalComponent, ServicioEditarModal, ServicioEliminarModal],
   templateUrl: './servicio-detalle-modal.html',
   styleUrl: './servicio-detalle-modal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ServicioDetalleModal {
   private readonly api = inject(servicioService);
+  private readonly auth = inject(authService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Identificador del servicio a mostrar. `null` mantiene el modal cerrado. */
@@ -62,6 +66,8 @@ export class ServicioDetalleModal {
   readonly cerrar = output<void>();
   /** Se emite cuando el servicio fue modificado y hay que refrescar el listado. */
   readonly modificado = output<void>();
+  /** Se emite cuando el servicio fue eliminado y hay que refrescar el listado. */
+  readonly eliminado = output<void>();
 
   protected readonly servicio = signal<ServicioDTO | null>(null);
   protected readonly cargando = signal(false);
@@ -70,6 +76,16 @@ export class ServicioDetalleModal {
   protected readonly exito = signal<string | null>(null);
   /** Indica que el formulario de modificación está abierto por encima. */
   protected readonly editando = signal(false);
+  /** Indica que las confirmaciones de eliminación están abiertas por encima. */
+  protected readonly confirmandoEliminacion = signal(false);
+
+  /**
+   * Solo el empleador puede eliminar servicios: es el rol que autoriza el
+   * endpoint `DELETE /servicios/eliminar/{servicioId}`. El backend sigue
+   * validando el permiso (y que la sucursal sea del empleador), así que esto
+   * solo evita mostrar una acción que el servidor va a rechazar.
+   */
+  protected readonly puedeEliminar = computed(() => this.auth.tieneAlgunRol('EMPLEADOR'));
 
   protected readonly abierto = computed(() => this.servicioId() !== null);
 
@@ -83,9 +99,11 @@ export class ServicioDetalleModal {
     toObservable(this.servicioId)
       .pipe(
         switchMap((id) => {
-          // Cambiar de servicio reinicia el mensaje de la última modificación.
+          // Cambiar de servicio reinicia el mensaje de la última modificación
+          // y cierra lo que estuviera abierto por encima.
           this.exito.set(null);
           this.editando.set(false);
+          this.confirmandoEliminacion.set(false);
           return this.recargar$.pipe(startWith(undefined), map(() => id));
         }),
         switchMap((id) => this.cargarDetalle(id)),
@@ -134,11 +152,12 @@ export class ServicioDetalleModal {
   }
 
   /**
-   * Cierra el modal de detalle. Mientras el formulario de modificación está
-   * abierto por encima, el detalle no se cierra.
+   * Cierra el modal de detalle. Mientras el formulario de modificación o las
+   * confirmaciones de eliminación están abiertos por encima, el detalle no se
+   * cierra.
    */
   protected solicitarCierre(): void {
-    if (this.editando()) return;
+    if (this.editando() || this.confirmandoEliminacion()) return;
     this.cerrar.emit();
   }
 
@@ -161,6 +180,24 @@ export class ServicioDetalleModal {
     this.recargar$.next();
     // La pantalla que lista los servicios tiene que reflejar el cambio.
     this.modificado.emit();
+  }
+
+  /** Abre las confirmaciones de eliminación por encima del detalle. */
+  protected abrirEliminacion(): void {
+    if (!this.servicio() || !this.puedeEliminar()) return;
+    this.exito.set(null);
+    this.confirmandoEliminacion.set(true);
+  }
+
+  /** El empleador canceló: se vuelve al detalle del servicio. */
+  protected onEliminacionCancelada(): void {
+    this.confirmandoEliminacion.set(false);
+  }
+
+  /** El backend confirmó la eliminación: la pantalla refresca el listado. */
+  protected onEliminado(): void {
+    this.confirmandoEliminacion.set(false);
+    this.eliminado.emit();
   }
 
   protected duracion(minutos: number | null | undefined): string {

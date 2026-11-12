@@ -746,6 +746,17 @@
   white-space: nowrap;
 }
 
+/* Aviso de éxito: creación y eliminación de servicios. */
+.aviso-exito {
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  border: 1px solid rgba(126, 226, 168, 0.4);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--success-light-soft);
+  color: var(--success-light);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
 .boton {
   display: inline-flex;
   align-items: center;

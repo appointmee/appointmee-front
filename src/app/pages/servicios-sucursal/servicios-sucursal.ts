@@ -84,6 +84,7 @@ export class ServiciosSucursal {
   protected readonly subiendoFoto = signal(false);
   protected readonly errorCreacion = signal<string | null>(null);
   protected readonly exitoCreacion = signal<string | null>(null);
+  protected readonly exitoEliminacion = signal<string | null>(null);
   protected readonly intentadoEnviar = signal(false);
   protected readonly erroresBackend = signal<Record<string, string>>({});
 
@@ -276,6 +277,18 @@ export class ServiciosSucursal {
   /** Cierra el detalle del servicio. */
   protected cerrarDetalle(): void {
     this.servicioSeleccionado.set(null);
+  }
+
+  /**
+   * El backend confirmó la eliminación del servicio: se cierra el detalle, se
+   * avisa al empleador y el listado se vuelve a pedir para que el servicio
+   * eliminado ya no aparezca. No hace falta recargar la página a mano.
+   */
+  protected onEliminado(): void {
+    this.exitoCreacion.set(null);
+    this.exitoEliminacion.set('El servicio se eliminó correctamente');
+    this.servicioSeleccionado.set(null);
+    this.refrescarListado();
   }
 
   /** Vuelve a pedir el listado para que refleje las modificaciones. */

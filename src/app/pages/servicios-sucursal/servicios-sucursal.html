@@ -39,6 +39,12 @@
       </div>
     }
 
+    @if (exitoEliminacion()) {
+      <div class="aviso-exito" role="status" aria-live="polite">
+        {{ exitoEliminacion() }}
+      </div>
+    }
+
     @if (!sucursalIdValido) {
       <div class="estado estado--contexto" role="alert" aria-live="assertive" aria-atomic="true">
         <h2>No pudimos identificar la sucursal</h2>
@@ -251,4 +257,5 @@
   [servicioId]="servicioSeleccionado()"
   (cerrar)="cerrarDetalle()"
   (modificado)="refrescarListado()"
+  (eliminado)="onEliminado()"
 />

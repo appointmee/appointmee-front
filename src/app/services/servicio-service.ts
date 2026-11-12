@@ -1,6 +1,7 @@
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import { ServicioDTO, ServicioModificarPayload, ServicioPayload } from '../models/servicio';
@@ -58,11 +59,23 @@ export class servicioService {
       },
     );
   }
-  /** Solicita la eliminación del servicio; el backend define su persistencia. */
+  /**
+   * Solicita la eliminación del servicio; el backend define su persistencia.
+   *
+   * El endpoint responde con un texto plano ("Se elimino el servicio
+   * correctamente"), por eso se pide `text` y no JSON: con el tipo por defecto
+   * la respuesta no se podría interpretar.
+   *
+   * Los errores los maneja la pantalla, así que se evita el aviso global del
+   * interceptor para que el mensaje aparezca inline, sin cambiar de ruta.
+   */
   eliminar(servicioId: number): Observable<void> {
-    return this.http.delete<void>(`${this.api.baseUrl}/servicios/eliminar/${servicioId}`, {
-      context: this.contextoSinAvisoGlobal(),
-    });
+    return this.http
+      .delete(`${this.api.baseUrl}/servicios/eliminar/${servicioId}`, {
+        context: this.contextoSinAvisoGlobal(),
+        responseType: 'text',
+      })
+      .pipe(map(() => undefined));
   }
 
   /** Deja que la pantalla presente el error inline sin duplicar el aviso global. */
