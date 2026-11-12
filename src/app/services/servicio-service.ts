@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
-import { ServicioDTO, ServicioPayload } from '../models/servicio';
+import { ServicioDTO, ServicioModificarPayload, ServicioPayload } from '../models/servicio';
 import { backendService } from './backend-service';
 
 /** Acceso HTTP al catálogo de servicios y a sus operaciones de edición. */
@@ -20,9 +20,17 @@ export class servicioService {
       { context: this.contextoSinAvisoGlobal() },
     );
   }
-  /** Obtiene un servicio para una vista de detalle o edición. */
-  obtenerPorId(servicioId: number): Observable<ServicioDTO> {
-    return this.http.get<ServicioDTO>(`${this.api.baseUrl}/servicios/${servicioId}`);
+  /**
+   * Obtiene un servicio para una vista de detalle o edición.
+   * `silenciarErroresGlobales` permite que la pantalla muestre el error
+   * inline sin duplicar el aviso global del interceptor.
+   */
+  obtenerPorId(servicioId: number, silenciarErroresGlobales = false): Observable<ServicioDTO> {
+    const url = `${this.api.baseUrl}/servicios/${servicioId}`;
+    if (!silenciarErroresGlobales) {
+      return this.http.get<ServicioDTO>(url);
+    }
+    return this.http.get<ServicioDTO>(url, { context: this.contextoSinAvisoGlobal() });
   }
   /** Envía al backend los datos validados de un nuevo servicio. */
   crear(datos: ServicioPayload): Observable<string> {
@@ -35,13 +43,26 @@ export class servicioService {
       },
     );
   }
-  /** Actualiza los datos editables de un servicio existente. */
-  actualizar(servicioId: number, datos: ServicioPayload): Observable<ServicioDTO> {
-    return this.http.put<ServicioDTO>(`${this.api.baseUrl}/servicios/${servicioId}`, datos);
+  /**
+   * Actualiza los datos editables de un servicio existente.
+   * El backend solo aplica los campos recibidos: los que no llegan conservan
+   * su valor actual (incluida la foto, si no se envía `fotoUrl`).
+   */
+  actualizar(servicioId: number, datos: ServicioModificarPayload): Observable<string> {
+    return this.http.patch(
+      `${this.api.baseUrl}/servicios/modificar/${servicioId}`,
+      datos,
+      {
+        context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+        responseType: 'text',
+      },
+    );
   }
   /** Solicita la eliminación del servicio; el backend define su persistencia. */
   eliminar(servicioId: number): Observable<void> {
-    return this.http.delete<void>(`${this.api.baseUrl}/servicios/${servicioId}`);
+    return this.http.delete<void>(`${this.api.baseUrl}/servicios/eliminar/${servicioId}`, {
+      context: this.contextoSinAvisoGlobal(),
+    });
   }
 
   /** Deja que la pantalla presente el error inline sin duplicar el aviso global. */

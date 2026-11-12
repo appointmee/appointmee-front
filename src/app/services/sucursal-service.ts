@@ -145,8 +145,6 @@ export class sucursalService {
     );
   }
 
-  crear(datos: SucursalPayload): Observable<SucursalDetalleDTO> {
-    return this.http.post<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales`, datos, {
   /** Crea una sucursal y silencia el interceptor para mostrar errores junto al formulario. */
   crear(datos: SucursalPayload): Observable<string> {
     return this.http.post(`${this.api.baseUrl}/sucursales/crear`, datos, {
