@@ -117,27 +117,42 @@
   min-width: 0;
 }
 
-.eyebrow {
-  display: inline-flex;
+.perfil__nombre-linea {
+  display: flex;
   align-items: center;
-  gap: 9px;
-  width: fit-content;
-  padding: 7px 16px 7px 12px;
-  border: 1px solid rgba(247, 198, 90, 0.28);
-  border-radius: 999px;
-  background: rgba(12, 15, 21, 0.5);
-  color: #f0e2b6;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  gap: var(--space-3);
+  min-width: 0;
 }
 
-.eyebrow__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 6px rgba(247, 198, 90, 0.14);
+.perfil__editar {
+  display: grid;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  place-items: center;
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 64%, transparent);
+  color: var(--accent);
+  box-shadow: var(--shadow-sm);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.perfil__editar:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.perfil__editar svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .perfil__hero h1 {
@@ -245,6 +260,143 @@
   font-weight: 600;
 }
 
+.perfil__exito {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--success) 35%, var(--line));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--success) 10%, var(--surface));
+  color: var(--text);
+}
+
+.perfil-editor {
+  display: grid;
+  gap: var(--space-4);
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(420px circle at 0% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 68%),
+    color-mix(in srgb, var(--surface) 78%, transparent);
+  box-shadow: var(--shadow-md);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.perfil-editor__cabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.perfil-editor__icono {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+}
+
+.perfil-editor__icono svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.perfil-editor__eyebrow {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.perfil-editor h2,
+.perfil-editor p {
+  margin: 0;
+}
+
+.perfil-editor h2 {
+  margin-top: var(--space-1);
+  color: var(--text);
+  font-size: var(--font-size-xl);
+}
+
+.perfil-editor__cabecera p {
+  margin-top: var(--space-1);
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+}
+
+.perfil-editor__campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.perfil-editor__campos ds-input:last-child {
+  grid-column: 1 / -1;
+}
+
+.perfil-editor__campos input {
+  width: 100%;
+  min-height: 46px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  color: var(--text);
+  font: inherit;
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+.perfil-editor__campos input:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.perfil-editor__resumen-error,
+.perfil-editor__error {
+  padding: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--line));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  color: var(--text);
+}
+
+.perfil-editor__resumen-error p {
+  font-weight: 600;
+}
+
+.perfil-editor__resumen-error ul {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+}
+
+.perfil-editor__resumen-error a {
+  color: var(--text);
+  text-underline-offset: 3px;
+}
+
+.perfil-editor__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
 /* =========================================================
    Secciones de sucursales
    ========================================================= */
@@ -261,7 +413,6 @@
   flex-direction: column;
   gap: 18px;
   min-width: 0;
-  height: 100%;
   padding: clamp(20px, 3vw, 28px);
   border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--line));
   border-radius: 22px;
@@ -281,8 +432,42 @@
   display: flex;
   align-items: center;
   gap: 14px;
+  width: 100%;
   padding-bottom: 16px;
+  border: 0;
   border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.panel__head:focus-visible {
+  border-radius: 8px;
+  outline: 2px solid var(--accent);
+  outline-offset: 5px;
+}
+
+.panel__head::after {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  content: '';
+  transform: rotate(45deg);
+  transition: transform 0.2s var(--ease);
+}
+
+.panel__head[aria-expanded='false']::after {
+  transform: rotate(-45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel__head::after {
+    transition: none;
+  }
 }
 
 .panel__head > div {

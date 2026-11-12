@@ -61,7 +61,10 @@ describe('US-PER-02 · Ver el perfil del usuario autenticado', () => {
   let fixture: ComponentFixture<Perfil>;
   let backend: HttpTestingController;
   let sesion: SesionMock;
-  const auth = { perfil: () => sesion };
+  const auth = {
+    perfil: () => sesion,
+    actualizarPerfilLocal: vi.fn(),
+  };
   const title = { setTitle: vi.fn() };
 
   beforeEach(async () => {
@@ -72,6 +75,7 @@ describe('US-PER-02 · Ver el perfil del usuario autenticado', () => {
       fotoPerfil: null,
     };
     title.setTitle.mockClear();
+    auth.actualizarPerfilLocal.mockClear();
 
     await TestBed.configureTestingModule({
       imports: [Perfil],
@@ -204,6 +208,102 @@ describe('US-PER-02 · Ver el perfil del usuario autenticado', () => {
     expect(title.setTitle).toHaveBeenCalledWith('AppointMee | Mi Perfil');
   });
 
+  it('mantiene independientes los desplegables de empleado y empleador', () => {
+    sesion.roles = ['EMPLEADO', 'EMPLEADOR'];
+    crear();
+    responderPerfil(perfil({ roles: ['EMPLEADO', 'EMPLEADOR'] }));
+    responderPropias([sucursal(111, 'Sucursal Centro')]);
+
+    const secciones = host().querySelectorAll<HTMLElement>('.perfil__secciones > .panel');
+    expect(secciones).toHaveLength(2);
+    const botonEmpleado = secciones[0].querySelector<HTMLButtonElement>('.panel__head');
+    const botonEmpleador = secciones[1].querySelector<HTMLButtonElement>('.panel__head');
+    const contenidoEmpleado = secciones[0].querySelector<HTMLElement>('#empleado-contenido');
+    const contenidoEmpleador = secciones[1].querySelector<HTMLElement>('#empleador-contenido');
+
+    expect(botonEmpleado?.textContent).toContain('Sucursales como empleado');
+    expect(botonEmpleador?.textContent).toContain('Sucursales como empleador');
+    expect(botonEmpleado?.getAttribute('aria-expanded')).toBe('true');
+    expect(botonEmpleador?.getAttribute('aria-expanded')).toBe('true');
+    expect(contenidoEmpleado?.hidden).toBe(false);
+    expect(contenidoEmpleador?.hidden).toBe(false);
+
+    botonEmpleado?.click();
+    fixture.detectChanges();
+    expect(botonEmpleado?.getAttribute('aria-expanded')).toBe('false');
+    expect(contenidoEmpleado?.hidden).toBe(true);
+    expect(botonEmpleador?.getAttribute('aria-expanded')).toBe('true');
+    expect(contenidoEmpleador?.hidden).toBe(false);
+
+    botonEmpleador?.click();
+    fixture.detectChanges();
+    expect(botonEmpleado?.getAttribute('aria-expanded')).toBe('false');
+    expect(botonEmpleador?.getAttribute('aria-expanded')).toBe('false');
+
+    botonEmpleado?.click();
+    fixture.detectChanges();
+    expect(botonEmpleado?.getAttribute('aria-expanded')).toBe('true');
+    expect(botonEmpleador?.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('abre el editor, resume errores de validación y enfoca el primer campo inválido', () => {
+    crear();
+    responderPerfil(perfil());
+
+    host().querySelector<HTMLButtonElement>('.perfil__editar')?.click();
+    fixture.detectChanges();
+    expect(host().querySelector('#editar-perfil-titulo')).not.toBeNull();
+
+    const nombre = host().querySelector<HTMLInputElement>('#editar-nombre')!;
+    nombre.value = '';
+    nombre.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+    host().querySelector<HTMLButtonElement>('.perfil-editor__acciones [type="submit"]')?.click();
+    fixture.detectChanges();
+
+    expect(host().querySelector('.perfil-editor__resumen-error')).not.toBeNull();
+    expect(host().querySelector('[role="alert"]')?.textContent).toContain('Nombre');
+    expect(document.activeElement).toBe(nombre);
+    backend.expectNone((request) => request.url.includes('/usuarios/modificar/'));
+  });
+
+  it('guarda los cambios del perfil y actualiza el correo de la sesión', () => {
+    crear();
+    responderPerfil(perfil());
+
+    host().querySelector<HTMLButtonElement>('.perfil__editar')?.click();
+    fixture.detectChanges();
+
+    const valores = [
+      ['#editar-nombre', 'Ana María'],
+      ['#editar-apellido', 'García López'],
+      ['#editar-email', 'ana.nueva@example.com'],
+    ] as const;
+    for (const [selector, valor] of valores) {
+      const input = host().querySelector<HTMLInputElement>(selector)!;
+      input.value = valor;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    fixture.detectChanges();
+    host().querySelector<HTMLButtonElement>('.perfil-editor__acciones [type="submit"]')?.click();
+
+    const request = backend.expectOne((item) => item.url.endsWith('/usuarios/modificar/42'));
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({
+      nombre: 'Ana María',
+      apellido: 'García López',
+      email: 'ana.nueva@example.com',
+    });
+    request.flush({ message: 'Perfil actualizado' });
+    fixture.detectChanges();
+
+    expect(texto(host())).toContain('Ana María García López');
+    expect(texto(host())).toContain('ana.nueva@example.com');
+    expect(texto(host())).toContain('Tu perfil se actualizó correctamente');
+    expect(host().querySelector('#editar-perfil-titulo')).toBeNull();
+    expect(auth.actualizarPerfilLocal).toHaveBeenCalledWith('ana.nueva@example.com');
+  });
+
   it('refuerza la jerarquía visual del resumen y las tarjetas de sucursal', () => {
     crear();
     responderPerfil(
@@ -212,6 +312,7 @@ describe('US-PER-02 · Ver el perfil del usuario autenticado', () => {
 
     const css = estilosRegistrados();
     expect(host().querySelector('.perfil__resumen')).not.toBeNull();
+    expect(css).not.toMatch(/\.panel[^{}]*\{[^}]*height:\s*100%/);
     expect(css).toMatch(
       /\.perfil__resumen[^{}]*\{[^}]*background:\s*color-mix\(in srgb, var\(--surface\) 72%, transparent\)/,
     );

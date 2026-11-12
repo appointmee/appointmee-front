@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
-import { UsuarioPerfilDTO, UsuarioResponseDTO } from '../models/usuario';
+import { UsuarioModificarDTO, UsuarioPerfilDTO, UsuarioResponseDTO } from '../models/usuario';
 import { backendService } from './backend-service';
 
 @Injectable({ providedIn: 'root' })
@@ -18,6 +18,12 @@ export class usuarioService {
    */
   obtenerPerfil(userId: number): Observable<UsuarioPerfilDTO> {
     return this.http.get<UsuarioPerfilDTO>(`${this.api.baseUrl}/usuarios/${userId}`, {
+      context: this.contextoSinAvisoGlobal(),
+    });
+  }
+
+  actualizarPerfil(userId: number, datos: UsuarioModificarDTO): Observable<unknown> {
+    return this.http.patch(`${this.api.baseUrl}/usuarios/modificar/${userId}`, datos, {
       context: this.contextoSinAvisoGlobal(),
     });
   }

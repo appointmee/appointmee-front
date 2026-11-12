@@ -20,3 +20,13 @@ export interface UsuarioPerfilDTO {
   readonly roles: readonly string[];
   readonly sucursalesEmpleado: readonly SucursalMiniDTO[];
 }
+
+/** Campos editables de `PATCH /usuarios/modificar/{userId}`. */
+export interface UsuarioModificarDTO {
+  readonly nombre?: string;
+  readonly apellido?: string;
+  readonly email?: string;
+  readonly fotoUrl?: string;
+  readonly fotoPublicId?: string;
+  readonly password?: string;
+}

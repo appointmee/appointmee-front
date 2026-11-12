@@ -280,6 +280,16 @@ export class authService {
     });
   }
 
+  /** Actualiza los datos visibles de la sesión tras editar el perfil. */
+  actualizarPerfilLocal(email: string, fotoPerfil: string | null = this.usuario()?.fotoPerfil ?? null): void {
+    const usuario = this.usuario();
+    if (!usuario) return;
+
+    const correo = email.trim();
+    localStorage.setItem('email', correo);
+    this.usuario.set({ ...usuario, email: correo, fotoPerfil });
+  }
+
 
   // Renovación de tokens
 

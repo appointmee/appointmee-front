@@ -8,11 +8,14 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { Observable, Subject, catchError, map, of, startWith, switchMap, tap } from 'rxjs';
 
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
+import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { DsModalComponent } from '../../shared/ui/misc/misc.component';
 import { humanizarCategoria, inicialesDeTexto } from '../../models/solicitud-empleado';
 import { formatearFechaSolicitud } from '../../models/solicitud-empleador';
 import { SucursalMiniDTO } from '../../models/sucursal';
@@ -38,7 +41,7 @@ const PLACEHOLDER_SUCURSAL = `data:image/svg+xml;utf8,${encodeURIComponent(
 
 @Component({
   selector: 'app-perfil',
-  imports: [DsButtonComponent, RouterLink],
+  imports: [DsButtonComponent, DsInputComponent, DsModalComponent, ReactiveFormsModule, RouterLink],
   templateUrl: './perfil.html',
   styleUrl: './perfil.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,6 +61,13 @@ export class Perfil {
   protected readonly error = signal<string | null>(null);
   protected readonly sinConexion = signal(false);
   protected readonly reintentando = signal(false);
+  protected readonly editorAbierto = signal(false);
+  protected readonly guardandoEdicion = signal(false);
+  protected readonly edicionIntentada = signal(false);
+  protected readonly errorEdicion = signal<string | null>(null);
+  protected readonly exitoEdicion = signal<string | null>(null);
+  protected readonly empleadoExpandido = signal(true);
+  protected readonly empleadorExpandido = signal(true);
 
   protected readonly sucursalesPropias = signal<readonly SucursalMiniDTO[]>([]);
   protected readonly cargandoSucursales = signal(false);
@@ -67,6 +77,30 @@ export class Perfil {
 
   protected readonly fotoPerfilFallida = signal(false);
   protected readonly imagenesFallidas = signal<ReadonlySet<number>>(new Set());
+  protected readonly formularioEdicion = new FormGroup({
+    nombre: new FormControl('', {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        Validators.minLength(3),
+        Validators.maxLength(60),
+        Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/),
+      ],
+    }),
+    apellido: new FormControl('', {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        Validators.minLength(3),
+        Validators.maxLength(60),
+        Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/),
+      ],
+    }),
+    email: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email, Validators.maxLength(150)],
+    }),
+  });
 
   protected readonly nombreCompleto = computed(() => {
     const actual = this.perfil();
@@ -152,6 +186,97 @@ export class Perfil {
     this.recargarPerfil$.next({ inicial: false });
   }
 
+  protected alternarEmpleado(): void {
+    this.empleadoExpandido.update((expandido) => !expandido);
+  }
+
+  protected alternarEmpleador(): void {
+    this.empleadorExpandido.update((expandido) => !expandido);
+  }
+
+  protected abrirEditor(): void {
+    const datos = this.perfil();
+    if (!datos || this.guardandoEdicion()) return;
+
+    this.formularioEdicion.reset({
+      nombre: datos.nombre,
+      apellido: datos.apellido,
+      email: datos.email,
+    });
+    this.edicionIntentada.set(false);
+    this.errorEdicion.set(null);
+    this.exitoEdicion.set(null);
+    this.editorAbierto.set(true);
+  }
+
+  protected cerrarEditor(): void {
+    if (this.guardandoEdicion()) return;
+    this.editorAbierto.set(false);
+    this.errorEdicion.set(null);
+    this.edicionIntentada.set(false);
+  }
+
+  protected limpiarErrorEdicion(): void {
+    this.errorEdicion.set(null);
+  }
+
+  protected errorCampo(campo: 'nombre' | 'apellido' | 'email'): string {
+    const control = this.formularioEdicion.controls[campo];
+    if (!this.edicionIntentada() && !control.touched) return '';
+    if (control.hasError('required')) return 'Este campo es obligatorio.';
+    if (control.hasError('minlength')) return 'Ingresá al menos 3 caracteres.';
+    if (control.hasError('maxlength')) return 'Superaste la cantidad máxima de caracteres.';
+    if (control.hasError('pattern')) return 'Usá solo letras y espacios.';
+    if (control.hasError('email')) return 'Ingresá un correo electrónico válido.';
+    return '';
+  }
+
+  protected guardarPerfil(): void {
+    if (this.guardandoEdicion()) return;
+
+    this.edicionIntentada.set(true);
+    this.errorEdicion.set(null);
+    if (this.formularioEdicion.invalid) {
+      this.formularioEdicion.markAllAsTouched();
+      const primerCampo = this.formularioEdicion.invalid
+        ? ['nombre', 'apellido', 'email'].find((campo) =>
+            this.formularioEdicion.controls[campo as 'nombre' | 'apellido' | 'email'].invalid,
+          )
+        : null;
+      if (primerCampo) {
+        document.getElementById(`editar-${primerCampo}`)?.focus();
+      }
+      return;
+    }
+
+    const datos = this.perfil();
+    if (!datos) return;
+
+    const cambios = {
+      nombre: this.formularioEdicion.controls.nombre.value.trim(),
+      apellido: this.formularioEdicion.controls.apellido.value.trim(),
+      email: this.formularioEdicion.controls.email.value.trim(),
+    };
+    this.guardandoEdicion.set(true);
+    this.usuariosApi
+      .actualizarPerfil(datos.id, cambios)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.perfil.update((actual) => (actual ? { ...actual, ...cambios } : actual));
+          this.auth.actualizarPerfilLocal(cambios.email);
+          this.guardandoEdicion.set(false);
+          this.editorAbierto.set(false);
+          this.edicionIntentada.set(false);
+          this.exitoEdicion.set('Tu perfil se actualizó correctamente.');
+        },
+        error: (error: unknown) => {
+          this.guardandoEdicion.set(false);
+          this.errorEdicion.set(this.mensajeErrorEdicion(error));
+        },
+      });
+  }
+
   protected reintentarSucursales(): void {
     if (this.reintentandoSucursales() || this.cargandoSucursales()) {
       return;
@@ -206,6 +331,18 @@ export class Perfil {
     return this.tienePuntuaciones(sucursal)
       ? `Puntuación ${this.puntuacion(sucursal).toFixed(1)} de 5, ${this.cantidadResenias(sucursal)} reseñas`
       : `La sucursal ${sucursal.nombre} todavía no tiene reseñas`;
+  }
+
+  private mensajeErrorEdicion(error: unknown): string {
+    const status = error instanceof HttpErrorResponse ? error.status : undefined;
+    if (status === 0) {
+      return 'No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.';
+    }
+    if (status === 401) return 'Tu sesión expiró. Iniciá sesión nuevamente para editar tu perfil.';
+    if (status === 403) return 'No tenés permiso para modificar este perfil.';
+    if (status === 409) return 'Ese correo ya está asociado a otra cuenta.';
+    if (status === 400) return 'Revisá los datos ingresados e intentá de nuevo.';
+    return 'No pudimos guardar los cambios. Intentá de nuevo en unos segundos.';
   }
 
   private prepararPerfil(): void {
