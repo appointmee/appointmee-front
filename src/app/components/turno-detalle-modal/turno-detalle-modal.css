@@ -96,8 +96,8 @@
 }
 
 .estado-chip--realizado {
-  border-color: rgba(34, 197, 94, 0.32);
-  background: var(--success-strong-soft);
+  border: 0;
+  background: transparent;
   color: var(--success-strong);
 }
 
