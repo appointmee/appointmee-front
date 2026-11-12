@@ -74,8 +74,12 @@
             <h2 id="enviadas-titulo">Solicitudes enviadas desde esta sucursal</h2>
           </div>
           @if (solicitudesEnviadas().length > 0) {
-            <span class="panel__contador" [attr.aria-label]="solicitudesEnviadas().length + ' invitaciones enviadas'">
+            <span
+              class="panel__contador"
+              [attr.aria-label]="solicitudesEnviadas().length + (solicitudesEnviadas().length === 1 ? ' solicitud enviada' : ' solicitudes enviadas')"
+            >
               {{ solicitudesEnviadas().length }}
+              {{ solicitudesEnviadas().length === 1 ? 'solicitud' : 'solicitudes' }}
             </span>
           }
         </header>

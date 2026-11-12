@@ -92,6 +92,7 @@ h1 {
   color: var(--accent-strong);
   text-align: center;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .panel__descripcion {
