@@ -13,12 +13,17 @@ class DummyPage {}
 describe('Crear sucursal', () => {
   let fixture: ComponentFixture<CrearSucursalPage>;
   let page: CrearSucursalPage;
-  const api = { crear: vi.fn(), categorias: vi.fn(() => of(['PELUQUERIA'])) };
+  const api = {
+    crear: vi.fn(),
+    categorias: vi.fn(() => of(['PELUQUERIA'])),
+    categoriasConId: vi.fn(() => of([{ id: 1, categoria: 'PELUQUERIA' }])),
+  };
 
   beforeEach(async () => {
     TestBed.resetTestingModule();
     vi.resetAllMocks();
     api.categorias.mockReturnValue(of(['PELUQUERIA']));
+    api.categoriasConId.mockReturnValue(of([{ id: 1, categoria: 'PELUQUERIA' }]));
     await TestBed.configureTestingModule({
       imports: [CrearSucursalPage],
       providers: [

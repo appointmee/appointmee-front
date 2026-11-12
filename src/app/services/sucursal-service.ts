@@ -54,6 +54,14 @@ export class sucursalService {
     });
   }
 
+  /** Obtiene las categorías con su id (para crear sucursales). */
+  categoriasConId(): Observable<{ id: number; categoria: string }[]> {
+    return this.http.get<{ id: number; categoria: string }[]>(
+      `${this.api.baseUrl}/sucursales/categorias/detalle`,
+      { context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true) },
+    );
+  }
+
   /** Lista las sucursales propias del empleador autenticado. */
   listarPropias(): Observable<SucursalMiniDTO[]> {
     return this.http.get<SucursalMiniDTO[]>(

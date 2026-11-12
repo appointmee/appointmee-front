@@ -50,8 +50,8 @@
       <ds-input>
         <select #dsNativeControl id="categoria" [formField]="formulario.categoria" aria-describedby="categoria-error">
           <option value="" disabled>Seleccioná una categoría</option>
-          @for (cat of categorias(); track cat) {
-            <option [value]="cat">{{ cat }}</option>
+          @for (cat of categorias(); track cat.id) {
+            <option [value]="cat.nombre">{{ cat.nombre }}</option>
           }
         </select>
       </ds-input>

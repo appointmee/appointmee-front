@@ -54,7 +54,7 @@ export class CrearSucursalPage implements OnInit {
   exito = signal<string | null>(null);
   intentadoEnviar = signal(false);
 
-  categorias = signal<string[]>([]);
+  categorias = signal<{ id: number; nombre: string }[]>([]);
   diasSeleccionados = signal<string[]>([]);
 
   fotoArchivo = signal<File | null>(null);
@@ -115,13 +115,33 @@ export class CrearSucursalPage implements OnInit {
 
   ngOnInit(): void {
     const api = this.api as any;
-    if (typeof api?.categorias === 'function') {
+    if (typeof api?.categoriasConId === 'function') {
+      api
+        .categoriasConId()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (cats: unknown) => {
+            if (Array.isArray(cats)) {
+              this.categorias.set(
+                cats.map((c: any) => ({ id: Number(c?.id), nombre: String(c?.categoria ?? c?.nombre ?? c) })),
+              );
+            } else {
+              this.categorias.set([]);
+            }
+          },
+          error: () => this.categorias.set([]),
+        });
+    } else if (typeof api?.categorias === 'function') {
       api
         .categorias()
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (cats: unknown) => {
-            this.categorias.set(Array.isArray(cats) ? cats.map((c) => String(c)) : []);
+            this.categorias.set(
+              Array.isArray(cats)
+                ? cats.map((c, i) => ({ id: i + 1, nombre: String(c) }))
+                : [],
+            );
           },
           error: () => this.categorias.set([]),
         });
@@ -158,8 +178,8 @@ export class CrearSucursalPage implements OnInit {
   }
 
   categoriaIdDe(nombre: string): number {
-    const idx = this.categorias().indexOf(nombre);
-    return idx >= 0 ? idx + 1 : 1;
+    const cat = this.categorias().find((c) => c.nombre === nombre);
+    return cat ? cat.id : 1;
   }
 
   onSubmit(event: Event): void {
@@ -234,10 +254,15 @@ export class CrearSucursalPage implements OnInit {
           this.exito.set('Se ha creado la sucursal con exito');
           void this.router.navigateByUrl('/mis-sucursales');
         },
-        error: () => {
+        error: (err: any) => {
           this.subiendoFoto.set(false);
           this.cargando.set(false);
-          this.error.set('No pudimos crear la sucursal. Intentá de nuevo.');
+          const mensaje =
+            (typeof err?.error === 'string' && err.error) ||
+            err?.error?.message ||
+            err?.message ||
+            'No pudimos crear la sucursal. Intentá de nuevo.';
+          this.error.set(mensaje);
         },
       });
   }
