@@ -69,6 +69,7 @@ export class usuarioService {
       context: this.contextoSinAvisoGlobal(),
       responseType: 'text',
     });
+  }
 
   private contextoSinAvisoGlobal(): HttpContext {
     return new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true);
