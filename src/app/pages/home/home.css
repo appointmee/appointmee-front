@@ -683,11 +683,13 @@
   isolation: isolate;
   width: min(420px, 100%);
   border-radius: 22px;
-  border: 1px solid color-mix(in srgb, var(--info) 24%, var(--line));
+  border: 1px solid rgba(247, 198, 90, 0.28);
   background: rgba(14, 18, 26, 0.98);
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
-  box-shadow: 0 60px 90px rgba(3, 17, 38, 0.58);
+  box-shadow:
+  0 60px 90px rgba(0, 0, 0, 0.55),
+  0 0 60px rgba(247, 198, 90, 0.16);
   overflow: hidden;
   transform-style: preserve-3d;
   will-change: transform;
@@ -698,20 +700,13 @@
     transform 120ms ease-out;
 }
 
-.hero-card:not(.hero-card--float)::before {
-  position: absolute;
-  z-index: -1;
-  inset: 8px;
-  border-radius: inherit;
-  background: var(--info-soft);
-  filter: blur(24px);
-  content: '';
-  transform: translateZ(-35px);
-}
+
 
 .hero-card:not(.hero-card--float):hover {
-  border-color: color-mix(in srgb, var(--info) 55%, var(--line));
-  box-shadow: 0 70px 110px rgba(0, 0, 0, 0.62);
+  border-color: rgba(247, 198, 90, 0.6);
+box-shadow:
+  0 70px 110px rgba(0, 0, 0, 0.62),
+  0 0 80px rgba(247, 198, 90, 0.26);
   animation-play-state: paused;
   transform:
     translateY(-8px)
