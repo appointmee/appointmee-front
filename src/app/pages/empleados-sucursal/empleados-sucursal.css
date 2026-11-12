@@ -135,6 +135,7 @@ h1 {
   border-radius: var(--radius-full);
   border: 1px solid var(--line);
   object-fit: cover;
+  object-position: center;
   background: var(--surface);
 }
 

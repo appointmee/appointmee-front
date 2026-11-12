@@ -328,6 +328,7 @@
   border: 3px solid var(--accent);
   background: var(--surface);
   object-fit: cover;
+  object-position: center;
   box-shadow: 0 0 0 5px rgba(247, 198, 90, 0.12);
 }
 

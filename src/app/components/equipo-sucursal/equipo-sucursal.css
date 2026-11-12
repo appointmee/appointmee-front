@@ -58,6 +58,7 @@
   width: clamp(52px, 8vw, 60px);
   height: clamp(52px, 8vw, 60px);
   object-fit: cover;
+  object-position: center;
   border: 2px solid rgba(247, 198, 90, 0.3);
   border-radius: 50%;
   background: #10151d;

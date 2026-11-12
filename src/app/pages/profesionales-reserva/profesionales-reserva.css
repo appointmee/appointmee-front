@@ -17,7 +17,7 @@
 .profesionales { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
 .profesional { min-height: 100px; display: flex; align-items: center; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.03); color: var(--text); text-align: left; cursor: pointer; }
 .profesional:hover, .profesional--seleccionado { border-color: var(--accent); background: rgba(247,198,90,.08); }
-.profesional img { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; }
+.profesional img { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; object-position: center; }
 .profesional small { margin-left: auto; color: var(--accent); }
 .horarios { display: grid; gap: 16px; padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.02); }
 .horarios h2 { margin: 0; color: #f6f8fb; }
