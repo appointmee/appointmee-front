@@ -662,19 +662,62 @@
   position: relative;
   display: grid;
   place-items: center;
+  perspective: 1100px;
+  perspective-origin: 50% 45%;
+  transform-style: preserve-3d;
+}
+
+.hero__visual::before {
+  position: absolute;
+  inset: 12% 8%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(247, 198, 90, 0.2), transparent 68%);
+  filter: blur(22px);
+  content: '';
+  transform: translateZ(-70px);
+  animation: hero-glow 7s ease-in-out infinite;
 }
 
 .hero-card {
   position: relative;
+  isolation: isolate;
   width: min(420px, 100%);
   border-radius: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background:
-    radial-gradient(380px circle at 50% -10%, rgba(247, 198, 90, 0.16), transparent 70%),
-    rgba(14, 18, 26, 0.98);
-  box-shadow: 0 60px 90px rgba(0, 0, 0, 0.55);
+  border: 1px solid color-mix(in srgb, var(--info) 24%, var(--line));
+  background: rgba(14, 18, 26, 0.98);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 60px 90px rgba(3, 17, 38, 0.58);
   overflow: hidden;
-  animation: float 6s ease-in-out infinite;
+  transform-style: preserve-3d;
+  will-change: transform;
+  animation: hero-card-3d 7s ease-in-out infinite;
+  transition:
+    box-shadow 350ms ease,
+    border-color 350ms ease,
+    transform 120ms ease-out;
+}
+
+.hero-card:not(.hero-card--float)::before {
+  position: absolute;
+  z-index: -1;
+  inset: 8px;
+  border-radius: inherit;
+  background: var(--info-soft);
+  filter: blur(24px);
+  content: '';
+  transform: translateZ(-35px);
+}
+
+.hero-card:not(.hero-card--float):hover {
+  border-color: color-mix(in srgb, var(--info) 55%, var(--line));
+  box-shadow: 0 70px 110px rgba(0, 0, 0, 0.62);
+  animation-play-state: paused;
+  transform:
+    translateY(-8px)
+    rotateX(calc(3deg + var(--pointer-rotate-x, 0deg)))
+    rotateY(calc(-4deg + var(--pointer-rotate-y, 0deg)))
+    scale(1.015);
 }
 
 .hero-card--float {
@@ -691,6 +734,7 @@
   gap: 12px;
   padding: 16px 22px;
   border-bottom: 1px solid var(--line);
+  transform: translateZ(18px);
 }
 
 .hero-card__dots {
@@ -753,6 +797,7 @@
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.02);
   overflow: hidden;
+  transform: translateZ(28px);
 }
 
 .hero-card__cal-head {
@@ -790,6 +835,7 @@
 .hero-card__footer {
   display: flex;
   gap: 10px;
+  transform: translateZ(16px);
 }
 
 .hero-card__badge {
@@ -810,6 +856,7 @@
   background: rgba(125, 255, 177, 0.16);
   color: #d8ffe9;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+  transform: translateZ(50px);
 }
 
 .hero-card__mini svg {
@@ -1255,6 +1302,34 @@
   }
 }
 
+@keyframes hero-card-3d {
+  0%,
+  100% {
+    transform:
+      translateY(0)
+      rotateX(var(--pointer-rotate-x, 0deg))
+      rotateY(var(--pointer-rotate-y, 0deg));
+  }
+  50% {
+    transform:
+      translateY(-12px)
+      rotateX(calc(2deg + var(--pointer-rotate-x, 0deg)))
+      rotateY(calc(-3deg + var(--pointer-rotate-y, 0deg)));
+  }
+}
+
+@keyframes hero-glow {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: translate3d(0, 0, -70px) scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(0, -8px, -70px) scale(1.08);
+  }
+}
+
 @keyframes pulse {
   0%,
   100% {
@@ -1368,6 +1443,18 @@
     animation: none;
     opacity: 1;
     transform: none;
+  }
+
+  .hero__visual::before {
+    animation: none;
+  }
+
+  .hero-card:not(.hero-card--float):hover {
+    transform: none;
+  }
+
+  .hero-card {
+    transition: none;
   }
 
   .branch-suggestions__loader {

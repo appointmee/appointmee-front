@@ -66,6 +66,7 @@ export class Home implements OnInit {
   protected readonly activeSuggestionIndex = signal(-1);
   protected readonly term = signal('');
   protected readonly termTooShort = computed(() => this.term().trim().length === 1);
+  protected readonly heroTilt = signal({ x: '0deg', y: '0deg' });
 
   constructor() {
     this.search.valueChanges
@@ -159,6 +160,25 @@ export class Home implements OnInit {
 
   protected onSuggestionImageError(event: Event): void {
     (event.target as HTMLImageElement).hidden = true;
+  }
+
+  protected onHeroPointerMove(event: PointerEvent): void {
+    if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') {
+      return;
+    }
+
+    const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const horizontalPosition = (event.clientX - bounds.left) / bounds.width;
+    const verticalPosition = (event.clientY - bounds.top) / bounds.height;
+
+    this.heroTilt.set({
+      x: `${((0.5 - verticalPosition) * 12).toFixed(2)}deg`,
+      y: `${((horizontalPosition - 0.5) * 12).toFixed(2)}deg`,
+    });
+  }
+
+  protected resetHeroTilt(): void {
+    this.heroTilt.set({ x: '0deg', y: '0deg' });
   }
 
   protected onSearchKeydown(event: KeyboardEvent): void {
