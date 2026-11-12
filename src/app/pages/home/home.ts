@@ -52,8 +52,6 @@ export class Home implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private searchFocused = false;
   private readonly lastSuggestionTerm = signal<string | null>(null);
-  private readonly mobileOpen = signal(false);
-  private readonly scrolled = signal(false);
   private readonly currentYear = signal(new Date().getFullYear());
   private busquedaTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -203,23 +201,10 @@ export class Home implements OnInit {
     return `${label.charAt(0).toLocaleUpperCase('es')}${label.slice(1)}`;
   }
 
-  @HostListener('window:scroll')
-  protected onScroll(): void {
-    this.scrolled.set(window.scrollY > 12);
-  }
-
-  @HostListener('window:resize')
-  protected onResize(): void {
-    if (window.innerWidth > 1024 && this.mobileOpen()) {
-      this.closeMobile();
-    }
-  }
-
   @HostListener('document:keydown', ['$event'])
   protected onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       this.closeSuggestions();
-      this.closeMobile();
     }
   }
 
@@ -229,20 +214,6 @@ export class Home implements OnInit {
     if (!(target instanceof Element) || !target.closest('.branch-search-wrap')) {
       this.closeSuggestions();
     }
-  }
-
-  protected toggleMobile(): void {
-    this.mobileOpen.update((open) => !open);
-    if (this.mobileOpen()) {
-      document.body.classList.add('nav-locked');
-    } else {
-      document.body.classList.remove('nav-locked');
-    }
-  }
-
-  protected closeMobile(): void {
-    this.mobileOpen.set(false);
-    document.body.classList.remove('nav-locked');
   }
 
   private closeSuggestions(): void {
