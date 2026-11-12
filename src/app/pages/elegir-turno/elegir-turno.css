@@ -630,6 +630,15 @@
   background: rgba(247, 198, 90, 0.07);
 }
 
+.aviso__salida {
+  display: inline-flex;
+  margin-top: var(--space-2);
+  color: var(--accent-strong);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
 .aviso p {
   margin: 0;
   color: var(--muted);

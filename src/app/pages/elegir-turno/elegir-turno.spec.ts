@@ -803,6 +803,11 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
 
     expect(host().querySelector('app-login-modal')).not.toBeNull();
     expect(host().querySelector('dialog[open]')).not.toBeNull();
+    const login = fixture.debugElement.query(By.directive(LoginPage))
+      .componentInstance as LoginPage;
+    expect(login.destinoRetorno()).toContain('/sucursal/7/servicios/3/turnos');
+    expect(login.destinoRetorno()).toContain('fecha=2030-12-20');
+    expect(login.destinoRetorno()).toContain('hora=10:00:00');
     expect(navegar).not.toHaveBeenCalledWith(
       ['/sucursal', 7, 'servicios', 3, 'turnos', 'pago'],
       expect.anything(),
@@ -849,7 +854,7 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
     expect(texto()).toContain('Pagar con Mercado Pago');
   });
 
-  it('con sesión pero sin rol Cliente avisa y no navega', async () => {
+  it('con sesión pero sin rol Cliente informa permiso y ofrece salida al Home', async () => {
     auth.autenticado.set(true);
     auth.tieneAlgunRol.mockReturnValue(false);
     await abrir();
@@ -861,7 +866,8 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto()).toContain('Necesitás una cuenta con rol Cliente');
+    expect(texto()).toContain('Tu cuenta no tiene permiso para reservar');
+    expect(host().querySelector<HTMLAnchorElement>('.aviso__salida')?.getAttribute('href')).toBe('/');
     expect(router.url).toContain('/turnos?');
     expect(host().querySelector('app-login-modal')).toBeNull();
   });

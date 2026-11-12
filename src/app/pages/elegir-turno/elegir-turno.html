@@ -137,6 +137,9 @@
             </svg>
           </span>
           <p>{{ aviso() }}</p>
+          @if (sinPermisoReserva()) {
+            <a class="aviso__salida" routerLink="/">Ir al Home</a>
+          }
         </div>
       }
 

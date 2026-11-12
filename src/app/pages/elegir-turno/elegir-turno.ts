@@ -118,6 +118,7 @@ export class ElegirTurno {
   protected readonly sinConexion = signal(!this.hayConexion());
   protected readonly loginAbierto = signal(false);
   protected readonly navegando = signal(false);
+  protected readonly sinPermisoReserva = signal(false);
   protected readonly contextoInvalido = signal(false);
 
   private readonly recargarContexto = new Subject<void>();
@@ -509,6 +510,8 @@ export class ElegirTurno {
       return;
     }
 
+    this.sinPermisoReserva.set(false);
+
     if (!this.auth.autenticado()) {
       this.loginAbierto.set(true);
       return;
@@ -517,8 +520,9 @@ export class ElegirTurno {
     this.loginAbierto.set(false);
 
     if (!this.auth.tieneAlgunRol('CLIENTE')) {
+      this.sinPermisoReserva.set(true);
       this.aviso.set(
-        'Necesitás una cuenta con rol Cliente para reservar. Podés seguir consultando los horarios.',
+        'No tenes permiso para reservar',
       );
       return;
     }
