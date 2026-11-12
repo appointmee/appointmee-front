@@ -57,6 +57,10 @@ describe('SolicitudesSucursal', () => {
     expect(fondo?.getAttribute('src')).toBe('https://example.com/sucursal.jpg');
     expect(fondo?.getAttribute('aria-hidden')).toBe('true');
     expect(html.querySelector('.solicitudes__layout')).toBeTruthy();
+    const css = Array.from(document.querySelectorAll('style'))
+      .map((style) => style.textContent ?? '')
+      .join('\n');
+    expect(css).toMatch(/\.panel[^{]*\{[^}]*background:\s*transparent/);
 
     fondo?.dispatchEvent(new Event('error'));
     fixture.detectChanges();
