@@ -116,6 +116,19 @@ describe('TurnosSucursal', () => {
     flushLista();
   }
 
+  it('mantiene la foto de la sucursal desenfocada detrás de la lista de turnos', () => {
+    flushInicial();
+
+    const fondo = html.querySelector<HTMLImageElement>('.historial__fondo-sucursal');
+    expect(fondo?.getAttribute('src')).toBe('https://example.com/sucursal.jpg');
+    expect(fondo?.getAttribute('aria-hidden')).toBe('true');
+    expect(html.querySelector('.panel')).toBeTruthy();
+
+    fondo?.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+    expect(html.querySelector('.historial__fondo-sucursal')).toBeNull();
+  });
+
   function botonesTurno(): HTMLButtonElement[] {
     return Array.from(html.querySelectorAll<HTMLButtonElement>('button.turno'));
   }

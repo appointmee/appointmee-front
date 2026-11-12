@@ -117,10 +117,17 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     return Array.from(host.querySelectorAll<HTMLElement>('.lista .empleado'));
   }
 
-  async function abrir(url = RUTA_BASE): Promise<HTMLElement> {
+  async function abrir(
+    url = RUTA_BASE,
+    fotoPerfil: string | null = null,
+  ): Promise<HTMLElement> {
     await router.navigateByUrl(url);
     fixture.detectChanges();
     await fixture.whenStable();
+    const foto = backend.match((request) => request.url.endsWith('/sucursales/7'));
+    for (const request of foto) {
+      request.flush({ fotoPerfil });
+    }
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
@@ -148,6 +155,23 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     responderListado();
     await fixture.whenStable();
     fixture.detectChanges();
+  });
+
+  it('muestra la foto de la sucursal desenfocada detrás del contenido', async () => {
+    const host = await abrir(RUTA_BASE, 'https://example.com/sucursal.jpg');
+    responderListado();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const fondo = host.querySelector<HTMLImageElement>('.pagina__fondo-sucursal');
+    expect(fondo?.getAttribute('src')).toBe('https://example.com/sucursal.jpg');
+    expect(fondo?.getAttribute('aria-hidden')).toBe('true');
+    expect(host.querySelector('.panel')).toBeTruthy();
+
+    fondo?.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+    expect(host.querySelector('.pagina__fondo-sucursal')).toBeNull();
+    expect(host.querySelector('.panel')).toBeTruthy();
   });
 
   it('muestra los datos visibles de cada empleado sin exponer su identificador', async () => {
