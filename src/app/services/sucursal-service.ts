@@ -15,19 +15,20 @@ function contextoSilenciado(activado: boolean): HttpContext {
   return activado ? new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true) : new HttpContext();
 }
 
+/** Acceso a sucursales públicas y a las operaciones autenticadas de gestión. */
 @Injectable({ providedIn: 'root' })
 export class sucursalService {
   private readonly api = inject(backendService);
   private readonly http = inject(HttpClient);
 
-  //GET
+  /** Recupera el listado público; permite delegar errores al estado inline de la vista. */
   listar(silenciarErroresGlobales = false): Observable<SucursalMiniDTO[]> {
     return this.http.get<SucursalMiniDTO[]>(`${this.api.baseUrl}/sucursales/listar`, {
       context: contextoSilenciado(silenciarErroresGlobales),
     });
   }
 
-  //GET
+  /** Filtra sucursales y omite parámetros vacíos para conservar el contrato REST. */
   filtrar(
     categoria?: string | null,
     nombre?: string | null,
@@ -46,14 +47,14 @@ export class sucursalService {
       context: contextoSilenciado(silenciarErroresGlobales),
     });
   }
-//GET CATEGORIAS
+  /** Obtiene las categorías disponibles para construir los filtros de sucursales. */
   categorias(): Observable<string[]> {
     return this.http.get<string[]>(`${this.api.baseUrl}/sucursales/categorias`, {
       context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
     });
   }
 
-  //GET
+  /** Lista las sucursales propias del empleador autenticado. */
   listarPropias(): Observable<SucursalMiniDTO[]> {
     return this.http.get<SucursalMiniDTO[]>(
       `${this.api.baseUrl}/sucursales/listar/propias`,
@@ -69,6 +70,7 @@ export class sucursalService {
     );
   }
 
+  /** Solicita incorporar el email indicado al equipo; propiedad y duplicados se validan en backend. */
   agregarEmpleado(sucursalId: number, email: string): Observable<string> {
     return this.http.post(
       `${this.api.baseUrl}/sucursales/${sucursalId}/empleados/agregar`,
@@ -92,6 +94,7 @@ export class sucursalService {
     );
   }
 
+   /** Permite elegir si el error del detalle se maneja globalmente o en su propia pantalla. */
   obtenerPorId(
     idSucursal: number,
     silenciarErroresGlobales = false,
@@ -105,18 +108,21 @@ export class sucursalService {
     });
   }
 
+  /** Crea una sucursal y silencia el interceptor para mostrar errores junto al formulario. */
   crear(datos: SucursalPayload): Observable<SucursalDetalleDTO> {
     return this.http.post<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales`, datos, {
       context: contextoSilenciado(true),
     });
   }
 
+  /** Actualiza la información editable de una sucursal existente. */
   actualizar(idSucursal: number, datos: SucursalPayload): Observable<SucursalDetalleDTO> {
     return this.http.put<SucursalDetalleDTO>(`${this.api.baseUrl}/sucursales/${idSucursal}`, datos, {
       context: contextoSilenciado(true),
     });
   }
 
+  /** Solicita la baja lógica; la autorización de propiedad se verifica en el backend. */
   eliminar(idSucursal: number): Observable<void> {
     return this.http.delete<void>(`${this.api.baseUrl}/sucursales/${idSucursal}`, {
       context: contextoSilenciado(true),

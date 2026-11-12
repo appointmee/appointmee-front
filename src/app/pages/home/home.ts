@@ -52,8 +52,6 @@ export class Home implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private searchFocused = false;
   private readonly lastSuggestionTerm = signal<string | null>(null);
-  private readonly mobileOpen = signal(false);
-  private readonly scrolled = signal(false);
   private readonly currentYear = signal(new Date().getFullYear());
   private busquedaTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -66,6 +64,7 @@ export class Home implements OnInit {
   protected readonly activeSuggestionIndex = signal(-1);
   protected readonly term = signal('');
   protected readonly termTooShort = computed(() => this.term().trim().length === 1);
+  protected readonly heroTilt = signal({ x: '0deg', y: '0deg' });
 
   constructor() {
     this.search.valueChanges
@@ -161,6 +160,25 @@ export class Home implements OnInit {
     (event.target as HTMLImageElement).hidden = true;
   }
 
+  protected onHeroPointerMove(event: PointerEvent): void {
+    if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') {
+      return;
+    }
+
+    const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const horizontalPosition = (event.clientX - bounds.left) / bounds.width;
+    const verticalPosition = (event.clientY - bounds.top) / bounds.height;
+
+    this.heroTilt.set({
+      x: `${((0.5 - verticalPosition) * 12).toFixed(2)}deg`,
+      y: `${((horizontalPosition - 0.5) * 12).toFixed(2)}deg`,
+    });
+  }
+
+  protected resetHeroTilt(): void {
+    this.heroTilt.set({ x: '0deg', y: '0deg' });
+  }
+
   protected onSearchKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -203,23 +221,10 @@ export class Home implements OnInit {
     return `${label.charAt(0).toLocaleUpperCase('es')}${label.slice(1)}`;
   }
 
-  @HostListener('window:scroll')
-  protected onScroll(): void {
-    this.scrolled.set(window.scrollY > 12);
-  }
-
-  @HostListener('window:resize')
-  protected onResize(): void {
-    if (window.innerWidth > 1024 && this.mobileOpen()) {
-      this.closeMobile();
-    }
-  }
-
   @HostListener('document:keydown', ['$event'])
   protected onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       this.closeSuggestions();
-      this.closeMobile();
     }
   }
 
@@ -229,20 +234,6 @@ export class Home implements OnInit {
     if (!(target instanceof Element) || !target.closest('.branch-search-wrap')) {
       this.closeSuggestions();
     }
-  }
-
-  protected toggleMobile(): void {
-    this.mobileOpen.update((open) => !open);
-    if (this.mobileOpen()) {
-      document.body.classList.add('nav-locked');
-    } else {
-      document.body.classList.remove('nav-locked');
-    }
-  }
-
-  protected closeMobile(): void {
-    this.mobileOpen.set(false);
-    document.body.classList.remove('nav-locked');
   }
 
   private closeSuggestions(): void {

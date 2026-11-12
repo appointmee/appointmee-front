@@ -1,4 +1,4 @@
-// The API may add enum values before this frontend is redeployed.
+/** Categorías conocidas hoy; el tipo se mantiene abierto para tolerar valores nuevos del backend. */
 export const BRANCH_CATEGORIES = [
   'PELUQUERIA',
   'SPA',

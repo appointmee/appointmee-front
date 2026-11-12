@@ -1,71 +1,4 @@
-<!-- Home público - AppointMee -->
-<header class="landing-nav" [class.landing-nav--scrolled]="scrolled()">
-  <div class="landing-nav__inner">
-    <a class="landing-brand" href="#inicio" (click)="scrollToSection($event, 'inicio')">
-      <span class="landing-brand__mark">
-        <img src="appointmee-logo.png" alt="" width="34" height="34" />
-      </span>
-      <span class="landing-brand__text">Appoint<span class="landing-brand__accent">Mee</span></span>
-    </a>
-
-    <nav class="landing-nav__links" aria-label="Navegación principal">
-      <a href="#inicio" (click)="scrollToSection($event, 'inicio')">Inicio</a>
-      <a href="#quienes-somos" (click)="scrollToSection($event, 'quienes-somos')"
-        >¿Quiénes somos?</a
-      >
-      <a href="#como-funciona" (click)="scrollToSection($event, 'como-funciona')"
-        >¿Cómo funciona?</a
-      >
-      <a routerLink="/sucursales">Sucursales</a>
-    </nav>
-
-    <div class="landing-nav__actions">
-      @if (isAuthenticated()) {
-        <a class="landing-btn landing-btn--ghost" routerLink="/mis-turnos">Mi cuenta</a>
-      } @else {
-        <a class="landing-btn landing-btn--ghost" routerLink="/login">Iniciar sesión</a>
-        <a class="landing-btn landing-btn--primary" routerLink="/registrarme">Crear cuenta</a>
-      }
-    </div>
-
-    <button dsButton
-      class="landing-burger"
-      type="button"
-      [class.is-open]="mobileOpen()"
-      (click)="toggleMobile()"
-      [attr.aria-expanded]="mobileOpen()"
-      aria-label="Abrir menú"
-    >
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
-  </div>
-</header>
-
-@if (mobileOpen()) {
-  <div class="landing-scrim" (click)="closeMobile()" aria-hidden="true"></div>
-  <aside class="landing-sheet" aria-label="Menú de navegación">
-    <nav>
-      <a href="#inicio" (click)="scrollToSection($event, 'inicio'); closeMobile()">Inicio</a>
-      <a href="#quienes-somos" (click)="scrollToSection($event, 'quienes-somos'); closeMobile()"
-        >¿Quiénes somos?</a
-      >
-      <a href="#como-funciona" (click)="scrollToSection($event, 'como-funciona'); closeMobile()"
-        >¿Cómo funciona?</a
-      >
-      <a routerLink="/sucursales" (click)="closeMobile()">Sucursales</a>
-      <div class="landing-sheet__divider"></div>
-      @if (isAuthenticated()) {
-        <a routerLink="/mis-turnos" (click)="closeMobile()">Mi cuenta</a>
-      } @else {
-        <a routerLink="/login" (click)="closeMobile()">Iniciar sesión</a>
-        <a routerLink="/registrarme" (click)="closeMobile()">Crear cuenta</a>
-      }
-    </nav>
-  </aside>
-}
-
+<!-- Home público - AppointMee; el navbar global es compartido con Sucursales. -->
 <main class="landing">
   <!-- Hero / Bienvenida -->
   <section id="inicio" class="section hero" aria-labelledby="hero-title">
@@ -207,7 +140,13 @@
         </div>
       </div>
       <div class="hero__visual reveal" style="--delay: 0.18s" aria-hidden="true">
-        <div class="hero-card">
+        <div
+          class="hero-card"
+          [style.--pointer-rotate-x]="heroTilt().x"
+          [style.--pointer-rotate-y]="heroTilt().y"
+          (pointermove)="onHeroPointerMove($event)"
+          (pointerleave)="resetHeroTilt()"
+        >
           <div class="hero-card__header">
             <div class="hero-card__dots"><span></span><span></span><span></span></div>
             <span class="hero-card__title">AppointMee</span>

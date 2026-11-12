@@ -120,9 +120,6 @@ export class LoginPage {
         const destino = destinoDespuesDelLogin(
           this.router,
           this.route.snapshot.queryParamMap.get('returnTo'),
-          (typeof this.auth.perfil === 'function'
-            ? this.auth.perfil()?.roles
-            : []) ?? []
         );
 
         void this.router.navigateByUrl(destino, { replaceUrl: true });
