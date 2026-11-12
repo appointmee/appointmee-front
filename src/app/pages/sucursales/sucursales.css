@@ -25,6 +25,8 @@
   position: sticky;
   top: calc(var(--nav-h) + var(--space-4));
   align-self: start;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .listado__results {
@@ -78,6 +80,8 @@
 
 .listado__controls {
   display: grid;
+  width: 100%;
+  min-width: 0;
   gap: 16px;
   padding: var(--space-4);
   border: 1px solid var(--line);
@@ -95,6 +99,8 @@
 
 .search {
   display: flex;
+  width: 100%;
+  min-width: 0;
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
@@ -128,6 +134,11 @@
   outline: none;
   color: var(--text);
   font-size: 15px;
+}
+
+.search ds-input {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .search__input::placeholder {
@@ -182,6 +193,8 @@
 
 .categorias {
   display: grid;
+  min-width: 0;
+  max-width: 100%;
   gap: var(--space-2);
 }
 
@@ -191,8 +204,14 @@
 }
 
 .categoria-chip {
+  display: flex;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   text-align: left;
+  justify-content: flex-start;
+  white-space: normal;
+  overflow-wrap: anywhere;
   padding: 8px 14px;
   border-radius: var(--radius-full);
   border: 1px solid var(--line);
@@ -515,18 +534,8 @@ button.estado__link:disabled {
 }
 
 @media (max-width: 640px) {
-  .categorias {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding: 5px;
-    scroll-padding-inline: 5px;
-  }
-
   .categoria-chip {
-    flex: 0 0 auto;
-    width: auto;
-    white-space: nowrap;
+    width: 100%;
   }
 
   .listado {
