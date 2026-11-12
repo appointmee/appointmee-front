@@ -147,7 +147,10 @@ describe('TurnosSucursal', () => {
     expect(botonesTurno()).toHaveLength(2);
     expect(botonesTurno()[0].textContent).toContain('Color completo');
     expect(botonesTurno()[1].textContent).toContain('Corte de pelo');
-    expect(html.textContent).toContain('Confirmado');
+    expect(html.querySelector('.turno__meta')).toBeNull();
+    expect(html.querySelector('.estado-chip')).toBeNull();
+    expect(botonesTurno()[0].getAttribute('aria-label')).toContain('Confirmado');
+    expect(botonesTurno()[0].classList.contains('turno--confirmado')).toBe(true);
     expect(html.textContent).toContain('Sucursal Centro');
     expect(html.querySelector('.panel__contador')?.textContent?.trim()).toBe('2');
   });
