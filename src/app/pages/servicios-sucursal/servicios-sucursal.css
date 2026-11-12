@@ -1021,8 +1021,53 @@
 }
 
 /* Espaciado del formulario del modal */
-form { display: flex; flex-direction: column; gap: var(--space-4, 1rem); }
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+  /* La altura sigue al contenido: cuando aparece un mensaje de validación el
+     modal crece y cuando desaparece recupera el espacio, sin alturas fijas que
+     corten los textos o dejen huecos. */
+  height: auto;
+}
 .campo-foto { display: flex; flex-direction: column; gap: var(--space-2, 0.5rem); }
+
+/* La vista previa se acota para que el modal no crezca de forma ilimitada
+   cuando se elige una imagen. */
+.foto-preview {
+  display: block;
+  width: 100%;
+  max-width: 160px;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 0.5rem);
+}
 .modal__acciones { display: flex; flex-direction: row; gap: var(--space-3, 0.75rem); margin-top: var(--space-2, 0.5rem); }
-.resumen-errores, .error-general { margin-bottom: var(--space-3, 0.75rem); }
+.error-general { margin-bottom: var(--space-3, 0.75rem); }
+
+/* Mensaje de error debajo del campo: en rojo y con tipografía pequeña. */
+.ds-error {
+  display: block;
+  color: var(--danger);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+
+/* Error general del formulario (banner inline, sin salir de la pantalla). */
+.error-general {
+  padding: var(--space-3, 0.75rem);
+  border: 1px solid rgba(255, 122, 122, 0.35);
+  border-radius: var(--radius-md, 0.5rem);
+  background: rgba(255, 122, 122, 0.08);
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.exito-modal {
+  margin: var(--space-3, 0.75rem) 0 0;
+  color: var(--success-light);
+  font-size: 0.9rem;
+}
 

@@ -33,12 +33,25 @@ interface CrearServicioModel {
   precio: number | null;
 }
 
+/**
+ * Estado mínimo de un campo del formulario, usado para mostrar su error.
+ * Los mensajes del backend tienen prioridad sobre los de la validación local.
+ */
+interface EstadoCampo {
+  touched(): boolean;
+  invalid(): boolean;
+  errors(): readonly { message?: string }[];
+}
+
 const FORMATO_PRECIO = new Intl.NumberFormat('es-AR', {
   style: 'currency',
   currency: 'ARS',
 });
 
 const LARGO_DESCRIPCION_ESTIMADO = 160;
+
+/** Campos del formulario que muestran su mensaje debajo de la entrada. */
+const CAMPOS_CON_ERROR = ['nombre', 'descripcion', 'duracion', 'precio', 'foto'];
 
 const FORMATO_DURACION = (minutos: number | null | undefined): string => {
   if (minutos === null || minutos === undefined || !Number.isFinite(minutos) || minutos <= 0) {
@@ -121,22 +134,37 @@ export class ServiciosSucursal {
     minLength(campos.descripcion, 10, { message: 'La descripción debe tener al menos 10 caracteres.' });
     maxLength(campos.descripcion, 500, { message: 'La descripción no puede superar los 500 caracteres.' });
 
-    required(campos.duracion, { message: 'Ingresá la duración.' });
+    required(campos.duracion, { message: 'Ingresá la duración en minutos.' });
     min(campos.duracion, 30, { message: 'La duración mínima es de 30 minutos.' });
     max(campos.duracion, 360, { message: 'La duración máxima es de 360 minutos (6 horas).' });
-    validate(campos.duracion, ({ value }) => {
-      if (value === null || value === undefined) return null;
-      return Number.isInteger(value)
-        ? null
-        : { kind: 'integer', message: 'La duración debe ser un número entero.' };
+    // Ojo: en el contexto de validación `value` es una signal, hay que invocarla
+    // para obtener el valor. Si se desestructura sin llamarla, el validador
+    // recibe la propia signal y rechaza cualquier número válido.
+    validate(campos.duracion, (contexto) => {
+      const duracion = contexto.value();
+      if (duracion === null || duracion === undefined) return null;
+      if (!Number.isInteger(duracion)) {
+        return { kind: 'integer', message: 'La duración debe ser un número entero de minutos.' };
+      }
+      // El backend solo acepta duraciones en intervalos de 30 minutos.
+      if (duracion % 30 !== 0) {
+        return {
+          kind: 'intervalo',
+          message: 'La duración debe ser un múltiplo de 30 minutos (30, 60, 90…).',
+        };
+      }
+      return null;
     });
 
-    required(campos.precio, { message: 'Ingresá el precio.' });
+    required(campos.precio, { message: 'Ingresá el precio del servicio.' });
     min(campos.precio, 0.01, { message: 'El precio mínimo es 0.01.' });
     max(campos.precio, 999999.99, { message: 'El precio máximo es 999999.99.' });
-    validate(campos.precio, ({ value }) => {
-      if (value === null || value === undefined) return null;
-      return /^\d+(\.\d{1,2})?$/.test(String(value))
+    validate(campos.precio, (contexto) => {
+      const precio = contexto.value();
+      if (precio === null || precio === undefined) return null;
+      // Se compara contra el precio redondeado a centavos para no depender de la
+      // representación binaria de los decimales (0.29 * 100 !== 29).
+      return Number(precio.toFixed(2)) === precio
         ? null
         : { kind: 'digits', message: 'El precio debe tener a lo sumo 2 decimales.' };
     });
@@ -150,70 +178,57 @@ export class ServiciosSucursal {
     return true;
   });
 
-  protected readonly resumenErrores = computed(() => {
-    const lista: { id: string; label: string; message: string }[] = [];
-    const touched = this.intentadoEnviar();
-    const agregar = (id: string, label: string, invalid: boolean, message: string | null) => {
-      if (invalid && (touched || this.formulario.nombre().touched())) {
-        // se filtra por touched individual abajo
-      }
+  /**
+   * Errores de cada campo del formulario, listos para pintarse debajo de la
+   * entrada correspondiente. El error del backend tiene prioridad sobre el de
+   * la validación local.
+   */
+  protected readonly erroresCampos = computed(() => {
+    const backend = this.erroresBackend();
+    return {
+      nombre: this.mensajeDeCampo(
+        this.formulario.nombre(),
+        backend['nombre'],
+        'Revisá el nombre del servicio.',
+      ),
+      descripcion: this.mensajeDeCampo(
+        this.formulario.descripcion(),
+        backend['descripcion'],
+        'Revisá la descripción del servicio.',
+      ),
+      duracion: this.mensajeDeCampo(
+        this.formulario.duracion(),
+        backend['duracion'],
+        'Ingresá una duración válida en minutos.',
+      ),
+      precio: this.mensajeDeCampo(
+        this.formulario.precio(),
+        backend['precio'],
+        'Ingresá un precio válido.',
+      ),
     };
-    void agregar;
-    if (this.formulario.nombre().touched() && this.formulario.nombre().invalid()) {
-      lista.push({ id: 'servicio-nombre', label: 'Nombre', message: this.formulario.nombre().errors()[0]?.message ?? 'Revisá este campo.' });
-    }
-    if (this.formulario.descripcion().touched() && this.formulario.descripcion().invalid()) {
-      lista.push({ id: 'servicio-descripcion', label: 'Descripción', message: this.formulario.descripcion().errors()[0]?.message ?? 'Revisá este campo.' });
-    }
-    if (this.formulario.duracion().touched() && this.formulario.duracion().invalid()) {
-      lista.push({ id: 'servicio-duracion', label: 'Duración', message: this.formulario.duracion().errors()[0]?.message ?? 'Revisá este campo.' });
-    }
-    if (this.formulario.precio().touched() && this.formulario.precio().invalid()) {
-      lista.push({ id: 'servicio-precio', label: 'Precio', message: this.formulario.precio().errors()[0]?.message ?? 'Revisá este campo.' });
-    }
-    if (this.intentadoEnviar() && this.fotoArchivo() === null) {
-      lista.push({ id: 'servicio-foto', label: 'Foto', message: 'Seleccioná una imagen.' });
-    }
-    const fotoError = this.errorFoto();
-    if (fotoError && this.fotoArchivo() !== null) {
-      lista.push({ id: 'servicio-foto', label: 'Foto', message: fotoError });
-    }
-    // Errores de backend por campo
-    for (const [campo, mensaje] of Object.entries(this.erroresBackend())) {
-      const id = campo.toLowerCase().includes('nombre')
-        ? 'servicio-nombre'
-        : campo.toLowerCase().includes('desc')
-          ? 'servicio-descripcion'
-          : campo.toLowerCase().includes('dur')
-            ? 'servicio-duracion'
-            : campo.toLowerCase().includes('prec')
-              ? 'servicio-precio'
-              : campo.toLowerCase().includes('foto')
-                ? 'servicio-foto'
-                : 'servicio-general';
-      if (!lista.some((item) => item.id === id)) {
-        lista.push({ id, label: campo, message: mensaje });
-      }
-    }
-    return lista;
   });
 
-  protected readonly errorNombre = computed(() =>
-    this.erroresBackend()['nombre'] ??
-    (this.formulario.nombre().touched() ? this.formulario.nombre().errors()[0]?.message ?? null : null),
-  );
-  protected readonly errorDescripcion = computed(() =>
-    this.erroresBackend()['descripcion'] ??
-    (this.formulario.descripcion().touched() ? this.formulario.descripcion().errors()[0]?.message ?? null : null),
-  );
-  protected readonly errorDuracion = computed(() =>
-    this.erroresBackend()['duracion'] ??
-    (this.formulario.duracion().touched() ? this.formulario.duracion().errors()[0]?.message ?? null : null),
-  );
-  protected readonly errorPrecio = computed(() =>
-    this.erroresBackend()['precio'] ??
-    (this.formulario.precio().touched() ? this.formulario.precio().errors()[0]?.message ?? null : null),
-  );
+  protected readonly errorNombre = computed(() => this.erroresCampos().nombre);
+  protected readonly errorDescripcion = computed(() => this.erroresCampos().descripcion);
+  protected readonly errorDuracion = computed(() => this.erroresCampos().duracion);
+  protected readonly errorPrecio = computed(() => this.erroresCampos().precio);
+
+  /**
+   * Mensaje de error de un campo: primero el que devuelve el backend y, si no
+   * hay, el de la validación del cliente. El error recién se muestra cuando el
+   * campo fue tocado o cuando se intentó enviar el formulario.
+   */
+  private mensajeDeCampo(
+    estado: EstadoCampo,
+    mensajeBackend: string | undefined,
+    porDefecto: string,
+  ): string | null {
+    if (mensajeBackend) return mensajeBackend;
+    if (!estado.invalid()) return null;
+    if (!estado.touched() && !this.intentadoEnviar()) return null;
+    return estado.errors()[0]?.message ?? porDefecto;
+  }
 
   private readonly recargar = new Subject<void>();
 
@@ -299,6 +314,41 @@ export class ServiciosSucursal {
     return this.fotoUrl() !== null || this.fotoArchivo() !== null;
   }
 
+  /**
+   * Mueve el foco al primer campo inválido para que el usuario sepa dónde
+   * corregir. No cambia la ruta ni el estado del formulario.
+   */
+  private enfocarPrimerCampoInvalido(): void {
+    const campos = [
+      this.formulario.nombre,
+      this.formulario.descripcion,
+      this.formulario.duracion,
+      this.formulario.precio,
+    ];
+
+    for (const campo of campos) {
+      if (!campo().invalid()) continue;
+      try {
+        campo().focusBoundControl();
+      } catch {
+        // El campo puede no tener un control nativo asociado.
+      }
+      return;
+    }
+  }
+
+  /** Duración en minutos como número entero, tal como lo espera el DTO. */
+  private duracionEnMinutos(): number {
+    const duracion = this.model().duracion;
+    return typeof duracion === 'number' && Number.isFinite(duracion) ? Math.round(duracion) : 0;
+  }
+
+  /** Precio como número, tal como lo espera el DTO (BigDecimal). */
+  private precioNumerico(): number {
+    const precio = this.model().precio;
+    return typeof precio === 'number' && Number.isFinite(precio) ? precio : 0;
+  }
+
   protected onSubmit(event: Event): void {
     event.preventDefault();
     if (this.cargandoCreacion()) return;
@@ -314,11 +364,7 @@ export class ServiciosSucursal {
     }
 
     if (this.formulario().invalid() || !this.tieneFoto()) {
-      try {
-        this.formulario.nombre().focusBoundControl();
-      } catch {
-        // ignore
-      }
+      this.enfocarPrimerCampoInvalido();
       return;
     }
 
@@ -362,8 +408,8 @@ export class ServiciosSucursal {
             sucursalId: this.sucursalId,
             nombre: this.model().nombre.trim(),
             descripcion: this.model().descripcion.trim(),
-            duracion: this.model().duracion as number,
-            precio: this.model().precio as number,
+            duracion: this.duracionEnMinutos(),
+            precio: this.precioNumerico(),
             fotoUrl,
             fotoPublicId,
           };
@@ -390,8 +436,9 @@ export class ServiciosSucursal {
   private mapearError(err: any): void {
     const backendErrors: Record<string, string> = {};
     let general: string | null = null;
+    const status = Number(err?.status ?? 0);
 
-    const body = err?.error;
+    const body = this.cuerpoDelError(err?.error);
     if (err?.fields && typeof err.fields === 'object') {
       Object.assign(backendErrors, err.fields);
     }
@@ -432,6 +479,7 @@ export class ServiciosSucursal {
 
     if (Object.keys(backendErrors).length) {
       const normalizados: Record<string, string> = {};
+      const mensajesGenerales: string[] = [];
       for (const [campo, mensaje] of Object.entries(backendErrors)) {
         const clave = campo.toLowerCase().includes('nombre')
           ? 'nombre'
@@ -444,18 +492,79 @@ export class ServiciosSucursal {
                 : campo.toLowerCase().includes('foto')
                   ? 'foto'
                   : campo;
-        normalizados[clave] = mensaje;
+        if (CAMPOS_CON_ERROR.includes(clave)) {
+          normalizados[clave] = mensaje;
+        } else {
+          // No hay campo en el formulario que lo muestre: va al banner general.
+          mensajesGenerales.push(`${campo}: ${mensaje}`);
+        }
       }
       this.erroresBackend.set(normalizados);
+      if (mensajesGenerales.length) {
+        general = mensajesGenerales.join(' · ');
+      }
       if (!general) {
         general = 'Revisá los campos marcados e intentá nuevamente.';
       }
     }
 
+    // El mensaje del backend solo se muestra cuando explica una regla del
+    // negocio (4xx). Para fallas del servidor o de red se usa un mensaje propio
+    // que no expone detalles internos.
+    if (general && !(status >= 400 && status < 500)) {
+      general = null;
+    }
+
     if (!general) {
-      general = err?.message || 'No pudimos crear el servicio. Intentá de nuevo.';
+      general = this.mensajeErrorCreacion(status);
     }
     this.errorCreacion.set(general);
+  }
+
+  /**
+   * El endpoint responde con texto plano, así que un error de validación del
+   * backend puede llegar como un JSON serializado. Se interpreta para poder
+   * mapear cada mensaje a su campo.
+   */
+  private cuerpoDelError(body: unknown): any {
+    if (typeof body !== 'string') return body;
+    const texto = body.trim();
+    if (!texto.startsWith('{') && !texto.startsWith('[')) return body;
+    try {
+      return JSON.parse(texto) as any;
+    } catch {
+      return body;
+    }
+  }
+
+  /**
+   * Mensaje general del error. Cuando el backend explica una regla concreta
+   * (4xx) se muestra el suyo; para fallas del servidor o de red se muestra un
+   * mensaje propio que no expone detalles internos.
+   */
+  private mensajeErrorCreacion(status: number): string {
+    if (status === 0) {
+      return 'No pudimos conectarnos con el servidor. Revisá tu conexión e intentá de nuevo.';
+    }
+    if (status === 403) {
+      return 'No tenés permisos para crear servicios en esta sucursal.';
+    }
+    if (status === 404) {
+      return 'No encontramos la sucursal donde querés crear el servicio.';
+    }
+    if (status === 409) {
+      return 'Ya existe un servicio con esos datos.';
+    }
+    if (status === 413) {
+      return 'La imagen no puede superar los 5 MB.';
+    }
+    if (status === 429) {
+      return 'Demasiados intentos. Esperá unos segundos e intentá de nuevo.';
+    }
+    if (status >= 500) {
+      return 'Tuvimos un problema al crear el servicio. Probá de nuevo en unos segundos.';
+    }
+    return 'No pudimos crear el servicio. Revisá los datos e intentá de nuevo.';
   }
 
   private limpiarFormulario(): void {

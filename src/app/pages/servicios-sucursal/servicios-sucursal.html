@@ -157,19 +157,8 @@
   </div>
 </section>
 
-<ds-modal [open]="modalAbierto()" (close)="cerrarModal()" ariaLabel="Crear servicio" maxWidth="560px">
+<ds-modal [open]="modalAbierto()" (close)="cerrarModal()" ariaLabelledby="crear-servicio-titulo" maxWidth="560px">
   <h2 id="crear-servicio-titulo">Crear servicio</h2>
-
-  @if (resumenErrores().length > 0) {
-    <div class="resumen-errores" role="alert" aria-live="assertive">
-      <p>Revisá los siguientes campos:</p>
-      <ul>
-        @for (item of resumenErrores(); track item.id) {
-          <li><a [href]="'#' + item.id">{{ item.label }}: {{ item.message }}</a></li>
-        }
-      </ul>
-    </div>
-  }
 
   @if (errorCreacion()) {
     <div class="error-general" role="alert">{{ errorCreacion() }}</div>
@@ -198,6 +187,7 @@
         id="servicio-duracion"
         type="number"
         step="1"
+        inputmode="numeric"
         [formField]="formulario.duracion"
       />
     </ds-input>
@@ -207,6 +197,7 @@
         id="servicio-precio"
         type="number"
         step="0.01"
+        inputmode="decimal"
         [formField]="formulario.precio"
       />
     </ds-input>
@@ -217,13 +208,15 @@
         id="servicio-foto"
         type="file"
         accept="image/jpeg,image/png,image/webp,image/gif"
+        [attr.aria-invalid]="errorFoto() ? 'true' : null"
+        [attr.aria-describedby]="errorFoto() ? 'servicio-foto-error' : null"
         (change)="onFileChange($event)"
       />
       @if (fotoPreview()) {
         <img class="foto-preview" [src]="fotoPreview()" alt="Vista previa de la foto" />
       }
       @if (errorFoto()) {
-        <span class="ds-error" role="alert">{{ errorFoto() }}</span>
+        <span id="servicio-foto-error" class="ds-error" role="alert">{{ errorFoto() }}</span>
       }
     </div>
 
