@@ -8,15 +8,21 @@ export const authGuard: CanActivateFn = (route, state) => {
   const auth = inject(authService);
   const router = inject(Router);
 
-  // Destino del visitante cuando no tiene una sesión válida
+  const inicio = () => router.parseUrl('/');
+  const tienePermisos = (): boolean => {
+    const roles = route.data['roles'] as string[] | undefined;
+    const rolesExcluidos = route.data['rolesExcluidos'] as string[] | undefined;
+    const cumpleRolesRequeridos = !roles?.length || auth.tieneAlgunRol(...roles);
+    const tieneRolExcluido = !!rolesExcluidos?.length && auth.tieneAlgunRol(...rolesExcluidos);
 
-  const login = () => router.createUrlTree(['/login'], { queryParams: { returnTo: state.url } });
+    return cumpleRolesRequeridos && !tieneRolExcluido;
+  };
 
-  if (!auth.getAccessToken() && !auth.getRefreshToken()) return login();
+  if (!auth.getAccessToken() && !auth.getRefreshToken()) return inicio();
 
-  // Sin conexión no validamos la sesión por red: la pantalla de destino (por
-  // ejemplo el detalle de sucursal) se encarga de mostrar el aviso correspondiente.
-  if (!navigator.onLine) return of(true);
+  // Offline solo se permite continuar con una sesión ya restaurada/validada en
+  // memoria y con los roles requeridos. Una sesión desconocida falla de forma segura.
+  if (!navigator.onLine) return of(auth.autenticado() && tienePermisos() ? true : inicio());
 
 
   // Primero validamos la sesión y después los roles de la ruta. Además de los
@@ -25,16 +31,7 @@ export const authGuard: CanActivateFn = (route, state) => {
 
   return auth.validarToken().pipe(
     map(() => {
-      const roles = route.data['roles'] as string[] | undefined;
-      const rolesExcluidos = route.data['rolesExcluidos'] as string[] | undefined;
-
-      const cumpleRolesRequeridos = !roles?.length || auth.tieneAlgunRol(...roles);
-      const tieneRolExcluido =
-        !!rolesExcluidos?.length && auth.tieneAlgunRol(...rolesExcluidos);
-
-      return cumpleRolesRequeridos && !tieneRolExcluido
-        ? true
-        : router.createUrlTree(['/error'], { queryParams: { status: 403 } });
+      return tienePermisos() ? true : inicio();
     }),
 
     catchError((error: unknown) => {
@@ -42,14 +39,13 @@ export const authGuard: CanActivateFn = (route, state) => {
 
       if (status === 401) {
         auth.limpiarSesion();
-        return of(login());
+        return of(inicio());
       }
 
-      // Ante un error de red (sin conexión) dejamos pasar a la ruta para que
-      // la propia pantalla (por ejemplo el detalle de sucursal) muestre su aviso
-      // de "sin conexión" con la opción "Reintentar", en lugar de enviar al error genérico.
+      // Ante un error de red solo se mantiene el acceso si la sesión ya estaba
+      // validada en memoria y los roles requeridos siguen disponibles.
       if (status === 0 || status === undefined || status === null) {
-        return of(true);
+        return of(auth.autenticado() && tienePermisos() ? true : inicio());
       }
 
       // Conservamos las credenciales ante errores de red o del servidor.
