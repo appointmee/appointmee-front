@@ -48,8 +48,12 @@
           [attr.aria-label]="searchOpen() ? 'Cerrar búsqueda' : 'Buscar sucursales'"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="11" cy="11" r="7.5" />
-            <path d="m16.5 16.5 4 4" />
+            @if (searchOpen()) {
+              <path d="m6 6 12 12M18 6 6 18" />
+            } @else {
+              <circle cx="11" cy="11" r="7.5" />
+              <path d="m16.5 16.5 4 4" />
+            }
           </svg>
         </button>
         @if (searchOpen()) {
@@ -69,9 +73,6 @@
               autocomplete="off"
               aria-describedby="navbar-search-hint"
             />
-            <button dsButton class="search__submit" type="submit" aria-label="Buscar">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 14 0m-6-6 6 6-6 6" /></svg>
-            </button>
           </form>
           <p id="navbar-search-hint" class="search__hint" [class.search__hint--error]="branchSearch.termTooShort()" role="status" aria-live="polite">
             @if (branchSearch.termTooShort()) { Escribí al menos 2 caracteres. } @else { Presioná Enter para buscar sucursales. }
