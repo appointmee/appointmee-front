@@ -231,7 +231,7 @@ export class CrearSucursalPage implements OnInit {
         next: () => {
           this.subiendoFoto.set(false);
           this.cargando.set(false);
-          this.exito.set('Sucursal creada correctamente.');
+          this.exito.set('Se ha creado la sucursal con exito');
           void this.router.navigateByUrl('/mis-sucursales');
         },
         error: () => {
