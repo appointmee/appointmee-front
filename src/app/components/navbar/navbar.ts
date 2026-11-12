@@ -36,6 +36,7 @@ const ICONS = {
   settings:
     'M4 7h6M14 7h6M4 12h10M18 12h2M4 17h2M10 17h2M10 7a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM6 12a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM14 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z',
   shield: 'M12 3 19 6v5c0 4.4-3 8.2-7 9-4-.8-7-4.6-7-9V6l7-3Z',
+  chart: 'M4 19V5m0 14h17M8 15l3-4 3 2 5-7',
   plus: 'M12 5v14M5 12h14',
   logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
   chevron: 'm9 18 6-6-6-6',
@@ -107,8 +108,10 @@ export class Navbar {
   /** Disponibles solo con el rol correspondiente (criterio 3, 4). */
   protected readonly linksPorRol: readonly NavItem[] = [
     { label: 'Mis Sucursales', path: '/mis-sucursales', icon: ICONS.store, exact: false, roles: ['EMPLEADOR'] },
+    { label: 'Estadísticas', path: '/graficos/empleador', icon: ICONS.chart, exact: false, roles: ['EMPLEADOR'] },
     { label: 'Turnos asignados', path: '/turnos-asignados', icon: ICONS.calendar, exact: false, roles: ['EMPLEADO'] },
     { label: 'Administración', path: '/admin', icon: ICONS.shield, exact: false, roles: ['ADMINISTRADOR'] },
+    { label: 'Estadísticas', path: '/graficos/administrador', icon: ICONS.chart, exact: false, roles: ['ADMINISTRADOR'] },
   ];
 
   /** Accesos del menú de perfil, disponibles para cualquier usuario autenticado. */
