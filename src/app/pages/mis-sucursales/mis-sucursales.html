@@ -2,7 +2,10 @@
   <div class="gestion__inner">
     @if (!sucursalSeleccionada()) {
       <header class="gestion__header">
-        <h1>Mis sucursales</h1>
+        <div class="gestion__intro">
+          <h1>Mis sucursales</h1>
+          <p>Organizá tus espacios de trabajo y accedé rápidamente a su gestión.</p>
+        </div>
         <a routerLink="/mis-sucursales/nueva" class="boton boton--primario">Crear sucursal</a>
       </header>
     }
@@ -138,17 +141,22 @@
       <ul class="lista" aria-live="polite">
         @for (sucursal of sucursales(); track sucursal.id) {
           <li class="sucursal-card">
-            <div class="sucursal-card__info">
-              <span class="sucursal-card__avatar" aria-hidden="true">
-                {{ sucursal.nombre.charAt(0).toUpperCase() }}
+            <button
+              class="sucursal-card__accion"
+              type="button"
+              (click)="seleccionarSucursal(sucursal.id)"
+              [attr.aria-label]="'Gestionar sucursal ' + sucursal.nombre"
+            >
+              <span class="sucursal-card__info">
+                <span class="sucursal-card__avatar" aria-hidden="true">
+                  {{ sucursal.nombre.charAt(0).toUpperCase() }}
+                </span>
+                <span>
+                  <span class="sucursal-card__nombre">{{ sucursal.nombre }}</span>
+                  <span class="sucursal-card__categoria">{{ humanizarCategoria(sucursal.categoria) }}</span>
+                </span>
               </span>
-              <div>
-                <h3>{{ sucursal.nombre }}</h3>
-                <p>{{ humanizarCategoria(sucursal.categoria) }}</p>
-              </div>
-            </div>
-            <button class="boton boton--principal" type="button" (click)="seleccionarSucursal(sucursal.id)">
-              Gestionar
+              <span class="sr-only">Gestionar</span>
             </button>
           </li>
         }
