@@ -62,6 +62,21 @@ describe('Sucursales', () => {
     expect(filtrar).toHaveBeenCalledWith('SPA', 'Centro');
   });
 
+  it('espera las categorías antes de buscar con los filtros iniciales de la URL', async () => {
+    const categoriasPendientes = new Subject<string[]>();
+    categorias.mockReturnValue(categoriasPendientes);
+    const fixture = await create('/sucursales?busqueda=Flores&categoria=CAFE');
+
+    expect(filtrar).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[aria-busy="true"]')).toBeTruthy();
+
+    categoriasPendientes.next(['CAFE']);
+    fixture.detectChanges();
+
+    expect(filtrar).toHaveBeenCalledOnce();
+    expect(filtrar).toHaveBeenCalledWith('CAFE', 'Flores');
+  });
+
   it('ubica búsqueda y categorías en la barra lateral antes del listado', async () => {
     const fixture = await create();
     const sidebar = fixture.nativeElement.querySelector('aside.listado__sidebar') as HTMLElement;
