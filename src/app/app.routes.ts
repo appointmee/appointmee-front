@@ -388,6 +388,30 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/admin/admin').then((module) => module.Administracion),
   },
   {
+    path: 'graficos/administrador',
+    canActivate: [authGuard],
+    title: 'AppointMee | Gráficos de administración',
+    data: {
+      title: 'Gráficos de administración',
+      roles: ['ADMINISTRADOR'],
+      rolGrafico: 'administrador',
+      description: 'Estadísticas globales de AppointMee.',
+    },
+    loadComponent: () => import('./pages/graficos/graficos').then((module) => module.Graficos),
+  },
+  {
+    path: 'graficos/empleador',
+    canActivate: [authGuard],
+    title: 'AppointMee | Gráficos de sucursal',
+    data: {
+      title: 'Gráficos de sucursal',
+      roles: ['EMPLEADOR'],
+      rolGrafico: 'empleador',
+      description: 'Estadísticas de las sucursales del empleador.',
+    },
+    loadComponent: () => import('./pages/graficos/graficos').then((module) => module.Graficos),
+  },
+  {
     path: 'design-system',
     title: 'AppointMee | Sistema de diseño',
     loadComponent: () => import('./pages/design-system/design-system').then((m) => m.DesignSystemPage),
