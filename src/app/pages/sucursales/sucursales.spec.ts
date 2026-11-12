@@ -174,10 +174,14 @@ describe('Sucursales', () => {
     const fixture = await create('/sucursales?busqueda=Inexistente');
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain(
-      'No encontramos sucursales para tu búsqueda.',
+    expect(fixture.nativeElement.querySelector('.estado__vacio')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.estado__titulo').textContent).toContain(
+      'No encontramos sucursales para «Inexistente».',
     );
     expect(fixture.nativeElement.querySelector('.search__input')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('.estado__accion').textContent,
+    ).toContain('Limpiar búsqueda');
   });
 
   it('muestra error recuperable y reintenta con los mismos filtros', async () => {
