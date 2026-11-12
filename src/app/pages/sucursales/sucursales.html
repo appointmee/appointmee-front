@@ -62,7 +62,27 @@
             }
           </p>
 
-          <div class="categorias" role="group" aria-label="Filtrar por categoría">
+          <button
+            dsButton
+            class="categorias__toggle"
+            type="button"
+            aria-controls="sucursales-categorias"
+            [attr.aria-expanded]="categoriasAbiertas()"
+            (click)="alternarCategorias()"
+          >
+            <span>Categorías</span>
+            <span class="categorias__seleccionada">
+              {{ selectedCategory() ? humanizeCategory(selectedCategory()) : 'Todas' }}
+            </span>
+            <span class="categorias__chevron" aria-hidden="true"></span>
+          </button>
+          <div
+            id="sucursales-categorias"
+            class="categorias"
+            [class.categorias--abiertas]="categoriasAbiertas()"
+            role="group"
+            aria-label="Filtrar por categoría"
+          >
             <button dsButton
               type="button"
               class="categoria-chip"
