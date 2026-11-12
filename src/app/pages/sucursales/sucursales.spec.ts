@@ -27,10 +27,10 @@ describe('Sucursales', () => {
   let categorias: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    filtrar = vi.fn<(categoria?: string | null, nombre?: string | null) => Observable<SucursalMiniDTO[]>>(
+    filtrar = vi.fn<(categoria?: string | null, nombre?: string | null, silenciarErroresGlobales?: boolean) => Observable<SucursalMiniDTO[]>>(
       () => of([CENTRO]),
     );
-    listar = vi.fn<() => Observable<SucursalMiniDTO[]>>(() => of([CENTRO]));
+    listar = vi.fn<(silenciarErroresGlobales?: boolean) => Observable<SucursalMiniDTO[]>>(() => of([CENTRO]));
     categorias = vi.fn<() => Observable<string[]>>(() => of(['SPA', 'BARBERIA']));
 
     TestBed.configureTestingModule({
@@ -59,7 +59,7 @@ describe('Sucursales', () => {
   it('combina busqueda y categoria recibidas por query params', async () => {
     await create('/sucursales?busqueda=Centro&categoria=SPA');
 
-    expect(filtrar).toHaveBeenCalledWith('SPA', 'Centro');
+    expect(filtrar).toHaveBeenCalledWith('SPA', 'Centro', true);
   });
 
   it('ubica búsqueda y categorías en la barra lateral antes del listado', async () => {
@@ -93,7 +93,7 @@ describe('Sucursales', () => {
 
   it('ignora una categoría inválida sin enviarla al backend', async () => {
     const fixture = await create('/sucursales?categoria=INEXISTENTE');
-    expect(filtrar).toHaveBeenCalledWith(null, '');
+    expect(filtrar).toHaveBeenCalledWith(null, null, true);
     expect(fixture.nativeElement.querySelector('.categoria-chip').getAttribute('aria-pressed')).toBe('true');
   });
 
@@ -101,7 +101,7 @@ describe('Sucursales', () => {
     categorias.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
     const fixture = await create('/sucursales?categoria=SPA');
     fixture.detectChanges();
-    expect(filtrar).toHaveBeenCalledWith(null, '');
+    expect(filtrar).toHaveBeenCalledWith(null, null, true);
     expect(fixture.nativeElement.querySelectorAll('.categoria-chip')).toHaveLength(1);
     expect(fixture.nativeElement.querySelector('.categorias__aviso').textContent).toContain('No pudimos cargar las categorías');
     expect(fixture.nativeElement.querySelector('.card')).toBeTruthy();
@@ -127,7 +127,7 @@ describe('Sucursales', () => {
     await vi.advanceTimersByTimeAsync(300);
 
     expect(router.url).toContain('categoria=SPA');
-    expect(filtrar).toHaveBeenLastCalledWith('SPA', 'Centro');
+    expect(filtrar).toHaveBeenLastCalledWith('SPA', 'Centro', true);
   });
 
   it('sincroniza la categoria con la URL sin perder la busqueda', async () => {
@@ -140,7 +140,7 @@ describe('Sucursales', () => {
     await vi.waitFor(() => expect(router.url).toContain('categoria=SPA'));
 
     expect(router.url).toContain('busqueda=Centro');
-    expect(filtrar).toHaveBeenLastCalledWith('SPA', 'Centro');
+    expect(filtrar).toHaveBeenLastCalledWith('SPA', 'Centro', true);
   });
 
   it('reacciona a cambios externos de los query params', async () => {
@@ -148,7 +148,7 @@ describe('Sucursales', () => {
 
     await router.navigate([], { queryParams: { busqueda: 'Norte', categoria: 'BARBERIA' } });
     await vi.waitFor(() =>
-      expect(filtrar).toHaveBeenLastCalledWith('BARBERIA', 'Norte'),
+      expect(filtrar).toHaveBeenLastCalledWith('BARBERIA', 'Norte', true),
     );
   });
 
@@ -175,7 +175,7 @@ describe('Sucursales', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain(
-      'No encontramos sucursales para tu búsqueda.',
+      'No encontramos sucursales para «Inexistente».',
     );
     expect(fixture.nativeElement.querySelector('.search__input')).toBeTruthy();
   });
@@ -193,8 +193,9 @@ describe('Sucursales', () => {
     (fixture.nativeElement.querySelector('button.estado__link') as HTMLButtonElement).click();
     fixture.detectChanges();
 
-    expect(filtrar).toHaveBeenLastCalledWith('SPA', 'Centro');
+    expect(filtrar).toHaveBeenLastCalledWith('SPA', 'Centro', true);
     expect(fixture.nativeElement.querySelector('.card')).toBeTruthy();
+    expect(router.url).toBe('/sucursales?busqueda=Centro&categoria=SPA');
   });
 
   it('filtra búsquedas numéricas por id y categoría sin cambiar contratos', async () => {
@@ -203,7 +204,33 @@ describe('Sucursales', () => {
     fixture.detectChanges();
 
     expect(listar).toHaveBeenCalledOnce();
+    expect(listar).toHaveBeenCalledWith(true);
     expect(filtrar).not.toHaveBeenCalled();
     expect(fixture.nativeElement.querySelectorAll('.card')).toHaveLength(1);
+  });
+
+  it('espera las categorías y las conserva al recuperarse de un error', async () => {
+    const categoriasPendientes = new Subject<string[]>();
+    categorias.mockReturnValue(categoriasPendientes);
+    filtrar
+      .mockReturnValueOnce(
+        throwError(() => new HttpErrorResponse({ status: 500, statusText: 'Error' })),
+      )
+      .mockReturnValueOnce(of([CENTRO]));
+
+    const fixture = await create('/sucursales?busqueda=Centro&categoria=SPA');
+    expect(filtrar).not.toHaveBeenCalled();
+
+    categoriasPendientes.next(['SPA', 'BARBERIA']);
+    categoriasPendientes.complete();
+    fixture.detectChanges();
+    expect(filtrar).toHaveBeenCalledWith('SPA', 'Centro', true);
+
+    (fixture.nativeElement.querySelector('button.estado__link') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(filtrar).toHaveBeenLastCalledWith('SPA', 'Centro', true);
+    expect(fixture.nativeElement.querySelector('.card')).toBeTruthy();
+    expect(router.url).toBe('/sucursales?busqueda=Centro&categoria=SPA');
   });
 });

@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest, Observable, of, Subject } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators';
 
@@ -21,7 +21,6 @@ import { SucursalMiniDTO } from '../../models/sucursal';
 import { ApiErrors } from '../../http/api-errors';
 import {
   DEBOUNCE_BUSQUEDA_MS,
-  MIN_CARACTERES_BUSQUEDA,
   claveComparacionBusqueda,
   normalizarTerminoBusqueda,
   terminoDeBusqueda,
@@ -72,7 +71,7 @@ export class Sucursales {
 
   protected readonly terminoMuyCorto = computed(() => {
     const termino = normalizarTerminoBusqueda(this.searchTerm());
-    return termino.length > 0 && termino.length < MIN_CARACTERES_BUSQUEDA;
+    return termino.length > 0 && !terminoDeBusqueda(termino);
   });
 
   private readonly busqueda$ = new Subject<SolicitudBusqueda>();
@@ -119,38 +118,25 @@ export class Sucursales {
         this.reintentando.set(false);
       });
 
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((qp) => {
+      this.aplicarQueryParams(qp);
+    });
+
     this.service
       .categorias()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (cats) => {
           this.categorias.set(cats ?? []);
-          this.selectedCategory.set(this.validarCategoria(this.route.snapshot.queryParamMap.get('categoria')));
           this.categoriasCargadas.set(true);
+          this.aplicarQueryParams(this.route.snapshot.queryParams);
         },
         error: () => {
           this.avisoCategorias.set('No pudimos cargar las categorías. Podés ver todas las sucursales.');
-          this.selectedCategory.set(null);
           this.categoriasCargadas.set(true);
+          this.aplicarQueryParams(this.route.snapshot.queryParams);
         },
       });
-
-    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((qp) => {
-      const busqueda = qp['busqueda'] ?? '';
-      if (busqueda !== this.searchTerm()) {
-        this.searchTerm.set(busqueda);
-      }
-      const categoria = this.categoriasCargadas()
-        ? this.validarCategoria(qp['categoria'] ?? null)
-        : null;
-      if (categoria !== this.selectedCategory()) {
-        this.selectedCategory.set(categoria);
-      }
-
-      // Al volver atrás o recargar, la URL manda: se aplica sin volver a escribirla.
-      this.searchTerm.set(busqueda);
-      this.ejecutarBusqueda({ actualizarUrl: false, forzar: true });
-    });
 
     this.destroyRef.onDestroy(() => this.cancelarDebounce());
   }
@@ -172,7 +158,7 @@ export class Sucursales {
       return;
     }
 
-    if (termino.length < MIN_CARACTERES_BUSQUEDA) {
+    if (!terminoDeBusqueda(termino)) {
       return;
     }
 
@@ -193,7 +179,7 @@ export class Sucursales {
       return;
     }
 
-    if (termino.length < MIN_CARACTERES_BUSQUEDA) {
+    if (!terminoDeBusqueda(termino)) {
       return;
     }
 
@@ -225,9 +211,12 @@ export class Sucursales {
 
   protected retry(): void {
     if (this.reintentando()) return;
+    const solicitud = this.ultimaSolicitud;
+    if (!solicitud) return;
+
     this.reintentando.set(true);
     this.cancelarDebounce();
-    this.ejecutarBusqueda({ actualizarUrl: false, forzar: true });
+    this.busqueda$.next({ termino: solicitud.termino, categoria: solicitud.categoria });
   }
 
   protected onImageError(event: Event): void {
@@ -316,6 +305,19 @@ export class Sucursales {
     return `${claveComparacionBusqueda(termino)}|${categoria ?? ''}`;
   }
 
+  private aplicarQueryParams(queryParams: Params): void {
+    const busqueda = queryParams['busqueda'] ?? '';
+    this.searchTerm.set(busqueda);
+
+    if (!this.categoriasCargadas()) {
+      return;
+    }
+
+    this.selectedCategory.set(this.validarCategoria(queryParams['categoria'] ?? null));
+    // Al volver atrás o recargar, la URL manda: se aplica sin volver a escribirla.
+    this.ejecutarBusqueda({ actualizarUrl: false, forzar: true });
+  }
+
   private cancelarDebounce(): void {
     if (this.debounceTimer !== null) {
       clearTimeout(this.debounceTimer);
@@ -329,7 +331,7 @@ export class Sucursales {
   ): Observable<SucursalMiniDTO[]> {
     const termino = normalizarTerminoBusqueda(nombre);
     if (/^\d+$/.test(termino)) {
-      return this.service.listar().pipe(
+      return this.service.listar(true).pipe(
         map((lista) =>
           (lista ?? []).filter(
             (sucursal) =>
@@ -340,6 +342,6 @@ export class Sucursales {
       );
     }
 
-    return this.service.filtrar(categoria, termino || null);
+    return this.service.filtrar(categoria, termino || null, true);
   }
 }

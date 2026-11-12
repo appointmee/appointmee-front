@@ -18,8 +18,8 @@ export function claveComparacionBusqueda(valor: string | null | undefined): stri
     .toLocaleLowerCase('es');
 }
 
-/** Un término de 0 caracteres limpia el filtro; con 2 o más se busca. */
+/** Un término numérico busca por ID; para nombres se requieren al menos 2 caracteres. */
 export function terminoDeBusqueda(valor: string | null | undefined): string {
   const termino = normalizarTerminoBusqueda(valor);
-  return termino.length >= MIN_CARACTERES_BUSQUEDA ? termino : '';
+  return /^\d+$/.test(termino) || termino.length >= MIN_CARACTERES_BUSQUEDA ? termino : '';
 }
