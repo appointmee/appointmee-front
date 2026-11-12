@@ -161,3 +161,32 @@ describe('Navbar en la vista de error', () => {
     expect(html.querySelector('.profile__trigger')).not.toBeNull();
   });
 });
+
+describe('Restauración de sesión en el navbar', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('muestra carga en vez de login o un avatar vacío mientras restaura', async () => {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([{ path: 'private', component: EmptyPage }]),
+        {
+          provide: authService,
+          useValue: {
+            autenticado: signal(false),
+            visitante: signal(false),
+            restaurando: signal(true),
+          },
+        },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/private');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[aria-label="Restaurando sesión"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.navbar__cta')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.profile__avatar')).toBeNull();
+  });
+});

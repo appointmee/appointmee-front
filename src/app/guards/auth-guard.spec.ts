@@ -16,6 +16,7 @@ describe('authGuard', () => {
     validarToken: vi.fn(),
     tieneAlgunRol: vi.fn(),
     limpiarSesion: vi.fn(),
+    expirado: vi.fn(),
   };
   beforeEach(() => {
     vi.resetAllMocks();
@@ -36,6 +37,12 @@ describe('authGuard', () => {
     const result = (await ejecutar()) as UrlTree;
     expect(result.toString()).toBe('/login?returnTo=%2Fadmin');
     expect(auth.validarToken).not.toHaveBeenCalled();
+  });
+  it('indica que la sesión expiró al superar las 24 horas', async () => {
+    auth.expirado.mockReturnValue(true);
+    expect(((await ejecutar()) as UrlTree).toString()).toBe(
+      '/login?returnTo=%2Fadmin&expired=1',
+    );
   });
   it('valida en backend antes de permitir acceso', async () => {
     auth.getAccessToken.mockReturnValue('access');
