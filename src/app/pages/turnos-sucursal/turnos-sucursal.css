@@ -3,11 +3,28 @@
 }
 
 .historial {
+  position: relative;
+  isolation: isolate;
   min-height: calc(100dvh - var(--nav-h));
   padding: calc(var(--nav-h) + 40px) 24px 80px;
 }
 
+.historial__fondo-sucursal {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(22px) brightness(0.27);
+  opacity: 0.68;
+  pointer-events: none;
+  transform: scale(1.06);
+}
+
 .historial__inner {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 26px;
   width: min(100% - 48px, 1040px);
@@ -68,7 +85,7 @@
   min-width: 0;
   padding: 22px;
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 16px;
   background:
     radial-gradient(460px circle at 0% 0%, rgba(247, 198, 90, 0.05), transparent 64%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.012));
@@ -127,17 +144,6 @@
 .panel__filtros ds-select {
   display: block;
   width: min(100%, 260px);
-}
-
-.panel__filtro-ayuda {
-  margin: 0 0 11px;
-  color: var(--muted);
-  font-size: 12.5px;
-}
-
-.panel__filtro-ayuda strong {
-  color: var(--text);
-  font-weight: 600;
 }
 
 .boton,
@@ -262,12 +268,34 @@
 
 .turno:hover {
   transform: translateY(-1px);
-  border-color: rgba(247, 198, 90, 0.26);
-  background: rgba(247, 198, 90, 0.045);
+  border-color: color-mix(in srgb, var(--turno-estado-color, var(--accent)) 35%, var(--line));
+  background: color-mix(in srgb, var(--turno-estado-color, var(--accent)) 9%, transparent);
+}
+
+.turno--pendiente {
+  --turno-estado-color: var(--accent);
+}
+
+.turno--confirmado {
+  --turno-estado-color: var(--success-light);
+}
+
+.turno--realizado {
+  --turno-estado-color: var(--success-strong);
+}
+
+.turno--cancelado,
+.turno--pago-rechazado {
+  --turno-estado-color: var(--danger);
+}
+
+.turno--desconocido {
+  --turno-estado-color: var(--muted);
 }
 
 .turno__principal {
   display: flex;
+  flex: 1;
   align-items: center;
   gap: 13px;
   min-width: 0;
@@ -316,14 +344,8 @@
   font-size: 12.5px;
 }
 
-.turno__meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
 .turno__chevron {
+  flex-shrink: 0;
   width: 17px;
   height: 17px;
   fill: none;
@@ -337,58 +359,6 @@
 .turno:hover .turno__chevron {
   transform: translateX(2px);
   stroke: var(--accent);
-}
-
-.estado-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-full);
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
-.estado-chip::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.estado-chip--pendiente {
-  border-color: rgba(247, 198, 90, 0.24);
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.estado-chip--confirmado {
-  border-color: rgba(126, 226, 168, 0.26);
-  background: var(--success-light-soft);
-  color: var(--success-light);
-}
-
-.estado-chip--realizado {
-  border-color: rgba(34, 197, 94, 0.32);
-  background: var(--success-strong-soft);
-  color: var(--success-strong);
-}
-
-.estado-chip--cancelado,
-.estado-chip--pago-rechazado {
-  border-color: rgba(255, 122, 122, 0.26);
-  background: rgba(255, 122, 122, 0.12);
-  color: var(--danger);
-}
-
-.estado-chip--desconocido {
-  border-color: var(--line);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--muted);
 }
 
 .estado {
@@ -962,19 +932,11 @@
     width: 100%;
   }
 
-  .panel__filtro-ayuda {
-    margin-bottom: 0;
-  }
-
   .turno {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .turno__meta {
-    justify-content: space-between;
-    padding-left: 55px;
+    align-items: center;
+    flex-direction: row;
+    gap: 8px;
+    padding: 12px;
   }
 
   .turno__copy strong {

@@ -43,6 +43,7 @@ export class SolicitudesSucursal {
     Number.isInteger(this.sucursalId) && this.sucursalId > 0;
 
   protected readonly email = signal('');
+  protected readonly fotoSucursal = signal<string | null>(null);
   protected readonly enviando = signal(false);
   protected readonly errorEnvio = signal<string | null>(null);
   protected readonly exitoEnvio = signal<string | null>(null);
@@ -65,6 +66,15 @@ export class SolicitudesSucursal {
       this.cargandoEnviadas.set(false);
       return;
     }
+
+    this.sucursalesApi
+      .obtenerPorId(this.sucursalId, true)
+      .pipe(
+        map((sucursal) => sucursal.fotoPerfil?.trim() || null),
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((foto) => this.fotoSucursal.set(foto));
 
     this.recargarEnviadas
       .pipe(
@@ -121,6 +131,10 @@ export class SolicitudesSucursal {
     if (this.reintentandoEnviadas()) return;
     this.reintentandoEnviadas.set(true);
     this.recargarEnviadas.next();
+  }
+
+  protected marcarFotoSucursalFallida(): void {
+    this.fotoSucursal.set(null);
   }
 
   protected readonly volverLink = ['/mis-sucursales'];

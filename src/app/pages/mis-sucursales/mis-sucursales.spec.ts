@@ -35,6 +35,21 @@ describe('MisSucursales', () => {
     fixture.destroy();
   });
 
+  it('muestra tarjetas skeleton cuadradas mientras carga las sucursales', () => {
+    const host = fixture.nativeElement as HTMLElement;
+    const lista = host.querySelector<HTMLElement>('.lista--cargando');
+
+    expect(lista?.getAttribute('aria-busy')).toBe('true');
+    expect(lista?.getAttribute('aria-live')).toBe('polite');
+    expect(lista?.querySelector('.sr-only')?.textContent).toContain('Cargando tus sucursales');
+    expect(lista?.querySelectorAll('.sucursal-card--skeleton')).toHaveLength(3);
+    expect(lista?.querySelectorAll('.skeleton--avatar')).toHaveLength(3);
+    expect(lista?.querySelectorAll('.skeleton--line')).toHaveLength(6);
+    expect(lista?.querySelectorAll('button, a')).toHaveLength(0);
+
+    backend.expectOne((request) => request.url.endsWith('/sucursales/listar/propias')).flush([]);
+  });
+
   it('carga las sucursales propias y muestra las 5 tarjetas al gestionar una', () => {
     const req = backend.expectOne((request) =>
       request.url.endsWith('/sucursales/listar/propias'),
@@ -45,9 +60,7 @@ describe('MisSucursales', () => {
     const host = fixture.nativeElement as HTMLElement;
     expect(host.textContent).toContain('Sucursal Uno');
 
-    const gestionar = Array.from(host.querySelectorAll<HTMLButtonElement>('button')).find((b) =>
-      b.textContent?.includes('Gestionar'),
-    );
+    const gestionar = host.querySelector<HTMLButtonElement>('.sucursal-card__accion');
     gestionar?.click();
     fixture.detectChanges();
 
@@ -57,5 +70,6 @@ describe('MisSucursales', () => {
     expect(host.textContent).toContain('Turnos');
     expect(host.textContent).toContain('Solicitudes');
     expect(host.textContent).toContain('Sucursal');
+    expect(host.querySelector('.gestor')?.previousElementSibling?.classList.contains('volver-gestor')).toBe(true);
   });
 });

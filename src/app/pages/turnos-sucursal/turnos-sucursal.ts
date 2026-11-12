@@ -105,6 +105,7 @@ export class TurnosSucursal {
   protected readonly sucursal = signal<SucursalDetalleDTO | null>(null);
   protected readonly sucursalCargando = signal(true);
   protected readonly sucursalError = signal<string | null>(null);
+  protected readonly fotoSucursalFallida = signal(false);
 
   protected readonly turnoSeleccionado = signal<TurnoMiniDTO | null>(null);
 
@@ -166,6 +167,10 @@ export class TurnosSucursal {
   protected reintentarSucursal(): void {
     if (this.sucursalCargando()) return;
     this.cargarSucursal();
+  }
+
+  protected marcarFotoSucursalFallida(): void {
+    this.fotoSucursalFallida.set(true);
   }
 
   protected abrirDetalle(turno: TurnoMiniDTO): void {

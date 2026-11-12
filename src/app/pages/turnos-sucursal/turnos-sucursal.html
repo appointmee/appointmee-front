@@ -1,4 +1,13 @@
-<section class="historial" aria-labelledby="turnos-sucursal-titulo">
+<section class="historial" aria-label="Turnos de la sucursal">
+  @if (sucursal()?.fotoPerfil && !fotoSucursalFallida()) {
+    <img
+      class="historial__fondo-sucursal"
+      [src]="sucursal()?.fotoPerfil"
+      alt=""
+      aria-hidden="true"
+      (error)="marcarFotoSucursalFallida()"
+    />
+  }
   <div class="historial__inner">
     <header class="historial__header">
       <span class="eyebrow">
@@ -45,9 +54,6 @@
           }
         </ds-select>
 
-        <p class="panel__filtro-ayuda" aria-live="polite">
-          Mostrando turnos en estado <strong>{{ etiquetaEstadoSeleccionado() }}</strong>.
-        </p>
       </div>
 
       @if (cargando() && turnos().length === 0) {
@@ -118,7 +124,7 @@
               @for (turno of turnos(); track turno.id) {
                 <li>
                   <button
-                    class="turno"
+                    [class]="'turno turno--' + claseEstado(turno.estadoTurno)"
                     type="button"
                     [attr.aria-label]="'Ver detalle del turno: ' + ariaLabelTurno(turno)"
                     (click)="abrirDetalle(turno)"
@@ -136,20 +142,9 @@
                         </span>
                       </span>
                     </span>
-
-                    <span class="turno__meta">
-                      <span
-                        class="estado-chip"
-                        [class]="
-                          'estado-chip estado-chip--' + claseEstado(turno.estadoTurno)
-                        "
-                      >
-                        {{ etiquetaEstado(turno.estadoTurno) }}
-                      </span>
-                      <svg class="turno__chevron" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="m9 18 6-6-6-6" />
-                      </svg>
-                    </span>
+                    <svg class="turno__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
                   </button>
                 </li>
               }

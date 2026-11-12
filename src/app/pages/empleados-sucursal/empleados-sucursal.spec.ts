@@ -117,10 +117,17 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     return Array.from(host.querySelectorAll<HTMLElement>('.lista .empleado'));
   }
 
-  async function abrir(url = RUTA_BASE): Promise<HTMLElement> {
+  async function abrir(
+    url = RUTA_BASE,
+    fotoPerfil: string | null = null,
+  ): Promise<HTMLElement> {
     await router.navigateByUrl(url);
     fixture.detectChanges();
     await fixture.whenStable();
+    const foto = backend.match((request) => request.url.endsWith('/sucursales/7'));
+    for (const request of foto) {
+      request.flush({ fotoPerfil });
+    }
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
@@ -150,6 +157,23 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     fixture.detectChanges();
   });
 
+  it('muestra la foto de la sucursal desenfocada detrás del contenido', async () => {
+    const host = await abrir(RUTA_BASE, 'https://example.com/sucursal.jpg');
+    responderListado();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const fondo = host.querySelector<HTMLImageElement>('.pagina__fondo-sucursal');
+    expect(fondo?.getAttribute('src')).toBe('https://example.com/sucursal.jpg');
+    expect(fondo?.getAttribute('aria-hidden')).toBe('true');
+    expect(host.querySelector('.panel')).toBeTruthy();
+
+    fondo?.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+    expect(host.querySelector('.pagina__fondo-sucursal')).toBeNull();
+    expect(host.querySelector('.panel')).toBeTruthy();
+  });
+
   it('muestra los datos visibles de cada empleado sin exponer su identificador', async () => {
     const host = await abrir();
     responderListado();
@@ -161,6 +185,7 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     expect(contenido).toContain('Gómez');
     expect(contenido).toContain('ana@ejemplo.com');
     expect(contenido).toContain('bruno@ejemplo.com');
+    expect(host.querySelector('.panel__contador')?.textContent?.trim()).toBe('2 Profesionales');
 
     // El identificador interno no se muestra en el listado.
     expect(contenido).not.toContain('ID 10');
@@ -171,16 +196,19 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     expect(foto?.getAttribute('src')).toBe('https://example.com/ana.jpg');
   });
 
-  it('muestra la puntuación promedio con número y abejas', async () => {
+  it('muestra la puntuación con abejas y conserva una etiqueta accesible', async () => {
     const host = await abrir();
     responderListado();
     await fixture.whenStable();
     fixture.detectChanges();
 
     const primera = filas(host)[0];
-    expect(primera.querySelector('.empleado__puntuacion')?.textContent?.trim()).toBe('4/5');
+    expect(primera.querySelector('.empleado__puntuacion')).toBeNull();
     expect(primera.querySelectorAll('.empleado__abejas .abeja').length).toBe(5);
     expect(primera.querySelectorAll('.empleado__abejas .abeja--vacia').length).toBe(1);
+    expect(primera.querySelector('.empleado__abejas')?.getAttribute('aria-label')).toBe(
+      'Puntuación 4/5',
+    );
     expect(primera.querySelector('.empleado__resenias')?.textContent?.trim()).toBe('12 reseñas');
   });
 
@@ -201,7 +229,9 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     expect(lista.length).toBe(2);
 
     // Cada fila conserva su propia puntuación y no la de otro empleado.
-    expect(lista[0].querySelector('.empleado__puntuacion')?.textContent?.trim()).toBe('4/5');
+    expect(lista[0].querySelector('.empleado__abejas')?.getAttribute('aria-label')).toBe(
+      'Puntuación 4/5',
+    );
     expect(lista[1].querySelector('.empleado__sin-puntuacion')?.textContent?.trim()).toBe(
       'Sin puntuaciones',
     );
@@ -265,7 +295,7 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     expect(filas(host).length).toBe(2);
   });
 
-  it('confunde el scroll con el listado y deja la auto-incorporación fuera', async () => {
+  it('mantiene el botón de auto-incorporación junto al regreso y fuera del scroll', async () => {
     const host = await abrir();
     responderListado();
     await fixture.whenStable();
@@ -277,13 +307,10 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     expect(scroll?.getAttribute('tabindex')).toBe('0');
     expect(scroll?.querySelectorAll('.empleado').length).toBe(2);
 
-    const auto = host.querySelector<HTMLElement>('.panel--auto');
-    expect(auto).toBeTruthy();
-    expect(scroll?.contains(auto)).toBe(false);
-
-    // El panel de auto-incorporación va después del listado.
-    const paneles = Array.from(host.querySelectorAll<HTMLElement>('.panel'));
-    expect(paneles.indexOf(auto as HTMLElement)).toBe(paneles.length - 1);
+    const boton = host.querySelector<HTMLElement>('.pagina__acciones .auto__boton');
+    expect(boton).toBeTruthy();
+    expect(scroll?.contains(boton)).toBe(false);
+    expect(boton?.parentElement?.querySelector('.volver-gestor')).toBeTruthy();
   });
 
   it('limita el listado a cinco empleados simultáneos con scroll propio', async () => {
@@ -313,7 +340,7 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     expect(css).toMatch(/right:\s*0/);
   });
 
-  it('rodea con borde amarillo el listado y el bloque de auto-incorporación', async () => {
+  it('muestra el listado con un borde discreto', async () => {
     await abrir();
     responderListado();
     await fixture.whenStable();
@@ -321,10 +348,16 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
 
     const css = estilosRegistrados();
 
-    expect(css).toMatch(/\.panel[^{]*\{[^}]*border:\s*2px solid var\(--accent\)/);
+    expect(css).toMatch(/\.panel[^{]*\{[^}]*border:\s*1px solid var\(--line\)/);
+    expect(css).toMatch(/\.panel[^{]*\{[^}]*border-radius:\s*var\(--radius-lg\)/);
+    expect(css).toMatch(/\.panel[^{]*\{[^}]*box-shadow:\s*var\(--shadow-sm\)/);
+    expect(css).toMatch(
+      /\.panel[^{]*\{[^}]*background:\s*color-mix\(in srgb, var\(--surface\) 64%, transparent\)/,
+    );
+    expect(css).toMatch(/\.panel[^{]*\{[^}]*backdrop-filter:\s*blur\(12px\)/);
   });
 
-  it('reduce las dimensiones del bloque de auto-incorporación', async () => {
+  it('ubica la auto-incorporación junto a volver al gestor', async () => {
     await abrir();
     responderListado();
     await fixture.whenStable();
@@ -332,8 +365,8 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
 
     const css = estilosRegistrados();
 
-    expect(css).toMatch(/\.panel--auto[^{]*\{[^}]*padding:\s*16px 18px/);
-    expect(css).toMatch(/\.auto__boton[^{]*\{[^}]*min-height:\s*36px/);
+    expect(css).toMatch(/\.pagina__acciones[^{]*\{[^}]*justify-content:\s*space-between/);
+    expect(css).toMatch(/\.auto__boton[^{]*\{[^}]*min-height:\s*48px/);
   });
 
   it('mantiene la auto-incorporación y actualiza el estado al agregarse', async () => {
@@ -386,7 +419,7 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
     expect(scroll?.querySelectorAll('button:not(.empleado__eliminar)').length).toBe(0);
   });
 
-  it('no repite el texto de la puntuación porque ya se ve en las abejas y el número', async () => {
+  it('no agrega una descripción redundante de la puntuación promedio', async () => {
     const host = await abrir();
     responderListado();
     await fixture.whenStable();
@@ -531,7 +564,7 @@ describe('SCRUM-268 · Empleados de la sucursal', () => {
       const lista = filas(host);
       expect(lista.length).toBe(1);
       expect(texto(host)).not.toContain('ana@ejemplo.com');
-      expect(host.querySelector('.panel__contador')?.textContent?.trim()).toBe('1');
+      expect(host.querySelector('.panel__contador')?.textContent?.trim()).toBe('1 Profesional');
 
       // Y se informa el resultado de la operación.
       const aviso = host.querySelector<HTMLElement>('.aviso--exito');

@@ -1,17 +1,48 @@
-<section class="pagina" aria-labelledby="empleados-titulo">
+<section class="pagina" aria-label="Empleados de la sucursal">
+  @if (fotoSucursal()) {
+    <img
+      class="pagina__fondo-sucursal"
+      [src]="fotoSucursal()"
+      alt=""
+      aria-hidden="true"
+      (error)="marcarFotoSucursalFallida()"
+    />
+  }
   <div class="pagina__inner">
-    <a class="volver-gestor" [routerLink]="['/mis-sucursales']" [queryParams]="{ sucursalId: sucursalId }">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M19 12H5M11 18l-6-6 6-6" />
-      </svg>
-      Volver al gestor
-    </a>
+    <div class="pagina__acciones">
+      <a class="volver-gestor" [routerLink]="['/mis-sucursales']" [queryParams]="{ sucursalId: sucursalId }">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M11 18l-6-6 6-6" />
+        </svg>
+        Volver al gestor
+      </a>
 
-    <header class="pagina__header">
-      <span class="eyebrow">Empleados</span>
-      <h1 id="empleados-titulo">Empleados de la sucursal</h1>
-      <p>Consultá el equipo de tu sucursal y la puntuación promedio de cada profesional.</p>
-    </header>
+      @if (yaEsEmpleado()) {
+        <div class="aviso aviso--exito" role="status" aria-live="polite">
+          <p>Ya formás parte del equipo de esta sucursal.</p>
+        </div>
+      } @else {
+        <button
+          class="boton boton--principal auto__boton"
+          type="button"
+          [disabled]="cargando() || agregandome()"
+          [attr.aria-busy]="agregandome()"
+          (click)="agregarmeComoEmpleado()"
+        >
+          @if (cargando()) {
+            Comprobando…
+          } @else if (agregandome()) {
+            Agregándote…
+          } @else {
+            Agregarme como empleado
+          }
+        </button>
+      }
+    </div>
+
+    @if (errorAgregarme()) {
+      <p class="aviso__error" role="alert">{{ errorAgregarme() }}</p>
+    }
 
     <section class="panel" aria-labelledby="listado-empleados-titulo">
       <header class="panel__cabecera">
@@ -19,9 +50,9 @@
         @if (!cargando() && !error() && totalEmpleados() > 0) {
           <span
             class="panel__contador"
-            [attr.aria-label]="totalEmpleados() + ' empleados en la sucursal'"
+            [attr.aria-label]="totalEmpleados() + (totalEmpleados() === 1 ? ' profesional en la sucursal' : ' profesionales en la sucursal')"
           >
-            {{ totalEmpleados() }}
+            {{ totalEmpleados() }} {{ totalEmpleados() === 1 ? 'Profesional' : 'Profesionales' }}
           </span>
         }
       </header>
@@ -120,8 +151,11 @@
 
                   <div class="empleado__rating">
                     @if (tienePuntuacion(empleado)) {
-                      <span class="empleado__puntuacion">{{ puntuacionTexto(empleado) }}</span>
-                      <span class="empleado__abejas" aria-hidden="true">
+                      <span
+                        class="empleado__abejas"
+                        role="img"
+                        [attr.aria-label]="'Puntuación ' + puntuacionTexto(empleado)"
+                      >
                         @for (llena of abejas(empleado); track $index) {
                           <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
                         }
@@ -159,39 +193,6 @@
       }
     </section>
 
-    <section class="panel panel--auto" aria-labelledby="auto-incorporacion-titulo">
-      <h2 id="auto-incorporacion-titulo" class="auto__titulo">Auto-incorporación</h2>
-
-      @if (yaEsEmpleado()) {
-        <div class="aviso aviso--exito" role="status" aria-live="polite">
-          <p>Ya formás parte del equipo de esta sucursal.</p>
-        </div>
-      } @else {
-        <p class="auto__descripcion">
-          Agregá tu cuenta al equipo para poder atender los servicios de esta sucursal.
-        </p>
-
-        @if (errorAgregarme()) {
-          <p class="aviso__error" role="alert">{{ errorAgregarme() }}</p>
-        }
-
-        <button
-          class="boton boton--principal auto__boton"
-          type="button"
-          [disabled]="cargando() || agregandome()"
-          [attr.aria-busy]="agregandome()"
-          (click)="agregarmeComoEmpleado()"
-        >
-          @if (cargando()) {
-            Comprobando…
-          } @else if (agregandome()) {
-            Agregándote…
-          } @else {
-            Agregarme como empleado
-          }
-        </button>
-      }
-    </section>
   </div>
 
   <ds-modal
