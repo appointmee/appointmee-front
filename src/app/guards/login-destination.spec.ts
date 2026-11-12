@@ -13,6 +13,16 @@ describe('destinoDespuesDelLogin', () => {
     expect(destinoDespuesDelLogin(router, '/sucursales?busqueda=Flores')).toBe(destino);
   });
 
+  it('redirige a sucursales cuando no hay un returnTo válido', () => {
+    const destino = urlTreeDe('sucursales');
+    const router = {
+      parseUrl: (url: string) => url === '/sucursales' ? destino : urlTreeDe(url),
+      config: [{ path: 'sucursales' }],
+    } as unknown as Router;
+
+    expect(destinoDespuesDelLogin(router, null)).toBe(destino);
+  });
+
   it('no acepta rutas absolutas externas ni protocolo relativo', () => {
     const router = { parseUrl: (url: string) => urlTreeDe(url.replace(/^\//, '')) } as unknown as Router;
     expect(destinoDespuesDelLogin(router, 'https://evil.example.com')).toBeDefined();
