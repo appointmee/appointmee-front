@@ -1,10 +1,8 @@
 import { Component, signal } from '@angular/core';
-import { FormControl } from '@angular/forms';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { Navbar } from './navbar';
 import { authService } from '../../services/auth-service';
-import { BranchSearch } from '../../services/branch-search';
 
 @Component({ selector: 'app-navbar-test-page', template: '' })
 class EmptyPage {}
@@ -41,7 +39,7 @@ describe('Buscador del navbar', () => {
     expect(fixture.nativeElement.querySelector('.profile__avatar img').src).toContain('nueva.jpg');
     expect(fixture.nativeElement.querySelector('.menu__avatar img').src).toContain('nueva.jpg');
   });
-  it('mantiene el navbar sin buscador en Home y en Sucursales', async () => {
+  it('expande la lupa y permite buscar sucursales desde el navbar', async () => {
     TestBed.configureTestingModule({
       imports: [Navbar],
       providers: [
@@ -52,19 +50,55 @@ describe('Buscador del navbar', () => {
         { provide: authService, useValue: {
           autenticado: signal(false), visitante: signal(true), restaurando: signal(false),
         } },
-        { provide: BranchSearch, useValue: { search: new FormControl(''), term: signal('') } },
       ],
     });
     const router = TestBed.inject(Router);
     const fixture = TestBed.createComponent(Navbar);
     await router.navigateByUrl('/'); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
+    const trigger = fixture.nativeElement.querySelector('.search-trigger') as HTMLButtonElement;
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    trigger.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    const input = fixture.nativeElement.querySelector('#navbar-search') as HTMLInputElement;
+    expect(input).toBeTruthy();
+    expect(document.activeElement).toBe(input);
+    input.value = 'Centro';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.search') as HTMLFormElement).dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }),
+    );
+    await vi.waitFor(() => expect(router.url).toBe('/sucursales?busqueda=Centro'));
+
+    (fixture.nativeElement.querySelector('.search-trigger') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const currentInput = fixture.nativeElement.querySelector('#navbar-search') as HTMLInputElement;
+    currentInput.value = 'c';
+    currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.search') as HTMLFormElement).dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }),
+    );
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.search__hint').textContent).toContain('2 caracteres');
+    expect(router.url).toBe('/sucursales?busqueda=Centro');
+
+    const searchTrigger = fixture.nativeElement.querySelector('.search-trigger') as HTMLButtonElement;
+    searchTrigger.click();
+    fixture.detectChanges();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
+    expect(searchTrigger.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(searchTrigger);
+
     await router.navigateByUrl('/sucursales?busqueda=pelu'); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
-    expect(fixture.nativeElement.querySelector('.search-trigger')).toBeNull();
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.navbar__search-wrap')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.search-trigger')).not.toBeNull();
     await router.navigateByUrl('/'); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
   });

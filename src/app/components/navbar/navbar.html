@@ -35,6 +35,49 @@
           {{ enErrorComoInvitado() || enRegistro() ? 'Iniciar sesión' : 'Crear cuenta' }}
         </a>
       } @else {
+      <div id="navbar-search-panel" class="navbar__search-wrap" [class.navbar__search-wrap--open]="searchOpen()">
+        <button
+          dsButton
+          #searchTrigger
+          class="search-trigger"
+          type="button"
+          (click)="toggleSearch()"
+          [disabled]="auth.restaurando()"
+          [attr.aria-expanded]="searchOpen()"
+          aria-controls="navbar-search-panel"
+          [attr.aria-label]="searchOpen() ? 'Cerrar búsqueda' : 'Buscar sucursales'"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7.5" />
+            <path d="m16.5 16.5 4 4" />
+          </svg>
+        </button>
+        @if (searchOpen()) {
+          <form class="search" role="search" aria-label="Buscar sucursales" (submit)="submitSearch($event)">
+            <label class="sr-only" for="navbar-search">Buscar sucursales por nombre</label>
+            <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7.5" />
+              <path d="m16.5 16.5 4 4" />
+            </svg>
+            <input
+              #searchInput
+              id="navbar-search"
+              class="search__input"
+              type="search"
+              [formControl]="branchSearch.search"
+              placeholder="Buscar sucursales..."
+              autocomplete="off"
+              aria-describedby="navbar-search-hint"
+            />
+            <button dsButton class="search__submit" type="submit" aria-label="Buscar">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 14 0m-6-6 6 6-6 6" /></svg>
+            </button>
+          </form>
+          <p id="navbar-search-hint" class="search__hint" [class.search__hint--error]="branchSearch.termTooShort()" role="status" aria-live="polite">
+            @if (branchSearch.termTooShort()) { Escribí al menos 2 caracteres. } @else { Presioná Enter para buscar sucursales. }
+          </p>
+        }
+      </div>
       @if (auth.restaurando()) {
         <!-- Placeholder durante la restauración de sesión (criterio 11). -->
         <button dsButton

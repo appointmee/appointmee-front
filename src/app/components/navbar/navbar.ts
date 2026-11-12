@@ -4,16 +4,20 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  Injector,
   HostListener,
+  afterNextRender,
   computed,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ReactiveFormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
 import { authService } from '../../services/auth-service';
+import { BranchSearch } from '../../services/branch-search';
 
 interface NavItem {
   readonly label: string;
@@ -43,7 +47,7 @@ const ICONS = {
 
 @Component({
   selector: 'app-navbar',
-  imports: [DsButtonComponent, RouterLink, RouterLinkActive],
+  imports: [DsButtonComponent, ReactiveFormsModule, RouterLink, RouterLinkActive],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,8 +55,10 @@ const ICONS = {
 })
 export class Navbar {
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(authService);
+  protected readonly branchSearch = inject(BranchSearch);
   private readonly fotoFallida = signal<string | null>(null);
   protected readonly fotoPerfil = computed(() => {
     const foto = this.auth.perfil()?.fotoPerfil?.trim();
@@ -65,6 +71,8 @@ export class Navbar {
 
   private readonly burger = viewChild('burger', { read: ElementRef<HTMLButtonElement> });
   private readonly sheet = viewChild<ElementRef<HTMLElement>>('sheet');
+  private readonly searchTrigger = viewChild('searchTrigger', { read: ElementRef<HTMLButtonElement> });
+  private readonly searchInput = viewChild('searchInput', { read: ElementRef<HTMLInputElement> });
 
   private readonly rutaActual = signal(this.router.url);
 
@@ -88,6 +96,7 @@ export class Navbar {
 
   protected readonly mobileOpen = signal(false);
   protected readonly profileOpen = signal(false);
+  protected readonly searchOpen = signal(false);
   protected readonly scrolled = signal(false);
   protected readonly icons = ICONS;
 
@@ -156,6 +165,10 @@ export class Navbar {
   @HostListener('document:keydown', ['$event'])
   protected onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
+      if (this.searchOpen()) {
+        this.closeSearch(true);
+        return;
+      }
       // Al cerrar con Escape se devuelve el foco al botón hamburguesa.
       this.closeAll(true);
       return;
@@ -194,6 +207,32 @@ export class Navbar {
         primerFoco?.focus();
       });
     }
+  }
+
+  protected toggleSearch(): void {
+    if (this.auth.restaurando()) return;
+    if (this.searchOpen()) {
+      this.closeSearch(true);
+      return;
+    }
+
+    this.profileOpen.set(false);
+    this.searchOpen.set(true);
+    afterNextRender(() => this.searchInput()?.nativeElement.focus(), { injector: this.injector });
+  }
+
+  protected submitSearch(event: Event): void {
+    event.preventDefault();
+    if (this.branchSearch.termTooShort()) {
+      afterNextRender(() => this.searchInput()?.nativeElement.focus(), { injector: this.injector });
+      return;
+    }
+    this.branchSearch.submit();
+  }
+
+  private closeSearch(returnFocus = false): void {
+    this.searchOpen.set(false);
+    if (returnFocus) this.searchTrigger()?.nativeElement.focus();
   }
 
   protected closeMobile(devolverFoco: boolean = false): void {
@@ -253,6 +292,7 @@ export class Navbar {
   }
 
   protected closeAll(devolverFoco: boolean = false): void {
+    this.searchOpen.set(false);
     this.profileOpen.set(false);
     this.closeMobile(devolverFoco);
   }

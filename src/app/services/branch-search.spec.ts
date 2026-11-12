@@ -128,14 +128,20 @@ describe('Navegación de sucursales desde Home', () => {
     );
   });
 
-  it('Navbar no renderiza buscador, disparador ni atajo visual', async () => {
+  it('Navbar muestra la lupa contraída y expande el campo de búsqueda al activarla', async () => {
     await router.navigateByUrl('/sucursales');
     const fixture = TestBed.createComponent(Navbar);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
-    expect(fixture.nativeElement.querySelector('.search-trigger')).toBeNull();
+    const trigger = fixture.nativeElement.querySelector('.search-trigger') as HTMLButtonElement;
+    expect(trigger).toBeTruthy();
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
     expect(fixture.nativeElement.querySelector('kbd')).toBeNull();
+    trigger.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#navbar-search')).toBeTruthy();
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
   });
 
   it('Navbar conserva logo, navegación y acciones de cuenta', async () => {
