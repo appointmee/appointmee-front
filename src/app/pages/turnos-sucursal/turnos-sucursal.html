@@ -1,4 +1,13 @@
 <section class="historial" aria-label="Turnos de la sucursal">
+  @if (sucursal()?.fotoPerfil && !fotoSucursalFallida()) {
+    <img
+      class="historial__fondo-sucursal"
+      [src]="sucursal()?.fotoPerfil"
+      alt=""
+      aria-hidden="true"
+      (error)="marcarFotoSucursalFallida()"
+    />
+  }
   <div class="historial__inner">
     <header class="historial__header">
       <span class="eyebrow">

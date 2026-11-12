@@ -86,6 +86,7 @@ export class EmpleadosSucursal {
 
   /** El equipo puede ser extenso: se informa cuántos hay en total. */
   protected readonly totalEmpleados = computed(() => this.empleados().length);
+  protected readonly fotoSucursal = signal<string | null>(null);
 
   protected readonly placeholderAvatar = `data:image/svg+xml;utf8,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240"><rect width="240" height="240" fill="#10151d"/><circle cx="120" cy="92" r="38" fill="#39424f"/><path d="M48 216c9-47 36-72 72-72s63 25 72 72" fill="#39424f"/></svg>',
@@ -99,6 +100,15 @@ export class EmpleadosSucursal {
       this.errorAgregarme.set('No pudimos identificar la sucursal solicitada.');
       return;
     }
+
+    this.sucursalesApi
+      .obtenerPorId(this.sucursalId, true)
+      .pipe(
+        map((sucursal) => sucursal.fotoPerfil?.trim() || null),
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((foto) => this.fotoSucursal.set(foto));
 
     this.recargar
       .pipe(
@@ -168,6 +178,10 @@ export class EmpleadosSucursal {
 
     this.reintentando.set(true);
     this.recargar.next();
+  }
+
+  protected marcarFotoSucursalFallida(): void {
+    this.fotoSucursal.set(null);
   }
 
   protected agregarmeComoEmpleado(): void {

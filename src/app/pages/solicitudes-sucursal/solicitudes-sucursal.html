@@ -1,4 +1,13 @@
 <section class="pagina" aria-labelledby="solicitudes-titulo">
+  @if (fotoSucursal()) {
+    <img
+      class="pagina__fondo-sucursal"
+      [src]="fotoSucursal()"
+      alt=""
+      aria-hidden="true"
+      (error)="marcarFotoSucursalFallida()"
+    />
+  }
   <div class="pagina__inner">
     <a class="volver-gestor" [routerLink]="['/mis-sucursales']" [queryParams]="{ sucursalId: sucursalId }">
       <svg viewBox="0 0 24 24" aria-hidden="true">
