@@ -1,3 +1,11 @@
+<ng-template #lapiz>
+<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none"
+          stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-6"/>
+          <path d="m10 14 .8-3.4 7.6-7.6a1.7 1.7 0 0 1 2.4 2.4l-7.6 7.6L10 14Z"/>
+        </svg>
+</ng-template>
+
 <section class="datos" aria-labelledby="datos-personales" [attr.aria-busy]="ocupado()">
   <h2 id="datos-personales">Datos personales</h2>
   @if (perfil(); as cuenta) {
@@ -7,18 +15,24 @@
       } @else {
         <span class="iniciales" aria-label="Avatar con iniciales">{{ iniciales() }}</span>
       }
-      <button dsButton type="button" [disabled]="ocupado()" (click)="cambiarFoto = !cambiarFoto">Cambiar foto</button>
+      <div class="foto__acciones">
+        <button dsButton type="button" [disabled]="ocupado()" (click)="cambiarFoto = !cambiarFoto">Cambiar foto</button>
       <button dsButton type="button" [disabled]="ocupado() || !cuenta.fotoPerfil" (click)="restablecer()">Restablecer</button>
+      </div>
     </div>
     @if (cambiarFoto) {
-      <div class="subida" (dragover)="$event.preventDefault()" (drop)="soltar($event)">
-        <label for="foto-perfil">Elegí una foto o arrastrala acá</label>
-        <input #archivo id="foto-perfil" type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+      <div class="subida" [class.subida--activa]="arrastrandoFoto()"
+        (dragenter)="arrastrarFoto($event)" (dragover)="arrastrarFoto($event)"
+        (dragleave)="salirDeSubida($event)" (drop)="soltar($event)">
+        <p>Arrastrá una foto acá</p>
+        <button dsButton type="button" [disabled]="ocupado()" aria-describedby="foto-error"
+          (click)="archivo.click()">Elegir foto</button>
+        <input #archivo hidden type="file" accept="image/jpeg,image/png,image/webp,image/gif"
           [disabled]="ocupado()" aria-describedby="foto-error" (change)="elegir(archivo)" />
       </div>
     }
     <p id="foto-error" class="error" aria-live="polite">{{ errores()['fotoUrl'] }}</p>
-    <form (ngSubmit)="guardar()" novalidate>
+    <form id="datos-perfil-form" (ngSubmit)="guardar()" novalidate>
       @if (erroresDeDatos().length > 1) {
         <div class="error" role="alert">
           <p>Revisá estos campos.</p>
@@ -29,43 +43,115 @@
           </ul>
         </div>
       }
-      <label for="perfil-nombre">Nombre</label>
-      <ds-input><input #dsNativeControl id="perfil-nombre" name="nombre" [(ngModel)]="nombre"
-        (ngModelChange)="corregir('nombre', $event)" autocomplete="given-name"
-        aria-describedby="nombre-error" [attr.aria-invalid]="!!errores()['nombre']" [disabled]="ocupado()" /></ds-input>
-      <p id="nombre-error" class="error" aria-live="polite">{{ errores()['nombre'] }}</p>
-      <label for="perfil-apellido">Apellido</label>
-      <ds-input><input #dsNativeControl id="perfil-apellido" name="apellido" [(ngModel)]="apellido"
-        (ngModelChange)="corregir('apellido', $event)" autocomplete="family-name"
-        aria-describedby="apellido-error" [attr.aria-invalid]="!!errores()['apellido']" [disabled]="ocupado()" /></ds-input>
-      <p id="apellido-error" class="error" aria-live="polite">{{ errores()['apellido'] }}</p>
-      <button dsButton type="submit" [disabled]="ocupado()">Guardar cambios</button>
+      @for (dato of camposPersonales; track dato.campo) {
+        <div class="correo-actual">
+          <div class="correo-actual__datos">
+            @if (editando()[dato.campo]) {
+              <label [for]="'perfil-' + dato.campo">{{ dato.etiqueta }}</label>
+              <ds-input><input #dsNativeControl [id]="'perfil-' + dato.campo" [name]="dato.campo"
+                [ngModel]="dato.campo === 'nombre' ? nombre : apellido"
+                (ngModelChange)="actualizarDato(dato.campo, $event)"
+                [attr.autocomplete]="dato.autocompletar" [attr.aria-describedby]="dato.campo + '-error'"
+                [attr.aria-invalid]="!!errores()[dato.campo]" [disabled]="ocupado()" /></ds-input>
+            } @else {
+              <span>{{ dato.etiqueta }}</span>
+              <div class="correo-actual__valor">{{ dato.campo === 'nombre' ? nombre : apellido }}</div>
+            }
+          </div>
+          <button dsButton variant="secondary" class="correo-actual__editar" type="button"
+            [attr.aria-label]="'Editar ' + dato.campo" [attr.title]="'Editar ' + dato.campo"
+            [attr.aria-pressed]="editando()[dato.campo]" [disabled]="ocupado()"
+            (click)="habilitarDato(dato.campo)">
+            <ng-container [ngTemplateOutlet]="lapiz" />
+          </button>
+        </div>
+        <p [id]="dato.campo + '-error'" class="error" aria-live="polite">{{ errores()[dato.campo] }}</p>
+      }
     </form>
-    <h3>Cambiar correo</h3>
-    <p>Correo actual: {{ cuenta.email }}</p>
-    <form (ngSubmit)="enviarCodigo()" novalidate>
-      <label for="correo-nuevo">Correo nuevo</label>
-      <ds-input><input #dsNativeControl id="correo-nuevo" name="email" type="email" autocomplete="email" [(ngModel)]="email"
-        (ngModelChange)="corregir('email', $event)"
-        aria-describedby="email-error" [attr.aria-invalid]="!!errores()['email']" [disabled]="ocupado()" /></ds-input>
-      <p id="email-error" class="error" aria-live="polite">{{ errores()['email'] }}</p>
-      <button dsButton type="submit" [disabled]="ocupado()">Enviar código</button>
-    </form>
-    @if (pendiente) {
-      <form (ngSubmit)="confirmarEmail()" novalidate>
-        <label for="correo-codigo">Código enviado a {{ pendiente }}</label>
-        <ds-input><input #dsNativeControl id="correo-codigo" name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
-          [(ngModel)]="codigo" aria-describedby="codigo-error" [attr.aria-invalid]="!!errores()['codigo']"
-          (ngModelChange)="corregir('codigo', $event)" [disabled]="ocupado()" /></ds-input>
-        <p id="codigo-error" class="error" aria-live="polite">{{ errores()['codigo'] }}</p>
-        <p>Al confirmar, vas a volver a iniciar sesión con tu correo nuevo.</p>
-        <button dsButton type="submit" [disabled]="ocupado()">Confirmar cambio</button>
-      </form>
-    }
+    <div class="correo-actual">
+      <div class="correo-actual__datos">
+        <span id="correo-actual-etiqueta">Correo actual</span>
+        <div class="correo-actual__valor" aria-labelledby="correo-actual-etiqueta">{{ cuenta.email }}</div>
+      </div>
+      <button dsButton variant="secondary" class="correo-actual__editar" type="button"
+        aria-label="Editar correo" aria-haspopup="dialog" title="Editar correo"
+        [disabled]="ocupado()" (click)="confirmarEdicionCorreo.set(true)">
+        <ng-container [ngTemplateOutlet]="lapiz" />
+      </button>
+    </div>
+    <div class="datos__acciones">
+      <button dsButton variant="primary" type="submit" form="datos-perfil-form"
+        [disabled]="ocupado() || !hayCambios()">Guardar cambios</button>
+    </div>
   } @else if (!ocupado()) {
     <button dsButton type="button" (click)="cargar()">Volver a intentar</button>
   }
   @if (ocupado()) { <p role="status">Procesando…</p> }
-  @if (aviso()) { <p role="status">{{ aviso() }}</p> }
+  @if (aviso() && !modalCorreo()) { <p class="exito" role="status">{{ aviso() }}</p> }
   @if (errores()['general']) { <p class="error" role="alert">{{ errores()['general'] }}</p> }
 </section>
+
+<ds-modal [open]="confirmarEdicionCorreo()" ariaLabelledby="confirmar-edicion-correo"
+  (close)="confirmarEdicionCorreo.set(false)">
+  <div class="correo-modal">
+    <h2 id="confirmar-edicion-correo">¿Seguro que querés cambiar tu correo actual?</h2>
+    <div class="correo-modal__acciones">
+      <button dsButton type="button" (click)="confirmarEdicionCorreo.set(false)">Cancelar</button>
+      <button dsButton variant="primary" type="button" (click)="abrirCorreo()">Sí, cambiar correo</button>
+    </div>
+  </div>
+</ds-modal>
+
+<ds-modal [open]="modalCorreo()" ariaLabelledby="cambiar-correo-titulo" (close)="cerrarCorreo()">
+  <div class="correo-modal" [attr.aria-busy]="ocupado()">
+    <h2 id="cambiar-correo-titulo">Cambiar correo</h2>
+    <p>Te vamos a enviar un código al correo nuevo para confirmar el cambio.</p>
+    <form id="enviar-codigo-correo" (ngSubmit)="enviarCodigo()" novalidate>
+      <label for="correo-nuevo">Correo nuevo</label>
+      <div class="correo-modal__campo">
+        <ds-input><input #dsNativeControl id="correo-nuevo" name="email" type="email" autocomplete="email" [(ngModel)]="email"
+        (ngModelChange)="corregir('email', $event)"
+        aria-describedby="email-error" [attr.aria-invalid]="!!errores()['email']" [disabled]="ocupado()" /></ds-input>
+      </div>
+      <p id="email-error" class="error" aria-live="polite">{{ errores()['email'] }}</p>
+      <p class="correo-modal__aviso">Al usar una dirección de Hotmail, el código puede demorarse o no llegar.</p>
+    </form>
+    @if (pendiente) {
+      <form id="confirmar-cambio-correo" (ngSubmit)="confirmarEmail()" novalidate>
+        <fieldset class="correo-modal__codigo">
+          <legend>Código enviado a {{ pendiente }}</legend>
+          <div class="correo-modal__casillas">
+            @for (indice of digitos; track indice) {
+              <ds-input><input #dsNativeControl #casilla [id]="'correo-codigo-' + indice" type="text"
+                inputmode="numeric" [attr.autocomplete]="indice === 0 ? 'one-time-code' : 'off'"
+                [attr.aria-label]="'Dígito ' + (indice + 1) + ' de 6'" aria-describedby="codigo-error"
+                [attr.aria-invalid]="!!errores()['codigo']" [value]="codigo()[indice]" [disabled]="ocupado()"
+                (input)="escribirCodigo(indice, casilla.value, casilla)"
+                (paste)="pegarCodigo($event, indice, casilla)" (keydown)="teclaCodigo($event, indice)" /></ds-input>
+            }
+          </div>
+        </fieldset>
+        @if (vigenciaCodigo() > 0) {
+          <p role="timer" aria-live="off">El código vence en {{ tiempoCodigo() }}.</p>
+        } @else {
+          <p role="status">El código venció. Podés reenviarlo.</p>
+        }
+        <p id="codigo-error" class="error" aria-live="polite">{{ errores()['codigo'] }}</p>
+        <p>Al confirmar, vas a volver a iniciar sesión con tu correo nuevo.</p>
+
+      </form>
+    }
+    @if (ocupado()) { <p role="status">Procesando…</p> }
+    @if (aviso()) { <p class="exito" role="status">{{ aviso() }}</p> }
+    <div class="correo-modal__acciones">
+      @if (pendiente) {
+        <button dsButton variant="primary" type="submit" form="confirmar-cambio-correo"
+          [disabled]="ocupado() || vigenciaCodigo() === 0">Confirmar cambio</button>
+      }
+      <button dsButton type="button" [disabled]="ocupado()" (click)="cerrarCorreo()">Cerrar</button>
+      <button dsButton type="submit" form="enviar-codigo-correo" [disabled]="ocupado() || esperaReenvio() > 0">
+        {{ esperaReenvio() > 0 ? 'Reenviar en ' + esperaReenvio() + ' s' : pendiente ? 'Reenviar código' : 'Enviar código' }}
+      </button>
+    </div>
+  </div>
+</ds-modal>

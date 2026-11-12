@@ -42,6 +42,10 @@
   outline-offset: -4px;
 }
 
+.app-main:has(> app-configuracion):focus-visible {
+  outline: none;
+}
+
 .api-notice {
   position: fixed;
   z-index: 1100;
