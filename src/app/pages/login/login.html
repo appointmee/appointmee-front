@@ -18,6 +18,9 @@
   >
     <h1 id="login-titulo" class="login__titulo">Iniciar sesión</h1>
     <p class="login__sub">Ingresá a tu cuenta de AppointMee.</p>
+    @if (emailDesdeAjustes()) {
+      <p class="login__success" role="status">Tu correo se actualizó. Iniciá sesión con tu correo nuevo.</p>
+    }
     @if (passwordActualizada()) {
       <p class="login__success" role="status" aria-live="polite">{{ passwordDesdeAjustes()
         ? 'Tu contraseña se actualizó. Iniciá sesión nuevamente por seguridad'

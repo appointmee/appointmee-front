@@ -57,6 +57,7 @@ export class LoginPage {
 
   registroExitoso = signal(this.router.getCurrentNavigation()?.extras.state?.['registroExitoso'] === true);
   passwordActualizada = signal(this.router.getCurrentNavigation()?.extras.state?.['passwordActualizada'] === true);
+  emailDesdeAjustes = signal(this.router.getCurrentNavigation()?.extras.state?.['emailDesdeAjustes'] === true);
   passwordDesdeAjustes = signal(this.router.getCurrentNavigation()?.extras.state?.['passwordDesdeAjustes'] === true);
 
   cargando = signal(false);

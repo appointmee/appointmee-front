@@ -1,0 +1,71 @@
+<section class="datos" aria-labelledby="datos-personales" [attr.aria-busy]="ocupado()">
+  <h2 id="datos-personales">Datos personales</h2>
+  @if (perfil(); as cuenta) {
+    <div class="foto">
+      @if (cuenta.fotoPerfil && !fotoFallida()) {
+        <img [src]="cuenta.fotoPerfil" alt="Foto de perfil" (error)="fotoFallida.set(true)" />
+      } @else {
+        <span class="iniciales" aria-label="Avatar con iniciales">{{ iniciales() }}</span>
+      }
+      <button dsButton type="button" [disabled]="ocupado()" (click)="cambiarFoto = !cambiarFoto">Cambiar foto</button>
+      <button dsButton type="button" [disabled]="ocupado() || !cuenta.fotoPerfil" (click)="restablecer()">Restablecer</button>
+    </div>
+    @if (cambiarFoto) {
+      <div class="subida" (dragover)="$event.preventDefault()" (drop)="soltar($event)">
+        <label for="foto-perfil">Elegí una foto o arrastrala acá</label>
+        <input #archivo id="foto-perfil" type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+          [disabled]="ocupado()" aria-describedby="foto-error" (change)="elegir(archivo)" />
+      </div>
+    }
+    <p id="foto-error" class="error" aria-live="polite">{{ errores()['fotoUrl'] }}</p>
+    <form (ngSubmit)="guardar()" novalidate>
+      @if (erroresDeDatos().length > 1) {
+        <div class="error" role="alert">
+          <p>Revisá estos campos.</p>
+          <ul>
+            @for (error of erroresDeDatos(); track error.campo) {
+              <li><a [attr.href]="'#perfil-' + error.campo">{{ error.etiqueta }}</a></li>
+            }
+          </ul>
+        </div>
+      }
+      <label for="perfil-nombre">Nombre</label>
+      <ds-input><input #dsNativeControl id="perfil-nombre" name="nombre" [(ngModel)]="nombre"
+        (ngModelChange)="corregir('nombre', $event)" autocomplete="given-name"
+        aria-describedby="nombre-error" [attr.aria-invalid]="!!errores()['nombre']" [disabled]="ocupado()" /></ds-input>
+      <p id="nombre-error" class="error" aria-live="polite">{{ errores()['nombre'] }}</p>
+      <label for="perfil-apellido">Apellido</label>
+      <ds-input><input #dsNativeControl id="perfil-apellido" name="apellido" [(ngModel)]="apellido"
+        (ngModelChange)="corregir('apellido', $event)" autocomplete="family-name"
+        aria-describedby="apellido-error" [attr.aria-invalid]="!!errores()['apellido']" [disabled]="ocupado()" /></ds-input>
+      <p id="apellido-error" class="error" aria-live="polite">{{ errores()['apellido'] }}</p>
+      <button dsButton type="submit" [disabled]="ocupado()">Guardar cambios</button>
+    </form>
+    <h3>Cambiar correo</h3>
+    <p>Correo actual: {{ cuenta.email }}</p>
+    <form (ngSubmit)="enviarCodigo()" novalidate>
+      <label for="correo-nuevo">Correo nuevo</label>
+      <ds-input><input #dsNativeControl id="correo-nuevo" name="email" type="email" autocomplete="email" [(ngModel)]="email"
+        (ngModelChange)="corregir('email', $event)"
+        aria-describedby="email-error" [attr.aria-invalid]="!!errores()['email']" [disabled]="ocupado()" /></ds-input>
+      <p id="email-error" class="error" aria-live="polite">{{ errores()['email'] }}</p>
+      <button dsButton type="submit" [disabled]="ocupado()">Enviar código</button>
+    </form>
+    @if (pendiente) {
+      <form (ngSubmit)="confirmarEmail()" novalidate>
+        <label for="correo-codigo">Código enviado a {{ pendiente }}</label>
+        <ds-input><input #dsNativeControl id="correo-codigo" name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+          [(ngModel)]="codigo" aria-describedby="codigo-error" [attr.aria-invalid]="!!errores()['codigo']"
+          (ngModelChange)="corregir('codigo', $event)" [disabled]="ocupado()" /></ds-input>
+        <p id="codigo-error" class="error" aria-live="polite">{{ errores()['codigo'] }}</p>
+        <p>Al confirmar, vas a volver a iniciar sesión con tu correo nuevo.</p>
+        <button dsButton type="submit" [disabled]="ocupado()">Confirmar cambio</button>
+      </form>
+    }
+  } @else if (!ocupado()) {
+    <button dsButton type="button" (click)="cargar()">Volver a intentar</button>
+  }
+  @if (ocupado()) { <p role="status">Procesando…</p> }
+  @if (aviso()) { <p role="status">{{ aviso() }}</p> }
+  @if (errores()['general']) { <p class="error" role="alert">{{ errores()['general'] }}</p> }
+</section>

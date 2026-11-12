@@ -130,6 +130,7 @@
         </div>
 
         <aside class="perfil__resumen" aria-label="Resumen de la cuenta">
+          <a class="btn btn--ghost" routerLink="/configuracion" [queryParams]="{ seccion: 'perfil' }">Editar perfil</a>
           <div class="perfil__resumen-item">
             <span class="perfil__resumen-label">Miembro desde</span>
             <span class="perfil__resumen-valor">{{ fechaCreacion() }}</span>
