@@ -147,6 +147,16 @@ describe('Acceso a Mis Turnos', () => {
     const html = await renderizar(['CLIENTE', 'EMPLEADOR']);
     expect(html.querySelector('.nav a[href="/mis-turnos"]')).not.toBeNull();
   });
+
+  it('ubica la lupa inmediatamente antes del enlace Home', async () => {
+    const html = await renderizar(['CLIENTE']);
+    const lupa = html.querySelector('.navbar__search-wrap') as HTMLElement;
+    const home = html.querySelector('.nav a[href="/"]') as HTMLElement;
+
+    expect(lupa).not.toBeNull();
+    expect(home).not.toBeNull();
+    expect(lupa.compareDocumentPosition(home) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });
 
 describe('Navbar en la vista de error', () => {

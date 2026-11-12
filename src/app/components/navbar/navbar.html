@@ -9,32 +9,7 @@
       <span class="brand__text">Appoint<span class="brand__accent">Mee</span></span>
     </a>
 
-    @if (auth.autenticado() && !navbarSimple()) {
-      <nav class="nav" aria-label="Navegación principal">
-        <ul class="nav__list">
-          @for (link of primaryLinks(); track link.path) {
-            <li class="nav__item">
-              <a
-                class="nav__link"
-                [routerLink]="link.path"
-                routerLinkActive="nav__link--active"
-                [routerLinkActiveOptions]="{ exact: link.exact }"
-                ariaCurrentWhenActive="page"
-              >
-                {{ link.label }}
-              </a>
-            </li>
-          }
-        </ul>
-      </nav>
-    }
-
-    <div class="navbar__actions">
-      @if (navbarSimple()) {
-        <a class="navbar__cta navbar__cta--solid navbar__cta--auth" [routerLink]="enErrorComoInvitado() || enRegistro() ? '/login' : '/registrarme'">
-          {{ enErrorComoInvitado() || enRegistro() ? 'Iniciar sesión' : 'Crear cuenta' }}
-        </a>
-      } @else {
+    @if (!navbarSimple()) {
       <div id="navbar-search-panel" class="navbar__search-wrap" [class.navbar__search-wrap--open]="searchOpen()">
         <button
           dsButton
@@ -79,6 +54,34 @@
           </p>
         }
       </div>
+    }
+
+    @if (auth.autenticado() && !navbarSimple()) {
+      <nav class="nav" aria-label="Navegación principal">
+        <ul class="nav__list">
+          @for (link of primaryLinks(); track link.path) {
+            <li class="nav__item">
+              <a
+                class="nav__link"
+                [routerLink]="link.path"
+                routerLinkActive="nav__link--active"
+                [routerLinkActiveOptions]="{ exact: link.exact }"
+                ariaCurrentWhenActive="page"
+              >
+                {{ link.label }}
+              </a>
+            </li>
+          }
+        </ul>
+      </nav>
+    }
+
+    <div class="navbar__actions">
+      @if (navbarSimple()) {
+        <a class="navbar__cta navbar__cta--solid navbar__cta--auth" [routerLink]="enErrorComoInvitado() || enRegistro() ? '/login' : '/registrarme'">
+          {{ enErrorComoInvitado() || enRegistro() ? 'Iniciar sesión' : 'Crear cuenta' }}
+        </a>
+      } @else {
       @if (auth.restaurando()) {
         <!-- Placeholder durante la restauración de sesión (criterio 11). -->
         <button dsButton
