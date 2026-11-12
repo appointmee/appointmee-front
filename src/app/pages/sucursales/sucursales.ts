@@ -58,6 +58,7 @@ export class Sucursales {
 
   protected readonly searchTerm = signal(this.initialSearch);
   protected readonly selectedCategory = signal<string | null>(this.initialCategory);
+  protected readonly categoriasAbiertas = signal(false);
   protected readonly terminoAplicado = signal(terminoDeBusqueda(this.initialSearch));
   protected readonly sucursales = signal<SucursalMiniDTO[]>([]);
   protected readonly categorias = signal<string[]>([]);
@@ -208,6 +209,7 @@ export class Sucursales {
   }
 
   protected selectCategory(categoria: string | null): void {
+    this.categoriasAbiertas.set(false);
     if (categoria === this.selectedCategory()) {
       return;
     }
@@ -215,6 +217,10 @@ export class Sucursales {
     this.selectedCategory.set(categoria);
     this.cancelarDebounce();
     this.ejecutarBusqueda({ forzar: true });
+  }
+
+  protected alternarCategorias(): void {
+    this.categoriasAbiertas.update((abiertas) => !abiertas);
   }
 
   protected retry(): void {

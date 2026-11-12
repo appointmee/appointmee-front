@@ -62,6 +62,35 @@ describe('Sucursales', () => {
     expect(filtrar).toHaveBeenCalledWith('SPA', 'Centro');
   });
 
+  it('ubica búsqueda y categorías en la barra lateral antes del listado', async () => {
+    const fixture = await create();
+    const sidebar = fixture.nativeElement.querySelector('aside.listado__sidebar') as HTMLElement;
+    const results = fixture.nativeElement.querySelector('.listado__results') as HTMLElement;
+
+    expect(sidebar.getAttribute('aria-label')).toBe('Filtros de sucursales');
+    expect(sidebar.querySelector('.search__input')).toBeTruthy();
+    expect(sidebar.querySelector('.categorias')).toBeTruthy();
+    expect(sidebar.compareDocumentPosition(results) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('abre y cierra el listado de categorías desde el botón responsive', async () => {
+    const fixture = await create();
+    const toggle = fixture.nativeElement.querySelector('.categorias__toggle') as HTMLButtonElement;
+    const listado = fixture.nativeElement.querySelector('#sucursales-categorias') as HTMLElement;
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(listado.classList.contains('categorias--abiertas')).toBe(true);
+
+    const spa = Array.from(listado.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'Spa');
+    spa?.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(listado.classList.contains('categorias--abiertas')).toBe(false);
+  });
+
   it('ignora una categoría inválida sin enviarla al backend', async () => {
     const fixture = await create('/sucursales?categoria=INEXISTENTE');
     expect(filtrar).toHaveBeenCalledWith(null, '');
