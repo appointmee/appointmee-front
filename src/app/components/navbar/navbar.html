@@ -9,7 +9,7 @@
       <span class="brand__text">Appoint<span class="brand__accent">Mee</span></span>
     </a>
 
-    @if (!navbarSimple()) {
+    <ng-template #navbarSearchControl>
       <div id="navbar-search-panel" class="navbar__search-wrap" [class.navbar__search-wrap--open]="searchOpen()">
         <button
           dsButton
@@ -54,11 +54,14 @@
           </p>
         }
       </div>
-    }
+    </ng-template>
 
     @if (auth.autenticado() && !navbarSimple()) {
       <nav class="nav" aria-label="Navegación principal">
         <ul class="nav__list">
+          <li class="nav__item nav__item--search" [class.nav__item--search-open]="searchOpen()">
+            <ng-container [ngTemplateOutlet]="navbarSearchControl"></ng-container>
+          </li>
           @for (link of primaryLinks(); track link.path) {
             <li class="nav__item">
               <a
@@ -82,6 +85,9 @@
           {{ enErrorComoInvitado() || enRegistro() ? 'Iniciar sesión' : 'Crear cuenta' }}
         </a>
       } @else {
+      @if (auth.visitante()) {
+        <ng-container [ngTemplateOutlet]="navbarSearchControl"></ng-container>
+      }
       @if (auth.restaurando()) {
         <!-- Placeholder durante la restauración de sesión (criterio 11). -->
         <button dsButton

@@ -1,4 +1,4 @@
-import { DsButtonComponent } from '../../shared/ui/button/button.component';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,6 +18,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { filter } from 'rxjs';
 import { authService } from '../../services/auth-service';
 import { BranchSearch } from '../../services/branch-search';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 
 interface NavItem {
   readonly label: string;
@@ -47,7 +48,7 @@ const ICONS = {
 
 @Component({
   selector: 'app-navbar',
-  imports: [DsButtonComponent, ReactiveFormsModule, RouterLink, RouterLinkActive],
+  imports: [DsButtonComponent, NgTemplateOutlet, ReactiveFormsModule, RouterLink, RouterLinkActive],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
