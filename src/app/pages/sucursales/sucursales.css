@@ -195,7 +195,12 @@
   display: grid;
   min-width: 0;
   max-width: 100%;
+  max-height: min(50dvh, 28rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   gap: var(--space-2);
+  padding: 2px var(--space-2) 2px 2px;
 }
 
 .categorias__aviso {
@@ -566,6 +571,9 @@ button.estado__link:disabled {
 
   .categorias {
     display: none;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
   }
 
   .categorias--abiertas {
