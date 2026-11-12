@@ -11,7 +11,7 @@
     <div class="aviso aviso--error" role="alert">{{ error() }}</div>
   }
 
-  <form (submit)="onSubmit($event)" novalidate>
+  <form (submit)="onSubmit($event)" novalidate [attr.aria-busy]="cargando()">
     <div class="campo">
       <label for="nombre">Nombre</label>
       <ds-input>
@@ -27,53 +27,109 @@
       <label for="direccion">Dirección</label>
       <ds-input>
         <input #dsNativeControl id="direccion" type="text" autocomplete="street-address"
-               [formField]="formulario.direccion" />
+               [formField]="formulario.direccion" aria-describedby="direccion-error" />
       </ds-input>
-    </div>
-
-    <div class="campo">
-      <label for="telefono">Teléfono</label>
-      <ds-input>
-        <input #dsNativeControl id="telefono" type="tel" autocomplete="tel"
-               [formField]="formulario.telefono" />
-      </ds-input>
-    </div>
-
-    <div class="campo">
-      <label for="categoria">Categoría</label>
-      <ds-input>
-        <input #dsNativeControl id="categoria" type="text"
-               [formField]="formulario.categoria" />
-      </ds-input>
+      @if (formulario.direccion().touched() && formulario.direccion().invalid()) {
+        <p id="direccion-error" class="error" role="alert">{{ formulario.direccion().errors()[0]?.message }}</p>
+      }
     </div>
 
     <div class="campo">
       <label for="descripcion">Descripción</label>
       <ds-input>
-        <input #dsNativeControl id="descripcion" type="text"
-               [formField]="formulario.descripcion" />
+        <textarea #dsNativeControl id="descripcion" rows="3"
+                  [formField]="formulario.descripcion" aria-describedby="descripcion-error"></textarea>
       </ds-input>
+      @if (formulario.descripcion().touched() && formulario.descripcion().invalid()) {
+        <p id="descripcion-error" class="error" role="alert">{{ formulario.descripcion().errors()[0]?.message }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="categoria">Categoría</label>
+      <ds-input>
+        <select #dsNativeControl id="categoria" [formField]="formulario.categoria" aria-describedby="categoria-error">
+          <option value="" disabled>Seleccioná una categoría</option>
+          @for (cat of categorias(); track cat) {
+            <option [value]="cat">{{ cat }}</option>
+          }
+        </select>
+      </ds-input>
+      @if (formulario.categoria().touched() && formulario.categoria().invalid()) {
+        <p id="categoria-error" class="error" role="alert">{{ formulario.categoria().errors()[0]?.message }}</p>
+      }
     </div>
 
     <div class="campo">
       <label for="horaApertura">Hora de apertura</label>
       <ds-input>
         <input #dsNativeControl id="horaApertura" type="time"
-               [formField]="formulario.horaApertura" />
+               [formField]="formulario.horaApertura" aria-describedby="horaApertura-error" />
       </ds-input>
+      @if (formulario.horaApertura().touched() && formulario.horaApertura().invalid()) {
+        <p id="horaApertura-error" class="error" role="alert">{{ formulario.horaApertura().errors()[0]?.message }}</p>
+      }
     </div>
 
     <div class="campo">
       <label for="horaCierre">Hora de cierre</label>
       <ds-input>
         <input #dsNativeControl id="horaCierre" type="time"
-               [formField]="formulario.horaCierre" />
+               [formField]="formulario.horaCierre" aria-describedby="horaCierre-error" />
       </ds-input>
+      @if (formulario.horaCierre().touched() && formulario.horaCierre().invalid()) {
+        <p id="horaCierre-error" class="error" role="alert">{{ formulario.horaCierre().errors()[0]?.message }}</p>
+      }
+      @if (formulario.horaApertura().touched() && formulario.horaCierre().touched() && model().horaApertura && model().horaCierre && !(model().horaCierre > model().horaApertura)) {
+        <p class="error" role="alert">La hora de cierre debe ser posterior a la de apertura.</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label>Días de apertura</label>
+      <div class="dias">
+        @for (dia of dias; track dia) {
+          <label class="dia-cuadrado" [class.dia-cuadrado--activo]="diaSeleccionado(dia)">
+            <input type="checkbox" [value]="dia" [checked]="diaSeleccionado(dia)"
+                   (change)="alternarDia(dia)" />
+            <span>{{ abreviaturas[dia] }}</span>
+          </label>
+        }
+      </div>
+      @if ((formulario().touched() || intentadoEnviar()) && (model().diasApertura?.length ?? 0) === 0) {
+        <p class="error" role="alert">Seleccioná al menos un día de apertura.</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="telefono">Teléfono (opcional)</label>
+      <ds-input>
+        <input #dsNativeControl id="telefono" type="tel" autocomplete="tel"
+               [formField]="formulario.telefono" aria-describedby="telefono-error" />
+      </ds-input>
+      @if (formulario.telefono().touched() && formulario.telefono().invalid()) {
+        <p id="telefono-error" class="error" role="alert">{{ formulario.telefono().errors()[0]?.message }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="foto">Foto principal</label>
+      <input id="foto" type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+             (change)="onFileChange($event)" />
+      @if (fotoPreview()) {
+        <img [src]="fotoPreview()" alt="Vista previa" class="foto-preview" />
+      }
+      @if (intentadoEnviar() && !tieneFoto()) {
+        <p class="error" role="alert">Seleccioná una foto principal.</p>
+      }
+      @if (subiendoFoto()) {
+        <p role="status" aria-live="polite">Subiendo imagen…</p>
+      }
     </div>
 
     <div class="acciones">
       <a routerLink="/mis-sucursales" class="boton boton--secundario">Cancelar</a>
-      <button dsButton type="submit" [disabled]="cargando()">
+      <button dsButton type="submit" [disabled]="!puedeEnviar()">
         {{ cargando() ? 'Creando…' : 'Crear sucursal' }}
       </button>
     </div>
