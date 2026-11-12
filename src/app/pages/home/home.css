@@ -332,29 +332,6 @@
   line-height: 1.8;
 }
 
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  padding: 7px 16px 7px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(247, 198, 90, 0.22);
-  background: rgba(247, 198, 90, 0.08);
-  color: #e7d9aa;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.eyebrow__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 6px rgba(247, 198, 90, 0.12);
-  animation: pulse 2.6s ease-in-out infinite;
-}
-
 .hero {
   min-height: 100svh;
   padding-top: calc(clamp(96px, 12vw, 160px) + 20px);
@@ -1255,16 +1232,6 @@
   }
 }
 
-@keyframes pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 4px rgba(247, 198, 90, 0.12);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(247, 198, 90, 0.06);
-  }
-}
-
 @keyframes sheet-in {
   from {
     opacity: 0;
@@ -1363,8 +1330,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .reveal,
-  .hero-card,
-  .eyebrow__dot {
+  .hero-card {
     animation: none;
     opacity: 1;
     transform: none;

@@ -20,6 +20,13 @@ Y usar en template:
 
 Definidos en `:root` en `src/styles.css`: colores, tipografía, espaciado, radios, sombras, breakpoints.
 
+### Patrón de eyebrow
+
+Las etiquetas introductorias usan la clase global `.eyebrow` de `src/styles.css`, sin recuadro ni
+iconos decorativos. El estilo compartido usa `--accent-strong` y tokens de tipografía. No se debe
+redefinir esta clase en los estilos de una pantalla; el contenedor puede resolver la alineación
+con su layout.
+
 ## Contraste WCAG AA
 
 Combinaciones usadas y verificadas (texto normal >= 4,5:1; texto grande >= 3:1):

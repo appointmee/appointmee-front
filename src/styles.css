@@ -145,6 +145,20 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
+/* Etiquetas introductorias compartidas entre las pantallas. */
+:where(.eyebrow) {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  color: var(--accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 :where(button, input, select, textarea):disabled { opacity: .6; }
 
 input:disabled,

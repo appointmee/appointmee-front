@@ -60,6 +60,13 @@ describe('Home branch autocomplete', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Sucursales disponibles');
   });
 
+  it('renders eyebrow labels without decorative dots', () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.eyebrow__dot')).toHaveLength(0);
+  });
+
   it('waits for two characters and debounces backend suggestions for 350 ms', async () => {
     vi.useFakeTimers();
     const fixture = TestBed.createComponent(Home);
