@@ -53,6 +53,7 @@ describe('MisSucursales', () => {
 
     expect(host.textContent).toContain('Servicios');
     expect(host.textContent).toContain('Empleados');
+    expect(host.textContent).toContain('Galería de imágenes');
     expect(host.textContent).toContain('Turnos');
     expect(host.textContent).toContain('Solicitudes');
     expect(host.textContent).toContain('Sucursal');

@@ -109,6 +109,17 @@
 
           <a
             class="tarjeta"
+            [routerLink]="['/mis-sucursales', sucursal.id, 'galeria']"
+            aria-label="Galería de imágenes"
+          >
+            <span class="tarjeta__titulo">Galería de imágenes</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 5h16v14H4zM8 10h.01M20 15l-5-5-7 8" />
+            </svg>
+          </a>
+
+          <a
+            class="tarjeta"
             [routerLink]="['/mis-sucursales', sucursal.id, 'turnos']"
             aria-label="Turnos"
           >

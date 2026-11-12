@@ -6,6 +6,11 @@ import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import { SucursalDetalleDTO, SucursalMiniDTO, SucursalPayload } from '../models/sucursal';
 import { UsuarioResponseDTO } from '../models/usuario';
 
+export interface SucursalGaleriaImagenDTO {
+  readonly id: number;
+  readonly url: string;
+}
+
 /**
  * Devuelve un HttpContext que silencia el manejo global de errores para que la
  * pantalla consumidora presente su propio estado de error inline (sin navegar a
@@ -103,6 +108,30 @@ export class sucursalService {
     return this.http.get<SucursalDetalleDTO>(url, {
       context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
     });
+  }
+
+  listarImagenes(sucursalId: number): Observable<SucursalGaleriaImagenDTO[]> {
+    return this.http.get<SucursalGaleriaImagenDTO[]>(
+      `${this.api.baseUrl}/sucursales/${sucursalId}/imagenes`,
+      { context: this.contextoSinAvisoGlobal() },
+    );
+  }
+
+  subirImagenGaleria(sucursalId: number, archivo: File): Observable<SucursalGaleriaImagenDTO> {
+    const datos = new FormData();
+    datos.append('file', archivo);
+    return this.http.post<SucursalGaleriaImagenDTO>(
+      `${this.api.baseUrl}/sucursales/${sucursalId}/imagenes/upload`,
+      datos,
+      { context: this.contextoSinAvisoGlobal() },
+    );
+  }
+
+  eliminarImagenGaleria(sucursalId: number, imagenId: number): Observable<string> {
+    return this.http.delete(
+      `${this.api.baseUrl}/sucursales/${sucursalId}/eliminar/imagen/${imagenId}`,
+      { context: this.contextoSinAvisoGlobal(), responseType: 'text' },
+    );
   }
 
   crear(datos: SucursalPayload): Observable<SucursalDetalleDTO> {
