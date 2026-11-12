@@ -60,6 +60,43 @@ describe('Home branch autocomplete', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Sucursales disponibles');
   });
 
+  it('tilts the hero card toward the pointer and resets it when the pointer leaves', () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    const card = fixture.nativeElement.querySelector(
+      '.hero-card:not(.hero-card--float)',
+    ) as HTMLElement;
+    vi.spyOn(card, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 100,
+      height: 100,
+      right: 100,
+      bottom: 100,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+
+    const pointerMove = new Event('pointermove', { bubbles: true });
+    Object.defineProperties(pointerMove, {
+      pointerType: { value: 'mouse' },
+      clientX: { value: 75 },
+      clientY: { value: 25 },
+    });
+    card.dispatchEvent(pointerMove);
+    fixture.detectChanges();
+
+    expect(card.style.getPropertyValue('--pointer-rotate-x')).toBe('3.00deg');
+    expect(card.style.getPropertyValue('--pointer-rotate-y')).toBe('3.00deg');
+
+    card.dispatchEvent(new Event('pointerleave'));
+    fixture.detectChanges();
+
+    expect(card.style.getPropertyValue('--pointer-rotate-x')).toBe('0deg');
+    expect(card.style.getPropertyValue('--pointer-rotate-y')).toBe('0deg');
+  });
+
   it('waits for two characters and debounces backend suggestions for 350 ms', async () => {
     vi.useFakeTimers();
     const fixture = TestBed.createComponent(Home);
