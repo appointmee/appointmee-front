@@ -1,0 +1,109 @@
+<ds-modal
+  [open]="abierto()"
+  (close)="solicitarCierre()"
+  ariaLabelledby="modificar-servicio-titulo"
+  maxWidth="560px"
+>
+  @if (confirmacionAbierta()) {
+    <div
+      class="descartar"
+      role="alertdialog"
+      aria-labelledby="descartar-servicio-titulo"
+      aria-describedby="descartar-servicio-texto"
+    >
+      <h2 id="descartar-servicio-titulo" class="descartar__titulo">
+        ¿Estás seguro de que querés descartar los cambios?
+      </h2>
+      <p id="descartar-servicio-texto" class="descartar__texto">
+        Los cambios que hiciste en este servicio no se van a guardar.
+      </p>
+      <div class="descartar__acciones">
+        <button #botonSeguirEditando dsButton type="button" (clicked)="seguirEditando()">
+          Seguir editando
+        </button>
+        <button dsButton variant="danger" type="button" (clicked)="descartarCambios()">
+          Descartar cambios
+        </button>
+      </div>
+    </div>
+  } @else {
+    <h2 id="modificar-servicio-titulo">Modificar servicio</h2>
+
+    @if (errorGeneral()) {
+      <div class="error-general" role="alert">{{ errorGeneral() }}</div>
+    }
+
+    <form (submit)="onSubmit($event)" novalidate>
+      <ds-input label="Nombre" [error]="errorNombre() ?? ''">
+        <input
+          id="servicio-editar-nombre"
+          type="text"
+          [formField]="formulario.nombre"
+          autocomplete="off"
+        />
+      </ds-input>
+
+      <ds-input label="Descripción" [error]="errorDescripcion() ?? ''">
+        <textarea
+          id="servicio-editar-descripcion"
+          rows="3"
+          [formField]="formulario.descripcion"
+        ></textarea>
+      </ds-input>
+
+      <ds-input label="Duración (en minutos)" [error]="errorDuracion() ?? ''">
+        <input
+          id="servicio-editar-duracion"
+          type="number"
+          step="1"
+          inputmode="numeric"
+          [formField]="formulario.duracion"
+        />
+      </ds-input>
+
+      <ds-input label="Precio" [error]="errorPrecio() ?? ''">
+        <input
+          id="servicio-editar-precio"
+          type="number"
+          step="0.01"
+          inputmode="decimal"
+          [formField]="formulario.precio"
+        />
+      </ds-input>
+
+      <div class="campo-foto">
+        <label for="servicio-editar-foto">Foto</label>
+        <input
+          id="servicio-editar-foto"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          [attr.aria-invalid]="errorFoto() ? 'true' : null"
+          [attr.aria-describedby]="errorFoto() ? 'servicio-editar-foto-error' : 'servicio-editar-foto-ayuda'"
+          (change)="onFileChange($event)"
+        />
+        @if (vistaPrevia(); as previa) {
+          <img class="foto-preview" [src]="previa" alt="Vista previa de la foto" />
+        }
+        <p id="servicio-editar-foto-ayuda" class="campo-foto__ayuda">
+          Si no elegís una imagen nueva se conserva la foto actual del servicio.
+        </p>
+        @if (errorFoto()) {
+          <span id="servicio-editar-foto-error" class="ds-error" role="alert">{{ errorFoto() }}</span>
+        }
+      </div>
+
+      <div class="modal__acciones">
+        <button
+          dsButton
+          variant="primary"
+          type="submit"
+          [disabled]="!puedeGuardar()"
+          [loading]="guardando()"
+        >
+          Modificar servicio
+        </button>
+        <button type="button" class="boton boton--ghost" (click)="solicitarCierre()">Cancelar</button>
+      </div>
+    </form>
+  }
+</ds-modal>

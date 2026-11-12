@@ -25,6 +25,9 @@ El interceptor envía Bearer en rutas privadas y omite las rutas que reconoce co
 | `GET /sucursales/categorias` | Lectura pública | — | `string[]` |
 | `GET /sucursales/{id}` | Lectura pública | ID numérico | `SucursalDetalleDTO` |
 | `GET /servicios/listar/sucursal/{id}` | La ruta de selección exige sesión en UI | ID numérico | `ServicioDTO[]` |
+| `GET /servicios/{id}` | Detalle de un servicio | ID numérico | `ServicioDTO` |
+| `POST /servicios/crear` | Crear servicio; rol `EMPLEADOR` | `ServicioPayload` | Texto plano `"Se creó el servicio"` |
+| `PATCH /servicios/modificar/{id}` | Modificar servicio; rol `EMPLEADOR`; solo se aplican los campos enviados | `{ nombre?, descripcion?, duracion?, precio?, fotoUrl?, fotoPublicId? }` | Texto plano `"Se modificó el servicio correctamente"` |
 | `POST /observabilidad/error` | Público, sin credenciales; registro técnico mínimo | `{ screen: 'error', code, status, reference }` | `202 Accepted`, sin cuerpo |
 
 `/auth/register`, `/auth/reset-password`, `/usuarios/inicio-sesion` y `/usuarios/crear` aparecen únicamente en la lista de omisión del interceptor. No se halló llamada que confirme que estos endpoints formen parte de una funcionalidad operativa; confirmar o retirar la discrepancia.

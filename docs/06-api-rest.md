@@ -26,8 +26,10 @@ La tabla siguiente registra únicamente llamadas encontradas en `src/app/service
 | `GET` | `/sucursales/{idSucursal}` | Obtener detalle |
 | `POST`, `PUT`, `DELETE` | `/sucursales`, `/sucursales/{idSucursal}` | Crear, actualizar y eliminar sucursal |
 | `GET` | `/servicios/listar/sucursal/{idSucursal}` | Listar servicios por sucursal |
-| `GET` | `/servicios/{servicioId}` | Obtener servicio |
-| `POST`, `PUT`, `DELETE` | `/servicios`, `/servicios/{servicioId}` | Crear, actualizar y eliminar servicio |
+| `GET` | `/servicios/{servicioId}` | Obtener detalle de un servicio |
+| `POST` | `/servicios/crear` | Crear servicio (empleador) |
+| `PATCH` | `/servicios/modificar/{servicioId}` | Modificar servicio (empleador); solo se aplican los campos enviados |
+| `DELETE` | `/servicios/eliminar/{servicioId}` | Eliminar servicio |
 | `GET` | `/sucursales/{sucursalId}/elegir-empleado` | Listar profesionales de una sucursal |
 | `POST`, `PUT`, `DELETE` | `/sucursales/{sucursalId}/empleados`, `.../empleados/{empleadoId}` | Operaciones de empleado |
 | `DELETE` | `/sucursales/{sucursalId}/empleados/eliminar/{empleadoId}` | Quitar al empleado del equipo de la sucursal |

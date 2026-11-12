@@ -503,6 +503,26 @@
   cursor: not-allowed;
 }
 
+/* Botón nativo que cubre la tarjeta: abre el detalle del servicio con clic,
+   Enter y Espacio. El botón de "Ver más" queda por encima para seguir siendo
+   usable. */
+.card__detalle {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.card__detalle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -4px;
+}
+
 .acciones {
   display: flex;
   align-items: center;

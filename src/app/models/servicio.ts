@@ -26,3 +26,19 @@ export interface ServicioPayload {
   readonly fotoUrl: string;
   readonly fotoPublicId: string | null;
 }
+
+/**
+ * Datos que acepta el endpoint `PATCH /servicios/modificar/{servicioId}`.
+ *
+ * Todos los campos son opcionales: el backend solo aplica los que recibe y
+ * conserva el resto. `fotoUrl` y `fotoPublicId` van juntos y, si no se
+ * envían, el servicio mantiene la imagen que ya tenía.
+ */
+export interface ServicioModificarPayload {
+  readonly nombre?: string;
+  readonly descripcion?: string;
+  readonly duracion?: number;
+  readonly precio?: number | string;
+  readonly fotoUrl?: string;
+  readonly fotoPublicId?: string | null;
+}

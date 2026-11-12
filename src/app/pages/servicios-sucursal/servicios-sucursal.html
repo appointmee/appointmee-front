@@ -149,6 +149,14 @@
                   </span>
                 </div>
               </div>
+
+              <button
+                class="card__detalle"
+                type="button"
+                [attr.aria-label]="'Ver detalles de ' + servicio.nombre"
+                [attr.data-servicio-id]="servicio.id"
+                (click)="abrirDetalle(servicio)"
+              ></button>
             </article>
           }
         </div>
@@ -238,3 +246,9 @@
     <p class="exito-modal" role="status">{{ exitoCreacion() }}</p>
   }
 </ds-modal>
+
+<app-servicio-detalle-modal
+  [servicioId]="servicioSeleccionado()"
+  (cerrar)="cerrarDetalle()"
+  (modificado)="refrescarListado()"
+/>

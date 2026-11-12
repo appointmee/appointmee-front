@@ -25,6 +25,9 @@ import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../../http/error-handling-context'
 import { backendService } from '../../services/backend-service';
 import { servicioService } from '../../services/servicio-service';
 import { sucursalService } from '../../services/sucursal-service';
+import { ServicioDetalleModal } from '../../components/servicio-detalle-modal/servicio-detalle-modal';
+import { formatearDuracionCompacta } from '../../shared/duracion';
+import { mapearErroresFormulario } from '../../shared/errores-formulario';
 
 interface CrearServicioModel {
   nombre: string;
@@ -50,24 +53,9 @@ const FORMATO_PRECIO = new Intl.NumberFormat('es-AR', {
 
 const LARGO_DESCRIPCION_ESTIMADO = 160;
 
-/** Campos del formulario que muestran su mensaje debajo de la entrada. */
-const CAMPOS_CON_ERROR = ['nombre', 'descripcion', 'duracion', 'precio', 'foto'];
-
-const FORMATO_DURACION = (minutos: number | null | undefined): string => {
-  if (minutos === null || minutos === undefined || !Number.isFinite(minutos) || minutos <= 0) {
-    return 'Duración a confirmar';
-  }
-  if (minutos < 60) {
-    return `${minutos} min`;
-  }
-  const horas = Math.floor(minutos / 60);
-  const resto = minutos % 60;
-  return resto === 0 ? `${horas} h` : `${horas} h ${resto} min`;
-};
-
 @Component({
   selector: 'app-servicios-sucursal',
-  imports: [DsButtonComponent, DsInputComponent, DsModalComponent, FormField, RouterLink],
+  imports: [DsButtonComponent, DsInputComponent, DsModalComponent, FormField, RouterLink, ServicioDetalleModal],
   templateUrl: './servicios-sucursal.html',
   styleUrl: './servicios-sucursal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -98,6 +86,9 @@ export class ServiciosSucursal {
   protected readonly exitoCreacion = signal<string | null>(null);
   protected readonly intentadoEnviar = signal(false);
   protected readonly erroresBackend = signal<Record<string, string>>({});
+
+  /** Servicio del que se está mostrando el detalle. `null` lo mantiene cerrado. */
+  protected readonly servicioSeleccionado = signal<number | null>(null);
 
   protected readonly fotoArchivo = signal<File | null>(null);
   protected readonly fotoPreview = signal<string | null>(null);
@@ -277,6 +268,21 @@ export class ServiciosSucursal {
     this.recargar.next();
   }
 
+  /** Abre el detalle del servicio elegido en el listado. */
+  protected abrirDetalle(servicio: ServicioDTO): void {
+    this.servicioSeleccionado.set(servicio.id);
+  }
+
+  /** Cierra el detalle del servicio. */
+  protected cerrarDetalle(): void {
+    this.servicioSeleccionado.set(null);
+  }
+
+  /** Vuelve a pedir el listado para que refleje las modificaciones. */
+  protected refrescarListado(): void {
+    this.recargar.next();
+  }
+
   protected abrirModal(): void {
     this.limpiarFormulario();
     this.modalAbierto.set(true);
@@ -433,108 +439,12 @@ export class ServiciosSucursal {
       });
   }
 
-  private mapearError(err: any): void {
-    const backendErrors: Record<string, string> = {};
-    let general: string | null = null;
-    const status = Number(err?.status ?? 0);
-
-    const body = this.cuerpoDelError(err?.error);
-    if (err?.fields && typeof err.fields === 'object') {
-      Object.assign(backendErrors, err.fields);
-    }
-    if (body && typeof body === 'object') {
-      if (body.fields && typeof body.fields === 'object') {
-        Object.assign(backendErrors, body.fields);
-      }
-      const lista = Array.isArray(body?.properties?.errors)
-        ? body.properties.errors
-        : Array.isArray(body?.errors)
-          ? body.errors
-          : null;
-      if (Array.isArray(lista)) {
-        for (const item of lista) {
-          const campo = String(item?.field ?? item?.propertyPath ?? item?.name ?? '').trim();
-          const mensaje = String(item?.message ?? item?.defaultMessage ?? 'Revisá este campo.').trim();
-          if (campo) backendErrors[campo] = mensaje;
-        }
-      }
-      for (const key of Object.keys(body)) {
-        if (
-          ['message', 'error', 'status', 'timestamp', 'path', 'title', 'detail', 'type', 'instance', 'properties', 'fields'].includes(key)
-        ) {
-          continue;
-        }
-        if (typeof body[key] === 'string') {
-          backendErrors[key] = body[key];
-        }
-      }
-      if (typeof body.message === 'string' && body.message.trim()) {
-        general = body.message;
-      } else if (typeof body.detail === 'string' && body.detail.trim()) {
-        general = body.detail;
-      }
-    } else if (typeof body === 'string' && body.trim()) {
-      general = body;
-    }
-
-    if (Object.keys(backendErrors).length) {
-      const normalizados: Record<string, string> = {};
-      const mensajesGenerales: string[] = [];
-      for (const [campo, mensaje] of Object.entries(backendErrors)) {
-        const clave = campo.toLowerCase().includes('nombre')
-          ? 'nombre'
-          : campo.toLowerCase().includes('desc')
-            ? 'descripcion'
-            : campo.toLowerCase().includes('dur')
-              ? 'duracion'
-              : campo.toLowerCase().includes('prec')
-                ? 'precio'
-                : campo.toLowerCase().includes('foto')
-                  ? 'foto'
-                  : campo;
-        if (CAMPOS_CON_ERROR.includes(clave)) {
-          normalizados[clave] = mensaje;
-        } else {
-          // No hay campo en el formulario que lo muestre: va al banner general.
-          mensajesGenerales.push(`${campo}: ${mensaje}`);
-        }
-      }
-      this.erroresBackend.set(normalizados);
-      if (mensajesGenerales.length) {
-        general = mensajesGenerales.join(' · ');
-      }
-      if (!general) {
-        general = 'Revisá los campos marcados e intentá nuevamente.';
-      }
-    }
-
-    // El mensaje del backend solo se muestra cuando explica una regla del
-    // negocio (4xx). Para fallas del servidor o de red se usa un mensaje propio
-    // que no expone detalles internos.
-    if (general && !(status >= 400 && status < 500)) {
-      general = null;
-    }
-
-    if (!general) {
-      general = this.mensajeErrorCreacion(status);
-    }
+  private mapearError(err: unknown): void {
+    const { campos, general } = mapearErroresFormulario(err, (status) =>
+      this.mensajeErrorCreacion(status),
+    );
+    this.erroresBackend.set(campos);
     this.errorCreacion.set(general);
-  }
-
-  /**
-   * El endpoint responde con texto plano, así que un error de validación del
-   * backend puede llegar como un JSON serializado. Se interpreta para poder
-   * mapear cada mensaje a su campo.
-   */
-  private cuerpoDelError(body: unknown): any {
-    if (typeof body !== 'string') return body;
-    const texto = body.trim();
-    if (!texto.startsWith('{') && !texto.startsWith('[')) return body;
-    try {
-      return JSON.parse(texto) as any;
-    } catch {
-      return body;
-    }
   }
 
   /**
@@ -585,7 +495,7 @@ export class ServiciosSucursal {
   }
 
   protected formatDuracion(minutos: number | null | undefined): string {
-    return FORMATO_DURACION(minutos);
+    return formatearDuracionCompacta(minutos);
   }
 
   protected formatPrecio(precio: ServicioDTO['precio']): string {
