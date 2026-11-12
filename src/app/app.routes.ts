@@ -175,6 +175,20 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'mis-sucursales/:sucursalId/galeria',
+    canActivate: [authGuard],
+    title: 'AppointMee | Galería de imágenes',
+    data: {
+      title: 'Galería de imágenes',
+      roles: ['EMPLEADOR'],
+      description: 'Administrá las imágenes de tu sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/galeria-sucursal/galeria-sucursal').then(
+        (module) => module.GaleriaSucursal,
+      ),
+  },
+  {
     path: 'mis-sucursales/:sucursalId/empleados',
     canActivate: [authGuard],
     title: 'AppointMee | Empleados de la sucursal',
