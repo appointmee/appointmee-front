@@ -7,6 +7,11 @@ export function normalizarTerminoBusqueda(valor: string | null | undefined): str
   return (valor ?? '').trim().replace(/\s+/g, ' ');
 }
 
+/** Los términos numéricos pueden ser IDs de sucursal, incluso con un solo dígito. */
+export function esTerminoNumerico(valor: string | null | undefined): boolean {
+  return /^\d+$/.test(normalizarTerminoBusqueda(valor));
+}
+
 /**
  * Clave de comparación visual: ignora mayúsculas/minúsculas y acentos.
  * Se usa para no repetir búsquedas equivalentes y para restaurar la URL.
@@ -18,8 +23,8 @@ export function claveComparacionBusqueda(valor: string | null | undefined): stri
     .toLocaleLowerCase('es');
 }
 
-/** Un término de 0 caracteres limpia el filtro; con 2 o más se busca. */
+/** Los términos numéricos pueden buscar IDs aunque tengan menos de 2 caracteres. */
 export function terminoDeBusqueda(valor: string | null | undefined): string {
   const termino = normalizarTerminoBusqueda(valor);
-  return termino.length >= MIN_CARACTERES_BUSQUEDA ? termino : '';
+  return termino.length >= MIN_CARACTERES_BUSQUEDA || esTerminoNumerico(termino) ? termino : '';
 }
