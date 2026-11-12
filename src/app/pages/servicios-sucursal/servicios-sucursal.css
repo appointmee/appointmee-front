@@ -1019,3 +1019,10 @@
     transition: none;
   }
 }
+
+/* Espaciado del formulario del modal */
+form { display: flex; flex-direction: column; gap: var(--space-4, 1rem); }
+.campo-foto { display: flex; flex-direction: column; gap: var(--space-2, 0.5rem); }
+.modal__acciones { display: flex; flex-direction: row; gap: var(--space-3, 0.75rem); margin-top: var(--space-2, 0.5rem); }
+.resumen-errores, .error-general { margin-bottom: var(--space-3, 0.75rem); }
+
