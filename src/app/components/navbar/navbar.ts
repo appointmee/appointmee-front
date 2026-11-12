@@ -10,10 +10,11 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { filter } from 'rxjs';
+import { catchError, filter, of, switchMap } from 'rxjs';
 import { authService } from '../../services/auth-service';
+import { usuarioService } from '../../services/usuario-service';
 
 interface NavItem {
   readonly label: string;
@@ -54,6 +55,8 @@ export class Navbar {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(authService);
+  private readonly usuarios = inject(usuarioService);
+  protected readonly nombreUsuario = signal('');
   private readonly fotoFallida = signal<string | null>(null);
   protected readonly fotoPerfil = computed(() => {
     const foto = this.auth.perfil()?.fotoPerfil?.trim();
@@ -136,6 +139,17 @@ export class Navbar {
   }
 
   constructor() {
+    toObservable(computed(() => this.auth.perfil?.() ?? null))
+      .pipe(
+        switchMap((perfil) => perfil
+          ? this.usuarios.obtenerPerfil(perfil.id).pipe(catchError(() => of(null)))
+          : of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((perfil) => {
+        this.nombreUsuario.set([perfil?.nombre, perfil?.apellido].filter(Boolean).join(' ').trim());
+      });
+
     this.router.events
       .pipe(
         filter((event) => event instanceof NavigationEnd),
