@@ -62,6 +62,17 @@ describe('Sucursales', () => {
     expect(filtrar).toHaveBeenCalledWith('SPA', 'Centro');
   });
 
+  it('ubica búsqueda y categorías en la barra lateral antes del listado', async () => {
+    const fixture = await create();
+    const sidebar = fixture.nativeElement.querySelector('aside.listado__sidebar') as HTMLElement;
+    const results = fixture.nativeElement.querySelector('.listado__results') as HTMLElement;
+
+    expect(sidebar.getAttribute('aria-label')).toBe('Filtros de sucursales');
+    expect(sidebar.querySelector('.search__input')).toBeTruthy();
+    expect(sidebar.querySelector('.categorias')).toBeTruthy();
+    expect(sidebar.compareDocumentPosition(results) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('ignora una categoría inválida sin enviarla al backend', async () => {
     const fixture = await create('/sucursales?categoria=INEXISTENTE');
     expect(filtrar).toHaveBeenCalledWith(null, '');
