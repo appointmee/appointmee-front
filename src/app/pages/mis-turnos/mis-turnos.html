@@ -355,7 +355,28 @@
           </section>
 
           <footer class="detalle__acciones">
-            @if (detalleEstado() === 'REALIZADO') {
+            @if (detalleEstado() === 'PENDIENTE') {
+              <div class="detalle__resenia-copy">
+                <strong>Pago pendiente</strong>
+                <p id="detalle-pago-ayuda">
+                  Completá el pago de este turno para confirmar tu reserva.
+                </p>
+                @if (pagoError(); as errorPago) {
+                  <p class="detalle__pago-error" role="alert">{{ errorPago }}</p>
+                }
+              </div>
+              <button
+                dsButton
+                class="boton"
+                type="button"
+                [disabled]="pagandoTurnoId() !== null"
+                [attr.aria-busy]="pagandoTurnoId() !== null"
+                aria-describedby="detalle-pago-ayuda"
+                (click)="pagarTurnoPendiente()"
+              >
+                {{ pagandoTurnoId() !== null ? 'Abriendo pago…' : 'Pagar' }}
+              </button>
+            } @else if (detalleEstado() === 'REALIZADO') {
               @if (detalleReseniado()) {
                 <div class="detalle__resenia-copy">
                   <strong>Reseña publicada</strong>
