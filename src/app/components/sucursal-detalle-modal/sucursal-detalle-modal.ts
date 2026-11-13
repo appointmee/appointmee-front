@@ -54,6 +54,13 @@ type ResultadoDetalle =
  * Consulta el mismo endpoint que usa el detalle público
  * (`GET /sucursales/{id}`) y muestra los datos de la sucursal. Desde acá se
  * abre el formulario de modificación, que queda por encima de este recuadro.
+ *
+ * Reglas de la pantalla que conviene tener presentes al tocar la plantilla:
+ * - se muestra únicamente la foto de perfil, no la galería de imágenes;
+ * - el identificador de la sucursal nunca se renderiza;
+ * - el teléfono solo aparece cuando la sucursal tiene uno cargado;
+ * - los días de apertura se pintan todos (LU a DO): los que abre la sucursal
+ *   quedan resaltados y los demás, apagados.
  */
 @Component({
   selector: 'app-sucursal-detalle-modal',
