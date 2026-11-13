@@ -30,7 +30,7 @@ import { SucursalDetalleModal } from '../../components/sucursal-detalle-modal/su
 import { Graficos } from '../graficos/graficos';
 import { usuarioService } from '../../services/usuario-service';
 import { UsuarioMiniAdminDTO, UsuarioPerfilDTO } from '../../models/usuario';
-import { DsModalComponent } from '../../shared/ui/misc/misc.component';
+import { DsModalComponent, DsPaginationComponent } from '../../shared/ui/misc/misc.component';
 import { fotoPerfilDe } from '../../shared/foto-perfil';
 
 type ResultadoLista =
@@ -47,7 +47,7 @@ interface FiltrosUsuarios {
 
 @Component({
   selector: 'app-admin',
-  imports: [DsButtonComponent, DsInputComponent, DsModalComponent, SolicitudEmpleadorCard, SucursalDetalleModal, Graficos],
+  imports: [DsButtonComponent, DsInputComponent, DsModalComponent, DsPaginationComponent, SolicitudEmpleadorCard, SucursalDetalleModal, Graficos],
   templateUrl: './admin.html',
   styleUrl: './admin.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,6 +60,7 @@ export class Administracion {
   private readonly recargar = new Subject<void>();
 
   private revision = 0;
+  private readonly elementosPorPagina = 10;
 
   protected readonly solicitudes = signal<readonly SolicitudEmpleadorMiniDTO[]>([]);
   protected readonly detalles = signal<ReadonlyMap<number, SolicitudEmpleadorDetalleDTO>>(new Map());
@@ -73,6 +74,7 @@ export class Administracion {
   protected readonly erroresAccion = signal<ReadonlyMap<number, string>>(new Map());
   protected readonly exito = signal<string | null>(null);
   protected readonly sucursales = signal<readonly SucursalMiniDTO[]>([]);
+  protected readonly paginaSucursales = signal(1);
   protected readonly sucursalesCargando = signal(true);
   protected readonly sucursalesError = signal(false);
   protected readonly sucursalesReintentando = signal(false);
@@ -82,6 +84,7 @@ export class Administracion {
   private readonly recargarSucursales = new Subject<void>();
   private readonly filtrosUsuarios$ = new Subject<FiltrosUsuarios>();
   protected readonly usuarios = signal<readonly UsuarioMiniAdminDTO[]>([]);
+  protected readonly paginaUsuarios = signal(1);
   protected readonly fotosUsuariosFallidas = signal<ReadonlySet<number>>(new Set());
   protected readonly usuariosCargando = signal(true);
   protected readonly usuariosError = signal(false);
@@ -105,6 +108,22 @@ export class Administracion {
     return this.sucursales().filter((sucursal) =>
       `${sucursal.nombre} ${sucursal.categoria} ${sucursal.id}`.toLocaleLowerCase('es').includes(termino),
     );
+  });
+  protected readonly totalPaginasSucursales = computed(() =>
+    Math.max(1, Math.ceil(this.sucursalesFiltradas().length / this.elementosPorPagina)),
+  );
+  protected readonly sucursalesPaginadas = computed(() => {
+    const pagina = Math.min(this.paginaSucursales(), this.totalPaginasSucursales());
+    const inicio = (pagina - 1) * this.elementosPorPagina;
+    return this.sucursalesFiltradas().slice(inicio, inicio + this.elementosPorPagina);
+  });
+  protected readonly totalPaginasUsuarios = computed(() =>
+    Math.max(1, Math.ceil(this.usuarios().length / this.elementosPorPagina)),
+  );
+  protected readonly usuariosPaginados = computed(() => {
+    const pagina = Math.min(this.paginaUsuarios(), this.totalPaginasUsuarios());
+    const inicio = (pagina - 1) * this.elementosPorPagina;
+    return this.usuarios().slice(inicio, inicio + this.elementosPorPagina);
   });
 
   protected readonly total = computed(() => this.solicitudes().length);
@@ -134,7 +153,10 @@ export class Administracion {
         this.sucursalesCargando.set(false);
         this.sucursalesReintentando.set(false);
         this.sucursalesError.set(!resultado.ok);
-        if (resultado.ok) this.sucursales.set(resultado.sucursales);
+        if (resultado.ok) {
+          this.sucursales.set(resultado.sucursales);
+          this.paginaSucursales.set(1);
+        }
       });
 
     this.recargar
@@ -170,7 +192,10 @@ export class Administracion {
         this.usuariosCargando.set(false);
         this.usuariosReintentando.set(false);
         this.usuariosError.set(!resultado.ok);
-        if (resultado.ok) this.usuarios.set(resultado.usuarios);
+        if (resultado.ok) {
+          this.usuarios.set(resultado.usuarios);
+          this.paginaUsuarios.set(1);
+        }
       });
   }
 
@@ -180,6 +205,15 @@ export class Administracion {
 
   protected buscarSucursales(valor: string): void {
     this.busquedaSucursal.set(valor);
+    this.paginaSucursales.set(1);
+  }
+
+  protected cambiarPaginaSucursales(pagina: number): void {
+    this.paginaSucursales.set(pagina);
+  }
+
+  protected cambiarPaginaUsuarios(pagina: number): void {
+    this.paginaUsuarios.set(pagina);
   }
 
   protected seleccionarSeccion(seccion: 'sucursales' | 'solicitudes' | 'estadisticas' | 'usuarios'): void {
@@ -188,6 +222,7 @@ export class Administracion {
 
   protected cambiarFiltroUsuario(valor: string): void {
     this.filtroEstadoUsuario.set(valor);
+    this.paginaUsuarios.set(1);
     this.filtrosUsuarios$.next(this.filtrosActuales());
   }
 
@@ -337,6 +372,7 @@ export class Administracion {
 
   protected quitarSucursalEliminada(id: number): void {
     this.sucursales.update((actuales) => actuales.filter((sucursal) => sucursal.id !== id));
+    this.paginaSucursales.set(1);
     this.sucursalDetalleId.set(null);
   }
 
