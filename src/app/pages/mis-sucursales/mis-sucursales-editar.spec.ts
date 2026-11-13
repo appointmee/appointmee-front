@@ -312,6 +312,10 @@ describe('SCRUM-265 · Ver y modificar los datos de la sucursal', () => {
       await abrirFormulario();
 
       const formulario = host().querySelector<HTMLElement>('app-sucursal-editar-modal')!;
+      const modal = formulario.querySelector<HTMLElement>('ds-modal')!;
+      expect(modal.style.getPropertyValue('--ds-modal-offset-y')).toBe('min(var(--space-6), 4dvh)');
+      expect(modal.style.getPropertyValue('--ds-modal-padding')).toBe('var(--space-3)');
+      expect(modal.style.getPropertyValue('--sucursal-form-section-padding')).toBe('var(--space-4)');
       expect(formulario.querySelector<HTMLInputElement>('#sucursal-editar-nombre')!.value).toBe(
         'Barber House',
       );
