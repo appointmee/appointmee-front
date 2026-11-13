@@ -52,6 +52,14 @@ describe('Editar perfil', () => {
     fixture.detectChanges();
   }
 
+  it('presenta los datos personales, el correo y el guardado en secciones claras', () => {
+    expect(host.querySelector('.datos__encabezado h2')?.textContent).toContain('Datos personales');
+    expect(host.querySelector('.datos__encabezado p')?.textContent).toContain('Administrá tu información');
+    expect(host.querySelectorAll('.datos__formulario .correo-actual--personal')).toHaveLength(2);
+    expect(host.querySelector('.correo-actual--email')?.textContent).toContain('ana@example.com');
+    expect(host.querySelector('.datos__acciones button')?.textContent).toContain('Guardar cambios');
+  });
+
   it('habilita los datos con el lápiz y muestra los errores debajo del campo', async () => {
     expect(host.querySelector('#perfil-nombre')).toBeNull();
     expect(host.querySelector('#perfil-apellido')).toBeNull();

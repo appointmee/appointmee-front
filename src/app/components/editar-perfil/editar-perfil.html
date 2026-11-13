@@ -7,7 +7,12 @@
 </ng-template>
 
 <section class="datos" aria-labelledby="datos-personales" [attr.aria-busy]="ocupado()">
-  <h2 id="datos-personales">Datos personales</h2>
+  <header class="datos__encabezado">
+    <div>
+      <h2 id="datos-personales">Datos personales</h2>
+      <p>Administrá tu información y cómo aparece tu perfil.</p>
+    </div>
+  </header>
   @if (perfil(); as cuenta) {
     <div class="foto">
       @if (cuenta.fotoPerfil && !fotoFallida()) {
@@ -32,7 +37,7 @@
       </div>
     }
     <p id="foto-error" class="error" aria-live="polite">{{ errores()['fotoUrl'] }}</p>
-    <form id="datos-perfil-form" (ngSubmit)="guardar()" novalidate>
+    <form id="datos-perfil-form" class="datos__formulario" (ngSubmit)="guardar()" novalidate>
       @if (erroresDeDatos().length > 1) {
         <div class="error" role="alert">
           <p>Revisá estos campos.</p>
@@ -44,7 +49,7 @@
         </div>
       }
       @for (dato of camposPersonales; track dato.campo) {
-        <div class="correo-actual">
+        <div class="correo-actual correo-actual--personal">
           <div class="correo-actual__datos">
             @if (editando()[dato.campo]) {
               <label [for]="'perfil-' + dato.campo">{{ dato.etiqueta }}</label>
@@ -68,7 +73,7 @@
         <p [id]="dato.campo + '-error'" class="error" aria-live="polite">{{ errores()[dato.campo] }}</p>
       }
     </form>
-    <div class="correo-actual">
+    <div class="correo-actual correo-actual--email">
       <div class="correo-actual__datos">
         <span id="correo-actual-etiqueta">Correo actual</span>
         <div class="correo-actual__valor" aria-labelledby="correo-actual-etiqueta">{{ cuenta.email }}</div>
@@ -82,6 +87,9 @@
     <div class="datos__acciones">
       <button dsButton variant="primary" type="submit" form="datos-perfil-form"
         [disabled]="ocupado() || !hayCambios()">Guardar cambios</button>
+      @if (hayCambios()) {
+        <span>Tenés cambios sin guardar</span>
+      }
     </div>
   } @else if (!ocupado()) {
     <button dsButton type="button" (click)="cargar()">Volver a intentar</button>
