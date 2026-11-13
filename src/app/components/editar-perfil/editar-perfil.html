@@ -14,19 +14,30 @@
     </div>
   </header>
   @if (perfil(); as cuenta) {
-    <div class="foto">
+    <section class="foto" aria-labelledby="foto-titulo">
+      <div class="foto__avatar">
       @if (cuenta.fotoPerfil && !fotoFallida()) {
         <img [src]="cuenta.fotoPerfil" alt="Foto de perfil" (error)="fotoFallida.set(true)" />
       } @else {
         <span class="iniciales" aria-label="Avatar con iniciales">{{ iniciales() }}</span>
       }
-      <div class="foto__acciones">
-        <button dsButton type="button" [disabled]="ocupado()" (click)="cambiarFoto = !cambiarFoto">Cambiar foto</button>
-      <button dsButton type="button" [disabled]="ocupado() || !cuenta.fotoPerfil" (click)="restablecer()">Restablecer</button>
       </div>
-    </div>
+      <div class="foto__acciones">
+        <div class="foto__descripcion">
+          <h3 id="foto-titulo">Foto de perfil</h3>
+          <p>Elegí una imagen clara. JPG, PNG, WEBP o GIF · hasta 5 MB.</p>
+        </div>
+        <div class="foto__botones">
+          <button dsButton variant="primary" type="button" [disabled]="ocupado()"
+            [attr.aria-expanded]="cambiarFoto"
+            (click)="cambiarFoto = !cambiarFoto">Actualizar foto</button>
+          <button dsButton type="button" [disabled]="ocupado() || !cuenta.fotoPerfil"
+            (click)="restablecer()">Quitar foto</button>
+        </div>
+      </div>
+    </section>
     @if (cambiarFoto) {
-      <div class="subida" [class.subida--activa]="arrastrandoFoto()"
+      <div id="subida-foto" class="subida" [class.subida--activa]="arrastrandoFoto()"
         (dragenter)="arrastrarFoto($event)" (dragover)="arrastrarFoto($event)"
         (dragleave)="salirDeSubida($event)" (drop)="soltar($event)">
         <p>Arrastrá una foto acá</p>

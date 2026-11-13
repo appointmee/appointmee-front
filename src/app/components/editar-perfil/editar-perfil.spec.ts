@@ -53,6 +53,10 @@ describe('Editar perfil', () => {
   }
 
   it('presenta los datos personales, el correo y el guardado en secciones claras', () => {
+    expect(host.querySelector('.foto__avatar .iniciales')?.textContent).toBe('AP');
+    expect(host.querySelector('.foto__descripcion')?.textContent).toContain('JPG, PNG, WEBP o GIF');
+    expect(host.querySelector('.foto__botones .ds-btn--primary')?.textContent).toContain('Actualizar foto');
+    expect(host.querySelector('.foto__botones button:last-child')?.textContent).toContain('Quitar foto');
     expect(host.querySelector('.datos__encabezado h2')?.textContent).toContain('Datos personales');
     expect(host.querySelector('.datos__encabezado p')?.textContent).toContain('Administrá tu información');
     expect(host.querySelectorAll('.datos__formulario .correo-actual--personal')).toHaveLength(2);
