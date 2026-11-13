@@ -90,6 +90,10 @@ describe('Gráficos ECharts', () => {
 
     expect(opciones).toHaveLength(3);
     expect(opciones[0].series).toHaveLength(5);
+    expect(opciones[0].media).toEqual([
+      { query: { maxWidth: 768 }, option: { grid: { top: 92 } } },
+    ]);
+    expect(fixture.nativeElement.querySelector('.grafico-echarts--turnos-admin')).not.toBeNull();
     expect(opciones[1].series).toHaveLength(3);
     expect(fixture.nativeElement.querySelectorAll('table').length).toBeGreaterThanOrEqual(2);
     expect(fixture.nativeElement.querySelectorAll('[role="img"]').length).toBe(3);

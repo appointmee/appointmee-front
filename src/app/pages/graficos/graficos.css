@@ -118,6 +118,10 @@ td { color: var(--muted); font-variant-numeric: tabular-nums; }
   th, td { padding: .55rem; }
 }
 
+@media (max-width: 768px) {
+  .grafico-echarts--turnos-admin { height: 20rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
   .graficos__fondo img { transition: none; }
