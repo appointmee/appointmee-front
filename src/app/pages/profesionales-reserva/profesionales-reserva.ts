@@ -11,6 +11,7 @@ import { empleadoService } from '../../services/empleado-service';
 import { reservaContextoService } from '../../services/reserva-contexto-service';
 import { servicioService } from '../../services/servicio-service';
 import { turnoService } from '../../services/turno-service';
+import { fotoPerfilDe } from '../../shared/foto-perfil';
 
 @Component({
   selector: 'app-profesionales-reserva',
@@ -53,6 +54,22 @@ export class ProfesionalesReserva {
   protected readonly volverUrl = this.sucursalId !== null
     ? ['/sucursal', this.sucursalId, 'servicios']
     : ['/'];
+
+  protected readonly placeholderAvatar = `data:image/svg+xml;utf8,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240"><rect width="240" height="240" fill="#10151d"/><circle cx="120" cy="92" r="38" fill="#39424f"/><path d="M48 216c9-47 36-72 72-72s63 25 72 72" fill="#39424f"/></svg>',
+  )}`;
+
+  protected fotoProfesional(profesional: EmpleadoDTO): string {
+    return fotoPerfilDe(profesional) ?? this.placeholderAvatar;
+  }
+
+  protected onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement | null;
+    if (img) {
+      img.onerror = null;
+      img.src = this.placeholderAvatar;
+    }
+  }
 
   constructor() {
     const sucursalId = this.sucursalId;

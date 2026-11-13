@@ -28,6 +28,6 @@ export class backendService {
     return hostname === 'localhost' || hostname === '127.0.0.1'
       ? 'http://localhost:8080'
       // IMPORTANTE: si cambia la URL pública del backend, actualizar esta URL.
-      : 'https://appointrail-production.up.railway.app';
+      : 'https://appointmee-back-production.up.railway.app';
   }
 }

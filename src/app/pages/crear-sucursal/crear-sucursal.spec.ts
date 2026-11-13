@@ -39,9 +39,47 @@ describe('Crear sucursal', () => {
   });
   afterEach(() => TestBed.resetTestingModule());
 
+  it('organiza el alta en secciones de información, horarios e imagen', () => {
+    const formulario = fixture.nativeElement.querySelector('form.sucursal-form') as HTMLFormElement;
+    expect(formulario).not.toBeNull();
+    expect(formulario.querySelectorAll('.seccion')).toHaveLength(3);
+    expect(formulario.textContent).toContain('Información de la sucursal');
+    expect(formulario.textContent).toContain('Horarios de atención');
+    expect(formulario.textContent).toContain('Imagen principal');
+    expect(formulario.querySelector('label[for="sucursal-crear-foto"]')?.textContent)
+      .toContain('Foto de la sucursal');
+  });
+
   it('no envía el formulario si el nombre está vacío', () => {
     page.onSubmit(new Event('submit', { cancelable: true }));
     expect(api.crear).not.toHaveBeenCalled();
+  });
+
+  it('abre el selector visual de hora y aplica hora y minutos elegidos', async () => {
+    const root = fixture.nativeElement as HTMLElement;
+    const abrir = root.querySelector('#sucursal-crear-horaApertura-selector-trigger') as HTMLButtonElement;
+    abrir.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const selector = root.querySelector('#sucursal-crear-horaApertura-selector') as HTMLElement;
+    const [hora, minuto] = Array.from(selector.querySelectorAll('select')) as HTMLSelectElement[];
+    expect(selector.getAttribute('role')).toBe('dialog');
+    expect(hora.options).toHaveLength(24);
+    expect(minuto.options).toHaveLength(60);
+
+    hora.value = '10';
+    hora.dispatchEvent(new Event('change'));
+    minuto.value = '30';
+    minuto.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    Array.from(selector.querySelectorAll('button'))
+      .find((button) => button.textContent?.includes('Aplicar hora'))!.click();
+    fixture.detectChanges();
+
+    expect(page.model().horaApertura).toBe('10:30');
+    expect(root.querySelector('#sucursal-crear-horaApertura-selector')).toBeNull();
+    expect(abrir.textContent).toContain('10:30');
   });
 
   it('envía los datos y navega al éxito', async () => {

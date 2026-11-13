@@ -1,11 +1,16 @@
 <section class="servicios" aria-labelledby="servicios-titulo">
+  <div class="servicios__fondo" aria-hidden="true">
+    @if (fotoFondo(); as foto) {
+      <img [src]="foto" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" (error)="onFotoFondoError()" />
+    }
+  </div>
   <div class="servicios__inner">
     <nav class="migas" aria-label="Navegación">
-      <a class="volver" routerLink="/mis-sucursales">
+      <a class="volver" [routerLink]="['/mis-sucursales']" [queryParams]="{ sucursalId: sucursalId }">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M19 12H5M11 18l-6-6 6-6" />
         </svg>
-        Volver a mis sucursales
+        Volver al gestor
       </a>
     </nav>
 
@@ -28,7 +33,7 @@
           class="boton"
           (click)="abrirModal()"
         >
-          Crear servicios
+          Crear servicio
         </button>
       </div>
     </header>
@@ -49,7 +54,7 @@
       <div class="estado estado--contexto" role="alert" aria-live="assertive" aria-atomic="true">
         <h2>No pudimos identificar la sucursal</h2>
         <p>Volvé a elegir una sucursal para ver sus servicios.</p>
-        <a class="boton" routerLink="/mis-sucursales">Volver a mis sucursales</a>
+        <a class="boton" [routerLink]="['/mis-sucursales']" [queryParams]="{ sucursalId: sucursalIdValido ? sucursalId : null }">Volver al gestor</a>
       </div>
     } @else {
       @if (sinConexion() && !cargando() && !error()) {
@@ -94,7 +99,7 @@
             >
               {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
             </button>
-            <a class="boton boton--ghost" routerLink="/mis-sucursales">Volver</a>
+            <a class="boton boton--ghost" [routerLink]="['/mis-sucursales']" [queryParams]="{ sucursalId: sucursalId }">Volver al gestor</a>
           </div>
         </div>
       } @else if (servicios().length === 0) {
@@ -171,80 +176,83 @@
   </div>
 </section>
 
-<ds-modal [open]="modalAbierto()" (close)="cerrarModal()" ariaLabelledby="crear-servicio-titulo" maxWidth="560px">
-  <h2 id="crear-servicio-titulo">Crear servicio</h2>
+<ds-modal [open]="modalAbierto()" (close)="cerrarModal()" ariaLabelledby="crear-servicio-titulo" maxWidth="720px">
+  <header class="crear-servicio__encabezado">
+    <p class="crear-servicio__sobrelinea">Nuevo servicio</p>
+    <h2 id="crear-servicio-titulo">Crear servicio</h2>
+    <p>Completá los detalles que verán tus clientes al reservar.</p>
+  </header>
 
   @if (errorCreacion()) {
     <div class="error-general" role="alert">{{ errorCreacion() }}</div>
   }
 
-  <form (submit)="onSubmit($event)" novalidate>
-    <ds-input label="Nombre" [error]="errorNombre() ?? ''">
-      <input
-        id="servicio-nombre"
-        type="text"
-        [formField]="formulario.nombre"
-        autocomplete="off"
-      />
-    </ds-input>
+  <form class="formulario-crear-servicio" (submit)="onSubmit($event)" novalidate
+    [attr.aria-busy]="cargandoCreacion()">
+    <section class="crear-servicio__seccion" aria-labelledby="crear-servicio-detalles">
+      <div class="crear-servicio__seccion-cabecera">
+        <h3 id="crear-servicio-detalles">Detalles del servicio</h3>
+        <p>Definí qué ofrecés, cuánto dura y cuál es su precio.</p>
+      </div>
+      <div class="crear-servicio__campos">
+        <div class="crear-servicio__campo crear-servicio__campo--ancho">
+          <ds-input label="Nombre del servicio" [error]="errorNombre() ?? ''">
+            <input id="servicio-nombre" type="text" [formField]="formulario.nombre"
+              autocomplete="off" placeholder="Ej. Corte de cabello" />
+          </ds-input>
+        </div>
+        <div class="crear-servicio__campo">
+          <ds-input label="Duración (minutos)" [error]="errorDuracion() ?? ''">
+            <input id="servicio-duracion" type="number" step="1" inputmode="numeric"
+              [formField]="formulario.duracion" placeholder="Ej. 60" />
+          </ds-input>
+          <p class="crear-servicio__ayuda">En intervalos de 30 minutos.</p>
+        </div>
+        <div class="crear-servicio__campo">
+          <ds-input label="Precio (ARS)" [error]="errorPrecio() ?? ''">
+            <input id="servicio-precio" type="number" step="0.01" inputmode="decimal"
+              [formField]="formulario.precio" placeholder="Ej. 12000" />
+          </ds-input>
+          <p class="crear-servicio__ayuda">Importe en pesos argentinos.</p>
+        </div>
+        <div class="crear-servicio__campo crear-servicio__campo--ancho">
+          <ds-input label="Descripción" [error]="errorDescripcion() ?? ''">
+            <textarea id="servicio-descripcion" rows="4" [formField]="formulario.descripcion"
+              placeholder="Contá brevemente qué incluye el servicio."></textarea>
+          </ds-input>
+        </div>
+      </div>
+    </section>
 
-    <ds-input label="Descripción" [error]="errorDescripcion() ?? ''">
-      <textarea
-        id="servicio-descripcion"
-        rows="3"
-        [formField]="formulario.descripcion"
-      ></textarea>
-    </ds-input>
-
-    <ds-input label="Duración (en minutos)" [error]="errorDuracion() ?? ''">
-      <input
-        id="servicio-duracion"
-        type="number"
-        step="1"
-        inputmode="numeric"
-        [formField]="formulario.duracion"
-      />
-    </ds-input>
-
-    <ds-input label="Precio" [error]="errorPrecio() ?? ''">
-      <input
-        id="servicio-precio"
-        type="number"
-        step="0.01"
-        inputmode="decimal"
-        [formField]="formulario.precio"
-      />
-    </ds-input>
-
-    <div class="campo-foto">
-      <label for="servicio-foto">Foto</label>
-      <input
-        id="servicio-foto"
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        [attr.aria-invalid]="errorFoto() ? 'true' : null"
-        [attr.aria-describedby]="errorFoto() ? 'servicio-foto-error' : null"
-        (change)="onFileChange($event)"
-      />
-      @if (fotoPreview()) {
-        <img class="foto-preview" [src]="fotoPreview()" alt="Vista previa de la foto" />
-      }
-      @if (errorFoto()) {
-        <span id="servicio-foto-error" class="ds-error" role="alert">{{ errorFoto() }}</span>
-      }
-    </div>
+    <section class="crear-servicio__seccion crear-servicio__seccion--foto" aria-labelledby="crear-servicio-foto-titulo">
+      <div class="crear-servicio__seccion-cabecera">
+        <h3 id="crear-servicio-foto-titulo">Imagen del servicio</h3>
+        <p>Una imagen ayuda a tus clientes a reconocer lo que ofrecés.</p>
+      </div>
+      <div class="campo-foto">
+        <label class="crear-servicio__etiqueta" for="servicio-foto">Foto principal</label>
+        <input class="crear-servicio__archivo" id="servicio-foto" type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          [attr.aria-invalid]="errorFoto() ? 'true' : null"
+          [attr.aria-describedby]="errorFoto() ? 'servicio-foto-ayuda servicio-foto-error' : 'servicio-foto-ayuda'"
+          (change)="onFileChange($event)" />
+        <p id="servicio-foto-ayuda" class="crear-servicio__ayuda">Formatos permitidos: JPG, PNG, WEBP o GIF.</p>
+        @if (fotoPreview()) {
+          <div class="crear-servicio__vista-previa">
+            <img class="foto-preview" [src]="fotoPreview()" alt="Vista previa de la imagen del servicio" />
+            <span>Vista previa</span>
+          </div>
+        }
+        @if (errorFoto()) {
+          <span id="servicio-foto-error" class="ds-error" role="alert">{{ errorFoto() }}</span>
+        }
+      </div>
+    </section>
 
     <div class="modal__acciones">
-      <button
-        dsButton
-        variant="primary"
-        type="submit"
-        [disabled]="!puedeCrear()"
-        [attr.aria-busy]="cargandoCreacion()"
-      >
-        Crear servicio
-      </button>
       <button type="button" class="boton boton--ghost" (click)="cerrarModal()">Cancelar</button>
+      <button dsButton variant="primary" type="submit" [disabled]="!puedeCrear()"
+        [loading]="cargandoCreacion()">Crear servicio</button>
     </div>
   </form>
 

@@ -36,8 +36,10 @@ export class MisSucursales {
   protected readonly cargandoSucursales = signal(true);
   protected readonly errorSucursales = signal<string | null>(null);
   protected readonly reintentandoSucursales = signal(false);
+  protected readonly fotosSucursalFallidas = signal<ReadonlySet<string>>(new Set());
 
   protected readonly sucursalSeleccionadaId = signal<number | null>(null);
+  protected readonly sucursalResaltadaId = signal<number | null>(null);
   /** El recuadro con los datos de la sucursal está abierto. */
   protected readonly detalleSucursalAbierto = signal(false);
   /** Mensaje de éxito de la última sucursal eliminada. */
@@ -46,6 +48,16 @@ export class MisSucursales {
   protected readonly sucursalSeleccionada = computed(() =>
     this.sucursales().find((sucursal) => sucursal.id === this.sucursalSeleccionadaId()) ?? null,
   );
+
+  protected readonly sucursalDeFondo = computed(() =>
+    this.sucursalSeleccionada()
+      ?? this.sucursales().find((sucursal) => sucursal.id === this.sucursalResaltadaId())
+      ?? null,
+  );
+  protected readonly fotoFondo = computed(() => {
+    const sucursal = this.sucursalDeFondo();
+    return sucursal ? this.fotoPrincipal(sucursal) : null;
+  });
 
   protected readonly puntuacion = computed(() => {
     const valor = this.sucursalSeleccionada()?.puntuacion;
@@ -64,6 +76,15 @@ export class MisSucursales {
   );
 
   protected readonly humanizarCategoria = humanizarCategoria;
+
+  protected fotoPrincipal(sucursal: SucursalMiniDTO): string | null {
+    const foto = sucursal.fotoPerfil?.trim();
+    return foto && !this.fotosSucursalFallidas().has(foto) ? foto : null;
+  }
+
+  protected onFotoSucursalError(foto: string): void {
+    this.fotosSucursalFallidas.update((fallidas) => new Set(fallidas).add(foto));
+  }
 
   constructor() {
     this.route.queryParamMap
@@ -112,6 +133,7 @@ export class MisSucursales {
 
   protected seleccionarSucursal(id: number): void {
     this.sucursalSeleccionadaId.set(id);
+    this.sucursalResaltadaId.set(null);
     this.detalleSucursalAbierto.set(false);
     this.exitoEliminacion.set(null);
     this.router.navigate([], {
@@ -119,6 +141,14 @@ export class MisSucursales {
       queryParams: { sucursalId: id },
       queryParamsHandling: 'merge',
     });
+  }
+
+  protected resaltarSucursal(sucursal: SucursalMiniDTO): void {
+    if (!this.sucursalSeleccionada()) this.sucursalResaltadaId.set(sucursal.id);
+  }
+
+  protected limpiarSucursalResaltada(): void {
+    this.sucursalResaltadaId.set(null);
   }
 
   /** Abre el recuadro con los datos de la sucursal seleccionada. */

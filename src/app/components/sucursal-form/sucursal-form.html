@@ -23,119 +23,191 @@
     <div class="error-general" role="alert">{{ errorGeneral() }}</div>
   }
 
-  <form (submit)="onSubmit($event)" novalidate [attr.aria-busy]="enviando()">
-    <div class="campo">
-      <ds-input label="Nombre" [error]="errorDe('nombre', formulario.nombre()) ?? ''">
-        <input
-          [id]="id('nombre')"
-          type="text"
-          autocomplete="organization"
-          [formField]="formulario.nombre"
-        />
-      </ds-input>
-    </div>
+  <form class="sucursal-form" (submit)="onSubmit($event)" novalidate [attr.aria-busy]="enviando()">
+    <section class="seccion" [attr.aria-labelledby]="id('informacion-titulo')">
+      <header class="seccion__encabezado">
+        <h2 [id]="id('informacion-titulo')">Información de la sucursal</h2>
+        <p>Completá los datos que verán tus clientes.</p>
+      </header>
+      <div class="campos-grid">
+        <div class="campo">
+          <ds-input label="Nombre" [error]="errorDe('nombre', formulario.nombre()) ?? ''">
+            <input [id]="id('nombre')" type="text" autocomplete="organization" [formField]="formulario.nombre" />
+          </ds-input>
+        </div>
+        <div class="campo">
+          <ds-input label="Categoría" [error]="errorDe('categoria', formulario.categoria()) ?? ''">
+            <select [id]="id('categoria')" [formField]="formulario.categoria">
+              <option value="" disabled>Seleccioná una categoría</option>
+              @for (cat of categorias(); track cat.id) {
+                <option [value]="cat.nombre">{{ cat.nombre }}</option>
+              }
+            </select>
+          </ds-input>
+        </div>
+        <div class="campo campo--ancho">
+          <ds-input label="Dirección" [error]="errorDe('direccion', formulario.direccion()) ?? ''">
+            <input [id]="id('direccion')" type="text" autocomplete="street-address" [formField]="formulario.direccion" />
+          </ds-input>
+        </div>
+        <div class="campo campo--ancho">
+          <ds-input label="Descripción" [error]="errorDe('descripcion', formulario.descripcion()) ?? ''">
+            <textarea [id]="id('descripcion')" rows="4" [formField]="formulario.descripcion"></textarea>
+          </ds-input>
+        </div>
+        <div class="campo">
+          <ds-input label="Teléfono (opcional)" [error]="errorDe('telefono', formulario.telefono()) ?? ''">
+            <input [id]="id('telefono')" type="tel" autocomplete="tel" [formField]="formulario.telefono" />
+          </ds-input>
+        </div>
+      </div>
+    </section>
 
-    <div class="campo">
-      <ds-input label="Dirección" [error]="errorDe('direccion', formulario.direccion()) ?? ''">
-        <input
-          [id]="id('direccion')"
-          type="text"
-          autocomplete="street-address"
-          [formField]="formulario.direccion"
-        />
-      </ds-input>
-    </div>
-
-    <div class="campo">
-      <ds-input label="Descripción" [error]="errorDe('descripcion', formulario.descripcion()) ?? ''">
-        <textarea [id]="id('descripcion')" rows="3" [formField]="formulario.descripcion"></textarea>
-      </ds-input>
-    </div>
-
-    <div class="campo">
-      <ds-input label="Categoría" [error]="errorDe('categoria', formulario.categoria()) ?? ''">
-        <select [id]="id('categoria')" [formField]="formulario.categoria">
-          <option value="" disabled>Seleccioná una categoría</option>
-          @for (cat of categorias(); track cat.id) {
-            <option [value]="cat.nombre">{{ cat.nombre }}</option>
+    <section class="seccion" [attr.aria-labelledby]="id('horarios-titulo')">
+      <header class="seccion__encabezado">
+        <h2 [id]="id('horarios-titulo')">Horarios de atención</h2>
+        <p>Indicá el horario habitual y los días en que abrís.</p>
+      </header>
+      <div class="campos-grid">
+        <div class="campo">
+          <div class="hora-campo">
+            <span class="hora-campo__etiqueta">Hora de apertura</span>
+            <button dsButton class="hora-trigger" type="button" [id]="id('horaApertura-selector-trigger')"
+              aria-label="Elegir hora de apertura" aria-haspopup="dialog"
+              [attr.aria-expanded]="selectorHora() === 'horaApertura'"
+              [attr.aria-controls]="selectorHora() === 'horaApertura' ? id('horaApertura-selector') : null"
+              (click)="abrirSelectorHora('horaApertura')">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+              </svg>
+              <span>{{ model().horaApertura || 'Elegir hora' }}</span>
+              <span class="hora-trigger__accion">Seleccionar</span>
+            </button>
+            @if (selectorHora() === 'horaApertura') {
+              <div class="hora-selector" [id]="id('horaApertura-selector')" role="dialog"
+                [attr.aria-labelledby]="id('horaApertura-selector-titulo')"
+                (keydown.escape)="cerrarSelectorHora()">
+                <h3 [id]="id('horaApertura-selector-titulo')">Elegí la hora de apertura</h3>
+                <div class="hora-selector__campos">
+                  <label [attr.for]="id('horaApertura-selector-hora')">Hora
+                    <select [id]="id('horaApertura-selector-hora')" [value]="horaTemporalParte('hora')"
+                      (change)="actualizarHoraTemporal('hora', $event)">
+                      @for (hora of horasDisponibles; track hora) { <option [value]="hora">{{ hora }}</option> }
+                    </select>
+                  </label>
+                  <span class="hora-selector__separador" aria-hidden="true">:</span>
+                  <label [attr.for]="id('horaApertura-selector-minuto')">Minutos
+                    <select [id]="id('horaApertura-selector-minuto')" [value]="horaTemporalParte('minuto')"
+                      (change)="actualizarHoraTemporal('minuto', $event)">
+                      @for (minuto of minutosDisponibles; track minuto) { <option [value]="minuto">{{ minuto }}</option> }
+                    </select>
+                  </label>
+                </div>
+                <div class="hora-selector__acciones">
+                  <button dsButton type="button" (click)="cerrarSelectorHora()">Cancelar</button>
+                  <button dsButton variant="primary" type="button" (click)="confirmarHora()">Aplicar hora</button>
+                </div>
+              </div>
+            }
+          </div>
+          @if (errorDe('horaApertura', formulario.horaApertura()); as error) {
+            <p class="error" role="alert">{{ error }}</p>
           }
-        </select>
-      </ds-input>
-    </div>
+        </div>
+        <div class="campo">
+          <div class="hora-campo">
+            <span class="hora-campo__etiqueta">Hora de cierre</span>
+            <button dsButton class="hora-trigger" type="button" [id]="id('horaCierre-selector-trigger')"
+              aria-label="Elegir hora de cierre" aria-haspopup="dialog"
+              [attr.aria-expanded]="selectorHora() === 'horaCierre'"
+              [attr.aria-controls]="selectorHora() === 'horaCierre' ? id('horaCierre-selector') : null"
+              (click)="abrirSelectorHora('horaCierre')">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+              </svg>
+              <span>{{ model().horaCierre || 'Elegir hora' }}</span>
+              <span class="hora-trigger__accion">Seleccionar</span>
+            </button>
+            @if (selectorHora() === 'horaCierre') {
+              <div class="hora-selector" [id]="id('horaCierre-selector')" role="dialog"
+                [attr.aria-labelledby]="id('horaCierre-selector-titulo')"
+                (keydown.escape)="cerrarSelectorHora()">
+                <h3 [id]="id('horaCierre-selector-titulo')">Elegí la hora de cierre</h3>
+                <div class="hora-selector__campos">
+                  <label [attr.for]="id('horaCierre-selector-hora')">Hora
+                    <select [id]="id('horaCierre-selector-hora')" [value]="horaTemporalParte('hora')"
+                      (change)="actualizarHoraTemporal('hora', $event)">
+                      @for (hora of horasDisponibles; track hora) { <option [value]="hora">{{ hora }}</option> }
+                    </select>
+                  </label>
+                  <span class="hora-selector__separador" aria-hidden="true">:</span>
+                  <label [attr.for]="id('horaCierre-selector-minuto')">Minutos
+                    <select [id]="id('horaCierre-selector-minuto')" [value]="horaTemporalParte('minuto')"
+                      (change)="actualizarHoraTemporal('minuto', $event)">
+                      @for (minuto of minutosDisponibles; track minuto) { <option [value]="minuto">{{ minuto }}</option> }
+                    </select>
+                  </label>
+                </div>
+                <div class="hora-selector__acciones">
+                  <button dsButton type="button" (click)="cerrarSelectorHora()">Cancelar</button>
+                  <button dsButton variant="primary" type="button" (click)="confirmarHora()">Aplicar hora</button>
+                </div>
+              </div>
+            }
+          </div>
+          @if (errorDe('horaCierre', formulario.horaCierre()); as error) {
+            <p class="error" role="alert">{{ error }}</p>
+          }
+          @if (formulario.horaApertura().touched() && formulario.horaCierre().touched() && horariosInvalidos()) {
+            <p class="error" role="alert">La hora de cierre debe ser posterior a la de apertura.</p>
+          }
+        </div>
+        <div class="campo campo--ancho">
+          <label [attr.for]="id('dias')">Días de apertura</label>
+          <div class="dias" [id]="id('dias')">
+            @for (dia of dias; track dia) {
+              <label class="dia-cuadrado" [class.dia-cuadrado--activo]="diaSeleccionado(dia)">
+                <input type="checkbox" [id]="id('dia-' + dia)" [value]="dia"
+                  [checked]="diaSeleccionado(dia)" (change)="alternarDia(dia)" />
+                <span>{{ abreviaturas[dia] }}</span>
+              </label>
+            }
+          </div>
+          @if ((formulario().touched() || intentadoEnviar()) && (model().diasApertura?.length ?? 0) === 0) {
+            <p class="error" role="alert">Seleccioná al menos un día de apertura.</p>
+          }
+        </div>
+      </div>
+    </section>
 
-    <div class="campo">
-      <ds-input
-        label="Hora de apertura"
-        [error]="errorDe('horaApertura', formulario.horaApertura()) ?? ''"
-      >
-        <input [id]="id('horaApertura')" type="time" [formField]="formulario.horaApertura" />
-      </ds-input>
-    </div>
-
-    <div class="campo">
-      <ds-input label="Hora de cierre" [error]="errorDe('horaCierre', formulario.horaCierre()) ?? ''">
-        <input [id]="id('horaCierre')" type="time" [formField]="formulario.horaCierre" />
-      </ds-input>
-      @if (formulario.horaApertura().touched() && formulario.horaCierre().touched() && horariosInvalidos()) {
-        <p class="error" role="alert">La hora de cierre debe ser posterior a la de apertura.</p>
-      }
-    </div>
-
-    <div class="campo">
-      <label [attr.for]="id('dias')">Días de apertura</label>
-      <div class="dias" [id]="id('dias')">
-        @for (dia of dias; track dia) {
-          <label class="dia-cuadrado" [class.dia-cuadrado--activo]="diaSeleccionado(dia)">
-            <input
-              type="checkbox"
-              [id]="id('dia-' + dia)"
-              [value]="dia"
-              [checked]="diaSeleccionado(dia)"
-              (change)="alternarDia(dia)"
-            />
-            <span>{{ abreviaturas[dia] }}</span>
-          </label>
+    <section class="seccion seccion--foto" [attr.aria-labelledby]="id('foto-titulo')">
+      <header class="seccion__encabezado">
+        <h2 [id]="id('foto-titulo')">Imagen principal</h2>
+        <p>Elegí una foto representativa para mostrar tu sucursal.</p>
+      </header>
+      <div class="campo">
+        <label class="campo__etiqueta" [attr.for]="id('foto')">Foto de la sucursal</label>
+        <input class="foto-archivo" [id]="id('foto')" type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif" (change)="onFileChange($event)" />
+        <p class="campo__ayuda">Formatos permitidos: JPG, PNG, WEBP o GIF.</p>
+        @if (fotoPreview(); as previa) {
+          <img [src]="previa" alt="Vista previa de la foto seleccionada" class="foto-preview" />
+        } @else if (fotoVigente(); as vigente) {
+          <img [src]="vigente" alt="Foto actual de la sucursal" class="foto-preview" />
+        }
+        @if (modo() === 'modificar') {
+          <p class="campo__ayuda">Si no elegís una imagen nueva se conserva la foto actual de la sucursal.</p>
+        }
+        @if (intentadoEnviar() && fotoRequerida() && !tieneFoto()) {
+          <p class="error" role="alert">Seleccioná una foto principal.</p>
+        }
+        @if (subiendoFoto()) {
+          <p class="estado-subida" role="status" aria-live="polite">Subiendo imagen…</p>
         }
       </div>
-      @if ((formulario().touched() || intentadoEnviar()) && (model().diasApertura?.length ?? 0) === 0) {
-        <p class="error" role="alert">Seleccioná al menos un día de apertura.</p>
-      }
-    </div>
-
-    <div class="campo">
-      <ds-input
-        label="Teléfono (opcional)"
-        [error]="errorDe('telefono', formulario.telefono()) ?? ''"
-      >
-        <input [id]="id('telefono')" type="tel" autocomplete="tel" [formField]="formulario.telefono" />
-      </ds-input>
-    </div>
-
-    <div class="campo">
-      <label [attr.for]="id('foto')">Foto principal</label>
-      <input
-        [id]="id('foto')"
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        (change)="onFileChange($event)"
-      />
-      @if (fotoPreview(); as previa) {
-        <img [src]="previa" alt="Vista previa" class="foto-preview" />
-      } @else if (fotoVigente(); as vigente) {
-        <img [src]="vigente" alt="Foto actual de la sucursal" class="foto-preview" />
-      }
-      @if (modo() === 'modificar') {
-        <p class="campo__ayuda">
-          Si no elegís una imagen nueva se conserva la foto actual de la sucursal.
-        </p>
-      }
-      @if (intentadoEnviar() && fotoRequerida() && !tieneFoto()) {
-        <p class="error" role="alert">Seleccioná una foto principal.</p>
-      }
-      @if (subiendoFoto()) {
-        <p role="status" aria-live="polite">Subiendo imagen…</p>
-      }
-    </div>
+    </section>
 
     <div class="acciones">
       <ng-content select="[accionCancelar]"></ng-content>

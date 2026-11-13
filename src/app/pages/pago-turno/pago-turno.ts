@@ -23,6 +23,7 @@ import { EmpleadoDTO } from '../../models/empleado';
 import { ServicioDTO } from '../../models/servicio';
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import { TurnoMiniDTO } from '../../models/turno';
+import { fotoPerfilDe } from '../../shared/foto-perfil';
 
 
 const FORMATO_FECHA_COMPLETA = new Intl.DateTimeFormat('es-AR', {
@@ -299,7 +300,7 @@ export class PagoTurno {
   }
 
   protected fotoEmpleado(): string {
-    return this.empleado()?.urlFotoPerfil?.trim() || this.placeholderAvatar;
+    return fotoPerfilDe(this.empleado()) ?? this.placeholderAvatar;
   }
 
   protected onImageErrorSucursal(event: Event): void {

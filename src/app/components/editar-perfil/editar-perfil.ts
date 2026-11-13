@@ -11,6 +11,7 @@ import { inicialesDeTexto } from '../../models/solicitud-empleado';
 import { UsuarioPerfilDTO } from '../../models/usuario';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { fotoPerfilDe } from '../../shared/foto-perfil';
 
 import { DsModalComponent } from '../../shared/ui/misc/misc.component';
 
@@ -51,6 +52,11 @@ export class EditarPerfil {
   protected readonly iniciales = computed(() =>
     inicialesDeTexto([this.perfil()?.nombre, this.perfil()?.apellido].filter(Boolean).join(' ')),
   );
+
+  protected readonly fotoPerfil = computed(() => {
+    const foto = fotoPerfilDe(this.perfil());
+    return foto && !this.fotoFallida() ? foto : null;
+  });
   protected nombre = '';
   protected apellido = '';
   protected email = '';
@@ -187,9 +193,11 @@ export class EditarPerfil {
 
   protected restablecer(): void {
     const perfil = this.perfil();
-    if (!perfil?.fotoPerfil) return;
+    if (!perfil || !fotoPerfilDe(perfil)) return;
     this.operar(this.usuarios.restablecerFotoPerfil(), 'Foto de perfil restablecida.', () => {
-      this.perfil.set({ ...perfil, fotoPerfil: null });
+      const actual = this.perfil();
+      if (!actual) return;
+      this.perfil.set({ ...actual, fotoPerfil: null, urlFotoPerfil: null });
       this.fotoFallida.set(false);
       this.cambiarFoto = false;
       this.refrescarSesion();

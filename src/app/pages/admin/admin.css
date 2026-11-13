@@ -266,6 +266,12 @@
   margin-top: 4px;
 }
 
+ds-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-4);
+}
+
 .sucursales-admin__busqueda {
   width: min(100%, 25rem);
 }

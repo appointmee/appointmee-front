@@ -61,7 +61,7 @@ describe('Gráficos ECharts', () => {
         },
         { provide: estadisticasService, useValue: { administrador: admin, empleador } },
         { provide: sucursalService, useValue: { listarPropias: () => of([
-          { id: 9, nombre: 'Sucursal', categoria: 'BARBERIA', fotoPerfil: null, puntuacion: 0, cantidadPuntuaciones: 0 },
+          { id: 9, nombre: 'Sucursal', categoria: 'BARBERIA', fotoPerfil: 'https://example.com/sucursal.jpg', puntuacion: 0, cantidadPuntuaciones: 0 },
           { id: 12, nombre: 'Otra sucursal', categoria: 'BARBERIA', fotoPerfil: null, puntuacion: 0, cantidadPuntuaciones: 0 },
         ]) } },
       ],
@@ -83,11 +83,17 @@ describe('Gráficos ECharts', () => {
   it('renderiza gráficos administrativos con series y tablas accesibles', async () => {
     await abrir('administrador');
 
+    expect(fixture.nativeElement.querySelector('.graficos__fondo')).toBeNull();
+
     const opciones = fixture.debugElement.queryAll(By.directive(EchartsStubDirective))
       .map((nodo) => nodo.injector.get(EchartsStubDirective).options);
 
     expect(opciones).toHaveLength(3);
     expect(opciones[0].series).toHaveLength(5);
+    expect(opciones[0].media).toEqual([
+      { query: { maxWidth: 768 }, option: { grid: { top: 92 } } },
+    ]);
+    expect(fixture.nativeElement.querySelector('.grafico-echarts--turnos-periodo')).not.toBeNull();
     expect(opciones[1].series).toHaveLength(3);
     expect(fixture.nativeElement.querySelectorAll('table').length).toBeGreaterThanOrEqual(2);
     expect(fixture.nativeElement.querySelectorAll('[role="img"]').length).toBe(3);
@@ -101,10 +107,20 @@ describe('Gráficos ECharts', () => {
       .map((nodo) => nodo.injector.get(EchartsStubDirective).options);
 
     expect(opciones).toHaveLength(3);
+    expect(opciones[0].media).toEqual([
+      { query: { maxWidth: 768 }, option: { grid: { top: 92 } } },
+    ]);
+    expect(fixture.nativeElement.querySelector('.grafico-echarts--turnos-periodo')).not.toBeNull();
     expect((opciones[1].series as { name: string }[])[0].name).toBe('Turnos');
     expect((opciones[2].series as { name: string }[])[0].name).toBe('Tasa de cancelación');
     expect(fixture.nativeElement.textContent).toContain('Demanda por servicio');
     expect(fixture.nativeElement.textContent).toContain('Sucursal: Sucursal');
+    const pagina = fixture.nativeElement.querySelector('main.graficos');
+    const fondo = fixture.nativeElement.querySelector('.graficos__fondo');
+    expect(fondo?.parentElement).toBe(pagina);
+    expect(pagina?.querySelector('.graficos__contenido .encabezado')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.graficos__fondo img')?.getAttribute('src'))
+      .toBe('https://example.com/sucursal.jpg');
     expect(fixture.nativeElement.textContent).not.toMatch(/Gráfico [1-5]/);
     expect(fixture.nativeElement.textContent).not.toContain('Ocupación: dato no disponible');
     expect(fixture.nativeElement.textContent).not.toContain('Ingresos y pagos: dato no disponible');

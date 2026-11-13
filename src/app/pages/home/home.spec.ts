@@ -60,41 +60,30 @@ describe('Home branch autocomplete', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Sucursales disponibles');
   });
 
-  it('tilts the hero card toward the pointer and resets it when the pointer leaves', () => {
+  it('incluye la secuencia visual de confirmación y el recorrido de pasos', () => {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
-    const card = fixture.nativeElement.querySelector(
-      '.hero-card:not(.hero-card--float)',
-    ) as HTMLElement;
-    vi.spyOn(card, 'getBoundingClientRect').mockReturnValue({
-      left: 0,
-      top: 0,
-      width: 100,
-      height: 100,
-      right: 100,
-      bottom: 100,
-      x: 0,
-      y: 0,
-      toJSON: () => ({}),
-    });
 
-    const pointerMove = new Event('pointermove', { bubbles: true });
-    Object.defineProperties(pointerMove, {
-      pointerType: { value: 'mouse' },
-      clientX: { value: 75 },
-      clientY: { value: 25 },
-    });
-    card.dispatchEvent(pointerMove);
+    expect(
+      fixture.nativeElement.querySelector('.booking-card__slot--chosen .hero-card__slot-check'),
+    ).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.hero-card__mini')?.textContent).toContain(
+      'Turno confirmado',
+    );
+    expect(fixture.nativeElement.querySelector('.steps__track-fill')).not.toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('.steps .step__number')).toHaveLength(7);
+    expect(fixture.nativeElement.querySelector('.booking-story .hero-card')).not.toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('.section__glow')).toHaveLength(3);
+  });
+
+  it('muestra la abeja proporcionada en el hero como imagen decorativa', () => {
+    const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
+    const bee = fixture.nativeElement.querySelector('.hero__bee') as HTMLImageElement | null;
 
-    expect(card.style.getPropertyValue('--pointer-rotate-x')).toBe('3.00deg');
-    expect(card.style.getPropertyValue('--pointer-rotate-y')).toBe('3.00deg');
-
-    card.dispatchEvent(new Event('pointerleave'));
-    fixture.detectChanges();
-
-    expect(card.style.getPropertyValue('--pointer-rotate-x')).toBe('0deg');
-    expect(card.style.getPropertyValue('--pointer-rotate-y')).toBe('0deg');
+    expect(bee?.getAttribute('src')).toBe('abeja-icono.svg');
+    expect(bee?.getAttribute('alt')).toBe('');
+    expect(fixture.nativeElement.querySelector('.hero__visual .hero-card')).toBeNull();
   });
 
   it('waits for two characters and debounces backend suggestions for 350 ms', async () => {
@@ -294,8 +283,9 @@ describe('Home branch autocomplete', () => {
       const enlacesSucursales = Array.from(
         fixture.nativeElement.querySelectorAll('a[href^="/sucursales"]'),
       ) as HTMLAnchorElement[];
-      expect(enlacesSucursales.some((enlace) => enlace.textContent?.includes('Ver todas')))
-        .toBe(true);
+      expect(enlacesSucursales.some((enlace) => enlace.textContent?.includes('Ver todas'))).toBe(
+        true,
+      );
     });
 
     it('muestra estado vacío "no hay sucursales en la plataforma" sin filtros', () => {
@@ -321,8 +311,9 @@ describe('Home branch autocomplete', () => {
       fixture.detectChanges();
 
       expect(fixture.nativeElement.querySelector('.grid[aria-busy="true"]')).not.toBeNull();
-      expect(fixture.nativeElement.querySelector('.sucursales-destacadas__aviso').textContent)
-        .toContain('Cargando');
+      expect(
+        fixture.nativeElement.querySelector('.sucursales-destacadas__aviso').textContent,
+      ).toContain('Cargando');
       expect(listar).toHaveBeenCalledTimes(2);
       listado$.next([]);
       fixture.detectChanges();

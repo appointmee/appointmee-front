@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { Location } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -24,6 +25,7 @@ import { reservaContextoService } from '../../services/reserva-contexto-service'
 import { servicioService } from '../../services/servicio-service';
 import { sucursalService } from '../../services/sucursal-service';
 import { turnoService } from '../../services/turno-service';
+import { fotoPerfilDe } from '../../shared/foto-perfil';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 
 type Resultado<T> =
@@ -95,6 +97,7 @@ export class ElegirTurno {
   private readonly turnosApi = inject(turnoService);
   private readonly reservaContexto = inject(reservaContextoService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly location = inject(Location);
 
   protected readonly sucursalId = signal<number | null>(null);
   protected readonly servicioId = signal<number | null>(null);
@@ -264,6 +267,22 @@ export class ElegirTurno {
       ),
     );
   });
+
+  protected readonly placeholderAvatar = `data:image/svg+xml;utf8,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240"><rect width="240" height="240" fill="#10151d"/><circle cx="120" cy="92" r="38" fill="#39424f"/><path d="M48 216c9-47 36-72 72-72s63 25 72 72" fill="#39424f"/></svg>',
+  )}`;
+
+  protected fotoEmpleado(): string {
+    return fotoPerfilDe(this.empleado()) ?? this.placeholderAvatar;
+  }
+
+  protected onImageErrorEmpleado(event: Event): void {
+    const img = event.target as HTMLImageElement | null;
+    if (img) {
+      img.onerror = null;
+      img.src = this.placeholderAvatar;
+    }
+  }
 
   protected readonly volverLink = computed<readonly (string | number)[]>(() => {
     const sucursalId = this.sucursalId();
@@ -521,9 +540,7 @@ export class ElegirTurno {
 
     if (!this.auth.tieneAlgunRol('CLIENTE')) {
       this.sinPermisoReserva.set(true);
-      this.aviso.set(
-        'No tenes permiso para reservar',
-      );
+      this.aviso.set('Tu cuenta no tiene permiso para reservar');
       return;
     }
 
@@ -844,12 +861,15 @@ export class ElegirTurno {
     return params;
   }
 
-  private sincronizarUrl(): void {
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: this.queryParamsSeleccion(),
-      replaceUrl: true,
-    });
+    private sincronizarUrl(): void {
+    const url = this.router
+      .createUrlTree([], {
+        relativeTo: this.route,
+        queryParams: this.queryParamsSeleccion(),
+      })
+      .toString();
+
+    this.location.replaceState(url);
   }
 
   private aplicarErrorEmpleados(error: HttpErrorResponse): void {

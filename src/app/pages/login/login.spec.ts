@@ -80,8 +80,8 @@ describe('Login con Signal Forms', () => {
   it('valida campos vacíos y email sin exigir complejidad de contraseña', () => {
     enviar(); expect(auth.login).not.toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Ingresá tu email.');
-    expect(fixture.nativeElement.querySelector('.login__summary a')).toBeNull();
-    expect(fixture.nativeElement.querySelector('.login__summary').textContent).toContain('Contraseña: Ingresá tu contraseña.');
+    expect(fixture.nativeElement.textContent).toContain('Ingresá tu contraseña.');
+    expect(fixture.nativeElement.querySelector('.login__summary')).toBeNull();
     page.loginModel.set({ email: 'invalido', password: 'x' });
     fixture.detectChanges(); enviar(); expect(auth.login).not.toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Ingresá un email válido.');

@@ -15,6 +15,8 @@ import {
   Subject,
   Subscription,
   catchError,
+  finalize,
+  firstValueFrom,
   forkJoin,
   map,
   of,
@@ -29,6 +31,7 @@ import {
 } from '../../shared/ui/misc/misc.component';
 import { EstadoTurno, TurnoClienteDetalleDTO, TurnoMiniDTO } from '../../models/turno';
 import { SucursalMiniDTO } from '../../models/sucursal';
+import { pagoService } from '../../services/pago-service';
 import { reseniaService } from '../../services/resenia-service';
 import { servicioService } from '../../services/servicio-service';
 import { sucursalService } from '../../services/sucursal-service';
@@ -98,6 +101,7 @@ export class MisTurnos {
   private readonly serviciosApi = inject(servicioService);
   private readonly sucursalesApi = inject(sucursalService);
   private readonly reseniasApi = inject(reseniaService);
+  private readonly pagosApi = inject(pagoService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly recargar = new Subject<void>();
@@ -108,7 +112,10 @@ export class MisTurnos {
 
   private detalleSub?: Subscription;
   private sucursalSub?: Subscription;
+  private pagoSeguimientoSub?: Subscription;
+  private pagoSeguimientoTimer?: ReturnType<typeof setTimeout>;
   private detalleRevision = 0;
+  private pagoSeguimientoRevision = 0;
 
   protected readonly estados = ESTADOS;
   protected readonly filtro = signal<FiltroEstado>('TODOS');
@@ -127,6 +134,9 @@ export class MisTurnos {
   protected readonly sucursalCargando = signal(false);
   protected readonly sucursalError = signal<string | null>(null);
   private readonly fotoSucursalFallida = signal<string | null>(null);
+
+  protected readonly pagandoTurnoId = signal<number | null>(null);
+  protected readonly pagoError = signal<string | null>(null);
 
   protected readonly puntuaciones = PUNTUACIONES;
   protected readonly reseniaAbierta = signal(false);
@@ -272,6 +282,7 @@ export class MisTurnos {
 
   protected cerrarDetalle(): void {
     this.cancelarConsultas();
+    this.cancelarSeguimientoPago();
     this.turnoSeleccionado.set(null);
     this.detalle.set(null);
     this.detalleError.set(null);
@@ -280,6 +291,8 @@ export class MisTurnos {
     this.sucursal.set(null);
     this.sucursalError.set(null);
     this.sucursalCargando.set(false);
+    this.pagandoTurnoId.set(null);
+    this.pagoError.set(null);
   }
 
   protected reintentarDetalle(): void {
@@ -293,6 +306,31 @@ export class MisTurnos {
     const detalle = this.detalle();
     if (!detalle || this.sucursalCargando()) return;
     this.cargarSucursal(detalle, this.detalleRevision);
+  }
+
+  protected async pagarTurnoPendiente(): Promise<void> {
+    const turno = this.turnoSeleccionado();
+    const detalle = this.detalle();
+    if (!turno || !detalle || detalle.estadoTurno !== 'PENDIENTE') return;
+    if (this.pagandoTurnoId() !== null) return;
+
+    this.pagandoTurnoId.set(turno.id);
+    this.pagoError.set(null);
+
+    try {
+      const url = await firstValueFrom(this.pagosApi.crearPreferencia(turno.id));
+      if (!url?.trim()) {
+        throw new Error('No pudimos obtener el enlace de pago.');
+      }
+
+      this.guardarContextoPago(turno.id);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      this.iniciarSeguimientoPago(turno.id);
+    } catch (error) {
+      this.pagoError.set(this.mensajeErrorPago(error));
+    } finally {
+      this.pagandoTurnoId.set(null);
+    }
   }
 
   /** Solo los turnos realizados y todavía sin reseña se pueden reseñar. */
@@ -468,6 +506,9 @@ export class MisTurnos {
 
   private cargarDetalle(id: number, reintento = false): void {
     this.cancelarConsultas();
+    this.cancelarSeguimientoPago();
+    this.pagoError.set(null);
+    this.pagandoTurnoId.set(null);
     const revision = this.detalleRevision;
 
     if (!reintento) {
@@ -633,6 +674,124 @@ export class MisTurnos {
       return 'Revisá la puntuación y el comentario ingresados.';
     }
     return 'No pudimos publicar tu reseña. Probá de nuevo en unos segundos.';
+  }
+
+  private mensajeErrorPago(error: unknown): string {
+    const status =
+      error instanceof HttpErrorResponse
+        ? error.status
+        : (error as { status?: number } | null)?.status;
+    const cuerpo =
+      error instanceof HttpErrorResponse
+        ? error.error
+        : (error as { error?: unknown } | null)?.error;
+
+    if (typeof cuerpo === 'string' && cuerpo.trim() !== '') return cuerpo;
+
+    const cuerpoObjeto =
+      cuerpo && typeof cuerpo === 'object'
+        ? (cuerpo as { mensaje?: unknown; message?: unknown })
+        : null;
+    const mensajeBackend =
+      typeof cuerpoObjeto?.mensaje === 'string'
+        ? cuerpoObjeto.mensaje
+        : typeof cuerpoObjeto?.message === 'string'
+          ? cuerpoObjeto.message
+          : '';
+    if (mensajeBackend.trim() !== '') return mensajeBackend;
+
+    if (status === 0) {
+      return 'No pudimos conectarnos. Revisá tu conexión e intentá nuevamente.';
+    }
+    if (status === 401) {
+      return 'Tu sesión expiró. Iniciá sesión nuevamente.';
+    }
+    if (status === 403) {
+      return 'No tenés permisos para pagar este turno.';
+    }
+    if (status === 404) {
+      return 'No encontramos el turno para iniciar el pago.';
+    }
+    if (status === 409) {
+      return 'Este turno ya no está disponible para pagar.';
+    }
+    return 'No pudimos iniciar el pago. Probá de nuevo en unos segundos.';
+  }
+
+  private guardarContextoPago(turnoId: number): void {
+    try {
+      const contexto = {
+        turnoId,
+        sucursalId: this.sucursal()?.id ?? null,
+      };
+      sessionStorage.setItem('appointmee.pago', JSON.stringify(contexto));
+    } catch {
+      // Ignorar errores de almacenamiento; no deben interrumpir el pago.
+    }
+  }
+
+  private iniciarSeguimientoPago(turnoId: number): void {
+    this.cancelarSeguimientoPago();
+    const revision = ++this.pagoSeguimientoRevision;
+    const consultar = (intentosRestantes: number): void => {
+      if (revision !== this.pagoSeguimientoRevision) return;
+      if (this.turnoSeleccionado()?.id !== turnoId) return;
+      const estadoActual = this.detalleEstado();
+      if (estadoActual && estadoActual !== 'PENDIENTE') return;
+      if (intentosRestantes <= 0) return;
+
+      this.pagoSeguimientoTimer = setTimeout(() => {
+        if (revision !== this.pagoSeguimientoRevision) return;
+        if (this.turnoSeleccionado()?.id !== turnoId) return;
+        this.pagoSeguimientoSub?.unsubscribe();
+        this.pagoSeguimientoSub = this.turnosApi
+          .detallePropio(turnoId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (detalle) => {
+              if (revision !== this.pagoSeguimientoRevision) return;
+              if (this.turnoSeleccionado()?.id !== turnoId) return;
+              if (detalle.estadoTurno !== 'PENDIENTE') {
+                this.actualizarTurnoIndividual(turnoId, detalle);
+                this.cancelarSeguimientoPago();
+                return;
+              }
+              consultar(intentosRestantes - 1);
+            },
+            error: () => {
+              if (revision !== this.pagoSeguimientoRevision) return;
+              consultar(intentosRestantes - 1);
+            },
+          });
+      }, 5000);
+    };
+    consultar(60);
+  }
+
+  private actualizarTurnoIndividual(
+    turnoId: number,
+    detalle: TurnoClienteDetalleDTO,
+  ): void {
+    if (this.turnoSeleccionado()?.id === turnoId) {
+      this.detalle.set(detalle);
+      this.detalleCargando.set(false);
+      this.detalleError.set(null);
+    }
+    this.turnos.update((turnos) =>
+      turnos.map((turno) =>
+        turno.id === turnoId ? { ...turno, estadoTurno: detalle.estadoTurno } : turno,
+      ),
+    );
+  }
+
+  private cancelarSeguimientoPago(): void {
+    this.pagoSeguimientoRevision++;
+    if (this.pagoSeguimientoTimer) {
+      clearTimeout(this.pagoSeguimientoTimer);
+      this.pagoSeguimientoTimer = undefined;
+    }
+    this.pagoSeguimientoSub?.unsubscribe();
+    this.pagoSeguimientoSub = undefined;
   }
 
   private enfocarPrimerCampoInvalido(): void {

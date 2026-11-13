@@ -74,6 +74,7 @@ export class ServiciosSucursal {
   protected readonly sucursalIdValido = Number.isInteger(this.sucursalId) && this.sucursalId > 0;
 
   protected readonly servicios = signal<readonly ServicioDTO[]>([]);
+  protected readonly fotoFondo = signal<string | null>(null);
   protected readonly cargando = signal(this.sucursalIdValido);
   protected readonly error = signal<string | null>(null);
   protected readonly reintentando = signal(false);
@@ -234,6 +235,12 @@ export class ServiciosSucursal {
       return;
     }
 
+    this.sucursalApi?.obtenerPorId(this.sucursalId, true).pipe(
+      map((sucursal) => sucursal.fotoPerfil?.trim() || null),
+      catchError(() => of(null)),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe((foto) => this.fotoFondo.set(foto));
+
     afterEveryRender(() => this.medirDescripciones());
 
     this.recargar
@@ -267,6 +274,10 @@ export class ServiciosSucursal {
     if (this.reintentando()) return;
     this.reintentando.set(true);
     this.recargar.next();
+  }
+
+  protected onFotoFondoError(): void {
+    this.fotoFondo.set(null);
   }
 
   /** Abre el detalle del servicio elegido en el listado. */

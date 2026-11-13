@@ -27,17 +27,6 @@
         : 'Tu contraseña se actualizó. Ya podés iniciar sesión' }}</p>
     }
 
-    @if (resumenErrores().length) {
-      <div class="login__summary" role="alert" aria-live="assertive">
-        <p>Corregí los siguientes campos:</p>
-        <ul>
-          @for (error of resumenErrores(); track error.id) {
-            <li>{{ error.label }}: {{ error.message }}</li>
-          }
-        </ul>
-      </div>
-    }
-
     <div class="login__field">
       <label for="login-email">Email</label>
       <ds-input>

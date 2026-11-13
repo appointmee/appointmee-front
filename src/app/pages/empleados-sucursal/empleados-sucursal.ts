@@ -21,6 +21,7 @@ import {
 import { UsuarioResponseDTO } from '../../models/usuario';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { DsModalComponent } from '../../shared/ui/misc/misc.component';
+import { fotoPerfilDe } from '../../shared/foto-perfil';
 import { authService } from '../../services/auth-service';
 import { empleadoService } from '../../services/empleado-service';
 import { sucursalService } from '../../services/sucursal-service';
@@ -279,7 +280,7 @@ export class EmpleadosSucursal {
   }
 
   protected foto(empleado: EmpleadoSucursalDTO): string {
-    return empleado.urlFotoPerfil?.trim() || this.placeholderAvatar;
+    return fotoPerfilDe(empleado) ?? this.placeholderAvatar;
   }
 
   protected onImageError(event: Event): void {

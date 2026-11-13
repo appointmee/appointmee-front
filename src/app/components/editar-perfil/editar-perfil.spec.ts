@@ -52,6 +52,20 @@ describe('Editar perfil', () => {
     fixture.detectChanges();
   }
 
+  it('presenta los datos personales, el correo y el guardado en secciones claras', () => {
+    expect(host.querySelector('.foto__avatar .iniciales')?.textContent).toBe('AP');
+    expect(host.querySelector('.foto__descripcion')?.textContent).toContain('JPG, PNG, WEBP o GIF');
+    expect(host.querySelector('.foto__botones .ds-btn--primary')?.textContent).toContain('Actualizar foto');
+    expect(host.querySelector('.foto__botones button:last-child')?.textContent).toContain('Quitar foto');
+    expect(host.querySelector('.datos__encabezado h2')?.textContent).toContain('Datos personales');
+    expect(host.querySelector('.datos__encabezado p')?.textContent).toContain('Administrá tu información');
+    expect(host.querySelectorAll('.datos__formulario .correo-actual--personal')).toHaveLength(2);
+    expect(host.querySelector('.correo-actual--email')?.textContent).toContain('ana@example.com');
+    expect(host.querySelector('.datos__acciones button')?.textContent).toContain('Guardar cambios');
+    expect(getComputedStyle(host.querySelector('.datos__formulario')!).width).toBe('100%');
+    expect(getComputedStyle(host.querySelector('.correo-actual--email')!).width).toBe('100%');
+  });
+
   it('habilita los datos con el lápiz y muestra los errores debajo del campo', async () => {
     expect(host.querySelector('#perfil-nombre')).toBeNull();
     expect(host.querySelector('#perfil-apellido')).toBeNull();

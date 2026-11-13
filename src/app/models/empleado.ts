@@ -1,3 +1,4 @@
+import { fotoPerfilDe } from '../shared/foto-perfil';
 import { UsuarioResponseDTO } from './usuario';
 
 /**
@@ -8,6 +9,7 @@ export interface EmpleadoDTO {
   readonly nombre: string;
   readonly apellido: string;
   readonly urlFotoPerfil: string | null;
+  readonly fotoPerfil?: string | null;
   readonly puntuacion: number | null;
   readonly cantidadPuntuaciones: number | null;
 }
@@ -18,6 +20,7 @@ export interface EmpleadoDTO {
  * puntuación promedio que expone `/sucursales/{id}/elegir-empleado`.
  */
 export interface EmpleadoSucursalDTO extends UsuarioResponseDTO {
+  readonly fotoPerfil?: string | null;
   readonly puntuacion: number | null;
   readonly cantidadPuntuaciones: number | null;
 }
@@ -54,13 +57,15 @@ export function combinarEmpleadosSucursal(
 
     vistos.add(usuario.id);
     const puntuacion = porId.get(usuario.id);
+    const foto = fotoPerfilDe(usuario) ?? fotoPerfilDe(puntuacion);
 
     lista.push({
       id: usuario.id,
       nombre: usuario.nombre,
       apellido: usuario.apellido,
       email: usuario.email,
-      urlFotoPerfil: usuario.urlFotoPerfil,
+      urlFotoPerfil: foto,
+      fotoPerfil: foto,
       puntuacion: puntuacion?.puntuacion ?? null,
       cantidadPuntuaciones: puntuacion?.cantidadPuntuaciones ?? null,
     });

@@ -77,26 +77,39 @@
             }
           </div>
 
-          <div class="contexto__item">
+                    <div class="contexto__item contexto__item--empleado">
             <span class="contexto__etiqueta">Profesional</span>
-            <span class="contexto__valor">{{ resumenContexto().empleado.nombre }}</span>
-            @if (resumenContexto().empleado.tienePuntuacion) {
-              <p class="contexto__rating">
-                <span class="contexto__puntuacion">
-                  {{ resumenContexto().empleado.numero }}
-                </span>
-                <span class="contexto__abejas" aria-hidden="true">
-                  @for (abeja of resumenContexto().empleado.abejas; track $index) {
-                    <span class="contexto__abeja">🐝</span>
-                  }
-                </span>
-                <span class="sr-only">
-                  Puntuación promedio {{ resumenContexto().empleado.numero }}.
-                </span>
-              </p>
-            } @else {
-              <p class="contexto__sin-puntuacion">Todavía no tiene reseñas.</p>
-            }
+            <div class="contexto__empleado">
+              <img
+                class="contexto__empleado-foto"
+                [src]="fotoEmpleado()"
+                [alt]="'Foto de ' + resumenContexto().empleado.nombre"
+                loading="lazy"
+                decoding="async"
+                referrerpolicy="no-referrer"
+                (error)="onImageErrorEmpleado($event)"
+              />
+              <div class="contexto__empleado-info">
+                <span class="contexto__valor">{{ resumenContexto().empleado.nombre }}</span>
+                @if (resumenContexto().empleado.tienePuntuacion) {
+                  <p class="contexto__rating">
+                    <span class="contexto__puntuacion">
+                      {{ resumenContexto().empleado.numero }}
+                    </span>
+                    <span class="contexto__abejas" aria-hidden="true">
+                      @for (abeja of resumenContexto().empleado.abejas; track $index) {
+                        <span class="contexto__abeja">🐝</span>
+                      }
+                    </span>
+                    <span class="sr-only">
+                      Puntuación promedio {{ resumenContexto().empleado.numero }}.
+                    </span>
+                  </p>
+                } @else {
+                  <p class="contexto__sin-puntuacion">Todavía no tiene reseñas.</p>
+                }
+              </div>
+            </div>
           </div>
         </aside>
       }
