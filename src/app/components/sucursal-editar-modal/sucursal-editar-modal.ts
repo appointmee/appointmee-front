@@ -1,4 +1,5 @@
 import { DsModalComponent } from '../../shared/ui/misc/misc.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -33,7 +34,7 @@ import { SucursalFormDatos, SucursalFormModel } from '../sucursal-form/sucursal-
  */
 @Component({
   selector: 'app-sucursal-editar-modal',
-  imports: [DsModalComponent, SucursalForm],
+  imports: [DsModalComponent, DsButtonComponent, SucursalForm],
   templateUrl: './sucursal-editar-modal.html',
   styleUrl: './sucursal-editar-modal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -5,6 +5,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  Injector,
+  afterNextRender,
   computed,
   effect,
   inject,
@@ -37,6 +40,8 @@ type EstadoCampo = {
   errors(): readonly { message?: string }[];
 };
 
+type CampoHorario = 'horaApertura' | 'horaCierre';
+
 /** Resultado de subir una imagen a Cloudinary. */
 interface FotoSubida {
   url: string;
@@ -66,6 +71,8 @@ export class SucursalForm {
   private readonly http = inject(HttpClient, { optional: true });
   private readonly backend = inject(backendService, { optional: true });
   private readonly destroyRef = inject(DestroyRef);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   /** Modo del formulario: alta o modificación de una sucursal existente. */
   readonly modo = input<'crear' | 'modificar'>('crear');
@@ -97,6 +104,16 @@ export class SucursalForm {
 
   /** Valores del formulario. */
   readonly model = signal<SucursalFormModel>({ ...SUCURSAL_FORM_VACIO });
+
+  /** Estado del selector visual para editar apertura o cierre. */
+  protected readonly selectorHora = signal<CampoHorario | null>(null);
+  protected readonly horaTemporal = signal('09:00');
+  protected readonly horasDisponibles = Array.from({ length: 24 }, (_, hora) =>
+    String(hora).padStart(2, '0'),
+  );
+  protected readonly minutosDisponibles = Array.from({ length: 60 }, (_, minuto) =>
+    String(minuto).padStart(2, '0'),
+  );
 
   /** Formulario con las validaciones del alta de sucursal. */
   readonly formulario = form(this.model, (campos) => {
@@ -277,6 +294,50 @@ export class SucursalForm {
   /** El día está marcado como día de apertura. */
   protected diaSeleccionado(dia: string): boolean {
     return (this.model().diasApertura ?? []).includes(dia);
+  }
+
+  /** Abre el selector propio, precargado con la hora actual o un valor sugerido. */
+  protected abrirSelectorHora(campo: CampoHorario): void {
+    const predeterminada = campo === 'horaApertura' ? '09:00' : '18:00';
+    this.horaTemporal.set(this.model()[campo] || predeterminada);
+    this.selectorHora.set(campo);
+    afterNextRender(() => this.host.nativeElement
+      .querySelector<HTMLSelectElement>(`#${this.id(campo + '-selector')} select`)?.focus(), {
+        injector: this.injector,
+      });
+  }
+
+  /** Actualiza hora o minuto del selector temporal sin modificar el formulario aún. */
+  protected actualizarHoraTemporal(parte: 'hora' | 'minuto', event: Event): void {
+    const valor = (event.target as HTMLSelectElement).value;
+    const [hora, minuto] = this.horaTemporal().split(':');
+    this.horaTemporal.set(parte === 'hora' ? `${valor}:${minuto ?? '00'}` : `${hora ?? '09'}:${valor}`);
+  }
+
+  /** Obtiene la parte de hora o minuto para los selectores separados. */
+  protected horaTemporalParte(parte: 'hora' | 'minuto'): string {
+    return this.horaTemporal().split(':')[parte === 'hora' ? 0 : 1] ?? '00';
+  }
+
+  /** Aplica la selección al formulario y devuelve el foco al control que la abrió. */
+  protected confirmarHora(): void {
+    const campo = this.selectorHora();
+    if (!campo) return;
+    this.model.update((actual) => ({ ...actual, [campo]: this.horaTemporal() }));
+    if (campo === 'horaApertura') this.formulario.horaApertura().markAsTouched();
+    else this.formulario.horaCierre().markAsTouched();
+    this.cerrarSelectorHora();
+  }
+
+  /** Cierra el selector sin aplicar y devuelve el foco al botón disparador. */
+  protected cerrarSelectorHora(): void {
+    const campo = this.selectorHora();
+    if (!campo) return;
+    this.selectorHora.set(null);
+    afterNextRender(() => this.host.nativeElement
+      .querySelector<HTMLButtonElement>(`#${this.id(campo + '-selector-trigger')}`)?.focus(), {
+        injector: this.injector,
+      });
   }
 
   /** La sucursal tiene foto: la vigente, la ya cargada o la elegida. */
