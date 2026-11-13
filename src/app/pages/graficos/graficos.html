@@ -122,9 +122,6 @@
         @if (datos.cancelaciones.porPeriodo.length === 0) { <p class="vacio" role="status">No hay turnos concluidos en el período para calcular la tasa.</p> }
         @else { <div class="grafico-echarts" echarts [options]="cancelacionesOption()" [autoResize]="true" role="img" aria-label="Tasa de cancelación por período"></div><div class="tabla-contenedor"><table><caption>Cancelaciones y tasa por período</caption><thead><tr><th scope="col">Período</th><th scope="col">Cancelados</th><th scope="col">Concluidos</th><th scope="col">Tasa</th></tr></thead><tbody>@for (fila of datos.cancelaciones.porPeriodo; track fila.periodo) { <tr><th scope="row">{{ fila.periodo }}</th><td>{{ fila.cancelados }}</td><td>{{ fila.turnosConcluidos }}</td><td>{{ fila.tasa }}%</td></tr> }</tbody></table></div> }
       </section>
-      @for (metrica of [{ titulo: 'Ocupación', detalle: datos.ocupacion }, { titulo: 'Ingresos y pagos', detalle: datos.ingresos }, { titulo: 'Ausencias', detalle: datos.ausencias }]; track metrica.titulo) {
-        @if (!metrica.detalle.disponible) { <aside class="no-disponible"><strong>{{ metrica.titulo }}: dato no disponible</strong><p>{{ metrica.detalle.motivo }}</p></aside> }
-      }
     }
   }
 </main>

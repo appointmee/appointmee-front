@@ -44,9 +44,6 @@ td { color: var(--muted); font-variant-numeric: tabular-nums; }
 .estado--error, .aviso-error { border-color: #a84444; color: #ffd1d1; }
 .aviso-error { padding: .9rem 1rem; border: 1px solid; border-radius: .7rem; }
 .aviso-error button { margin-left: .75rem; color: inherit; font: inherit; text-decoration: underline; background: none; border: 0; cursor: pointer; }
-.no-disponible { padding: .9rem 1rem; border-left: 3px solid var(--accent); background: var(--accent-soft); color: var(--text); }
-.no-disponible p { margin: .4rem 0 0; color: var(--muted); line-height: 1.5; }
-
 @media (max-width: 650px) {
   .graficos { width: min(100% - 1.5rem, 76rem); padding-top: calc(var(--nav-h) + 1.25rem); }
   .encabezado { flex-direction: column; }

@@ -104,6 +104,9 @@ describe('Gráficos ECharts', () => {
     expect((opciones[2].series as { name: string }[])[0].name).toBe('Tasa de cancelación');
     expect(fixture.nativeElement.textContent).toContain('Demanda por servicio');
     expect(fixture.nativeElement.textContent).toContain('Sucursal: Sucursal');
+    expect(fixture.nativeElement.textContent).not.toContain('Ocupación: dato no disponible');
+    expect(fixture.nativeElement.textContent).not.toContain('Ingresos y pagos: dato no disponible');
+    expect(fixture.nativeElement.textContent).not.toContain('Ausencias: dato no disponible');
     expect(Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.filtros label'))
       .some((label) => label.textContent?.includes('Sucursal'))).toBe(false);
   });
