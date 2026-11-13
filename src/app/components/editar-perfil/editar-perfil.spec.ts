@@ -58,6 +58,8 @@ describe('Editar perfil', () => {
     expect(host.querySelectorAll('.datos__formulario .correo-actual--personal')).toHaveLength(2);
     expect(host.querySelector('.correo-actual--email')?.textContent).toContain('ana@example.com');
     expect(host.querySelector('.datos__acciones button')?.textContent).toContain('Guardar cambios');
+    expect(getComputedStyle(host.querySelector('.datos__formulario')!).width).toBe('100%');
+    expect(getComputedStyle(host.querySelector('.correo-actual--email')!).width).toBe('100%');
   });
 
   it('habilita los datos con el lápiz y muestra los errores debajo del campo', async () => {

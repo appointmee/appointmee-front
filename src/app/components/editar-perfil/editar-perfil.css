@@ -39,8 +39,9 @@
   line-height: 1.5;
 }
 .datos form, .correo-modal form { display: grid; justify-items: start; gap: var(--space-2); }
-.datos form { width: min(100%, 36rem); }
+.datos form { width: 100%; max-width: none; justify-items: stretch; }
 .datos form.datos__formulario {
+  width: 100%;
   gap: 0;
   padding: var(--space-2) var(--space-4);
   border: 1px solid var(--line);
@@ -71,7 +72,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-3);
-  width: min(100%, 36rem);
+  width: 100%;
   margin-top: var(--space-2);
   padding-top: var(--space-4);
   border-top: 1px solid var(--line);
@@ -121,7 +122,8 @@
   margin-top: var(--space-2);
 }
 .correo-actual--email {
-  width: min(100%, 36rem);
+  width: 100%;
+  max-width: none;
   margin-top: var(--space-2);
   padding: var(--space-4);
   border: 1px solid var(--line);
