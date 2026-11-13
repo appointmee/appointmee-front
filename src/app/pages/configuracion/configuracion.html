@@ -7,6 +7,8 @@
     <button dsButton type="button" class="ajustes__pestana" [class.ajustes__pestana--activa]="seccion() === 'verificacion'"
       [attr.aria-pressed]="seccion() === 'verificacion'" (click)="seccion.set('verificacion')">Verificar cuenta</button>
     @if (auth.autenticado()) {
+      <button dsButton type="button" class="ajustes__pestana" [class.ajustes__pestana--activa]="seccion() === 'perfil'"
+        [attr.aria-pressed]="seccion() === 'perfil'" (click)="seccion.set('perfil')">Datos personales</button>
       <button dsButton type="button" class="ajustes__pestana" [class.ajustes__pestana--activa]="seccion() === 'password'"
         [attr.aria-pressed]="seccion() === 'password'" (click)="seccion.set('password')">Cambiar contraseña</button>
       <button dsButton type="button" class="ajustes__pestana" [class.ajustes__pestana--activa]="seccion() === 'eliminar'"
@@ -14,7 +16,9 @@
     }
   </nav>
 
-  @if (seccion() === 'password' && auth.autenticado()) {
+  @if (seccion() === 'perfil' && auth.autenticado()) {
+    <app-editar-perfil />
+  } @else if (seccion() === 'password' && auth.autenticado()) {
     <app-cambiar-password />
   } @else if (seccion() === 'eliminar') {
     <app-eliminar-cuenta />

@@ -346,7 +346,7 @@ describe('Ajustes · Verificar cuenta', () => {
       abrirSesion();
 
       const etiquetas = pestanas().map((pestana) => pestana.textContent?.trim());
-      expect(etiquetas).toEqual(['Verificar cuenta', 'Cambiar contraseña', 'Eliminar cuenta']);
+      expect(etiquetas).toEqual(['Verificar cuenta', 'Datos personales', 'Cambiar contraseña', 'Eliminar cuenta']);
     });
 
     it('no muestra la sección a un visitante sin sesión', () => {

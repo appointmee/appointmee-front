@@ -15,15 +15,17 @@ import { verificacionService } from '../../services/verificacion-service';
 import { CambiarPassword } from '../../components/cambiar-password/cambiar-password';
 import { EliminarCuenta } from '../../components/eliminar-cuenta/eliminar-cuenta';
 
+import { EditarPerfil } from '../../components/editar-perfil/editar-perfil';
+
 @Component({
-  imports: [DsInputComponent, DsButtonComponent, CambiarPassword, EliminarCuenta],
+  imports: [DsInputComponent, DsButtonComponent, CambiarPassword, EliminarCuenta, EditarPerfil],
   selector: 'app-configuracion',
   templateUrl: './configuracion.html',
   styleUrl: './configuracion.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Configuracion implements OnInit {
-  seccion = signal<'verificacion' | 'password' | 'eliminar'>('verificacion');
+  seccion = signal<'perfil' | 'verificacion' | 'password' | 'eliminar'>('verificacion');
 
   auth = inject(authService);
   private verificacion = inject(verificacionService);
@@ -119,6 +121,9 @@ export class Configuracion implements OnInit {
 
 
   ngOnInit(): void {
+    if (this.auth.autenticado() && this.route.snapshot.queryParamMap.get('seccion') === 'perfil') {
+      this.seccion.set('perfil');
+    }
     this.actualizarVigencia(true);
     if (!this.verificada() && this.contextoValido() && !this.codigoEnviado() && !this.bloqueada() && this.segundosReenvio() === 0) {
       this.enviarCodigo(false);
