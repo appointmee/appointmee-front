@@ -85,6 +85,11 @@ describe('SCRUM-261 · Crear servicios de la sucursal', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
+    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush({
+      id: 7,
+      nombre: 'Sucursal de prueba',
+      fotoPerfil: 'https://example.com/sucursal.jpg',
+    });
     backend.expectOne((request) => request.url.includes('/servicios/listar/sucursal')).flush([]);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -134,9 +139,20 @@ describe('SCRUM-261 · Crear servicios de la sucursal', () => {
     for (const listado of listados) listado.flush([]);
   }
 
+  it('vuelve al gestor de la sucursal actual desde Servicios', async () => {
+    await abrir();
+
+    host().querySelector<HTMLAnchorElement>('.migas .volver')?.click();
+    await fixture.whenStable();
+
+    expect(router.url).toBe('/mis-sucursales?sucursalId=7');
+  });
+
   describe('mensajes de error debajo de cada campo', () => {
     it('muestra un mensaje claro debajo del campo cuando se envía el formulario vacío', async () => {
       await abrir();
+      expect(host().querySelector('.servicios__fondo img')?.getAttribute('src'))
+        .toBe('https://example.com/sucursal.jpg');
       abrirModal();
 
       enviar();

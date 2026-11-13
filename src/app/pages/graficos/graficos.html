@@ -1,4 +1,10 @@
 <main class="graficos" [class.graficos--incrustado]="incrustado()" aria-labelledby="graficos-titulo">
+  @if (fotoFondoVisible(); as foto) {
+    <div class="graficos__fondo" aria-hidden="true">
+      <img [src]="foto" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" (error)="onFotoFondoError()" />
+    </div>
+  }
+  <div class="graficos__contenido">
   <header class="encabezado" [class.encabezado--incrustado]="incrustado()">
     <div>
       <p class="sobrelinea">AppointMee · {{ rol === 'administrador' ? 'Administración' : 'Empleador' }}</p>
@@ -131,4 +137,5 @@
       </section>
     }
   }
+  </div>
 </main>

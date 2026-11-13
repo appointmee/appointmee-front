@@ -79,6 +79,16 @@ export class Graficos {
   protected readonly sucursalActual = computed(() =>
     this.sucursales().find((sucursal) => sucursal.id === this.sucursalId())?.nombre ?? '',
   );
+  protected readonly fotoFondo = computed(() => {
+    if (this.rol !== 'empleador' || this.incrustado()) return null;
+    return this.sucursales()
+      .find((sucursal) => sucursal.id === this.sucursalId())
+      ?.fotoPerfil?.trim() || null;
+  });
+  protected readonly fotoFondoFallida = signal(false);
+  protected readonly fotoFondoVisible = computed(() =>
+    this.fotoFondoFallida() ? null : this.fotoFondo(),
+  );
   protected readonly adminDatos = signal<AdminEstadisticas | null>(null);
   protected readonly empleadorDatos = signal<EmpleadorEstadisticas | null>(null);
   protected readonly cargando = signal(false);
@@ -196,6 +206,10 @@ export class Graficos {
 
   protected cambiarAgrupacion(event: Event): void {
     this.agrupacion.set((event.target as HTMLSelectElement).value as AgrupacionGrafico);
+  }
+
+  protected onFotoFondoError(): void {
+    this.fotoFondoFallida.set(true);
   }
 
   protected estadoLabel(estado: EstadoTurnoGrafico): string {

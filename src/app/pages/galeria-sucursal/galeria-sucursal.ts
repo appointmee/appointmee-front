@@ -19,6 +19,7 @@ export class GaleriaSucursal {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly sucursalId = Number(this.route.snapshot.paramMap.get('sucursalId'));
   protected readonly imagenes = signal<readonly SucursalGaleriaImagenDTO[]>([]);
+  protected readonly fotoFondo = signal<string | null>(null);
   protected readonly cargando = signal(true);
   protected readonly guardando = signal(false);
   protected readonly eliminandoId = signal<number | null>(null);
@@ -33,7 +34,15 @@ export class GaleriaSucursal {
       this.cargando.set(false);
       return;
     }
+    this.api.obtenerPorId(this.sucursalId, true).pipe(
+      catchError(() => of(null)),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe((sucursal) => this.fotoFondo.set(sucursal?.fotoPerfil?.trim() || null));
     this.cargar();
+  }
+
+  protected onFotoFondoError(): void {
+    this.fotoFondo.set(null);
   }
 
   protected cargar(): void {
