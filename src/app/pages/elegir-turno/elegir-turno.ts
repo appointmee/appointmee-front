@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { Location } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -95,6 +96,7 @@ export class ElegirTurno {
   private readonly turnosApi = inject(turnoService);
   private readonly reservaContexto = inject(reservaContextoService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly location = inject(Location);
 
   protected readonly sucursalId = signal<number | null>(null);
   protected readonly servicioId = signal<number | null>(null);
@@ -844,25 +846,15 @@ export class ElegirTurno {
     return params;
   }
 
-  private sincronizarUrl(): void {
-    const scrollY = typeof window === 'undefined' ? 0 : window.scrollY;
-    const scrollX = typeof window === 'undefined' ? 0 : window.scrollX;
+    private sincronizarUrl(): void {
+    const url = this.router
+      .createUrlTree([], {
+        relativeTo: this.route,
+        queryParams: this.queryParamsSeleccion(),
+      })
+      .toString();
 
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: this.queryParamsSeleccion(),
-      replaceUrl: true,
-    }).then(() => {
-      if (typeof window === 'undefined') {
-        return;
-      }
-
-      try {
-        window.scrollTo({ top: scrollY, left: scrollX });
-      } catch {
-        // jsdom no implementa scrollTo; en navegador preserva la posición.
-      }
-    });
+    this.location.replaceState(url);
   }
 
   private aplicarErrorEmpleados(error: HttpErrorResponse): void {
