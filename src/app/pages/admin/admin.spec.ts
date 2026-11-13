@@ -504,3 +504,75 @@ describe('Administración · solicitudes de empleador', () => {
     expect(host.textContent).toContain('Ana Pérez');
   });
 });
+
+describe('Administración · paginación de listados', () => {
+  let fixture: ComponentFixture<Administracion>;
+  let backend: HttpTestingController;
+
+  beforeEach(async () => {
+    TestBed.configureTestingModule({
+      imports: [Administracion],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    });
+    TestBed.overrideComponent(Administracion, {
+      remove: { imports: [Graficos] },
+      add: { imports: [GraficosIntegradosStub] },
+    });
+    await TestBed.compileComponents();
+
+    fixture = TestBed.createComponent(Administracion);
+    fixture.detectChanges();
+    backend = TestBed.inject(HttpTestingController);
+    backend.expectOne((request) => request.url.endsWith('/usuarios/listar')).flush(
+      Array.from({ length: 12 }, (_, indice) => ({
+        id: 700 + indice,
+        nombre: `Usuario${indice + 1}`,
+        apellido: 'Prueba',
+        estado: true,
+        fotoPerfil: null,
+      })),
+    );
+    backend.expectOne((request) => request.url.endsWith('/sucursales/listar')).flush(
+      Array.from({ length: 12 }, (_, indice) => ({
+        id: 100 + indice,
+        nombre: `Sucursal ${indice + 1}`,
+        categoria: 'SPA',
+        fotoPerfil: null,
+        puntuacion: null,
+        cantidadPuntuaciones: 0,
+      })),
+    );
+    backend.expectOne((request) => request.url.endsWith('/solicitudes-empleador/listar')).flush([]);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+    backend.verify();
+  });
+
+  it('limita usuarios y sucursales a diez elementos y permite avanzar de página', () => {
+    const host = fixture.nativeElement as HTMLElement;
+
+    host.querySelector<HTMLButtonElement>('.admin__seccion[aria-controls="admin-usuarios-panel"]')?.click();
+    fixture.detectChanges();
+    expect(host.querySelectorAll('#admin-usuarios-panel .usuario-admin')).toHaveLength(10);
+    expect(host.textContent).toContain('Usuario1 Prueba');
+    expect(host.textContent).not.toContain('Usuario11 Prueba');
+    host.querySelector<HTMLButtonElement>('#admin-usuarios-panel ds-pagination button:last-child')?.click();
+    fixture.detectChanges();
+    expect(host.querySelectorAll('#admin-usuarios-panel .usuario-admin')).toHaveLength(2);
+    expect(host.textContent).toContain('Usuario11 Prueba');
+    expect(host.textContent).toContain('Página 2 de 2');
+
+    host.querySelector<HTMLButtonElement>('.admin__seccion[aria-controls="sucursales-admin-panel"]')?.click();
+    fixture.detectChanges();
+    expect(host.querySelectorAll('#sucursales-admin-panel .sucursal-admin')).toHaveLength(10);
+    expect(host.textContent).not.toContain('Sucursal 11');
+    host.querySelector<HTMLButtonElement>('#sucursales-admin-panel ds-pagination button:last-child')?.click();
+    fixture.detectChanges();
+    expect(host.querySelectorAll('#sucursales-admin-panel .sucursal-admin')).toHaveLength(2);
+    expect(host.textContent).toContain('Sucursal 11');
+    expect(host.textContent).toContain('Página 2 de 2');
+  });
+});

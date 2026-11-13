@@ -251,7 +251,7 @@
           </div>
         }
         <ul id="admin-sucursales-lista" class="lista sucursales-admin" aria-live="polite">
-          @for (sucursal of sucursalesFiltradas(); track sucursal.id) {
+          @for (sucursal of sucursalesPaginadas(); track sucursal.id) {
             <li class="sucursal-admin">
               <div>
                 <h3>{{ sucursal.nombre }}</h3>
@@ -268,6 +268,14 @@
             </li>
           }
         </ul>
+        @if (totalPaginasSucursales() > 1) {
+          <ds-pagination
+            [page]="paginaSucursales()"
+            [totalPages]="totalPaginasSucursales()"
+            ariaLabel="Paginación de sucursales activas"
+            (pageChange)="cambiarPaginaSucursales($event)"
+          />
+        }
       }
     </section>
 
@@ -323,7 +331,7 @@
           <div class="aviso aviso--error" role="alert"><p>No se pudo actualizar la lista. Se muestran los últimos resultados.</p><button dsButton type="button" [disabled]="usuariosReintentando()" (clicked)="reintentarUsuarios()">Reintentar</button></div>
         }
         <ul class="lista usuarios-admin" aria-label="Resultados de usuarios" aria-live="polite">
-          @for (usuario of usuarios(); track usuario.id) {
+          @for (usuario of usuariosPaginados(); track usuario.id) {
             <li class="usuario-admin">
               <span class="usuario-admin__foto" aria-hidden="true">
                 @if (fotoUsuario(usuario); as foto) {
@@ -348,6 +356,14 @@
             </li>
           }
         </ul>
+        @if (totalPaginasUsuarios() > 1) {
+          <ds-pagination
+            [page]="paginaUsuarios()"
+            [totalPages]="totalPaginasUsuarios()"
+            ariaLabel="Paginación de usuarios"
+            (pageChange)="cambiarPaginaUsuarios($event)"
+          />
+        }
       }
     </section>
   </div>
