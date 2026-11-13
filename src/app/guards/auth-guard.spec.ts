@@ -33,16 +33,14 @@ describe('authGuard', () => {
     );
     return isObservable(result) ? firstValueFrom(result) : await result;
   }
-  it('sin credenciales redirige a login y conserva el destino', async () => {
+  it('sin credenciales redirige a la pantalla de error 401', async () => {
     const result = (await ejecutar()) as UrlTree;
-    expect(result.toString()).toBe('/login?returnTo=%2Fadmin');
+    expect(result.toString()).toBe('/error?status=401');
     expect(auth.validarToken).not.toHaveBeenCalled();
   });
-  it('indica que la sesión expiró al superar las 24 horas', async () => {
+  it('sin credenciales redirige a la pantalla de error 401 aunque la sesión expiró', async () => {
     auth.expirado.mockReturnValue(true);
-    expect(((await ejecutar()) as UrlTree).toString()).toBe(
-      '/login?returnTo=%2Fadmin&expired=1',
-    );
+    expect(((await ejecutar()) as UrlTree).toString()).toBe('/error?status=401');
   });
   it('valida en backend antes de permitir acceso', async () => {
     auth.getAccessToken.mockReturnValue('access');
@@ -75,12 +73,12 @@ describe('authGuard', () => {
     auth.tieneAlgunRol.mockReturnValue(false);
     expect(await ejecutar(undefined, ['ADMINISTRADOR'])).toBe(true);
   });
-  it('entiende el 401 normalizado por el interceptor de errores', async () => {
+  it('entierra el 401 de la sesión en la pantalla de error', async () => {
     auth.getAccessToken.mockReturnValue('access');
     auth.validarToken.mockReturnValue(
       throwError(() => ({ status: 401, message: 'Sesión vencida' })),
     );
-    expect(((await ejecutar()) as UrlTree).toString()).toBe('/login?returnTo=%2Fadmin');
+    expect(((await ejecutar()) as UrlTree).toString()).toBe('/error?status=401');
     expect(auth.limpiarSesion).toHaveBeenCalled();
   });
   it('deja pasar y conserva credenciales ante un fallo de red', async () => {
