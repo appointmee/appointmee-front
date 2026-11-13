@@ -25,6 +25,7 @@ import { reservaContextoService } from '../../services/reserva-contexto-service'
 import { servicioService } from '../../services/servicio-service';
 import { sucursalService } from '../../services/sucursal-service';
 import { turnoService } from '../../services/turno-service';
+import { fotoPerfilDe } from '../../shared/foto-perfil';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 
 type Resultado<T> =
@@ -272,7 +273,7 @@ export class ElegirTurno {
   )}`;
 
   protected fotoEmpleado(): string {
-    return this.empleado()?.urlFotoPerfil?.trim() || this.placeholderAvatar;
+    return fotoPerfilDe(this.empleado()) ?? this.placeholderAvatar;
   }
 
   protected onImageErrorEmpleado(event: Event): void {

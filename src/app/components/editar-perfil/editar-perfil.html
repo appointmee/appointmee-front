@@ -16,8 +16,8 @@
   @if (perfil(); as cuenta) {
     <section class="foto" aria-labelledby="foto-titulo">
       <div class="foto__avatar">
-      @if (cuenta.fotoPerfil && !fotoFallida()) {
-        <img [src]="cuenta.fotoPerfil" alt="Foto de perfil" (error)="fotoFallida.set(true)" />
+      @if (fotoPerfil(); as foto) {
+        <img [src]="foto" alt="Foto de perfil" (error)="fotoFallida.set(true)" />
       } @else {
         <span class="iniciales" aria-label="Avatar con iniciales">{{ iniciales() }}</span>
       }
@@ -31,7 +31,7 @@
           <button dsButton variant="primary" type="button" [disabled]="ocupado()"
             [attr.aria-expanded]="cambiarFoto"
             (click)="cambiarFoto = !cambiarFoto">Actualizar foto</button>
-          <button dsButton type="button" [disabled]="ocupado() || !cuenta.fotoPerfil"
+          <button dsButton type="button" [disabled]="ocupado() || !fotoPerfil()"
             (click)="restablecer()">Quitar foto</button>
         </div>
       </div>

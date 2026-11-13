@@ -11,6 +11,7 @@ import { empleadoService } from '../../services/empleado-service';
 import { reservaContextoService } from '../../services/reserva-contexto-service';
 import { servicioService } from '../../services/servicio-service';
 import { turnoService } from '../../services/turno-service';
+import { fotoPerfilDe } from '../../shared/foto-perfil';
 
 @Component({
   selector: 'app-profesionales-reserva',
@@ -59,7 +60,7 @@ export class ProfesionalesReserva {
   )}`;
 
   protected fotoProfesional(profesional: EmpleadoDTO): string {
-    return profesional.urlFotoPerfil?.trim() || this.placeholderAvatar;
+    return fotoPerfilDe(profesional) ?? this.placeholderAvatar;
   }
 
   protected onImageError(event: Event): void {

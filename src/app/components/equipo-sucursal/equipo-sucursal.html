@@ -33,7 +33,7 @@
         <article class="equipo-card">
           <img
             class="equipo-card__avatar"
-            [src]="empleado.urlFotoPerfil || placeholderAvatar"
+            [src]="foto(empleado)"
             [alt]="'Fotografía de ' + nombreCompleto(empleado)"
             loading="lazy"
             decoding="async"

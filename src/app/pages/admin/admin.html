@@ -326,9 +326,9 @@
           @for (usuario of usuarios(); track usuario.id) {
             <li class="usuario-admin">
               <span class="usuario-admin__foto" aria-hidden="true">
-                @if (usuario.fotoPerfil && !fotosUsuariosFallidas().has(usuario.id)) {
+                @if (fotoUsuario(usuario); as foto) {
                   <img
-                    [src]="usuario.fotoPerfil"
+                    [src]="foto"
                     alt=""
                     loading="lazy"
                     decoding="async"
