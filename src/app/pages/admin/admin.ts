@@ -1,4 +1,5 @@
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
+import { DsInputComponent } from '../../shared/ui/input/input.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
@@ -23,20 +24,37 @@ import {
   SolicitudEmpleadorMiniDTO,
 } from '../../models/solicitud-empleador';
 import { solicitudEmpleadorService } from '../../services/solicitud-empleador-service';
+import { sucursalService } from '../../services/sucursal-service';
+import { SucursalMiniDTO } from '../../models/sucursal';
+import { SucursalDetalleModal } from '../../components/sucursal-detalle-modal/sucursal-detalle-modal';
+import { Graficos } from '../graficos/graficos';
+import { usuarioService } from '../../services/usuario-service';
+import { UsuarioMiniAdminDTO, UsuarioPerfilDTO } from '../../models/usuario';
+import { DsModalComponent } from '../../shared/ui/misc/misc.component';
 
 type ResultadoLista =
   | { readonly ok: true; readonly solicitudes: readonly SolicitudEmpleadorMiniDTO[] }
   | { readonly ok: false; readonly error: HttpErrorResponse };
 
+type ResultadoUsuarios =
+  | { readonly ok: true; readonly usuarios: readonly UsuarioMiniAdminDTO[] }
+  | { readonly ok: false };
+
+interface FiltrosUsuarios {
+  readonly activo: boolean | undefined;
+}
+
 @Component({
   selector: 'app-admin',
-  imports: [DsButtonComponent, SolicitudEmpleadorCard],
+  imports: [DsButtonComponent, DsInputComponent, DsModalComponent, SolicitudEmpleadorCard, SucursalDetalleModal, Graficos],
   templateUrl: './admin.html',
   styleUrl: './admin.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Administracion {
   private readonly api = inject(solicitudEmpleadorService);
+  private readonly sucursalesApi = inject(sucursalService);
+  private readonly usuariosApi = inject(usuarioService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly recargar = new Subject<void>();
 
@@ -53,6 +71,40 @@ export class Administracion {
   protected readonly resolviendo = signal<ReadonlyMap<number, AccionSolicitudEmpleador>>(new Map());
   protected readonly erroresAccion = signal<ReadonlyMap<number, string>>(new Map());
   protected readonly exito = signal<string | null>(null);
+  protected readonly sucursales = signal<readonly SucursalMiniDTO[]>([]);
+  protected readonly sucursalesCargando = signal(true);
+  protected readonly sucursalesError = signal(false);
+  protected readonly sucursalesReintentando = signal(false);
+  protected readonly busquedaSucursal = signal('');
+  protected readonly seccionActiva = signal<'sucursales' | 'solicitudes' | 'estadisticas' | 'usuarios' | null>(null);
+  protected readonly sucursalDetalleId = signal<number | null>(null);
+  private readonly recargarSucursales = new Subject<void>();
+  private readonly filtrosUsuarios$ = new Subject<FiltrosUsuarios>();
+  protected readonly usuarios = signal<readonly UsuarioMiniAdminDTO[]>([]);
+  protected readonly fotosUsuariosFallidas = signal<ReadonlySet<number>>(new Set());
+  protected readonly usuariosCargando = signal(true);
+  protected readonly usuariosError = signal(false);
+  protected readonly usuariosReintentando = signal(false);
+  protected readonly filtroEstadoUsuario = signal('todos');
+  protected readonly usuarioDetalleId = signal<number | null>(null);
+  protected readonly usuarioDetalle = signal<UsuarioPerfilDTO | null>(null);
+  protected readonly detalleUsuarioCargando = signal(false);
+  protected readonly detalleUsuarioError = signal<string | null>(null);
+  protected readonly usuarioAEliminar = signal<UsuarioMiniAdminDTO | null>(null);
+  protected readonly eliminandoUsuario = signal(false);
+  protected readonly errorEliminarUsuario = signal<string | null>(null);
+  protected readonly usuarioDetalleEstado = signal<boolean | null>(null);
+  protected readonly activandoUsuario = signal(false);
+  protected readonly errorActivarUsuario = signal<string | null>(null);
+  protected readonly usuarioActualizado = signal<string | null>(null);
+
+  protected readonly sucursalesFiltradas = computed(() => {
+    const termino = this.busquedaSucursal().trim().toLocaleLowerCase('es');
+    if (!termino) return this.sucursales();
+    return this.sucursales().filter((sucursal) =>
+      `${sucursal.nombre} ${sucursal.categoria} ${sucursal.id}`.toLocaleLowerCase('es').includes(termino),
+    );
+  });
 
   protected readonly total = computed(() => this.solicitudes().length);
   protected readonly pendientes = computed(
@@ -65,6 +117,25 @@ export class Administracion {
   protected readonly hayResueltas = computed(() => this.pendientes() < this.total());
 
   constructor() {
+    this.recargarSucursales
+      .pipe(
+        startWith(undefined as void),
+        switchMap(() => {
+          this.sucursalesCargando.set(this.sucursales().length === 0);
+          return this.sucursalesApi.listar(true).pipe(
+            map((sucursales) => ({ ok: true as const, sucursales })),
+            catchError(() => of({ ok: false as const })),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((resultado) => {
+        this.sucursalesCargando.set(false);
+        this.sucursalesReintentando.set(false);
+        this.sucursalesError.set(!resultado.ok);
+        if (resultado.ok) this.sucursales.set(resultado.sucursales);
+      });
+
     this.recargar
       .pipe(
         startWith(undefined as void),
@@ -78,10 +149,189 @@ export class Administracion {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((resultado) => this.aplicarLista(resultado));
+
+    this.filtrosUsuarios$
+      .pipe(
+        startWith(this.filtrosActuales()),
+        switchMap((filtros) => {
+          this.usuariosCargando.set(this.usuarios().length === 0);
+          const request = filtros.activo === undefined
+            ? this.usuariosApi.listarAdmin()
+            : this.usuariosApi.filtrarAdmin({ activo: filtros.activo });
+          return request.pipe(
+            map((usuarios): ResultadoUsuarios => ({ ok: true, usuarios })),
+            catchError(() => of<ResultadoUsuarios>({ ok: false })),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((resultado) => {
+        this.usuariosCargando.set(false);
+        this.usuariosReintentando.set(false);
+        this.usuariosError.set(!resultado.ok);
+        if (resultado.ok) this.usuarios.set(resultado.usuarios);
+      });
   }
 
   protected detalleDe(id: number): SolicitudEmpleadorDetalleDTO | null {
     return this.detalles().get(id) ?? null;
+  }
+
+  protected buscarSucursales(valor: string): void {
+    this.busquedaSucursal.set(valor);
+  }
+
+  protected seleccionarSeccion(seccion: 'sucursales' | 'solicitudes' | 'estadisticas' | 'usuarios'): void {
+    this.seccionActiva.update((actual) => (actual === seccion ? null : seccion));
+  }
+
+  protected cambiarFiltroUsuario(valor: string): void {
+    this.filtroEstadoUsuario.set(valor);
+    this.filtrosUsuarios$.next(this.filtrosActuales());
+  }
+
+  protected reintentarUsuarios(): void {
+    if (this.usuariosReintentando()) return;
+    this.usuariosReintentando.set(true);
+    this.filtrosUsuarios$.next(this.filtrosActuales());
+  }
+
+  protected verDetalleUsuario(id: number): void {
+    this.usuarioDetalleId.set(id);
+    this.usuarioDetalleEstado.set(this.usuarios().find((usuario) => usuario.id === id)?.estado ?? null);
+    this.usuarioDetalle.set(null);
+    this.detalleUsuarioError.set(null);
+    this.errorActivarUsuario.set(null);
+    this.detalleUsuarioCargando.set(true);
+    this.usuariosApi.obtenerPerfil(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (detalle) => {
+        if (this.usuarioDetalleId() !== id) return;
+        this.usuarioDetalle.set(detalle);
+        this.detalleUsuarioCargando.set(false);
+      },
+      error: (error: HttpErrorResponse) => {
+        if (this.usuarioDetalleId() !== id) return;
+        this.detalleUsuarioCargando.set(false);
+        this.detalleUsuarioError.set(error.status === 0
+          ? 'No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.'
+          : 'No pudimos cargar el detalle del usuario. Intentá de nuevo.');
+      },
+    });
+  }
+
+  protected cerrarDetalleUsuario(): void {
+    this.usuarioDetalleId.set(null);
+    this.usuarioDetalle.set(null);
+    this.usuarioDetalleEstado.set(null);
+    this.detalleUsuarioError.set(null);
+  }
+
+  protected reintentarDetalleUsuario(): void {
+    const id = this.usuarioDetalleId();
+    if (id !== null && !this.detalleUsuarioCargando()) this.verDetalleUsuario(id);
+  }
+
+  protected solicitarEliminarUsuario(usuario: UsuarioMiniAdminDTO): void {
+    this.usuarioAEliminar.set(usuario);
+    this.errorEliminarUsuario.set(null);
+  }
+
+  protected activarUsuario(id: number): void {
+    if (this.activandoUsuario() || this.usuarioDetalleEstado() !== false) return;
+    this.activandoUsuario.set(true);
+    this.errorActivarUsuario.set(null);
+    this.usuariosApi.activarAdmin(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.activandoUsuario.set(false);
+        this.usuarioDetalleEstado.set(true);
+        this.usuarios.update((usuarios) => usuarios.map((usuario) =>
+          usuario.id === id ? { ...usuario, estado: true } : usuario,
+        ));
+      },
+      error: (error: HttpErrorResponse) => {
+        this.activandoUsuario.set(false);
+        this.errorActivarUsuario.set(error.status === 403
+          ? 'No tenés permisos para activar este usuario.'
+          : error.status === 404
+            ? 'No encontramos esta cuenta.'
+            : error.status === 0
+              ? 'No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.'
+              : 'No pudimos activar el usuario. Intentá de nuevo.');
+      },
+    });
+  }
+
+  protected inicialesUsuario(usuario: UsuarioMiniAdminDTO): string {
+    return `${usuario.nombre.trim().charAt(0)}${usuario.apellido.trim().charAt(0)}`.toLocaleUpperCase('es');
+  }
+
+  protected marcarFotoUsuarioFallida(id: number): void {
+    this.fotosUsuariosFallidas.update((fallidas) => new Set(fallidas).add(id));
+  }
+
+  protected cancelarEliminarUsuario(): void {
+    if (this.eliminandoUsuario()) return;
+    this.usuarioAEliminar.set(null);
+    this.errorEliminarUsuario.set(null);
+  }
+
+  protected confirmarEliminarUsuario(): void {
+    const usuario = this.usuarioAEliminar();
+    if (!usuario || this.eliminandoUsuario()) return;
+    this.eliminandoUsuario.set(true);
+    this.errorEliminarUsuario.set(null);
+    this.usuariosApi.eliminarAdmin(usuario.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.eliminandoUsuario.set(false);
+        this.usuarioAEliminar.set(null);
+        this.usuarioDetalleId.set(null);
+        this.usuarioDetalle.set(null);
+        this.usuarioActualizado.set(`Se eliminó al usuario ${usuario.nombre} ${usuario.apellido}.`);
+        this.filtrosUsuarios$.next(this.filtrosActuales());
+      },
+      error: (error: HttpErrorResponse) => {
+        this.eliminandoUsuario.set(false);
+        this.errorEliminarUsuario.set(error.status === 403
+          ? 'No tenés permisos para eliminar este usuario.'
+          : error.status === 409
+            ? 'No se puede eliminar esta cuenta. Revisá si intentás eliminar tu propio usuario administrador.'
+            : error.status === 0
+              ? 'No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.'
+              : 'No pudimos eliminar el usuario. Intentá de nuevo.');
+      },
+    });
+  }
+
+  protected sucursalesDelUsuario(detalle: UsuarioPerfilDTO): string {
+    return detalle.sucursalesEmpleado.length
+      ? detalle.sucursalesEmpleado.map((sucursal) => sucursal.nombre).join(', ')
+      : 'Sin sucursales asociadas';
+  }
+
+  private filtrosActuales(): FiltrosUsuarios {
+    const estado = this.filtroEstadoUsuario();
+    return {
+      activo: estado === 'activos' ? true : estado === 'inactivos' ? false : undefined,
+    };
+  }
+
+  protected reintentarSucursales(): void {
+    if (this.sucursalesReintentando()) return;
+    this.sucursalesReintentando.set(true);
+    this.recargarSucursales.next();
+  }
+
+  protected verDetalleSucursal(id: number): void {
+    this.sucursalDetalleId.set(id);
+  }
+
+  protected cerrarDetalleSucursal(): void {
+    this.sucursalDetalleId.set(null);
+  }
+
+  protected quitarSucursalEliminada(id: number): void {
+    this.sucursales.update((actuales) => actuales.filter((sucursal) => sucursal.id !== id));
+    this.sucursalDetalleId.set(null);
   }
 
   protected estadoDe(id: number): EstadoSolicitudEmpleador | null {

@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import type { Observable } from 'rxjs';
@@ -43,6 +43,8 @@ echarts.use([BarChart, LineChart, GridComponent, TooltipComponent, LegendCompone
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Graficos {
+  /** Modo incrustado dentro del panel de administración. */
+  readonly incrustado = input(false);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(estadisticasService);

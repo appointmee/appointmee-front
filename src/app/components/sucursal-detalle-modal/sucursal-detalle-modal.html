@@ -98,6 +98,11 @@
           </div>
 
           <div class="dato dato--ancho">
+            <dt>Descripción</dt>
+            <dd>{{ local.descripcion?.trim() || 'Sin descripción informada.' }}</dd>
+          </div>
+
+          <div class="dato dato--ancho">
             <dt>Días de apertura</dt>
             <dd>
               <ul class="dias" aria-label="Días de apertura">
@@ -134,31 +139,65 @@
         </dl>
       </div>
 
-      <footer class="detalle__acciones">
-        <a class="detalle__boton detalle__boton--ir" [routerLink]="['/sucursal', local.id]">
-          Ir a sucursal
-        </a>
-        @if (puedeEliminar()) {
+      @if (modo() === 'administrador') {
+        <footer class="detalle__acciones detalle__acciones--admin">
+          @if (confirmandoEliminacion()) {
+            <div class="detalle__confirmacion" role="group" aria-labelledby="confirmar-baja-sucursal">
+              <p id="confirmar-baja-sucursal">
+                ¿Estás seguro de que querés eliminar la sucursal <strong>{{ local.nombre }}</strong>? Va a dejar de aparecer en el listado público.
+              </p>
+              @if (errorEliminacion()) {
+                <p class="detalle__error-eliminacion" role="alert">{{ errorEliminacion() }}</p>
+              }
+              <div class="detalle__confirmacion-acciones">
+                <button dsButton type="button" [disabled]="eliminando()" (clicked)="cancelarEliminacion()">Cancelar</button>
+                <button dsButton variant="danger" type="button" [loading]="eliminando()" (clicked)="confirmarEliminacion()">
+                  {{ eliminando() ? 'Eliminando…' : 'Confirmar eliminación' }}
+                </button>
+              </div>
+            </div>
+          } @else {
+            <button
+              dsButton
+              variant="danger"
+              type="button"
+              class="detalle__boton--eliminar"
+              (clicked)="solicitarEliminacion()"
+            >
+              Eliminar sucursal
+            </button>
+            <a class="detalle__boton detalle__boton--ir" [routerLink]="['/sucursal', local.id]">
+              Ver sucursal
+            </a>
+          }
+        </footer>
+      } @else {
+        <footer class="detalle__acciones">
+          <a class="detalle__boton detalle__boton--ir" [routerLink]="['/sucursal', local.id]">
+            Ir a sucursal
+          </a>
+          @if (puedeEliminar()) {
+            <button
+              dsButton
+              variant="danger"
+              type="button"
+              class="detalle__boton detalle__boton--eliminar"
+              (click)="abrirEliminacion()"
+            >
+              Eliminar sucursal
+            </button>
+          }
           <button
             dsButton
-            variant="danger"
+            variant="primary"
             type="button"
-            class="detalle__boton detalle__boton--eliminar"
-            (click)="abrirEliminacion()"
+            class="detalle__boton"
+            (click)="abrirEdicion()"
           >
-            Eliminar sucursal
+            Modificar sucursal
           </button>
-        }
-        <button
-          dsButton
-          variant="primary"
-          type="button"
-          class="detalle__boton"
-          (click)="abrirEdicion()"
-        >
-          Modificar sucursal
-        </button>
-      </footer>
+        </footer>
+      }
     }
   </article>
 </ds-modal>
@@ -172,9 +211,11 @@
   />
 }
 
-<app-sucursal-eliminar-modal
-  [sucursal]="sucursal()"
-  [abierto]="confirmandoEliminacion()"
-  (cerrar)="onEliminacionCancelada()"
-  (eliminado)="onEliminado()"
-/>
+@if (modo() !== 'administrador') {
+  <app-sucursal-eliminar-modal
+    [sucursal]="sucursal()"
+    [abierto]="confirmandoEliminacion()"
+    (cerrar)="onEliminacionCancelada()"
+    (eliminado)="onEliminado()"
+  />
+}

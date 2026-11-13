@@ -113,15 +113,25 @@ export class Navbar {
     { label: 'Mis Sucursales', path: '/mis-sucursales', icon: ICONS.store, exact: false, roles: ['EMPLEADOR'] },
     { label: 'Turnos asignados', path: '/turnos-asignados', icon: ICONS.calendar, exact: false, roles: ['EMPLEADO'] },
     { label: 'Administración', path: '/admin', icon: ICONS.shield, exact: false, roles: ['ADMINISTRADOR'] },
-    { label: 'Estadísticas', path: '/graficos/administrador', icon: ICONS.chart, exact: false, roles: ['ADMINISTRADOR'] },
   ];
 
   /** Accesos del menú de perfil, disponibles para cualquier usuario autenticado. */
   protected readonly linksCuenta: readonly NavItem[] = [
     { label: 'Mi Perfil', path: '/perfil', icon: ICONS.user, exact: false },
-    { label: 'Solicitudes', path: '/solicitudes', icon: ICONS.inbox, exact: false },
+    {
+      label: 'Solicitudes',
+      path: '/solicitudes',
+      icon: ICONS.inbox,
+      exact: false,
+      rolesExcluidos: ['ADMINISTRADOR'],
+    },
     { label: 'Ajustes', path: '/configuracion', icon: ICONS.settings, exact: false },
   ];
+
+  /** Menú de cuenta filtrado por los roles excluidos configurados. */
+  protected readonly cuentasVisibles = computed(() =>
+    this.linksCuenta.filter((link) => !this.accesoExcluido(link)),
+  );
 
   protected readonly primaryLinks = computed(() => [
     ...this.linksBase.filter((link) => !this.accesoExcluido(link)),

@@ -98,7 +98,7 @@
                 </div>
               </div>
               <div class="menu__divider"></div>
-              @for (link of linksCuenta; track link.path) {
+              @for (link of cuentasVisibles(); track link.path) {
                 <a class="menu__link" [routerLink]="link.path" role="menuitem">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="link.icon" />
@@ -209,7 +209,7 @@
 
         <p class="sheet__label">Cuenta</p>
         <ul class="sheet__list">
-          @for (link of linksCuenta; track link.path) {
+          @for (link of cuentasVisibles(); track link.path) {
             <li>
               <a
                 class="sheet__link"

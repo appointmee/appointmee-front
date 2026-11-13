@@ -1,10 +1,10 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
-import { UsuarioPerfilDTO, UsuarioResponseDTO } from '../models/usuario';
+import { UsuarioMiniAdminDTO, UsuarioPerfilDTO, UsuarioResponseDTO } from '../models/usuario';
 import { backendService } from './backend-service';
 
 @Injectable({ providedIn: 'root' })
@@ -19,6 +19,43 @@ export class usuarioService {
   obtenerPerfil(userId: number): Observable<UsuarioPerfilDTO> {
     return this.http.get<UsuarioPerfilDTO>(`${this.api.baseUrl}/usuarios/${userId}`, {
       context: this.contextoSinAvisoGlobal(),
+    });
+  }
+
+  /** Lista usuarios para el panel admin (el backend limita la cantidad máxima). */
+  listarAdmin(): Observable<UsuarioMiniAdminDTO[]> {
+    return this.http.get<UsuarioMiniAdminDTO[]>(`${this.api.baseUrl}/usuarios/listar`, {
+      context: this.contextoSinAvisoGlobal(),
+    });
+  }
+
+  /** Filtra usuarios por nombre, apellido y estado activo según el contrato admin. */
+  filtrarAdmin(filtros: { nombre?: string; apellido?: string; activo?: boolean }): Observable<UsuarioMiniAdminDTO[]> {
+    let params = new HttpParams();
+    const nombre = filtros.nombre?.trim();
+    const apellido = filtros.apellido?.trim();
+    if (nombre) params = params.set('nombre', nombre);
+    if (apellido) params = params.set('apellido', apellido);
+    if (filtros.activo !== undefined) params = params.set('activo', String(filtros.activo));
+    return this.http.get<UsuarioMiniAdminDTO[]>(`${this.api.baseUrl}/usuarios/listar/filtrar`, {
+      params,
+      context: this.contextoSinAvisoGlobal(),
+    });
+  }
+
+  /** Baja lógica administrativa. El backend restringe el endpoint a ADMINISTRADOR. */
+  eliminarAdmin(id: number): Observable<string> {
+    return this.http.delete(`${this.api.baseUrl}/usuarios/eliminar/${id}`, {
+      context: this.contextoSinAvisoGlobal(),
+      responseType: 'text',
+    });
+  }
+
+  /** Reactiva una cuenta inactiva; el endpoint está restringido a ADMINISTRADOR. */
+  activarAdmin(id: number): Observable<string> {
+    return this.http.patch(`${this.api.baseUrl}/usuarios/activar/${id}`, null, {
+      context: this.contextoSinAvisoGlobal(),
+      responseType: 'text',
     });
   }
 

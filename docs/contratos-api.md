@@ -24,6 +24,12 @@ El interceptor envía Bearer en rutas privadas y omite las rutas que reconoce co
 | `GET /sucursales/listar/filtrar` | Lectura pública | Query opcional `categoria`, `nombre` | `SucursalMiniDTO[]` |
 | `GET /sucursales/categorias` | Lectura pública | — | `string[]` |
 | `GET /sucursales/{id}` | Lectura pública | ID numérico | `SucursalDetalleDTO` |
+| `DELETE /sucursales/eliminar/{id}` | Baja lógica; rol `ADMINISTRADOR` | ID numérico | Texto plano |
+| `GET /usuarios/listar` | Listado administrativo; rol `ADMINISTRADOR` | — | `UsuarioMiniAdminDTO[]` |
+| `GET /usuarios/listar/filtrar` | Filtro administrativo; rol `ADMINISTRADOR` | Query opcional `nombre`, `apellido`, `activo` | `UsuarioMiniAdminDTO[]` |
+| `GET /usuarios/{id}` | Detalle propio o administrativo | ID numérico | `UsuarioPerfilDTO` |
+| `DELETE /usuarios/eliminar/{id}` | Baja lógica y revocación de sesiones; rol `ADMINISTRADOR` | ID numérico | Texto plano |
+| `PATCH /usuarios/activar/{id}` | Reactivar una cuenta inactiva; rol `ADMINISTRADOR` | ID numérico | Texto plano |
 | `GET /servicios/listar/sucursal/{id}` | La ruta de selección exige sesión en UI | ID numérico | `ServicioDTO[]` |
 | `GET /servicios/{id}` | Detalle de un servicio | ID numérico | `ServicioDTO` |
 | `POST /servicios/crear` | Crear servicio; rol `EMPLEADOR` | `ServicioPayload` | Texto plano `"Se creó el servicio"` |
@@ -51,6 +57,11 @@ interface SucursalDetalleDTO {
   descripcion: string | null; fechaCreacion: string | null; categoria: string | null;
   horaApertura: string | null; horaCierre: string | null; diasApertura: readonly string[] | null;
   puntuacion: number | null; cantidadPuntuaciones: number | null; fotoPerfil: string | null;
+}
+interface UsuarioMiniAdminDTO { id: number; nombre: string; apellido: string; estado: boolean; fotoPerfil: string | null }
+interface UsuarioPerfilDTO {
+  id: number; nombre: string; apellido: string; email: string; fechaCreacion: string | null;
+  fotoPerfil: string | null; roles: readonly string[]; sucursalesEmpleado: readonly SucursalMiniDTO[];
 }
 interface ServicioDTO {
   id: number; nombre: string; descripcion: string | null; duracion: number;
