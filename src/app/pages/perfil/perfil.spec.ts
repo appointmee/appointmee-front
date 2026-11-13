@@ -368,6 +368,10 @@ describe('US-PER-02 · Ver el perfil del usuario autenticado', () => {
     const avatar = host().querySelector<HTMLImageElement>('img.perfil__avatar');
     expect(avatar?.getAttribute('alt')).toBe('Foto de perfil de Ana Pérez');
 
+    const estilos = estilosRegistrados();
+    expect(estilos).toMatch(/\.perfil__avatar-marco[^{}]*\{[^}]*height:\s*var\(--perfil-avatar-size\)/);
+    expect(estilos).toMatch(/\.perfil__avatar[^{}]*\{[^}]*aspect-ratio:\s*1[^}]*object-fit:\s*cover/);
+
     avatar?.dispatchEvent(new Event('error'));
     fixture.detectChanges();
 
