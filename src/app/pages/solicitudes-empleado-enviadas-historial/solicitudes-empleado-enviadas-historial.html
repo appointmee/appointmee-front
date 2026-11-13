@@ -1,11 +1,11 @@
 <section class="historial" aria-labelledby="historial-titulo">
   <div class="historial__inner">
     <nav class="migas" aria-label="Navegación de solicitudes">
-      <a class="volver" routerLink="/mis-sucursales">
+      <a class="volver" [routerLink]="['/mis-sucursales']" [queryParams]="{ sucursalId: sucursalId() }">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M19 12H5M11 18l-6-6 6-6" />
         </svg>
-        Volver a Mis Sucursales
+        Volver al gestor
       </a>
     </nav>
 
@@ -79,7 +79,7 @@
             </span>
             <h3>Todavía no enviaste invitaciones</h3>
             <p>Cuando invites a alguien a sumarse al equipo, la vas a poder ver en este historial.</p>
-            <a class="boton" routerLink="/mis-sucursales">Volver a Mis Sucursales</a>
+            <a class="boton" [routerLink]="['/mis-sucursales']" [queryParams]="{ sucursalId: sucursalId() }">Volver al gestor</a>
           </div>
         } @else {
           <app-solicitud-empleado-lista

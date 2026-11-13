@@ -1,11 +1,16 @@
 <section class="servicios" aria-labelledby="servicios-titulo">
+  <div class="servicios__fondo" aria-hidden="true">
+    @if (fotoFondo(); as foto) {
+      <img [src]="foto" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" (error)="onFotoFondoError()" />
+    }
+  </div>
   <div class="servicios__inner">
     <nav class="migas" aria-label="Navegación">
-      <a class="volver" routerLink="/mis-sucursales">
+      <a class="volver" [routerLink]="['/mis-sucursales']" [queryParams]="{ sucursalId: sucursalId }">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M19 12H5M11 18l-6-6 6-6" />
         </svg>
-        Volver a mis sucursales
+        Volver al gestor
       </a>
     </nav>
 
@@ -49,7 +54,7 @@
       <div class="estado estado--contexto" role="alert" aria-live="assertive" aria-atomic="true">
         <h2>No pudimos identificar la sucursal</h2>
         <p>Volvé a elegir una sucursal para ver sus servicios.</p>
-        <a class="boton" routerLink="/mis-sucursales">Volver a mis sucursales</a>
+        <a class="boton" [routerLink]="['/mis-sucursales']" [queryParams]="{ sucursalId: sucursalIdValido ? sucursalId : null }">Volver al gestor</a>
       </div>
     } @else {
       @if (sinConexion() && !cargando() && !error()) {
@@ -94,7 +99,7 @@
             >
               {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
             </button>
-            <a class="boton boton--ghost" routerLink="/mis-sucursales">Volver</a>
+            <a class="boton boton--ghost" [routerLink]="['/mis-sucursales']" [queryParams]="{ sucursalId: sucursalId }">Volver al gestor</a>
           </div>
         </div>
       } @else if (servicios().length === 0) {
