@@ -1,6 +1,6 @@
 import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { backendService } from './backend-service';
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import { SucursalCrearPayload, SucursalDetalleDTO, SucursalMiniDTO, SucursalModificarPayload } from '../models/sucursal';
@@ -172,11 +172,24 @@ export class sucursalService {
     );
   }
 
-  /** Solicita la baja lógica; la autorización de propiedad se verifica en el backend. */
+  /**
+   * Elimina una sucursal propia del empleador.
+   *
+   * El backend expone `DELETE /sucursales/borrar-sucursal-propia/{sucursalId}`:
+   * exige el rol EMPLEADOR y comprueba que la sucursal sea del empleador que
+   * la pide. El endpoint devuelve un texto plano ("Se eliminó la sucursal"),
+   * por eso se pide `responseType: 'text'` y el resultado se descarta.
+   *
+   * El otro endpoint de borrado, `DELETE /sucursales/eliminar/{sucursalId}`,
+   * está reservado al administrador, así que no sirve para esta operación.
+   */
   eliminar(idSucursal: number): Observable<void> {
-    return this.http.delete<void>(`${this.api.baseUrl}/sucursales/${idSucursal}`, {
-      context: contextoSilenciado(true),
-    });
+    return this.http
+      .delete(`${this.api.baseUrl}/sucursales/borrar-sucursal-propia/${idSucursal}`, {
+        context: contextoSilenciado(true),
+        responseType: 'text',
+      })
+      .pipe(map(() => undefined));
   }
 
   private contextoSinAvisoGlobal(): HttpContext {

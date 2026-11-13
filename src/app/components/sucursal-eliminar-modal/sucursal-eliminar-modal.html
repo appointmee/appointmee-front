@@ -1,0 +1,60 @@
+<!-- Primera confirmación: todavía no se elimina nada. -->
+<ds-modal
+  [open]="abierto() && paso() === 'confirmar'"
+  (close)="cancelar()"
+  ariaLabelledby="eliminar-sucursal-titulo"
+  maxWidth="480px"
+>
+  <h2 id="eliminar-sucursal-titulo" class="eliminar__titulo">Eliminar sucursal</h2>
+
+  <p class="eliminar__texto">Este es un procedimiento definitivo, solo un administrador puede revertirlo y no esta garantizado, desea continuar?</p>
+
+  <div class="eliminar__acciones">
+    <button #botonCancelar dsButton type="button" (clicked)="cancelar()">Cancelar</button>
+    <button dsButton variant="danger" type="button" (clicked)="continuar()">Continuar</button>
+  </div>
+</ds-modal>
+
+<!-- Segunda confirmación: la última antes de eliminar definitivamente. -->
+<ds-modal
+  [open]="abierto() && paso() === 'definitivo'"
+  (close)="cancelar()"
+  ariaLabelledby="eliminar-sucursal-definitivo-titulo"
+  maxWidth="480px"
+>
+  <h2 id="eliminar-sucursal-definitivo-titulo" class="eliminar__titulo">
+    Última confirmación
+  </h2>
+
+  <p class="eliminar__texto">
+    Vas a eliminar la sucursal
+    <strong>{{ sucursal()?.nombre ?? 'seleccionada' }}</strong> de forma
+    permanente. Esta acción no se puede deshacer.
+  </p>
+
+  @if (error()) {
+    <p class="eliminar__error" role="alert">{{ error() }}</p>
+  }
+
+  <div class="eliminar__acciones">
+    <button
+      #botonCancelarDefinitivo
+      dsButton
+      type="button"
+      [disabled]="eliminando()"
+      (clicked)="cancelar()"
+    >
+      Cancelar
+    </button>
+    <button
+      dsButton
+      variant="danger"
+      type="button"
+      [loading]="eliminando()"
+      [disabled]="!puedeEliminar()"
+      (clicked)="confirmar()"
+    >
+      {{ eliminando() ? 'Eliminando…' : 'Eliminar permanentemente' }}
+    </button>
+  </div>
+</ds-modal>
