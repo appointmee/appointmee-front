@@ -43,9 +43,14 @@
             [attr.aria-pressed]="profesionalSeleccionadoId() === profesional.id"
             (click)="elegirProfesional(profesional.id)"
           >
-            @if (profesional.urlFotoPerfil) {
-              <img [src]="profesional.urlFotoPerfil" [alt]="profesional.nombre + ' ' + profesional.apellido" />
-            }
+            <img
+              [src]="foto(profesional)"
+              [alt]="'Fotografía de ' + profesional.nombre + ' ' + profesional.apellido"
+              loading="lazy"
+              decoding="async"
+              referrerpolicy="no-referrer"
+              (error)="onFotoError($event)"
+            />
             <span>{{ profesional.nombre }} {{ profesional.apellido }}</span>
             @if (profesionalSeleccionadoId() === profesional.id) {
               <small>Seleccionado</small>
