@@ -89,9 +89,6 @@ describe('Gráficos ECharts', () => {
     expect(opciones).toHaveLength(3);
     expect(opciones[0].series).toHaveLength(5);
     expect(opciones[1].series).toHaveLength(3);
-    expect(opciones[0]).toMatchObject({ yAxis: { axisLabel: { show: false } } });
-    expect(opciones[1]).toMatchObject({ yAxis: { axisLabel: { show: false } } });
-    expect(opciones[2]).toMatchObject({ yAxis: { axisLabel: { show: false } } });
     expect(fixture.nativeElement.querySelectorAll('table').length).toBeGreaterThanOrEqual(2);
     expect(fixture.nativeElement.querySelectorAll('[role="img"]').length).toBe(3);
   });
@@ -105,9 +102,6 @@ describe('Gráficos ECharts', () => {
     expect(opciones).toHaveLength(3);
     expect((opciones[1].series as { name: string }[])[0].name).toBe('Turnos');
     expect((opciones[2].series as { name: string }[])[0].name).toBe('Tasa de cancelación');
-    expect(opciones[0]).toMatchObject({ yAxis: { axisLabel: { show: false } } });
-    expect(opciones[1]).toMatchObject({ xAxis: { axisLabel: { show: false } } });
-    expect(opciones[2]).toMatchObject({ yAxis: { axisLabel: { show: false } } });
     expect(fixture.nativeElement.textContent).toContain('Demanda por servicio');
     expect(fixture.nativeElement.textContent).toContain('Sucursal: Sucursal');
     expect(fixture.nativeElement.textContent).not.toContain('Ocupación: dato no disponible');

@@ -95,7 +95,7 @@ export class Graficos {
       legend: { top: 0, textStyle: { color: this.colorTexto } },
       grid: { left: 48, right: 24, top: 44, bottom: 62 },
       xAxis: { type: 'category', data: filas.map((fila) => fila.periodo), axisLabel: { color: this.colorSecundario, rotate: 25 } },
-      yAxis: { type: 'value', minInterval: 1, axisLabel: { show: false }, splitLine: { lineStyle: { color: this.colorLinea } } },
+      yAxis: { type: 'value', minInterval: 1, axisLabel: { color: this.colorSecundario }, splitLine: { lineStyle: { color: this.colorLinea } } },
       dataZoom: this.zoom(filas.length),
       series: this.roles.map((rol) => ({
         name: this.rolLabel(rol), type: 'line' as const, smooth: true, symbolSize: 7,
@@ -109,7 +109,7 @@ export class Graficos {
       ...this.baseOption(),
       grid: { left: 48, right: 24, top: 24, bottom: 62 },
       xAxis: { type: 'category', data: filas.map((fila) => fila.periodo), axisLabel: { color: this.colorSecundario, rotate: 25 } },
-       yAxis: { type: 'value', minInterval: 1, axisLabel: { show: false }, splitLine: { lineStyle: { color: this.colorLinea } } },
+       yAxis: { type: 'value', minInterval: 1, axisLabel: { color: this.colorSecundario }, splitLine: { lineStyle: { color: this.colorLinea } } },
       dataZoom: this.zoom(filas.length),
       series: [{ name: 'Nuevas sucursales', type: 'bar', data: filas.map((fila) => fila.nuevas), barMaxWidth: 34, itemStyle: { borderRadius: [6, 6, 0, 0] } }],
     };
@@ -119,7 +119,7 @@ export class Graficos {
     return {
       ...this.baseOption(),
       grid: { left: 120, right: 30, top: 20, bottom: 30 },
-      xAxis: { type: 'value', minInterval: 1, axisLabel: { show: false }, splitLine: { lineStyle: { color: this.colorLinea } } },
+      xAxis: { type: 'value', minInterval: 1, axisLabel: { color: this.colorSecundario }, splitLine: { lineStyle: { color: this.colorLinea } } },
       yAxis: { type: 'category', data: filas.map((fila) => fila.servicio), axisLabel: { color: this.colorSecundario, width: 105, overflow: 'truncate' } },
       series: [{ name: 'Turnos', type: 'bar', data: filas.map((fila) => fila.cantidad), barMaxWidth: 28, itemStyle: { borderRadius: [0, 6, 6, 0] } }],
     };
@@ -130,7 +130,7 @@ export class Graficos {
       ...this.baseOption(),
       grid: { left: 48, right: 24, top: 24, bottom: 62 },
       xAxis: { type: 'category', data: filas.map((fila) => fila.periodo), axisLabel: { color: this.colorSecundario, rotate: 25 } },
-      yAxis: { type: 'value', min: 0, max: 100, axisLabel: { show: false }, splitLine: { lineStyle: { color: this.colorLinea } } },
+      yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: this.colorSecundario, formatter: '{value}%' }, splitLine: { lineStyle: { color: this.colorLinea } } },
       dataZoom: this.zoom(filas.length),
       series: [{ name: 'Tasa de cancelación', type: 'line', smooth: true, symbolSize: 7, data: filas.map((fila) => fila.tasa), areaStyle: { opacity: 0.14 } }],
     };
@@ -213,7 +213,7 @@ export class Graficos {
       legend: { top: 0, textStyle: { color: this.colorTexto } },
       grid: { left: 48, right: 24, top: 44, bottom: 62 },
       xAxis: { type: 'category', data: filas.map((fila) => fila.periodo), axisLabel: { color: this.colorSecundario, rotate: 25 } },
-      yAxis: { type: 'value', minInterval: 1, axisLabel: { show: false }, splitLine: { lineStyle: { color: this.colorLinea } } },
+      yAxis: { type: 'value', minInterval: 1, axisLabel: { color: this.colorSecundario }, splitLine: { lineStyle: { color: this.colorLinea } } },
       dataZoom: this.zoom(filas.length),
       series: ESTADO_SERIES.map((estado) => ({
         name: this.estadoLabel(estado), type: 'bar' as const, stack: 'turnos',
