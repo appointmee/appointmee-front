@@ -128,6 +128,7 @@ describe('Gráficos ECharts', () => {
       .querySelector<HTMLAnchorElement>('.encabezado .volver');
     expect(volver?.textContent).toContain('Volver a la sucursal');
     expect(volver?.getAttribute('href')).toBe('/mis-sucursales?sucursalId=12');
+    expect(volver?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
   });
 
   it('no elige otra sucursal automáticamente cuando la ruta no lleva un ID válido', async () => {
