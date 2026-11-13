@@ -98,6 +98,8 @@
 .foto__avatar {
   display: grid;
   width: 7rem;
+  height: 7rem;
+  min-width: 7rem;
   aspect-ratio: 1;
   padding: var(--space-1);
   place-items: center;
@@ -212,6 +214,6 @@ ds-modal {
   .correo-actual--email { padding: var(--space-3); }
   .datos__acciones > button { width: 100%; }
   .foto { grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); padding: var(--space-3); }
-  .foto__avatar { width: 5rem; }
+  .foto__avatar { width: 5rem; height: 5rem; min-width: 5rem; }
   .foto__botones { display: grid; grid-template-columns: 1fr; }
 }
