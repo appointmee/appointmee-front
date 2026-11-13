@@ -14,7 +14,10 @@
     <div class="error-card__actions">
       @if (variant() === 'sucursal-no-encontrada') {
         <a class="error-button error-button--primary" routerLink="/sucursales">Volver a sucursales</a>
-        <a class="error-button error-button--quiet" routerLink="/">Ir al inicio</a>
+        <a class="error-button error-button--quiet" routerLink="/">Volver al inicio</a>
+      } @else if (errorDeAutenticacion()) {
+        <a class="error-button" routerLink="/sucursales">Ver sucursales</a>
+        <a class="error-button error-button--quiet" routerLink="/">Volver al inicio</a>
       } @else {
         @if (canRetry) {
           <button dsButton class="error-button error-button--primary" type="button" [disabled]="retrying()" (click)="retry()">
@@ -26,7 +29,7 @@
         } @else {
           <a class="error-button" routerLink="/sucursales">Ver sucursales</a>
         }
-        <a class="error-button error-button--quiet" routerLink="/">Ir al inicio</a>
+        <a class="error-button error-button--quiet" routerLink="/">Volver al inicio</a>
       }
     </div>
   </div>

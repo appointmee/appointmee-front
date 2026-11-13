@@ -36,6 +36,9 @@ export class ErrorPage {
   protected readonly canRetry = this.status !== null
     && [0, 500, 502, 503].includes(this.status) && !!this.returnTo;
 
+  /** Estados de autenticación (401/403) con acciones de salida fijas de la pantalla. */
+  protected readonly errorDeAutenticacion = computed(() => this.status === 401 || this.status === 403);
+
   /**
    * Permite reutilizar esta pantalla desde otras vistas (por ejemplo el detalle
    * de sucursal) sin duplicar el diseño de error existente.
@@ -45,15 +48,21 @@ export class ErrorPage {
   protected readonly heading = computed(() =>
     this.variant() === 'sucursal-no-encontrada'
       ? 'No encontramos esta sucursal'
+      : this.status === 401 ? 'Error 401 - No autenticado'
+      : this.status === 403 ? 'Error 403 - Acceso denegado'
       : this.status === 0 ? 'No pudimos conectarnos' : 'Algo salió mal',
   );
 
   protected readonly description = computed(() =>
     this.variant() === 'sucursal-no-encontrada'
       ? 'La sucursal que buscás no existe o ya no está disponible. Volvé al listado para elegir otra.'
-      : this.status === 0
-        ? 'Revisá tu conexión e intentá de nuevo.'
-        : 'No pudimos completar tu solicitud. Podés volver a intentarlo o continuar desde el inicio.',
+      : this.status === 401
+        ? 'No has iniciado sesión o tu sesión ha expirado. Iniciá sesión para acceder a esta sección.'
+        : this.status === 403
+          ? 'No tenés los permisos necesarios para acceder a esta sección.'
+        : this.status === 0
+          ? 'Revisá tu conexión e intentá de nuevo.'
+          : 'No pudimos completar tu solicitud. Podés volver a intentarlo o continuar desde el inicio.',
   );
 
   constructor() {

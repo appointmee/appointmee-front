@@ -16,7 +16,11 @@ describe('ErrorPage', () => {
     await TestBed.configureTestingModule({
       imports: [ErrorPage],
       providers: [
-        provideRouter([{ path: 'private', component: TestRoute }]),
+        provideRouter([
+          { path: '', component: TestRoute },
+          { path: 'private', component: TestRoute },
+          { path: 'sucursales', component: TestRoute },
+        ]),
         { provide: NavigationHistory, useValue: { backTarget } },
         { provide: ReporteError, useValue: { registrar: registrarError } },
       ],
@@ -32,7 +36,7 @@ describe('ErrorPage', () => {
 
     const html = fixture.nativeElement as HTMLElement;
     expect(html.querySelector('h1')?.textContent).toContain('Algo salió mal');
-    expect(html.querySelector('a[routerLink="/"]')?.textContent).toContain('Ir al inicio');
+    expect(html.querySelector('a[routerLink="/"]')?.textContent).toContain('Volver al inicio');
     expect(html.textContent).not.toContain('stack trace');
     expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow');
   });
@@ -106,6 +110,7 @@ describe('ErrorPage', () => {
 
   it('always offers at least two actions as a way out', async () => {
     // Sin historial hay dos destinos útiles: sucursales e inicio.
+    history.replaceState({}, '');
     const fixture = TestBed.createComponent(ErrorPage);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -115,9 +120,10 @@ describe('ErrorPage', () => {
     const buttons = actions?.querySelectorAll('button, a') ?? [];
     expect(buttons.length).toBeGreaterThanOrEqual(2);
     expect(actions?.textContent).toContain('Ver sucursales');
-    expect(actions?.textContent).not.toContain('Volver');
+    expect(actions?.textContent).toContain('Volver al inicio');
+    expect(actions?.querySelector('button')).toBeNull();
 
-    // Con returnTo seguro y estado recuperable: 'Reintentar' + 'Volver' + 'Ir al inicio' = 3.
+    // Con returnTo seguro y estado recuperable: 'Reintentar' + 'Ver sucursales' + 'Volver al inicio' = 3.
     history.replaceState({ status: 503, returnTo: '/private' }, '');
     const fixture2 = TestBed.createComponent(ErrorPage);
     fixture2.detectChanges();
@@ -155,5 +161,71 @@ describe('ErrorPage', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('h1')).not.toBeNull();
+  });
+
+  it('muestra el error 401 sin autenticación con sus acciones de salida', async () => {
+    history.replaceState({ status: 401 }, '');
+    const fixture = TestBed.createComponent(ErrorPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('h1')?.textContent).toContain('Error 401 - No autenticado');
+    expect(html.textContent).toContain('No has iniciado sesión o tu sesión ha expirado. Iniciá sesión para acceder a esta sección.');
+    // El error de autenticación no ofrece reintento: solo salida al inicio y a sucursales.
+    expect(html.querySelector('button')).toBeNull();
+
+    const actions = html.querySelector('.error-card__actions');
+    expect(actions?.textContent).toContain('Ver sucursales');
+    expect(actions?.textContent).toContain('Volver al inicio');
+    expect(actions?.querySelectorAll('button, a')).toHaveLength(2);
+  });
+
+  it('muestra el error 403 de acceso denegado con sus acciones de salida', async () => {
+    history.replaceState({ status: 403 }, '');
+    const fixture = TestBed.createComponent(ErrorPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('h1')?.textContent).toContain('Error 403 - Acceso denegado');
+    expect(html.textContent).toContain('No tenés los permisos necesarios para acceder a esta sección.');
+
+    const actions = html.querySelector('.error-card__actions');
+    expect(actions?.textContent).toContain('Ver sucursales');
+    expect(actions?.textContent).toContain('Volver al inicio');
+    expect(actions?.querySelectorAll('button, a')).toHaveLength(2);
+  });
+
+  it('redirige al inicio desde el botón Volver al inicio de la pantalla de error', async () => {
+    history.replaceState({ status: 401 }, '');
+    const fixture = TestBed.createComponent(ErrorPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const html = fixture.nativeElement as HTMLElement;
+    const botonInicio = html.querySelector<HTMLAnchorElement>('a[routerLink="/"]');
+    expect(botonInicio?.textContent).toContain('Volver al inicio');
+    botonInicio!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(TestBed.inject(Router).url).toBe('/');
+  });
+
+  it('redirige a sucursales desde el botón Ver sucursales de la pantalla de error', async () => {
+    history.replaceState({ status: 403 }, '');
+    const fixture = TestBed.createComponent(ErrorPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const html = fixture.nativeElement as HTMLElement;
+    const botonSucursales = html.querySelector<HTMLAnchorElement>('a[routerLink="/sucursales"]');
+    expect(botonSucursales?.textContent).toContain('Ver sucursales');
+    botonSucursales!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(TestBed.inject(Router).url).toBe('/sucursales');
   });
 });

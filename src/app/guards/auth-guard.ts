@@ -8,16 +8,12 @@ export const authGuard: CanActivateFn = (route, state) => {
   const auth = inject(authService);
   const router = inject(Router);
 
-  // Destino del visitante cuando no tiene una sesión válida
+  // Destino del visitante cuando no tiene una sesión válida: la pantalla de
+  // error existente representa el escenario 401 de autenticación.
 
-  const login = () => router.createUrlTree(['/login'], {
-    queryParams: {
-      returnTo: state.url,
-      ...(auth.expirado() ? { expired: '1' } : {}),
-    },
-  });
+  const errorSinSesion = () => router.createUrlTree(['/error'], { queryParams: { status: 401 } });
 
-  if (!auth.getAccessToken() && !auth.getRefreshToken()) return login();
+  if (!auth.getAccessToken() && !auth.getRefreshToken()) return errorSinSesion();
 
   // Sin conexión no validamos la sesión por red: la pantalla de destino (por
   // ejemplo el detalle de sucursal) se encarga de mostrar el aviso correspondiente.
@@ -47,7 +43,7 @@ export const authGuard: CanActivateFn = (route, state) => {
 
       if (status === 401) {
         auth.limpiarSesion();
-        return of(login());
+        return of(errorSinSesion());
       }
 
       // Ante un error de red (sin conexión) dejamos pasar a la ruta para que
