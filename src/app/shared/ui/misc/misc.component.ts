@@ -100,7 +100,7 @@ export class DsEmptyStateComponent {
     </div>
   }`,
   styles: [
-    `.ds-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:var(--space-4)}.ds-modal{transform:translateY(var(--ds-modal-offset-y,0px));background:var(--ds-modal-background,var(--surface));border:1px solid var(--ds-modal-border-color,var(--line));border-radius:var(--ds-modal-radius,var(--radius-lg));box-shadow:var(--ds-modal-shadow,var(--shadow-md));padding:var(--ds-modal-padding,var(--space-4));max-width:500px;width:100%;max-height:90dvh;overflow:auto;overscroll-behavior:contain}.ds-modal:focus-visible{outline:var(--ds-modal-focus-outline,2px solid var(--accent));outline-offset:2px}`,
+    `.ds-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:var(--space-4)}.ds-modal{transform:translateY(var(--ds-modal-offset-y,0px));background:var(--ds-modal-background,var(--surface));border:1px solid var(--ds-modal-border-color,var(--line));border-radius:var(--ds-modal-radius,var(--radius-lg));box-shadow:var(--ds-modal-shadow,var(--shadow-md));padding:var(--ds-modal-padding,var(--space-4));max-width:500px;width:100%;max-height:var(--ds-modal-max-height,90dvh);overflow:auto;overscroll-behavior:contain}.ds-modal:focus-visible{outline:var(--ds-modal-focus-outline,2px solid var(--accent));outline-offset:2px}`,
   ],
 })
 export class DsModalComponent implements AfterViewChecked, OnDestroy {

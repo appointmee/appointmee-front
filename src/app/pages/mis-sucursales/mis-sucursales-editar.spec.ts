@@ -315,6 +315,7 @@ describe('SCRUM-265 · Ver y modificar los datos de la sucursal', () => {
       const modal = formulario.querySelector<HTMLElement>('ds-modal')!;
       expect(modal.style.getPropertyValue('--ds-modal-offset-y')).toBe('min(var(--space-6), 4dvh)');
       expect(modal.style.getPropertyValue('--ds-modal-padding')).toBe('var(--space-3)');
+      expect(modal.style.getPropertyValue('--ds-modal-max-height')).toBe('81dvh');
       expect(modal.style.getPropertyValue('--sucursal-form-section-padding')).toBe('var(--space-4)');
       expect(formulario.querySelector<HTMLInputElement>('#sucursal-editar-nombre')!.value).toBe(
         'Barber House',
@@ -448,7 +449,11 @@ describe('SCRUM-265 · Ver y modificar los datos de la sucursal', () => {
       await abrirFormulario();
 
       escribir('sucursal-editar-nombre', 'Barber House Centro');
-      botonPorTexto('Cancelar')?.click();
+      const cerrar = host().querySelector<HTMLButtonElement>(
+        '[aria-label="Cerrar edición de sucursal"]',
+      );
+      expect(cerrar).toBeTruthy();
+      cerrar!.click();
       fixture.detectChanges();
       await fixture.whenStable();
       fixture.detectChanges();
