@@ -143,7 +143,10 @@ export class Graficos {
     this.sucursalApi.listarPropias().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (sucursales) => {
         this.sucursales.set(sucursales);
-        this.sucursalId.set(sucursales[0]?.id ?? null);
+        const sucursalSolicitada = Number(this.route.snapshot.queryParamMap?.get('sucursalId'));
+        const sucursalInicial = sucursales.find((sucursal) => sucursal.id === sucursalSolicitada)
+          ?? sucursales[0];
+        this.sucursalId.set(sucursalInicial?.id ?? null);
         this.primeraCargaSucursales.set(false);
         if (sucursales.length) this.cargar();
       },

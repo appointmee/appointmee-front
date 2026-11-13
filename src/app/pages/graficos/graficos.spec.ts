@@ -45,14 +45,25 @@ describe('Gráficos ECharts', () => {
   let empleador: ReturnType<typeof vi.fn>;
   let fixture: ComponentFixture<Graficos>;
 
-  async function abrir(rolGrafico: 'administrador' | 'empleador'): Promise<void> {
+  async function abrir(rolGrafico: 'administrador' | 'empleador', sucursalId?: number): Promise<void> {
     TestBed.configureTestingModule({
       imports: [Graficos],
       providers: [
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { snapshot: { data: { rolGrafico } } } },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              data: { rolGrafico },
+              queryParamMap: { get: (clave: string) => clave === 'sucursalId' && sucursalId ? String(sucursalId) : null },
+            },
+          },
+        },
         { provide: estadisticasService, useValue: { administrador: admin, empleador } },
-        { provide: sucursalService, useValue: { listarPropias: () => of([{ id: 9, nombre: 'Sucursal', categoria: 'BARBERIA', fotoPerfil: null, puntuacion: 0, cantidadPuntuaciones: 0 }]) } },
+        { provide: sucursalService, useValue: { listarPropias: () => of([
+          { id: 9, nombre: 'Sucursal', categoria: 'BARBERIA', fotoPerfil: null, puntuacion: 0, cantidadPuntuaciones: 0 },
+          { id: 12, nombre: 'Otra sucursal', categoria: 'BARBERIA', fotoPerfil: null, puntuacion: 0, cantidadPuntuaciones: 0 },
+        ]) } },
       ],
     });
     TestBed.overrideComponent(Graficos, {
@@ -92,5 +103,12 @@ describe('Gráficos ECharts', () => {
     expect((opciones[1].series as { name: string }[])[0].name).toBe('Turnos');
     expect((opciones[2].series as { name: string }[])[0].name).toBe('Tasa de cancelación');
     expect(fixture.nativeElement.textContent).toContain('Demanda por servicio');
+  });
+
+  it('carga las estadísticas de la sucursal solicitada desde Mis sucursales', async () => {
+    await abrir('empleador', 12);
+
+    expect(empleador).toHaveBeenCalledWith(12, expect.any(String), expect.any(String), 'DIA');
+    expect(fixture.nativeElement.querySelector('select')?.value).toBe('12');
   });
 });

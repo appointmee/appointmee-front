@@ -72,6 +72,9 @@ describe('MisSucursales', () => {
     expect(host.textContent).toContain('Galería de imágenes');
     expect(host.textContent).toContain('Turnos');
     expect(host.textContent).toContain('Solicitudes');
+    const estadisticas = host.querySelector<HTMLAnchorElement>('.gestor__tarjetas a[href^="/graficos/empleador"]');
+    expect(estadisticas?.textContent).toContain('Estadísticas');
+    expect(estadisticas?.getAttribute('href')).toBe('/graficos/empleador?sucursalId=5');
     expect(host.textContent).toContain('Sucursal');
     expect(host.querySelector('.gestor')?.previousElementSibling?.classList.contains('volver-gestor')).toBe(true);
   });

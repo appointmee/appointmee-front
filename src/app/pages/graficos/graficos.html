@@ -20,7 +20,7 @@
         Sucursal
         <select [value]="sucursalId() ?? ''" (change)="cambiarSucursal($event)" [disabled]="primeraCargaSucursales()">
           @for (sucursal of sucursales(); track sucursal.id) {
-            <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
+            <option [value]="sucursal.id" [selected]="sucursal.id === sucursalId()">{{ sucursal.nombre }}</option>
           }
         </select>
       </label>
