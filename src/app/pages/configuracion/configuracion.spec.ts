@@ -5,18 +5,20 @@ const estadoEnvio = (espera = 60) => ({ verificada: false, enviado: true, enviad
 import { Configuracion } from './configuracion';
 import { verificacionPendienteService } from '../../services/verificacion-pendiente-service';
 import { authService } from '../../services/auth-service';
+import { verificacionService } from '../../services/verificacion-service';
 
 describe('Ajustes · Verificar cuenta', () => {
   let fixture: ComponentFixture<Configuracion>;
   let page: Configuracion;
-  const auth = { perfil: vi.fn(), autenticado: vi.fn(), solicitarVerificacion: vi.fn(), verificarEmail: vi.fn() };
+  const auth = { perfil: vi.fn(), autenticado: vi.fn() };
+  const verificacion = { solicitarVerificacion: vi.fn(), verificarEmail: vi.fn() };
 
   beforeEach(async () => {
     vi.resetAllMocks();
     sessionStorage.clear();
     auth.autenticado.mockReturnValue(false); auth.perfil.mockReturnValue(null);
     await TestBed.configureTestingModule({ imports: [Configuracion], providers: [
-      provideRouter([]), { provide: authService, useValue: auth },
+      provideRouter([]), { provide: authService, useValue: auth }, { provide: verificacionService, useValue: verificacion },
     ] }).compileComponents();
     const pendiente = TestBed.inject(verificacionPendienteService);
     pendiente.guardarEmail('ana@example.com', 'ticket-prueba');
@@ -43,32 +45,32 @@ describe('Ajustes · Verificar cuenta', () => {
 
   it('solicitar código valida solo email, no exige código todavía', () => {
     page.verificacionModel.set({ email: 'invalido', codigo: '' }); fixture.detectChanges();
-    page.enviarCodigo(); expect(auth.solicitarVerificacion).not.toHaveBeenCalled();
-    const response = new Subject<{ message: string }>(); auth.solicitarVerificacion.mockReturnValue(response);
+    page.enviarCodigo(); expect(verificacion.solicitarVerificacion).not.toHaveBeenCalled();
+    const response = new Subject<{ message: string }>(); verificacion.solicitarVerificacion.mockReturnValue(response);
     page.verificacionModel.set({ email: ' Ana@Example.com ', codigo: '' }); fixture.detectChanges();
     page.enviarCodigo(); page.enviarCodigo();
-    expect(auth.solicitarVerificacion).toHaveBeenCalledTimes(1);
-    expect(auth.solicitarVerificacion).toHaveBeenCalledWith('ana@example.com', true);
+    expect(verificacion.solicitarVerificacion).toHaveBeenCalledTimes(1);
+    expect(verificacion.solicitarVerificacion).toHaveBeenCalledWith('ana@example.com', true);
     response.next(estadoEnvio() as any); response.complete(); fixture.detectChanges();
     expect(page.segundosReenvio()).toBe(60);
-    page.enviarCodigo(); expect(auth.solicitarVerificacion).toHaveBeenCalledTimes(1);
+    page.enviarCodigo(); expect(verificacion.solicitarVerificacion).toHaveBeenCalledTimes(1);
     expect(fixture.nativeElement.textContent).toContain('Código enviado');
   });
 
   it('no confirma sin un código de seis dígitos', () => {
     page.verificacionModel.update(datos => ({ ...datos, codigo: '123' })); fixture.detectChanges();
     page.confirmarCodigo(new Event('submit'));
-    expect(auth.verificarEmail).not.toHaveBeenCalled();
+    expect(verificacion.verificarEmail).not.toHaveBeenCalled();
     fixture.detectChanges(); expect(fixture.nativeElement.textContent).toContain('El código debe tener 6 dígitos');
   });
 
   it('confirma por Enter o submit y muestra el acceso a Sucursales', () => {
-    const response = new Subject<{ message: string }>(); auth.verificarEmail.mockReturnValue(response);
+    const response = new Subject<{ message: string }>(); verificacion.verificarEmail.mockReturnValue(response);
     page.verificacionModel.update(datos => ({ ...datos, codigo: '012345' })); fixture.detectChanges();
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     page.confirmarCodigo(new Event('submit'));
-    expect(auth.verificarEmail).toHaveBeenCalledTimes(1);
-    expect(auth.verificarEmail).toHaveBeenCalledWith('ana@example.com', '012345');
+    expect(verificacion.verificarEmail).toHaveBeenCalledTimes(1);
+    expect(verificacion.verificarEmail).toHaveBeenCalledWith('ana@example.com', '012345');
     response.next({ message: 'Email verificado' }); response.complete(); fixture.detectChanges();
     expect(page.verificada()).toBe(true); expect(page.verificacionModel().codigo).toBe('');
     expect(TestBed.inject(verificacionPendienteService).leer()).toBeNull();
@@ -79,7 +81,7 @@ describe('Ajustes · Verificar cuenta', () => {
   });
 
   it.each([400, 0, 503])('muestra el error %s y permite corregir o reintentar', status => {
-    const response = new Subject<{ message: string }>(); auth.verificarEmail.mockReturnValue(response);
+    const response = new Subject<{ message: string }>(); verificacion.verificarEmail.mockReturnValue(response);
     page.verificacionModel.update(datos => ({ ...datos, codigo: '123456' })); fixture.detectChanges();
     page.confirmarCodigo(new Event('submit')); response.error({ status }); fixture.detectChanges();
     expect(page.confirmando()).toBe(false); expect(page.verificada()).toBe(false);
@@ -93,7 +95,7 @@ describe('Ajustes · Verificar cuenta', () => {
     expect(page.verificacionModel().email).toBe('cuenta@example.com');
     expect(fixture.nativeElement.textContent).toContain('Tu cuenta ya está verificada');
     expect(fixture.nativeElement.querySelector('form')).toBeNull();
-    page.enviarCodigo(); expect(auth.solicitarVerificacion).not.toHaveBeenCalled();
+    page.enviarCodigo(); expect(verificacion.solicitarVerificacion).not.toHaveBeenCalled();
   });
 
   it('pega el código completo, filtra números y no autoenvía', () => {
@@ -107,7 +109,7 @@ describe('Ajustes · Verificar cuenta', () => {
     expect(document.activeElement).toBe(ultimo);
     expect(ultimo.selectionStart).toBe(0);
     expect(ultimo.selectionEnd).toBe(1);
-    expect(Array.from(fixture.nativeElement.querySelectorAll('.verificacion__casilla') as NodeListOf<HTMLInputElement>).map(campo => campo.value).join('')).toBe('012345'); expect(auth.verificarEmail).not.toHaveBeenCalled();
+    expect(Array.from(fixture.nativeElement.querySelectorAll('.verificacion__casilla') as NodeListOf<HTMLInputElement>).map(campo => campo.value).join('')).toBe('012345'); expect(verificacion.verificarEmail).not.toHaveBeenCalled();
     expect((fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(false);
     input.value = 'ab12x34'; input.dispatchEvent(new Event('input', { bubbles: true })); fixture.detectChanges();
     expect(page.verificacionModel().codigo).toBe('1234');
@@ -115,7 +117,7 @@ describe('Ajustes · Verificar cuenta', () => {
   });
 
   it('error incorrecto limpia el código, enfoca el campo y ofrece reenviar', () => {
-    const response = new Subject<{ message: string }>(); auth.verificarEmail.mockReturnValue(response);
+    const response = new Subject<{ message: string }>(); verificacion.verificarEmail.mockReturnValue(response);
     page.verificacionModel.update(datos => ({ ...datos, codigo: '123456' })); fixture.detectChanges();
     page.confirmarCodigo(new Event('submit')); response.error({ status: 400 }); fixture.detectChanges();
     expect(page.error()).toBe('El código es incorrecto o venció');
@@ -127,20 +129,20 @@ describe('Ajustes · Verificar cuenta', () => {
 
   it('bloquea al quinto error, conserva el bloqueo al recargar y permite nuevo código tras la espera', () => {
     for (let i = 0; i < 5; i++) {
-      const response = new Subject<{ message: string }>(); auth.verificarEmail.mockReturnValue(response);
+      const response = new Subject<{ message: string }>(); verificacion.verificarEmail.mockReturnValue(response);
       page.verificacionModel.update(datos => ({ ...datos, codigo: '123456' })); fixture.detectChanges();
       page.confirmarCodigo(new Event('submit')); response.error({ status: 400, attemptsRemaining: 4 - i, retryAfterSeconds: 60 }); fixture.detectChanges();
     }
     expect(page.bloqueada()).toBe(true);
     expect(page.segundosReenvio()).toBeGreaterThan(0);
     page.verificacionModel.update(datos => ({ ...datos, codigo: '123456' }));
-    page.confirmarCodigo(new Event('submit')); expect(auth.verificarEmail).toHaveBeenCalledTimes(5);
+    page.confirmarCodigo(new Event('submit')); expect(verificacion.verificarEmail).toHaveBeenCalledTimes(5);
     fixture.destroy(); fixture = TestBed.createComponent(Configuracion); page = fixture.componentInstance; fixture.detectChanges();
     expect(page.bloqueada()).toBe(true); expect(page.verificacionModel().email).toBe('ana@example.com');
     const pending = TestBed.inject(verificacionPendienteService).leer()!;
     sessionStorage.setItem('verificacionPendiente', JSON.stringify({ ...pending, reenviarDesde: 0 }));
     page.segundosReenvio.set(0);
-    const response = new Subject<{ message: string }>(); auth.solicitarVerificacion.mockReturnValue(response);
+    const response = new Subject<{ message: string }>(); verificacion.solicitarVerificacion.mockReturnValue(response);
     page.enviarCodigo(); response.next(estadoEnvio() as any); response.complete(); fixture.detectChanges();
     expect(page.bloqueada()).toBe(false); expect(TestBed.inject(verificacionPendienteService).leer()?.intentos).toBe(0);
   });
@@ -166,7 +168,7 @@ describe('Ajustes · Verificar cuenta', () => {
       expect(document.activeElement).toBe(campos[Math.min(indice + 1, 5)]);
     });
     expect(page.verificacionModel().codigo).toBe('012345');
-    expect(auth.verificarEmail).not.toHaveBeenCalled();
+    expect(verificacion.verificarEmail).not.toHaveBeenCalled();
     campos[5].dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true }));
     fixture.detectChanges();
     expect(campos[5].value).toBe(''); expect(document.activeElement).toBe(campos[4]);
@@ -212,25 +214,25 @@ describe('Ajustes · Verificar cuenta', () => {
     fixture.destroy();
     const pendiente = TestBed.inject(verificacionPendienteService);
     pendiente.limpiar(); pendiente.guardarEmail('ana@example.com', 'ticket-prueba');
-    const inicial = new Subject<{ message: string }>(); auth.solicitarVerificacion.mockReturnValue(inicial);
+    const inicial = new Subject<{ message: string }>(); verificacion.solicitarVerificacion.mockReturnValue(inicial);
     fixture = TestBed.createComponent(Configuracion); page = fixture.componentInstance; fixture.detectChanges();
-    expect(auth.solicitarVerificacion).toHaveBeenCalledTimes(1); expect(page.enviando()).toBe(true);
+    expect(verificacion.solicitarVerificacion).toHaveBeenCalledTimes(1); expect(page.enviando()).toBe(true);
     inicial.next(estadoEnvio(15) as any); inicial.complete(); fixture.detectChanges();
     expect(page.codigoEnviado()).toBe(true); expect(page.segundosReenvio()).toBe(15);
     vi.advanceTimersByTime(5000); fixture.detectChanges(); expect(page.segundosReenvio()).toBe(10);
     fixture.destroy(); fixture = TestBed.createComponent(Configuracion); page = fixture.componentInstance; fixture.detectChanges();
-    expect(auth.solicitarVerificacion).toHaveBeenCalledTimes(1); expect(page.segundosReenvio()).toBe(10);
+    expect(verificacion.solicitarVerificacion).toHaveBeenCalledTimes(1); expect(page.segundosReenvio()).toBe(10);
     vi.advanceTimersByTime(10000); fixture.detectChanges(); expect(page.segundosReenvio()).toBe(0);
-    const reenvio = new Subject<{ message: string }>(); auth.solicitarVerificacion.mockReturnValue(reenvio);
+    const reenvio = new Subject<{ message: string }>(); verificacion.solicitarVerificacion.mockReturnValue(reenvio);
     page.enviarCodigo(); reenvio.next(estadoEnvio(60) as any); reenvio.complete(); fixture.detectChanges();
     expect(page.segundosReenvio()).toBe(60);
-    page.enviarCodigo(); expect(auth.solicitarVerificacion).toHaveBeenCalledTimes(2);
+    page.enviarCodigo(); expect(verificacion.solicitarVerificacion).toHaveBeenCalledTimes(2);
   });
 
   it('muestra Todo bien y redirige a Sucursales después de dos segundos', () => {
     vi.useFakeTimers();
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
-    const response = new Subject<{ message: string }>(); auth.verificarEmail.mockReturnValue(response);
+    const response = new Subject<{ message: string }>(); verificacion.verificarEmail.mockReturnValue(response);
     page.verificacionModel.update(datos => ({ ...datos, codigo: '012345' })); fixture.detectChanges();
     page.confirmarCodigo(new Event('submit')); response.next({ message: 'ok' }); response.complete(); fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('¡Todo bien!'); expect(navigate).not.toHaveBeenCalled();
@@ -238,7 +240,7 @@ describe('Ajustes · Verificar cuenta', () => {
   });
 
   it('si el backend no reenvía, conserva el código y usa su espera sin reiniciar los intentos', () => {
-    const response = new Subject<any>(); auth.solicitarVerificacion.mockReturnValue(response);
+    const response = new Subject<any>(); verificacion.solicitarVerificacion.mockReturnValue(response);
     page.verificacionModel.update(datos => ({ ...datos, codigo: '012345' })); fixture.detectChanges();
     page.enviarCodigo(); response.next({ ...estadoEnvio(47), enviadoAhora: false, attemptsRemaining: 2 }); response.complete(); fixture.detectChanges();
     expect(page.aviso()).toContain('Ya hay un código vigente');
@@ -249,7 +251,7 @@ describe('Ajustes · Verificar cuenta', () => {
   });
 
   it('un error al enviar no confirma un envío nuevo ni cambia el plazo', () => {
-    const response = new Subject<any>(); auth.solicitarVerificacion.mockReturnValue(response);
+    const response = new Subject<any>(); verificacion.solicitarVerificacion.mockReturnValue(response);
     const antes = TestBed.inject(verificacionPendienteService).leer();
     page.enviarCodigo(); response.error({ status: 503 }); fixture.detectChanges();
     expect(page.error()).toContain('No pudimos enviar');
@@ -277,7 +279,7 @@ describe('Ajustes · Verificar cuenta', () => {
     expect(page.tiempoVigencia()).toBe('0:00');
     expect(page.avisoVigencia()).toContain('El código venció');
     expect(page.puedeVerificar()).toBe(false);
-    page.confirmarCodigo(new Event('submit')); expect(auth.verificarEmail).not.toHaveBeenCalled();
+    page.confirmarCodigo(new Event('submit')); expect(verificacion.verificarEmail).not.toHaveBeenCalled();
   });
 
   it('deja un solo Volver al lado de Verificar, sin accesos duplicados', () => {
@@ -291,26 +293,26 @@ describe('Ajustes · Verificar cuenta', () => {
   it('verifica automáticamente tras dos segundos completos y estables, incluso si se pegó', () => {
     vi.useFakeTimers();
     fixture.destroy(); fixture = TestBed.createComponent(Configuracion); page = fixture.componentInstance; fixture.detectChanges();
-    const response = new Subject<any>(); auth.verificarEmail.mockReturnValue(response);
+    const response = new Subject<any>(); verificacion.verificarEmail.mockReturnValue(response);
     const paste = new Event('paste', { bubbles: true, cancelable: true });
     Object.defineProperty(paste, 'clipboardData', { value: { getData: () => '012345' } });
     fixture.nativeElement.querySelector('#verificacion-codigo-0').dispatchEvent(paste); fixture.detectChanges();
-    vi.advanceTimersByTime(1999); fixture.detectChanges(); expect(auth.verificarEmail).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(1); fixture.detectChanges(); expect(auth.verificarEmail).toHaveBeenCalledWith('ana@example.com', '012345');
-    vi.advanceTimersByTime(5000); expect(auth.verificarEmail).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(1999); fixture.detectChanges(); expect(verificacion.verificarEmail).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1); fixture.detectChanges(); expect(verificacion.verificarEmail).toHaveBeenCalledWith('ana@example.com', '012345');
+    vi.advanceTimersByTime(5000); expect(verificacion.verificarEmail).toHaveBeenCalledTimes(1);
   });
 
   it('corregir reinicia la espera y un error de red no causa reintentos automáticos infinitos', () => {
     vi.useFakeTimers();
     fixture.destroy(); fixture = TestBed.createComponent(Configuracion); page = fixture.componentInstance; fixture.detectChanges();
-    const response = new Subject<any>(); auth.verificarEmail.mockReturnValue(response);
+    const response = new Subject<any>(); verificacion.verificarEmail.mockReturnValue(response);
     page.verificacionModel.update(datos => ({ ...datos, codigo: '012345' })); fixture.detectChanges();
     vi.advanceTimersByTime(1500);
     page.verificacionModel.update(datos => ({ ...datos, codigo: '012346' })); fixture.detectChanges();
-    vi.advanceTimersByTime(1500); fixture.detectChanges(); expect(auth.verificarEmail).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(500); fixture.detectChanges(); expect(auth.verificarEmail).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(1500); fixture.detectChanges(); expect(verificacion.verificarEmail).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(500); fixture.detectChanges(); expect(verificacion.verificarEmail).toHaveBeenCalledTimes(1);
     response.error({ status: 503 }); fixture.detectChanges();
-    vi.advanceTimersByTime(10000); fixture.detectChanges(); expect(auth.verificarEmail).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(10000); fixture.detectChanges(); expect(verificacion.verificarEmail).toHaveBeenCalledTimes(1);
   });
 
   it('borrar un dígito o salir cancela el autoenvío pendiente', () => {
@@ -319,8 +321,70 @@ describe('Ajustes · Verificar cuenta', () => {
     page.verificacionModel.update(datos => ({ ...datos, codigo: '012345' })); fixture.detectChanges();
     vi.advanceTimersByTime(1000);
     page.verificacionModel.update(datos => ({ ...datos, codigo: '01234' })); fixture.detectChanges();
-    vi.advanceTimersByTime(3000); expect(auth.verificarEmail).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(3000); expect(verificacion.verificarEmail).not.toHaveBeenCalled();
     page.verificacionModel.update(datos => ({ ...datos, codigo: '012345' })); fixture.detectChanges();
-    fixture.destroy(); vi.advanceTimersByTime(3000); expect(auth.verificarEmail).not.toHaveBeenCalled();
+    fixture.destroy(); vi.advanceTimersByTime(3000); expect(verificacion.verificarEmail).not.toHaveBeenCalled();
+  });
+
+  describe('SCRUM-274 · Sección "Eliminar cuenta"', () => {
+    function pestanas(): HTMLButtonElement[] {
+      return Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('nav .ajustes__pestana'),
+      );
+    }
+
+    function abrirSesion(): void {
+      auth.autenticado.mockReturnValue(true);
+      auth.perfil.mockReturnValue({ email: 'cuenta@example.com' });
+      fixture.destroy();
+      fixture = TestBed.createComponent(Configuracion);
+      page = fixture.componentInstance;
+      fixture.detectChanges();
+    }
+
+    it('agrega la pestaña "Eliminar cuenta" junto a las secciones existentes', () => {
+      abrirSesion();
+
+      const etiquetas = pestanas().map((pestana) => pestana.textContent?.trim());
+      expect(etiquetas).toEqual(['Verificar cuenta', 'Datos personales', 'Cambiar contraseña', 'Eliminar cuenta']);
+    });
+
+    it('no muestra la sección a un visitante sin sesión', () => {
+      expect(pestanas().map((pestana) => pestana.textContent?.trim())).toEqual(['Verificar cuenta']);
+    });
+
+    it('muestra la sección con el aviso y el botón cuando se elige la pestaña', () => {
+      abrirSesion();
+
+      const pestana = pestanas().find((item) => item.textContent?.trim() === 'Eliminar cuenta');
+      pestana?.click();
+      fixture.detectChanges();
+
+      const seccion = (fixture.nativeElement as HTMLElement).querySelector('section.eliminar-cuenta');
+      expect(seccion).toBeTruthy();
+      expect(seccion?.querySelector('h2')?.textContent?.trim()).toBe('Eliminar cuenta');
+      expect(seccion?.textContent).toContain('AVISO:');
+      expect(seccion?.textContent).toContain(
+        'Una vez una cuenta es eliminada, un administrador puede reactivarla, pero no es un proceso garantizado y llevará mucho tiempo',
+      );
+      expect(seccion?.querySelector('button.eliminar-cuenta__boton')?.textContent?.trim()).toBe(
+        'Eliminar cuenta',
+      );
+
+      // Las secciones anteriores quedan intactas.
+      expect((fixture.nativeElement as HTMLElement).querySelector('section.verificacion')).toBeNull();
+      expect((fixture.nativeElement as HTMLElement).querySelector('app-cambiar-password')).toBeNull();
+    });
+
+    it('la pestaña activa se marca para "Eliminar cuenta"', () => {
+      abrirSesion();
+
+      const pestana = pestanas().find((item) => item.textContent?.trim() === 'Eliminar cuenta');
+      pestana?.click();
+      fixture.detectChanges();
+
+      expect(pestana?.getAttribute('aria-pressed')).toBe('true');
+      expect(pestana?.classList.contains('ajustes__pestana--activa')).toBe(true);
+    });
   });
 });

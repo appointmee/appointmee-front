@@ -5,6 +5,7 @@ import { catchError, switchMap, throwError } from 'rxjs';
 
 import { authService } from '../services/auth-service';
 import { backendService } from '../services/backend-service';
+import { esPasswordActualIncorrecta } from '../http/password-change-error';
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
@@ -18,6 +19,16 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   // Los endpoints públicos no necesitan access token.
 
   const path = new URL(request.url).pathname;
+  const observabilityEvent = request.method === 'POST' && path === '/observabilidad/error';
+  if (observabilityEvent) return next(request);
+
+  const lecturaPublica = request.method === 'GET' && (
+    /^\/sucursales\/(listar(?:\/filtrar)?|categorias|\d+(?:\/(elegir-empleado|resenias))?)$/.test(path)
+    || /^\/servicios\/(?:listar\/sucursal\/\d+|\d+)$/.test(path)
+    || /^\/turnos\/disponibilidad\/empleado\/\d+\/servicio\/\d+$/.test(path)
+  );
+  if (lecturaPublica) return next(request);
+
   if (
     [
       '/auth/login',
@@ -25,6 +36,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
       '/auth/refresh',
       '/auth/forgot-password',
       '/auth/reset-password',
+      '/auth/reset-password/validate',
       '/auth/send-verification',
       '/auth/verify-email',
       '/auth/verification-status',
@@ -44,6 +56,9 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
   const withToken = (value: string) =>
     request.clone({ setHeaders: { Authorization: `Bearer ${value}` } });
+
+  const errorDePasswordActual = (error: unknown) => request.method === 'POST'
+    && path === '/auth/change-password' && esPasswordActualIncorrecta(error);
 
 
   // Volver al login cuando la sesión fue rechazada
@@ -67,6 +82,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     catchError((error: unknown) => {
       if (
         !(error instanceof HttpErrorResponse) ||
+        errorDePasswordActual(error) ||
         error.status !== 401 ||
         (!token && !auth.getRefreshToken())
       ) {
@@ -83,7 +99,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
       return retry.pipe(
         catchError((cause: unknown) => {
-          if (cause instanceof HttpErrorResponse && cause.status === 401) expire();
+          if (cause instanceof HttpErrorResponse && cause.status === 401 && !errorDePasswordActual(cause)) expire();
           return throwError(() => cause);
         }),
       );

@@ -1,0 +1,202 @@
+<section class="gestion" aria-label="Mis sucursales">
+  <div class="gestion__inner">
+    @if (exitoEliminacion()) {
+      <p class="aviso aviso--exito" role="status" aria-live="polite">
+        {{ exitoEliminacion() }}
+      </p>
+    }
+
+    @if (!sucursalSeleccionada()) {
+      <header class="gestion__header">
+        <div class="gestion__intro">
+          <h1>Mis sucursales</h1>
+          <p>Organizá tus espacios de trabajo y accedé rápidamente a su gestión.</p>
+        </div>
+        <a routerLink="/mis-sucursales/nueva" class="boton boton--primario">Crear sucursal</a>
+      </header>
+    }
+
+    @if (cargandoSucursales()) {
+      <div class="lista lista--cargando" aria-busy="true" aria-live="polite">
+        <span class="sr-only">Cargando tus sucursales…</span>
+        @for (item of [1, 2, 3]; track item) {
+          <div class="sucursal-card sucursal-card--skeleton" aria-hidden="true">
+            <span class="skeleton skeleton--avatar"></span>
+            <span class="skeleton skeleton--line"></span>
+            <span class="skeleton skeleton--line skeleton--line-corta"></span>
+          </div>
+        }
+      </div>
+    } @else if (errorSucursales() && sucursales().length === 0) {
+      <div class="estado estado--error" role="alert">
+        <span class="estado__icono" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+        </span>
+        <h3>No pudimos cargar tus sucursales</h3>
+        <p>{{ errorSucursales() }}</p>
+        <button
+          class="boton boton--ghost"
+          type="button"
+          [disabled]="reintentandoSucursales()"
+          (click)="reintentarSucursales()"
+        >
+          {{ reintentandoSucursales() ? 'Reintentando…' : 'Reintentar' }}
+        </button>
+      </div>
+    } @else if (sucursales().length === 0) {
+      <div class="estado estado--vacio" role="status">
+        <span class="estado__icono" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 5h16v14H4zM8 9h8M8 13h5" />
+          </svg>
+        </span>
+        <h3>Todavía no tenés sucursales propias</h3>
+        <p>Cuando crees una sucursal, vas a poder gestionarla desde acá.</p>
+      </div>
+    } @else if (sucursalSeleccionada(); as sucursal) {
+      <button class="volver-gestor" type="button" (click)="volverALista()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M11 18l-6-6 6-6" />
+        </svg>
+        Volver a mis sucursales
+      </button>
+
+      <section class="gestor" aria-labelledby="gestor-titulo">
+        <header class="gestor__cabecera">
+          <span class="eyebrow">
+            Gestor de sucursal
+          </span>
+          <h1 id="gestor-titulo">{{ sucursal.nombre }}</h1>
+          <div class="gestor__rating" aria-label="Puntuación {{ puntuacion() }} de 5">
+            <span class="gestor__abejas" aria-hidden="true">
+              @for (llena of abejas(); track $index) {
+                <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
+              }
+            </span>
+            <span class="gestor__puntuacion">
+              {{ puntuacion() }}/5
+              @if (cantidadResenias() > 0) {
+                · {{ cantidadResenias() }} reseñas
+              } @else {
+                · Sin reseñas
+              }
+            </span>
+          </div>
+        </header>
+
+        <div class="gestor__tarjetas">
+          <a
+            class="tarjeta"
+            [routerLink]="['/mis-sucursales', sucursal.id, 'servicios']"
+            aria-label="Servicios"
+          >
+            <span class="tarjeta__titulo">Servicios</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h10" />
+            </svg>
+          </a>
+
+          <a
+            class="tarjeta"
+            [routerLink]="['/mis-sucursales', sucursal.id, 'empleados']"
+            aria-label="Empleados"
+          >
+            <span class="tarjeta__titulo">Empleados</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 0a4 4 0 1 0 0-8M22 21v-2a4 4 0 0 0-3-3.87" />
+            </svg>
+          </a>
+
+          <a
+            class="tarjeta"
+            [routerLink]="['/mis-sucursales', sucursal.id, 'galeria']"
+            aria-label="Galería de imágenes"
+          >
+            <span class="tarjeta__titulo">Galería de imágenes</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 5h16v14H4zM8 10h.01M20 15l-5-5-7 8" />
+            </svg>
+          </a>
+
+          <a
+            class="tarjeta"
+            [routerLink]="['/mis-sucursales', sucursal.id, 'turnos']"
+            aria-label="Turnos"
+          >
+            <span class="tarjeta__titulo">Turnos</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" />
+            </svg>
+          </a>
+
+          <a
+            class="tarjeta"
+            [routerLink]="['/mis-sucursales', sucursal.id, 'solicitudes']"
+            aria-label="Solicitudes"
+          >
+            <span class="tarjeta__titulo">Solicitudes</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5" />
+            </svg>
+          </a>
+
+          <a
+            class="tarjeta"
+            [routerLink]="['/graficos/empleador']"
+            [queryParams]="{ sucursalId: sucursal.id }"
+            [attr.aria-label]="'Estadísticas de ' + sucursal.nombre"
+          >
+            <span class="tarjeta__titulo">Estadísticas</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 19V5m0 14h16M8 15v-4m4 4V7m4 8v-6m4 6V4" />
+            </svg>
+          </a>
+
+          <button
+            class="tarjeta"
+            type="button"
+            (click)="abrirDetalleSucursal()"
+            aria-label="Sucursal"
+          >
+            <span class="tarjeta__titulo">Sucursal</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
+            </svg>
+          </button>
+        </div>
+      </section>
+    } @else {
+      <ul class="lista" aria-live="polite">
+        @for (sucursal of sucursales(); track sucursal.id) {
+          <li class="sucursal-card">
+            <button
+              class="sucursal-card__accion"
+              type="button"
+              (click)="seleccionarSucursal(sucursal.id)"
+              [attr.aria-label]="'Gestionar sucursal ' + sucursal.nombre"
+            >
+              <span class="sucursal-card__info">
+                <span class="sucursal-card__avatar" aria-hidden="true">
+                  {{ sucursal.nombre.charAt(0).toUpperCase() }}
+                </span>
+                <span>
+                  <span class="sucursal-card__nombre">{{ sucursal.nombre }}</span>
+                  <span class="sucursal-card__categoria">{{ humanizarCategoria(sucursal.categoria) }}</span>
+                </span>
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <app-sucursal-detalle-modal
+    [sucursalId]="detalleSucursalAbierto() ? sucursalSeleccionadaId() : null"
+    (cerrar)="cerrarDetalleSucursal()"
+    (modificado)="refrescarSucursales()"
+    (eliminado)="onSucursalEliminada()"
+  />
+</section>

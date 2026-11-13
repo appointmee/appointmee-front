@@ -1,0 +1,273 @@
+import { Component, signal } from '@angular/core';
+import { FormControl } from '@angular/forms';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
+import { of } from 'rxjs';
+import { Navbar } from './navbar';
+import { authService } from '../../services/auth-service';
+import { BranchSearch } from '../../services/branch-search';
+import { usuarioService } from '../../services/usuario-service';
+
+@Component({ selector: 'app-navbar-test-page', template: '' })
+class EmptyPage {}
+
+const usuariosMock = {
+  provide: usuarioService,
+  useValue: { obtenerPerfil: () => of({ nombre: 'Ana', apellido: 'Pérez' }) },
+};
+
+describe('Buscador del navbar', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+  it('muestra iniciales si la foto falla y vuelve a intentar cuando cambia la URL', async () => {
+    const perfil = signal({ id: 1, fotoPerfil: 'https://res.cloudinary.com/demo/image/upload/avatar.jpg', email: 'ana@example.com' });
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([{ path: 'sucursales', component: EmptyPage }]),
+        usuariosMock,
+        { provide: authService, useValue: {
+          autenticado: signal(true), visitante: signal(false), restaurando: signal(false),
+          perfil, iniciales: signal('AN'), tieneAlgunRol: () => false,
+        } },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/sucursales');
+    const fixture = TestBed.createComponent(Navbar);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.profile__name').textContent).toContain('Ana Pérez');
+    const photo = fixture.nativeElement.querySelector('.profile__avatar img') as HTMLImageElement;
+    expect(photo.src).toContain('avatar.jpg');
+    expect(getComputedStyle(photo).objectFit).toBe('cover');
+    expect(getComputedStyle(photo).aspectRatio).toBe('1 / 1');
+    expect(getComputedStyle(photo.parentElement!).overflow).toBe('hidden');
+    photo.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.profile__avatar img')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.profile__avatar').textContent).toContain('AN');
+    fixture.nativeElement.querySelector('.profile__trigger').click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.menu__head strong').textContent).toContain('Ana Pérez');
+    expect(fixture.nativeElement.querySelector('.menu__avatar').textContent).toContain('AN');
+    perfil.set({ ...perfil(), fotoPerfil: 'https://res.cloudinary.com/demo/image/upload/nueva.jpg' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.profile__avatar img').src).toContain('nueva.jpg');
+    expect(fixture.nativeElement.querySelector('.menu__avatar img').src).toContain('nueva.jpg');
+  });
+  it('mantiene el navbar sin buscador en Home y en Sucursales', async () => {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([
+          { path: '', component: EmptyPage },
+          { path: 'sucursales', component: EmptyPage },
+        ]),
+        usuariosMock,
+        { provide: authService, useValue: {
+          autenticado: signal(false), visitante: signal(true), restaurando: signal(false),
+        } },
+        { provide: BranchSearch, useValue: { search: new FormControl(''), term: signal('') } },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/'); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
+    await router.navigateByUrl('/sucursales?busqueda=pelu'); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.search-trigger')).toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.navbar__search-wrap')).toBeNull();
+    await router.navigateByUrl('/'); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#navbar-search')).toBeNull();
+  });
+});
+
+describe('Acceso a Mis Turnos', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  async function renderizar(roles: readonly string[]): Promise<HTMLElement> {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([
+          { path: 'sucursales', component: EmptyPage },
+          { path: 'mis-turnos', component: EmptyPage },
+          { path: 'admin', component: EmptyPage },
+        ]),
+        usuariosMock,
+        {
+          provide: authService,
+          useValue: {
+            autenticado: signal(true),
+            visitante: signal(false),
+            restaurando: signal(false),
+            perfil: signal(null),
+            iniciales: signal('AM'),
+            tieneAlgunRol: (...solicitados: string[]) =>
+              solicitados.some((rol) => roles.includes(rol)),
+          },
+        },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/sucursales');
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  it('oculta Mis Turnos a administradores', async () => {
+    const html = await renderizar(['ADMINISTRADOR']);
+    expect(html.querySelector('.nav a[href="/mis-turnos"]')).toBeNull();
+    expect(html.querySelector('.nav a[href="/admin"]')).not.toBeNull();
+    
+  expect(html.querySelector('.nav a[href="/graficos/administrador"]')).not.toBeNull();
+  });
+
+  it('muestra Mis Turnos a clientes y empleadores', async () => {
+    const html = await renderizar(['CLIENTE', 'EMPLEADOR']);
+    expect(html.querySelector('.nav a[href="/mis-turnos"]')).not.toBeNull();
+    expect(html.querySelector('.nav a[href="/mis-sucursales"]')).not.toBeNull();
+    expect(html.querySelector('.nav a[href="/graficos/empleador"]')).toBeNull();
+  });
+});
+
+describe('Acceso a Solicitudes en el menú de cuenta', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  async function renderizar(roles: readonly string[]) {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([
+          { path: 'sucursales', component: EmptyPage },
+          { path: 'perfil', component: EmptyPage },
+          { path: 'configuracion', component: EmptyPage },
+        ]),
+        usuariosMock,
+        {
+          provide: authService,
+          useValue: {
+            autenticado: signal(true),
+            visitante: signal(false),
+            restaurando: signal(false),
+            perfil: signal(null),
+            iniciales: signal('AM'),
+            tieneAlgunRol: (...solicitados: string[]) =>
+              solicitados.some((rol) => roles.includes(rol)),
+          },
+        },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/sucursales');
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('oculta Solicitudes del menú de cuenta a administradores', async () => {
+    const fixture = await renderizar(['ADMINISTRADOR']);
+    fixture.nativeElement.querySelector('.profile__trigger')?.click();
+    fixture.detectChanges();
+
+    const menu = fixture.nativeElement.querySelector('.menu');
+    expect(menu).not.toBeNull();
+    expect(menu?.querySelector('a[href="/solicitudes"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/perfil"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/configuracion"]')).not.toBeNull();
+  });
+
+  it('mantiene Solicitudes en el menú de cuenta para clientes y empleados', async () => {
+    const fixture = await renderizar(['CLIENTE', 'EMPLEADOR']);
+    fixture.nativeElement.querySelector('.profile__trigger')?.click();
+    fixture.detectChanges();
+
+    const menu = fixture.nativeElement.querySelector('.menu');
+    expect(menu).not.toBeNull();
+    expect(menu?.querySelector('a[href="/solicitudes"]')).not.toBeNull();
+  });
+});
+
+describe('Navbar en la vista de error', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('muestra una versión mínima con acceso a login para visitantes', async () => {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([{ path: 'error', component: EmptyPage }]),
+        usuariosMock,
+        { provide: authService, useValue: {
+          autenticado: signal(false), visitante: signal(true), restaurando: signal(false),
+        } },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/error');
+    fixture.detectChanges();
+
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('.nav')).toBeNull();
+    expect(html.querySelector('.burger')).toBeNull();
+    expect(html.querySelector('a[href="/login"]')?.textContent).toContain('Iniciar sesión');
+    expect(html.querySelector('a[href="/registrarme"]')).toBeNull();
+  });
+
+  it('conserva la navegación completa para usuarios con sesión', async () => {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([{ path: 'error', component: EmptyPage }]),
+        usuariosMock,
+        { provide: authService, useValue: {
+          autenticado: signal(true), visitante: signal(false), restaurando: signal(false),
+          perfil: signal(null), iniciales: signal('AM'), tieneAlgunRol: () => false,
+        } },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/error');
+    fixture.detectChanges();
+
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('.nav')).not.toBeNull();
+    expect(html.querySelector('.profile__trigger')).not.toBeNull();
+  });
+});
+
+describe('Restauración de sesión en el navbar', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('muestra carga en vez de login o un avatar vacío mientras restaura', async () => {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([{ path: 'private', component: EmptyPage }]),
+        usuariosMock,
+        {
+          provide: authService,
+          useValue: {
+            autenticado: signal(false),
+            visitante: signal(false),
+            restaurando: signal(true),
+          },
+        },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/private');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[aria-label="Restaurando sesión"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.navbar__cta')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.profile__avatar')).toBeNull();
+  });
+});

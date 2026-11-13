@@ -1,0 +1,36 @@
+.login-modal {
+  position: fixed;
+  width: min(440px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  margin: auto;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 24px 80px #0008;
+}
+
+.login-modal::backdrop {
+  background: #0007;
+  backdrop-filter: blur(3px);
+}
+
+.login-modal__cerrar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.login-modal__cerrar:focus-visible {
+  outline: 2px solid var(--accent);
+}

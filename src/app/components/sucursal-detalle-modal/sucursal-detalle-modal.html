@@ -1,0 +1,221 @@
+<ds-modal
+  [open]="sucursalId() !== null"
+  (close)="solicitarCierre()"
+  ariaLabelledby="sucursal-detalle-titulo"
+  maxWidth="640px"
+>
+  <article class="detalle" [attr.aria-busy]="cargando()">
+    <header class="detalle__cabecera">
+      <div class="detalle__titulo">
+        <span class="detalle__eyebrow">Datos de la sucursal</span>
+        <h2 id="sucursal-detalle-titulo">
+          {{ sucursal()?.nombre ?? 'Sucursal' }}
+        </h2>
+      </div>
+
+      <button
+        class="detalle__cerrar"
+        type="button"
+        aria-label="Cerrar datos de la sucursal"
+        (click)="solicitarCierre()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </header>
+
+    @if (exito()) {
+      <p class="detalle__exito" role="status" aria-live="polite">{{ exito() }}</p>
+    }
+
+    @if (cargando()) {
+      <div class="detalle__skeleton" aria-live="polite">
+        <span class="sr-only" role="status">Cargando los datos de la sucursal…</span>
+        <div class="skeleton skeleton--foto" aria-hidden="true"></div>
+        <div class="skeleton skeleton--line" aria-hidden="true"></div>
+        <div class="skeleton skeleton--line skeleton--short" aria-hidden="true"></div>
+        <div class="skeleton skeleton--line" aria-hidden="true"></div>
+      </div>
+    } @else if (error()) {
+      <div class="estado estado--error" role="alert">
+        <h3>No pudimos cargar los datos</h3>
+        <p>{{ error() }}</p>
+        <button
+          dsButton
+          type="button"
+          [disabled]="reintentando()"
+          [attr.aria-busy]="reintentando()"
+          (click)="reintentar()"
+        >
+          {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+        </button>
+      </div>
+    } @else if (sucursal(); as local) {
+      <div class="detalle__contenido">
+        <div class="detalle__media">
+          <img
+            [src]="foto()"
+            [alt]="'Foto de perfil de ' + local.nombre"
+            loading="lazy"
+            decoding="async"
+            referrerpolicy="no-referrer"
+            (error)="onImageError($event)"
+          />
+        </div>
+
+        <dl class="detalle__datos">
+          <div class="dato">
+            <dt>Nombre</dt>
+            <dd>{{ local.nombre }}</dd>
+          </div>
+
+          <div class="dato">
+            <dt>Dirección</dt>
+            <dd>{{ local.direccion?.trim() || 'Sin dirección informada.' }}</dd>
+          </div>
+
+          @if (telefono()) {
+            <div class="dato">
+              <dt>Teléfono</dt>
+              <dd>{{ telefono() }}</dd>
+            </div>
+          }
+
+          <div class="dato">
+            <dt>Fecha de creación</dt>
+            <dd>{{ fecha(local.fechaCreacion) }}</dd>
+          </div>
+
+          <div class="dato">
+            <dt>Categoría</dt>
+            <dd>{{ categoria() || 'Sin categoría informada.' }}</dd>
+          </div>
+
+          <div class="dato dato--ancho">
+            <dt>Horario</dt>
+            <dd>{{ horario() || 'Sin horario informado.' }}</dd>
+          </div>
+
+          <div class="dato dato--ancho">
+            <dt>Descripción</dt>
+            <dd>{{ local.descripcion?.trim() || 'Sin descripción informada.' }}</dd>
+          </div>
+
+          <div class="dato dato--ancho">
+            <dt>Días de apertura</dt>
+            <dd>
+              <ul class="dias" aria-label="Días de apertura">
+                @for (dia of dias; track dia) {
+                  <li class="dia" [class.dia--activo]="abre(dia)">{{ abreviatura(dia) }}</li>
+                }
+              </ul>
+            </dd>
+          </div>
+
+          <div class="dato dato--ancho">
+            <dt>Puntuación</dt>
+            <dd class="rating">
+              @if (tienePuntuacion()) {
+                <span class="rating__abejas" aria-hidden="true">
+                  @for (llena of abejas(); track $index) {
+                    <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
+                  }
+                </span>
+                <span class="rating__valor">{{ puntuacion() }}/5</span>
+                <span class="rating__resenas">
+                  {{ cantidadResenias() }}
+                  {{ cantidadResenias() === 1 ? 'reseña' : 'reseñas' }}
+                </span>
+                <span class="sr-only">
+                  Puntuación promedio {{ puntuacion() }} de 5 sobre
+                  {{ cantidadResenias() }} reseñas
+                </span>
+              } @else {
+                <span class="rating__sin-puntuacion">Sin puntuaciones</span>
+              }
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      @if (modo() === 'administrador') {
+        <footer class="detalle__acciones detalle__acciones--admin">
+          @if (confirmandoEliminacion()) {
+            <div class="detalle__confirmacion" role="group" aria-labelledby="confirmar-baja-sucursal">
+              <p id="confirmar-baja-sucursal">
+                ¿Estás seguro de que querés eliminar la sucursal <strong>{{ local.nombre }}</strong>? Va a dejar de aparecer en el listado público.
+              </p>
+              @if (errorEliminacion()) {
+                <p class="detalle__error-eliminacion" role="alert">{{ errorEliminacion() }}</p>
+              }
+              <div class="detalle__confirmacion-acciones">
+                <button dsButton type="button" [disabled]="eliminando()" (clicked)="cancelarEliminacion()">Cancelar</button>
+                <button dsButton variant="danger" type="button" [loading]="eliminando()" (clicked)="confirmarEliminacion()">
+                  {{ eliminando() ? 'Eliminando…' : 'Confirmar eliminación' }}
+                </button>
+              </div>
+            </div>
+          } @else {
+            <button
+              dsButton
+              variant="danger"
+              type="button"
+              class="detalle__boton--eliminar"
+              (clicked)="solicitarEliminacion()"
+            >
+              Eliminar sucursal
+            </button>
+            <a class="detalle__boton detalle__boton--ir" [routerLink]="['/sucursal', local.id]">
+              Ver sucursal
+            </a>
+          }
+        </footer>
+      } @else {
+        <footer class="detalle__acciones">
+          <a class="detalle__boton detalle__boton--ir" [routerLink]="['/sucursal', local.id]">
+            Ir a sucursal
+          </a>
+          @if (puedeEliminar()) {
+            <button
+              dsButton
+              variant="danger"
+              type="button"
+              class="detalle__boton detalle__boton--eliminar"
+              (click)="abrirEliminacion()"
+            >
+              Eliminar sucursal
+            </button>
+          }
+          <button
+            dsButton
+            variant="primary"
+            type="button"
+            class="detalle__boton"
+            (click)="abrirEdicion()"
+          >
+            Modificar sucursal
+          </button>
+        </footer>
+      }
+    }
+  </article>
+</ds-modal>
+
+@if (editando()) {
+  <app-sucursal-editar-modal
+    [sucursal]="sucursal()"
+    [abierto]="editando()"
+    (cerrar)="cerrarEdicion()"
+    (actualizado)="onActualizado()"
+  />
+}
+
+@if (modo() !== 'administrador') {
+  <app-sucursal-eliminar-modal
+    [sucursal]="sucursal()"
+    [abierto]="confirmandoEliminacion()"
+    (cerrar)="onEliminacionCancelada()"
+    (eliminado)="onEliminado()"
+  />
+}

@@ -53,12 +53,13 @@
       <h1 id="detalle-titulo">{{ tituloError() }}</h1>
       <p>{{ error() }}</p>
       <div class="detalle__estado-acciones">
-        <button
+        <button dsButton
           class="btn btn--primary detalle__reintentar"
           type="button"
           (click)="reintentar()"
           [disabled]="reintentando()"
           [attr.aria-busy]="reintentando()"
+          aria-label="Reintentar carga de la sucursal"
         >
           @if (reintentando()) {
             <span class="detalle__spinner" aria-hidden="true"></span>
@@ -67,6 +68,7 @@
             Reintentar
           }
         </button>
+        <a class="btn btn--ghost" routerLink="/">Volver al Home</a>
         <a class="btn btn--ghost" routerLink="/sucursales">Volver al listado</a>
       </div>
       <span class="sr-only" role="status" aria-live="polite">
@@ -79,9 +81,13 @@
     <header class="detalle__hero">
       <img
         class="detalle__hero-img"
-        [src]="s.fotoPerfil || placeholderImage"
-        [alt]="'Fachada de ' + s.nombre"
-        (error)="onImageError($event)"
+        [src]="imagenPrincipal()"
+        [alt]="altImagenPrincipal()"
+        width="1600"
+        height="700"
+        fetchpriority="high"
+        decoding="async"
+        (error)="onImageError(imagenPrincipal())"
       />
       <div class="detalle__hero-overlay" aria-hidden="true"></div>
 
@@ -119,7 +125,6 @@
 
       <div class="detalle__hero-content">
         <span class="eyebrow">
-          <span class="eyebrow__dot" aria-hidden="true"></span>
           {{ categoria() || 'Sucursal' }}
         </span>
 
@@ -153,27 +158,72 @@
           }
         </div>
       </div>
+
+      @if (imagenesGaleria().length > 1) {
+        <div
+          class="detalle__galeria"
+          role="group"
+          [attr.aria-label]="'Galería de imágenes de ' + s.nombre"
+          (keydown)="moverGaleria($event)"
+        >
+          @for (imagen of imagenesGaleria(); track imagen.url; let indice = $index) {
+            <button
+              class="detalle__miniatura"
+              type="button"
+              [class.detalle__miniatura--activa]="imagenPrincipal() === imagen.url"
+              [attr.aria-label]="'Mostrar ' + imagen.alt + ' (' + (indice + 1) + ' de ' + imagenesGaleria().length + ')'"
+              [attr.aria-pressed]="imagenPrincipal() === imagen.url"
+              (click)="seleccionarImagen(imagen.url)"
+            >
+              <img
+                [src]="imagen.url"
+                [alt]="imagen.alt"
+                width="160"
+                height="100"
+                loading="lazy"
+                decoding="async"
+                (error)="onImageError(imagen.url)"
+              />
+            </button>
+          }
+        </div>
+      }
     </header>
+
+    @if (avisoReserva()) {
+      <p class="detalle__reserva-aviso" role="status">{{ avisoReserva() }}</p>
+    }
 
     <div class="detalle__inner">
       <div class="detalle__grid">
         <div class="detalle__main">
-          <article class="panel panel--descripcion">
-            <header class="panel__head">
-              <h2>Sobre esta sucursal</h2>
-            </header>
-            <p class="descripcion" [class.descripcion--colgada]="descripcionLarga() && !descripcionExpandida()">
-              {{ descripcion() || 'Esta sucursal todavía no cargó su descripción.' }}
-            </p>
-            @if (descripcionLarga()) {
-              <button class="link-btn" type="button" (click)="alternarDescripcion()">
-                {{ descripcionExpandida() ? 'Ver menos' : 'Ver más' }}
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m6 9 6 6 6-6" [attr.transform]="descripcionExpandida() ? 'rotate(180 12 12)' : null" />
-                </svg>
-              </button>
-            }
-          </article>
+          @if (descripcion(); as descripcionTexto) {
+            <article class="panel panel--descripcion">
+              <header class="panel__head">
+                <h2>Sobre esta sucursal</h2>
+              </header>
+              <p class="descripcion" [class.descripcion--colgada]="descripcionLarga() && !descripcionExpandida()">
+                {{ descripcionTexto }}
+              </p>
+              @if (descripcionLarga()) {
+                <button dsButton class="link-btn" type="button" (click)="alternarDescripcion()">
+                  {{ descripcionExpandida() ? 'Ver menos' : 'Ver más' }}
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" [attr.transform]="descripcionExpandida() ? 'rotate(180 12 12)' : null" />
+                  </svg>
+                </button>
+              }
+            </article>
+          } @else {
+            <article class="panel panel--descripcion">
+              <header class="panel__head">
+                <h2>Sobre esta sucursal</h2>
+              </header>
+              <p class="descripcion">
+                Esta sucursal todavía no cargó su descripción.
+              </p>
+            </article>
+          }
 
           <div class="datos">
             @if (s.direccion?.trim()) {
@@ -221,7 +271,7 @@
               <p class="panel__aviso" role="alert">{{ avisoRol() }}</p>
             }
 
-            <button
+            <button dsButton
               class="btn btn--primary btn--block"
               type="button"
               [disabled]="navegando()"
@@ -328,7 +378,7 @@
         </div>
         <div class="detalle__cta-acciones">
           <a class="btn btn--ghost" routerLink="/sucursales">Volver</a>
-          <button
+          <button dsButton
             class="btn btn--primary"
             type="button"
             [disabled]="navegando()"

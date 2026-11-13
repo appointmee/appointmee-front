@@ -1,24 +1,36 @@
+import { DsInputComponent } from '../../shared/ui/input/input.component';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, signal, viewChildren } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { email, form, maxLength, pattern, required } from '@angular/forms/signals';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { destinoDespuesDelLogin } from '../../guards/login-destination';
 import { timer } from 'rxjs';
 
 import { VerificacionEmailModel } from '../../models/auth';
-import { ApiError } from '../../http/api-errors-service';
+import { ApiError } from '../../models/api-error';
 import { verificacionPendienteService } from '../../services/verificacion-pendiente-service';
 import { authService } from '../../services/auth-service';
+import { verificacionService } from '../../services/verificacion-service';
+import { CambiarPassword } from '../../components/cambiar-password/cambiar-password';
+import { EliminarCuenta } from '../../components/eliminar-cuenta/eliminar-cuenta';
+
+import { EditarPerfil } from '../../components/editar-perfil/editar-perfil';
 
 @Component({
+  imports: [DsInputComponent, DsButtonComponent, CambiarPassword, EliminarCuenta, EditarPerfil],
   selector: 'app-configuracion',
   templateUrl: './configuracion.html',
   styleUrl: './configuracion.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Configuracion implements OnInit {
+  seccion = signal<'perfil' | 'verificacion' | 'password' | 'eliminar'>('verificacion');
 
   auth = inject(authService);
+  private verificacion = inject(verificacionService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private pendiente = inject(verificacionPendienteService);
   private destroyRef = inject(DestroyRef);
   private ultimoCodigoIntentado: string | null = null;
@@ -109,6 +121,9 @@ export class Configuracion implements OnInit {
 
 
   ngOnInit(): void {
+    if (this.auth.autenticado() && this.route.snapshot.queryParamMap.get('seccion') === 'perfil') {
+      this.seccion.set('perfil');
+    }
     this.actualizarVigencia(true);
     if (!this.verificada() && this.contextoValido() && !this.codigoEnviado() && !this.bloqueada() && this.segundosReenvio() === 0) {
       this.enviarCodigo(false);
@@ -117,6 +132,11 @@ export class Configuracion implements OnInit {
 
 
   irASucursales(): void {
+    const returnTo = this.route.snapshot.queryParamMap.get('returnTo');
+    if (returnTo) {
+      void this.router.navigateByUrl(destinoDespuesDelLogin(this.router, returnTo));
+      return;
+    }
     void this.router.navigate(['/sucursales']);
   }
 
@@ -233,13 +253,13 @@ export class Configuracion implements OnInit {
     this.aviso.set('');
     this.error.set('');
 
-    this.auth.solicitarVerificacion(this.verificacionModel().email, reenviar).pipe(
+    this.verificacion.solicitarVerificacion(this.verificacionModel().email, reenviar).pipe(
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({
       next: (estado) => {
         this.pendiente.aplicarEstado(estado);
         if (estado.verificada) {
-          this.auth.completarVerificacion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          this.verificacion.completarVerificacion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: () => this.finalizarVerificacion(),
             error: () => {
               this.enviando.set(false);
@@ -303,7 +323,7 @@ export class Configuracion implements OnInit {
 
     const datos = this.verificacionModel();
 
-    this.auth.verificarEmail(datos.email, datos.codigo).pipe(
+    this.verificacion.verificarEmail(datos.email, datos.codigo).pipe(
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({
       next: () => this.finalizarVerificacion(),

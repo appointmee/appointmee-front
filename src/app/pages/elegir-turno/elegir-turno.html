@@ -1,0 +1,444 @@
+<section class="elegir-turno" aria-labelledby="elegir-turno-titulo">
+  <div class="elegir-turno__inner">
+    <nav class="migas" aria-label="Navegación de la reserva">
+      <a class="volver" [routerLink]="volverLink()" [queryParams]="volverQueryParams()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M11 18l-6-6 6-6" />
+        </svg>
+        Volver a empleados
+      </a>
+    </nav>
+
+    <header class="cabecera">
+      <div class="cabecera__intro">
+        <span class="eyebrow">
+          Reserva de turno
+        </span>
+        <h1 id="elegir-turno-titulo">Seleccionar día y horario</h1>
+
+        @if (!sinContexto()) {
+          <p class="paso" aria-label="Paso 3 de 3: elegir día y horario">
+            <span class="paso__numero" aria-hidden="true">3</span>
+            <span class="paso__texto">Paso 3 de 3 · Día y horario</span>
+            <span class="paso__track" aria-hidden="true">
+              <span class="paso__progress"></span>
+            </span>
+          </p>
+        }
+      </div>
+
+      @if (!sinContexto()) {
+        <aside
+          class="contexto"
+          aria-label="Resumen de la reserva"
+          [attr.aria-busy]="cargandoContexto()"
+        >
+          <div class="contexto__item">
+            <span class="contexto__etiqueta">Sucursal</span>
+            <span class="contexto__valor">{{ resumenContexto().sucursal.nombre }}</span>
+            @if (resumenContexto().sucursal.tienePuntuacion) {
+              <p class="contexto__rating">
+                <span class="contexto__puntuacion">
+                  {{ resumenContexto().sucursal.numero }}
+                </span>
+                <span class="contexto__abejas" aria-hidden="true">
+                  @for (abeja of resumenContexto().sucursal.abejas; track $index) {
+                    <span class="contexto__abeja">🐝</span>
+                  }
+                </span>
+                <span class="sr-only">
+                  Puntuación promedio {{ resumenContexto().sucursal.numero }}.
+                </span>
+              </p>
+            } @else {
+              <p class="contexto__sin-puntuacion">Todavía no tiene reseñas.</p>
+            }
+          </div>
+
+          <div class="contexto__item">
+            <span class="contexto__etiqueta">Servicio</span>
+            <span class="contexto__valor">{{ resumenContexto().servicio.nombre }}</span>
+            @if (resumenContexto().servicio.tienePuntuacion) {
+              <p class="contexto__rating">
+                <span class="contexto__puntuacion">
+                  {{ resumenContexto().servicio.numero }}
+                </span>
+                <span class="contexto__abejas" aria-hidden="true">
+                  @for (abeja of resumenContexto().servicio.abejas; track $index) {
+                    <span class="contexto__abeja">🐝</span>
+                  }
+                </span>
+                <span class="sr-only">
+                  Puntuación promedio {{ resumenContexto().servicio.numero }}.
+                </span>
+              </p>
+            } @else {
+              <p class="contexto__sin-puntuacion">Todavía no tiene reseñas.</p>
+            }
+          </div>
+
+          <div class="contexto__item">
+            <span class="contexto__etiqueta">Profesional</span>
+            <span class="contexto__valor">{{ resumenContexto().empleado.nombre }}</span>
+            @if (resumenContexto().empleado.tienePuntuacion) {
+              <p class="contexto__rating">
+                <span class="contexto__puntuacion">
+                  {{ resumenContexto().empleado.numero }}
+                </span>
+                <span class="contexto__abejas" aria-hidden="true">
+                  @for (abeja of resumenContexto().empleado.abejas; track $index) {
+                    <span class="contexto__abeja">🐝</span>
+                  }
+                </span>
+                <span class="sr-only">
+                  Puntuación promedio {{ resumenContexto().empleado.numero }}.
+                </span>
+              </p>
+            } @else {
+              <p class="contexto__sin-puntuacion">Todavía no tiene reseñas.</p>
+            }
+          </div>
+        </aside>
+      }
+    </header>
+
+    @if (sinContexto()) {
+      <div
+        class="estado estado--contexto"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <span class="estado__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M12 9v4M12 17h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+            />
+          </svg>
+        </span>
+        <h2>No pudimos identificar la reserva</h2>
+        <p>
+          Falta la sucursal, el servicio o el profesional en la URL. Volvé a elegir un
+          servicio y un profesional para continuar con la reserva.
+        </p>
+        <a class="boton" routerLink="/">Volver al Home</a>
+      </div>
+    } @else {
+      @if (aviso()) {
+        <div
+          class="aviso"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <span class="aviso__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </span>
+          <p>{{ aviso() }}</p>
+          @if (sinPermisoReserva()) {
+            <a class="aviso__salida" routerLink="/">Ir al Home</a>
+          }
+        </div>
+      }
+
+      @if (sinConexion() && !cargandoDisponibilidad() && !errorDisponibilidad() && !errorContexto()) {
+        <div
+          class="aviso aviso--conexion"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          <span class="aviso__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M2 2 22 22M8.5 8.5A10.9 10.9 0 0 1 12 8c4 0 7.4 2 9 5M5 13c1-1.4 2.4-2.4 4-3M8.5 16.5a4.5 4.5 0 0 1 7 0M12 20h.01"
+              />
+            </svg>
+          </span>
+          <div class="aviso__texto">
+            <strong>Sin conexión a internet</strong>
+            <p>Revisá tu conexión y reintentá. Podés seguir viendo lo que ya está cargado.</p>
+          </div>
+          <button
+            class="boton boton--compacto"
+            type="button"
+            [disabled]="reintentandoDisponibilidad()"
+            [attr.aria-busy]="reintentandoDisponibilidad()"
+            (click)="reintentarConexion()"
+          >
+            {{ reintentandoDisponibilidad() ? 'Reintentando…' : 'Reintentar' }}
+          </button>
+        </div>
+      }
+
+      @if (errorContexto()) {
+        <div
+          class="aviso aviso--error"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          <span class="aviso__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </span>
+          <div class="aviso__texto">
+            <strong>No pudimos cargar los datos de la reserva</strong>
+            <p>{{ errorContexto() }}</p>
+          </div>
+          <div class="aviso__acciones">
+            @if (contextoInvalido()) {
+              <a class="boton" [routerLink]="['/sucursal', sucursalId() ?? 0]">
+                Volver al detalle
+              </a>
+            } @else {
+              <button
+                class="boton boton--compacto"
+                type="button"
+                [disabled]="reintentandoContexto()"
+                [attr.aria-busy]="reintentandoContexto()"
+                (click)="reintentarContexto()"
+              >
+                {{ reintentandoContexto() ? 'Reintentando…' : 'Reintentar' }}
+              </button>
+            }
+            <a
+              class="boton boton--ghost boton--compacto"
+              [routerLink]="volverLink()"
+              [queryParams]="volverQueryParams()"
+            >
+              Volver a empleados
+            </a>
+          </div>
+        </div>
+      }
+
+      @if (cargandoDisponibilidad() && diasDisponibles().length === 0) {
+        <section class="disponibilidad" aria-busy="true" aria-labelledby="fechas-titulo">
+          <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            Cargando días y horarios disponibles…
+          </span>
+          <h2 id="fechas-titulo" class="seccion-titulo">Elegí un día</h2>
+          <div class="dias dias--skeleton" aria-hidden="true">
+            @for (item of [1, 2, 3, 4, 5]; track item) {
+              <span class="dia dia--skeleton">
+                <span class="skeleton skeleton--dia-numero"></span>
+                <span class="skeleton skeleton--dia-mes"></span>
+              </span>
+            }
+          </div>
+          <div class="horarios horarios--skeleton" aria-hidden="true">
+            <span class="skeleton skeleton--horarios-titulo"></span>
+            @for (item of [1, 2, 3]; track item) {
+              <span class="skeleton skeleton--horario"></span>
+            }
+          </div>
+        </section>
+      } @else {
+        @if (errorDisponibilidad()) {
+          <div
+            class="aviso aviso--error"
+            role="alert"
+            aria-live="assertive"
+            aria-atomic="true"
+          >
+            <span class="aviso__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+            </span>
+            <div class="aviso__texto">
+              <strong>
+                {{ sinConexion() ? 'Sin conexión a internet' : 'No pudimos cargar los horarios' }}
+              </strong>
+              <p>{{ errorDisponibilidad() }}</p>
+            </div>
+            <button
+              class="boton boton--compacto"
+              type="button"
+              [disabled]="reintentandoDisponibilidad()"
+              [attr.aria-busy]="reintentandoDisponibilidad()"
+              (click)="reintentarDisponibilidad()"
+            >
+              {{ reintentandoDisponibilidad() ? 'Reintentando…' : 'Reintentar' }}
+            </button>
+          </div>
+        }
+
+        @if (diasDisponibles().length === 0) {
+          @if (!errorDisponibilidad()) {
+            <div class="estado estado--vacio" role="status" aria-live="polite">
+              <span class="estado__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+                </svg>
+              </span>
+              <h2>No hay días disponibles en este momento</h2>
+              <p>
+                No encontramos horarios para este profesional y servicio dentro de los
+                próximos 21 días. Podés elegir otro profesional o volver más tarde.
+              </p>
+              <a
+                class="boton"
+                [routerLink]="volverLink()"
+                [queryParams]="volverQueryParams()"
+              >
+                Volver a empleados
+              </a>
+            </div>
+          }
+        } @else {
+          <section class="fechas" aria-labelledby="fechas-titulo">
+            <div class="fechas__cabecera">
+              <h2 id="fechas-titulo" class="seccion-titulo">Elegí un día</h2>
+              @if (reintentandoDisponibilidad()) {
+                <p class="actualizando" role="status" aria-live="polite">
+                  Actualizando horarios disponibles…
+                </p>
+              }
+            </div>
+
+            <div
+              class="dias"
+              role="radiogroup"
+              aria-labelledby="fechas-titulo"
+              aria-describedby="fechas-ayuda"
+            >
+              @for (dia of diasDisponibles(); track trackFecha($index, dia)) {
+                <button
+                  class="dia"
+                  type="button"
+                  role="radio"
+                  [class.dia--seleccionado]="estaSeleccionadoDia(dia)"
+                  [attr.aria-checked]="estaSeleccionadoDia(dia)"
+                  [attr.aria-label]="
+                    'Día ' + dia.etiqueta + ', ' + dia.horarios.length + ' horarios disponibles'
+                  "
+                  [attr.tabindex]="esDiaEnfocable(dia) ? 0 : -1"
+                  [attr.data-fecha]="dia.fecha"
+                  [disabled]="seleccionDeshabilitada()"
+                  (click)="seleccionarFecha(dia.fecha)"
+                  (keydown)="onTeclaDia($event, dia)"
+                >
+                  <span class="dia__numero">{{ dia.numero }}</span>
+                  <span class="dia__mes">{{ dia.mes }}</span>
+                  @if (estaSeleccionadoDia(dia)) {
+                    <span class="dia__check" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path d="m5 12 5 5 9-10" />
+                      </svg>
+                    </span>
+                  }
+                </button>
+              }
+            </div>
+            <p id="fechas-ayuda" class="ayuda">
+              Sólo se muestran los días con horarios disponibles. Usá las flechas para
+              recorrer y Enter o Espacio para elegir.
+            </p>
+          </section>
+
+          @if (fechaSeleccionada(); as fechaSeleccionada) {
+            <section class="horarios" aria-labelledby="horarios-titulo">
+              <div class="horarios__cabecera">
+                <h2 id="horarios-titulo" class="seccion-titulo">
+                  Horarios para {{ etiquetaFechaSeleccionada() }}
+                </h2>
+                <span class="horarios__contador">
+                  {{ horariosDiaSeleccionado().length }}
+                  {{ horariosDiaSeleccionado().length === 1 ? 'horario' : 'horarios' }}
+                </span>
+              </div>
+
+              @if (horariosDiaSeleccionado().length === 0) {
+                <p class="horarios__vacio" role="status">
+                  No hay horarios disponibles para este día. Elegí otro día.
+                </p>
+              } @else {
+                <div
+                  class="horarios__lista"
+                  role="radiogroup"
+                  aria-labelledby="horarios-titulo"
+                  [attr.data-fecha]="fechaSeleccionada"
+                >
+                  @for (hora of horariosDiaSeleccionado(); track trackHora($index, hora)) {
+                    <button
+                      class="horario"
+                      type="button"
+                      role="radio"
+                      [class.horario--seleccionado]="estaSeleccionadoHorario(hora)"
+                      [attr.aria-checked]="estaSeleccionadoHorario(hora)"
+                      [attr.aria-label]="
+                        'Horario ' + horaTexto(hora) + ' del ' + etiquetaFechaSeleccionada()
+                      "
+                      [attr.tabindex]="esHoraEnfocable(hora) ? 0 : -1"
+                      [attr.data-hora]="hora"
+                      [disabled]="seleccionDeshabilitada()"
+                      (click)="seleccionarHora(hora)"
+                      (keydown)="onTeclaHora($event, hora)"
+                    >
+                      <span class="horario__hora">{{ horaTexto(hora) }}</span>
+                      <span class="horario__estado" aria-hidden="true">
+                        @if (estaSeleccionadoHorario(hora)) {
+                          <span class="horario__check">
+                            <svg viewBox="0 0 24 24">
+                              <path d="m5 12 5 5 9-10" />
+                            </svg>
+                          </span>
+                          Seleccionado
+                        } @else {
+                          Elegir
+                        }
+                      </span>
+                    </button>
+                  }
+                </div>
+              }
+            </section>
+          }
+
+          <footer class="acciones">
+            <div class="acciones__resumen" role="status" aria-live="polite" aria-atomic="true">
+              @if (resumenSeleccion(); as resumen) {
+                <p class="acciones__resumen-linea">
+                  <span class="acciones__resumen-etiqueta">Turno seleccionado:</span>
+                </p>
+                <p class="acciones__nombre">{{ resumen.fecha }}</p>
+                <p class="acciones__meta">
+                  <span class="acciones__hora">{{ resumen.hora }}</span> hs
+                </p>
+              } @else {
+                <p class="acciones__resumen-linea">
+                  Elegí un día y un horario para continuar.
+                </p>
+              }
+            </div>
+
+            <button
+              dsButton
+              variant="primary"
+              class="boton boton--siguiente"
+              type="button"
+              [disabled]="!puedeContinuar() || navegando()"
+              [attr.aria-busy]="navegando()"
+              (click)="continuar($event)"
+            >
+              {{ navegando() ? 'Continuando…' : 'Continuar' }}
+            </button>
+          </footer>
+        }
+      }
+    }
+  </div>
+</section>
+
+@if (loginAbierto()) {
+  <app-login-modal
+    [destinoRetorno]="destinoRetorno()"
+    (cerrar)="cerrarLogin()"
+    (sesionIniciada)="continuar()"
+  />
+}

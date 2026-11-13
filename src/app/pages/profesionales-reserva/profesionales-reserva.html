@@ -1,0 +1,112 @@
+<main class="reserva">
+  <div class="reserva__inner">
+    <a class="volver" [routerLink]="volverUrl" [queryParams]="servicioId ? { servicioId } : {}">
+      ← Volver a servicios
+    </a>
+
+    <header class="reserva__header">
+      <span class="eyebrow">Reserva de turno</span>
+      <h1>Elegí un profesional</h1>
+      @if (servicio(); as elegido) {
+        <p>Servicio: <strong>{{ elegido.nombre }}</strong></p>
+      }
+      <p class="paso">Paso 2 de 3 — Profesional</p>
+    </header>
+
+    @if (cargando()) {
+      <p role="status">Validando tu selección…</p>
+    } @else if (contextoInvalido()) {
+      <section class="estado" role="alert">
+        <h2>La selección no es válida o ya no está disponible</h2>
+        <p>Volvé al detalle de la sucursal y empezá una nueva reserva.</p>
+        <a class="boton" [routerLink]="sucursalId !== null ? ['/sucursal', sucursalId] : ['/']">Volver al detalle</a>
+      </section>
+    } @else if (error()) {
+      <section class="estado" role="alert">
+        <h2>No pudimos cargar los profesionales</h2>
+        <p>{{ error() }}</p>
+        <a class="boton" [routerLink]="volverUrl" [queryParams]="{ servicioId }">Volver a servicios</a>
+      </section>
+    } @else if (profesionales().length === 0) {
+      <section class="estado" role="status">
+        <h2>No hay profesionales disponibles</h2>
+        <p>Podés volver y elegir otro servicio o regresar al detalle.</p>
+        <a class="boton" [routerLink]="volverUrl" [queryParams]="{ servicioId }">Volver a servicios</a>
+      </section>
+    } @else {
+      <div class="profesionales" aria-label="Profesionales disponibles">
+        @for (profesional of profesionales(); track profesional.id) {
+          <button
+            class="profesional"
+            type="button"
+            [class.profesional--seleccionado]="profesionalSeleccionadoId() === profesional.id"
+            [attr.aria-pressed]="profesionalSeleccionadoId() === profesional.id"
+            (click)="elegirProfesional(profesional.id)"
+          >
+            @if (profesional.urlFotoPerfil) {
+              <img [src]="profesional.urlFotoPerfil" [alt]="profesional.nombre + ' ' + profesional.apellido" />
+            }
+            <span>{{ profesional.nombre }} {{ profesional.apellido }}</span>
+            @if (profesionalSeleccionadoId() === profesional.id) {
+              <small>Seleccionado</small>
+            }
+          </button>
+        }
+      </div>
+
+      @if (profesionalSeleccionadoId() !== null) {
+        <section class="horarios" aria-labelledby="horarios-titulo">
+          <h2 id="horarios-titulo">Elegí fecha y horario</h2>
+          @if (cargandoDisponibilidad()) {
+            <p role="status">Buscando horarios disponibles…</p>
+          } @else if (errorDisponibilidad()) {
+            <p class="mensaje mensaje--error" role="alert">{{ errorDisponibilidad() }}</p>
+          } @else if (!hayHorariosDisponibles()) {
+            <p role="status">No hay horarios disponibles para este profesional en los próximos días.</p>
+          } @else {
+            <div class="fechas" aria-label="Fechas disponibles">
+              @for (dia of disponibilidad(); track dia.fecha) {
+                @if (dia.horarios.length > 0) {
+                  <button
+                    class="opcion"
+                    type="button"
+                    [class.opcion--seleccionada]="fechaSeleccionada() === dia.fecha"
+                    [attr.aria-pressed]="fechaSeleccionada() === dia.fecha"
+                    (click)="elegirFecha(dia.fecha)"
+                  >{{ formatoFecha(dia.fecha) }}</button>
+                }
+              }
+            </div>
+            @if (horariosDelDia().length > 0) {
+              <div class="horas" aria-label="Horarios disponibles">
+                @for (horario of horariosDelDia(); track horario) {
+                  <button
+                    class="opcion"
+                    type="button"
+                    [class.opcion--seleccionada]="horarioSeleccionado() === horario"
+                    [attr.aria-pressed]="horarioSeleccionado() === horario"
+                    (click)="elegirHorario(horario)"
+                  >{{ formatoHorario(horario) }}</button>
+                }
+              </div>
+            }
+          }
+          @if (errorReserva()) {
+            <p class="mensaje mensaje--error" role="alert">{{ errorReserva() }}</p>
+          }
+          <button
+            class="boton"
+            type="button"
+            [disabled]="!horarioSeleccionado() || reservando()"
+            [attr.aria-busy]="reservando()"
+            (click)="confirmarReserva()"
+          >{{ reservando() ? 'Confirmando…' : 'Confirmar reserva' }}</button>
+        </section>
+      }
+
+      <div class="acciones">
+        <button class="boton boton--cancelar" type="button" (click)="cancelarReserva()">Cancelar reserva</button>
+      </div>
+    }
+  </div>
+</main>

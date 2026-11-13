@@ -1,0 +1,59 @@
+<!-- Primera confirmación: todavía no se elimina nada. -->
+<ds-modal
+  [open]="abierto() && paso() === 'confirmar'"
+  (close)="cancelar()"
+  ariaLabelledby="eliminar-servicio-titulo"
+  maxWidth="480px"
+>
+  <h2 id="eliminar-servicio-titulo" class="eliminar__titulo">Eliminar servicio</h2>
+
+  <p class="eliminar__texto">
+    Eliminar un servicio es un proceso que únicamente puede revertir un
+    administrador. ¿Estás seguro?
+  </p>
+
+  <div class="eliminar__acciones">
+    <button #botonCancelar dsButton type="button" (clicked)="cancelar()">Cancelar</button>
+    <button dsButton variant="danger" type="button" (clicked)="continuar()">Continuar</button>
+  </div>
+</ds-modal>
+
+<!-- Segunda confirmación: la última antes de eliminar definitivamente. -->
+<ds-modal
+  [open]="abierto() && paso() === 'definitivo'"
+  (close)="cancelar()"
+  ariaLabelledby="eliminar-servicio-definitivo-titulo"
+  maxWidth="480px"
+>
+  <h2 id="eliminar-servicio-definitivo-titulo" class="eliminar__titulo">Última confirmación</h2>
+
+  <p class="eliminar__texto">
+    ¿Estás seguro de que deseas eliminar este servicio permanentemente? Esta
+    acción no se puede deshacer.
+  </p>
+
+  @if (error()) {
+    <p class="eliminar__error" role="alert">{{ error() }}</p>
+  }
+
+  <div class="eliminar__acciones">
+    <button
+      #botonCancelarDefinitivo
+      dsButton
+      type="button"
+      [disabled]="eliminando()"
+      (clicked)="cancelar()"
+    >
+      Cancelar
+    </button>
+    <button
+      dsButton
+      variant="danger"
+      type="button"
+      [loading]="eliminando()"
+      (clicked)="confirmar()"
+    >
+      {{ eliminando() ? 'Eliminando…' : 'Eliminar permanentemente' }}
+    </button>
+  </div>
+</ds-modal>

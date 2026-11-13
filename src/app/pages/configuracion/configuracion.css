@@ -33,6 +33,9 @@
 }
 
 .ajustes__pestana {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   display: inline-flex;
   padding: 12px 2px;
   border-bottom: 2px solid transparent;
@@ -107,8 +110,8 @@
 .verificacion__exito h3 { margin: 0 0 8px; color: #9be2b2; font-size: 16px; }
 
 .ajustes a:focus-visible, .ajustes button:focus-visible, .ajustes input:focus-visible {
-  outline: 2px solid var(--accent-strong);
-  outline-offset: 3px;
+  outline: 2px solid var(--muted);
+  outline-offset: 1px;
 }
 
 @media (max-width: 600px) {

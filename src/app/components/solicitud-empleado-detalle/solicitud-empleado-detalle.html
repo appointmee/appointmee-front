@@ -1,0 +1,56 @@
+<div class="detalle">
+  <div class="detalle__cabecera">
+    <div>
+      <span class="detalle__eyebrow">
+        {{ tipo() === 'recibida' ? 'Invitación recibida' : 'Invitación enviada' }}
+      </span>
+      <h3>Detalles de la invitación</h3>
+    </div>
+    <span [class]="'estado ' + claseEstado()">{{ etiqueta() }}</span>
+  </div>
+
+  <dl class="detalle__datos">
+    <div class="detalle__dato detalle__dato--sucursal">
+      <dt>Sucursal</dt>
+      <dd>
+        <span class="detalle__sucursal">{{ detalle().sucursal.nombre }}</span>
+        @if (categoria(); as nombreCategoria) {
+          <span class="detalle__meta">{{ nombreCategoria }}</span>
+        }
+        <span class="detalle__meta">{{ resumenPuntuacion() }}</span>
+        <a class="detalle__enlace" [routerLink]="['/sucursal', detalle().sucursal.id]">
+          Ver sucursal
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </a>
+      </dd>
+    </div>
+
+    <div class="detalle__dato">
+      <dt>{{ etiquetaEmpleado() }}</dt>
+      <dd class="detalle__persona">
+        <span class="detalle__avatar" aria-hidden="true">{{ inicialesEmpleado() }}</span>
+        <span>
+          <span class="detalle__nombre">{{ nombreEmpleado() }}</span>
+          @if (detalle().empleado.email; as correo) {
+            <a class="detalle__email" [href]="'mailto:' + correo">{{ correo }}</a>
+          }
+        </span>
+      </dd>
+    </div>
+
+    <div class="detalle__dato">
+      <dt>Fecha de la invitación</dt>
+      <dd>{{ fecha() }}</dd>
+    </div>
+
+    <div class="detalle__dato">
+      <dt>Estado actual</dt>
+      <dd>
+        <span [class]="'estado estado--compacto ' + claseEstado()">{{ etiqueta() }}</span>
+        <span class="detalle__nota">{{ notaEstado() }}</span>
+      </dd>
+    </div>
+  </dl>
+</div>

@@ -1,0 +1,340 @@
+:host {
+  display: contents;
+}
+
+.detalle {
+  display: grid;
+  gap: var(--space-4, 1rem);
+}
+
+.detalle__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4, 1rem);
+}
+
+.detalle__titulo {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.detalle__eyebrow {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.detalle__cabecera h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(1.25rem, 3vw, 1.6rem);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.detalle__cerrar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 0.2s var(--ease),
+    border-color 0.2s var(--ease);
+}
+
+.detalle__cerrar:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.detalle__cerrar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.detalle__cerrar svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+}
+
+.detalle__exito {
+  margin: 0;
+  padding: var(--space-3, 0.75rem);
+  border: 1px solid rgba(126, 226, 168, 0.4);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--success-light-soft);
+  color: var(--success-light);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.detalle__contenido {
+  display: grid;
+  grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-5, 1.25rem);
+}
+
+.detalle__media {
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0d1117;
+  aspect-ratio: 4 / 3;
+}
+
+.detalle__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detalle__datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4, 1rem);
+  margin: 0;
+}
+
+.dato {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.dato--ancho {
+  grid-column: 1 / -1;
+}
+
+.dato dt {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dato dd {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.98rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.dato__precio {
+  color: var(--accent);
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Puntuación: lasrables con el valor numérico al lado y la cantidad de
+   reseñas diferenciada. */
+.rating {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.rating__abejas {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.abeja {
+  display: inline-block;
+  line-height: 1;
+}
+
+.abeja--vacia {
+  filter: grayscale(1);
+  opacity: 0.22;
+}
+
+.rating__valor {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.rating__resenas {
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rating__sin-puntuacion {
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-style: italic;
+}
+
+.detalle__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
+  justify-content: flex-end;
+  padding-top: var(--space-3, 0.75rem);
+  border-top: 1px solid var(--line);
+}
+
+.detalle__boton {
+  min-width: 200px;
+}
+
+/* Botón de eliminación: rojo, con resplandor rojo al pasar el mouse. */
+.detalle__boton--eliminar {
+  transition:
+    box-shadow 0.2s var(--ease),
+    filter 0.2s var(--ease);
+}
+
+.detalle__boton--eliminar:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: 0 0 18px rgba(255, 122, 122, 0.55);
+}
+
+.detalle__boton--eliminar:focus-visible {
+  box-shadow: 0 0 14px rgba(255, 122, 122, 0.45);
+}
+
+/* Estado de error al cargar el detalle. */
+.estado {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3, 0.75rem);
+  padding: var(--space-6, 1.5rem) var(--space-4, 1rem);
+  text-align: center;
+}
+
+.estado h3 {
+  margin: 0;
+  color: var(--danger);
+  font-size: 1.1rem;
+}
+
+.estado p {
+  max-width: 42ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+/* Skeleton de carga. */
+.detalle__skeleton {
+  display: grid;
+  gap: var(--space-3, 0.75rem);
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 8px;
+}
+
+.skeleton--foto {
+  height: 160px;
+  border-radius: 14px;
+}
+
+.skeleton--line {
+  height: 16px;
+  width: 75%;
+}
+
+.skeleton--short {
+  width: 45%;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 560px) {
+  .detalle__contenido {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detalle__media {
+    max-width: 320px;
+  }
+
+  .detalle__datos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detalle__acciones {
+    justify-content: stretch;
+  }
+
+  /* Los dos botones siguen en la misma fila, uno al lado del otro. */
+  .detalle__boton {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+
+  .detalle__cerrar {
+    transition: none;
+  }
+
+  .detalle__boton--eliminar {
+    transition: none;
+  }
+}

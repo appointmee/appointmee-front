@@ -3,6 +3,14 @@ import { authGuard } from './guards/auth-guard';
 import { verificationGuard } from './guards/verification-guard';
 import { guestGuard } from './guards/guest-guard';
 
+
+/*
+
+  Usamos loadcomponent: en vez de component: porque
+  nos permite cargar las cosas solo cuando se necesitan
+
+*/
+
 export const routes: Routes = [
   {
     path: '',
@@ -24,21 +32,79 @@ export const routes: Routes = [
     redirectTo: 'sucursales',
   },
   {
-    path: 'sucursal/:sucursalId/servicios',
-    canActivate: [authGuard],
-    title: 'AppointMee | Elegir servicio',
+    path: 'sucursal/:sucursalId/servicios/:servicioId/empleados',
+    title: 'AppointMee | Elegir empleado',
     data: {
-      title: 'Elegir servicio',
+      title: 'Elegir empleado',
+      description: 'Elegí al profesional que realizará el servicio reservado.',
+    },
+    loadComponent: () =>
+      import('./pages/elegir-empleado/elegir-empleado').then(
+        (module) => module.ElegirEmpleado,
+      ),
+  },
+  {
+    path: 'sucursal/:sucursalId/servicios/:servicioId/turnos/pago',
+    title: 'AppointMee | Enlace de pago',
+    data: {
+      title: 'Enlace de pago',
+      description: 'Completá el pago para confirmar tu turno.',
+    },
+    loadComponent: () =>
+      import('./pages/pago-turno/pago-turno').then((module) => module.PagoTurno),
+  },
+  {
+    path: 'pago/resultado',
+    title: 'AppointMee | Resultado del pago',
+    loadComponent: () =>
+      import('./pages/resultado-pago/resultado-pago').then(
+        (module) => module.ResultadoPago,
+      ),
+  },
+  {
+    path: 'sucursal/:sucursalId/servicios/:servicioId/turnos',
+    title: 'AppointMee | Seleccionar día y horario',
+    data: {
+      title: 'Seleccionar día y horario',
+      description: 'Elegí el día y el horario disponible para tu turno.',
+    },
+    loadComponent: () =>
+      import('./pages/elegir-turno/elegir-turno').then((module) => module.ElegirTurno),
+  },
+  {
+    path: 'sucursal/:sucursalId/servicios',
+    title: 'AppointMee | Seleccionar servicio',
+    data: {
+      title: 'Seleccionar servicio',
       description: 'Elegí el servicio que querés reservar en esta sucursal.',
     },
     loadComponent: () =>
       import('./pages/servicios/servicios').then((module) => module.Servicios),
   },
   {
+    path: 'sucursal/:sucursalId/profesionales',
+    canActivate: [authGuard],
+    title: 'AppointMee | Elegir profesional',
+    data: { title: 'Elegir profesional', description: 'Elegí quién te atenderá.' },
+    loadComponent: () =>
+      import('./pages/profesionales-reserva/profesionales-reserva').then(
+        (module) => module.ProfesionalesReserva,
+      ),
+  },
+  {
+    path: 'reserva/confirmada',
+    canActivate: [authGuard],
+    title: 'AppointMee | Reserva confirmada',
+    loadComponent: () =>
+      import('./pages/reserva-confirmada/reserva-confirmada').then(
+        (module) => module.ReservaConfirmada,
+      ),
+  },
+  {
     path: 'servicios',
-    title: 'AppointMee | Elegir servicio',
+    title: 'AppointMee | Seleccionar servicio',
     data: {
-      title: 'Elegir servicio',
+      title: 'Seleccionar servicio',
       description: 'Elegí el servicio que querés reservar en esta sucursal.',
     },
     loadComponent: () =>
@@ -46,7 +112,6 @@ export const routes: Routes = [
   },
   {
     path: 'sucursal/:id/resenias',
-    canActivate: [authGuard],
     title: 'AppointMee | Reseñas',
     loadComponent: () =>
       import('./pages/sucursal-resenias/sucursal-resenias').then(
@@ -55,7 +120,6 @@ export const routes: Routes = [
   },
   {
     path: 'sucursal/:id/equipo',
-    canActivate: [authGuard],
     title: 'AppointMee | Equipo',
     loadComponent: () =>
       import('./pages/sucursal-equipo/sucursal-equipo').then(
@@ -63,7 +127,6 @@ export const routes: Routes = [
       ),
   },
   {
-    // El detalle es público: el CTA decide si inicia sesión antes de reservar.
     path: 'sucursal/:id',
     title: 'AppointMee | Sucursal',
     loadComponent: () =>
@@ -78,8 +141,10 @@ export const routes: Routes = [
     data: {
       title: 'Mis Turnos',
       description: 'Consultá y gestioná todos tus turnos en un solo lugar.',
+      rolesExcluidos: ['ADMINISTRADOR'],
     },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () =>
+      import('./pages/mis-turnos/mis-turnos').then((module) => module.MisTurnos),
   },
   {
     path: 'mis-sucursales',
@@ -88,9 +153,137 @@ export const routes: Routes = [
     data: {
       title: 'Mis Sucursales',
       roles: ['EMPLEADOR'],
-      description: 'Explorá las sucursales disponibles y encontrá la más cercana.',
+      description: 'Gestioná las sucursales que te pertenecen y sus solicitudes de empleo.',
     },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () =>
+      import('./pages/mis-sucursales/mis-sucursales').then(
+        (module) => module.MisSucursales,
+      ),
+  },
+  {
+    path: 'mis-sucursales/nueva',
+    canActivate: [authGuard],
+    title: 'AppointMee | Crear sucursal',
+    data: {
+      title: 'Crear sucursal',
+      roles: ['EMPLEADOR'],
+      description: 'Creá una nueva sucursal para gestionarla desde tu panel.',
+    },
+    loadComponent: () =>
+      import('./pages/crear-sucursal/crear-sucursal').then(
+        (module) => module.CrearSucursalPage,
+      ),
+  },
+  {
+    path: 'mis-sucursales/:sucursalId/galeria',
+    canActivate: [authGuard],
+    title: 'AppointMee | Galería de imágenes',
+    data: {
+      title: 'Galería de imágenes',
+      roles: ['EMPLEADOR'],
+      description: 'Administrá las imágenes de tu sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/galeria-sucursal/galeria-sucursal').then(
+        (module) => module.GaleriaSucursal,
+      ),
+  },
+  {
+    path: 'mis-sucursales/:sucursalId/empleados',
+    canActivate: [authGuard],
+    title: 'AppointMee | Empleados de la sucursal',
+    data: {
+      title: 'Empleados',
+      roles: ['EMPLEADOR'],
+      description: 'Consultá el equipo de tu sucursal y agregate como empleado.',
+    },
+    loadComponent: () =>
+      import('./pages/empleados-sucursal/empleados-sucursal').then(
+        (module) => module.EmpleadosSucursal,
+      ),
+  },
+  {
+    path: 'mis-sucursales/:sucursalId/solicitudes',
+    canActivate: [authGuard],
+    title: 'AppointMee | Solicitudes de la sucursal',
+    data: {
+      title: 'Solicitudes',
+      roles: ['EMPLEADOR'],
+      description: 'Enviá y consultá las solicitudes de empleo de tu sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/solicitudes-sucursal/solicitudes-sucursal').then(
+        (module) => module.SolicitudesSucursal,
+      ),
+  },
+  {
+    path: 'mis-sucursales/:sucursalId/turnos',
+    canActivate: [authGuard],
+    title: 'AppointMee | Turnos de la sucursal',
+    data: {
+      title: 'Turnos de la sucursal',
+      roles: ['EMPLEADOR'],
+      description: 'Consultá y supervisá el historial de turnos de tu sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/turnos-sucursal/turnos-sucursal').then(
+        (module) => module.TurnosSucursal,
+      ),
+  },
+  {
+    path: 'mis-sucursales/:sucursalId/servicios',
+    canActivate: [authGuard],
+    title: 'AppointMee | Servicios de la sucursal',
+    data: {
+      title: 'Servicios',
+      roles: ['EMPLEADOR'],
+      description: 'Administrá los servicios de tu sucursal.',
+    },
+    loadComponent: () =>
+      import('./pages/servicios-sucursal/servicios-sucursal').then(
+        (module) => module.ServiciosSucursal,
+      ),
+  },
+  {
+    path: 'turnos-asignados',
+    canActivate: [authGuard],
+    title: 'AppointMee | Turnos asignados',
+    data: {
+      title: 'Turnos asignados',
+      roles: ['EMPLEADO'],
+      description: 'Consultá los turnos que tenés asignados en tus sucursales.',
+    },
+    loadComponent: () =>
+      import('./pages/turnos-asignados/turnos-asignados').then(
+        (module) => module.TurnosAsignados,
+      ),
+  },
+  {
+    path: 'turnos-asignados/:sucursalId',
+    canActivate: [authGuard],
+    title: 'AppointMee | Turnos asignados de la sucursal',
+    data: {
+      title: 'Turnos asignados',
+      roles: ['EMPLEADO'],
+      description: 'Consultá tus turnos asignados en una de tus sucursales.',
+    },
+    loadComponent: () =>
+      import(
+        './pages/turnos-asignados-sucursal/turnos-asignados-sucursal'
+      ).then((module) => module.TurnosAsignadosSucursal),
+  },
+  {
+    path: 'solicitudes/empleo/enviadas/:sucursalId',
+    canActivate: [authGuard],
+    title: 'AppointMee | Solicitudes de empleo enviadas',
+    data: {
+      title: 'Solicitudes de empleo enviadas',
+      description: 'Consultá todas las invitaciones de empleo que enviaste.',
+    },
+    loadComponent: () =>
+      import(
+        './pages/solicitudes-empleado-enviadas-historial/solicitudes-empleado-enviadas-historial'
+      ).then((module) => module.SolicitudesEmpleadoEnviadasHistorial),
   },
   {
     path: 'perfil',
@@ -98,9 +291,35 @@ export const routes: Routes = [
     title: 'AppointMee | Mi Perfil',
     data: {
       title: 'Mi Perfil',
-      description: 'Actualizá tus datos y mantené tu cuenta al día.',
+      description: 'Consultá tus datos y las sucursales donde participás.',
     },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () => import('./pages/perfil/perfil').then((module) => module.Perfil),
+  },
+  {
+    path: 'solicitudes/todas',
+    canActivate: [authGuard],
+    title: 'AppointMee | Historial de solicitudes',
+    data: {
+      title: 'Historial de solicitudes',
+      description: 'Consultá el historial completo de tus solicitudes para ser empleador.',
+    },
+    loadComponent: () =>
+      import('./pages/solicitudes-historial/solicitudes-historial').then(
+        (module) => module.SolicitudesHistorial,
+      ),
+  },
+  {
+    path: 'solicitudes/empleo/recibidas',
+    canActivate: [authGuard],
+    title: 'AppointMee | Historial de solicitudes de empleo',
+    data: {
+      title: 'Historial de solicitudes de empleo',
+      description: 'Consultá todas las invitaciones de empleo que recibiste.',
+    },
+    loadComponent: () =>
+      import(
+        './pages/solicitudes-empleado-historial/solicitudes-empleado-historial'
+      ).then((module) => module.SolicitudesEmpleadoHistorial),
   },
   {
     path: 'solicitudes',
@@ -110,7 +329,8 @@ export const routes: Routes = [
       title: 'Solicitudes',
       description: 'Seguí el estado de tus solicitudes y enterate de las novedades.',
     },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () =>
+      import('./pages/solicitudes/solicitudes').then((module) => module.Solicitudes),
   },
   {
     path: 'configuracion/verificar-email',
@@ -136,6 +356,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login/login').then((module) => module.LoginPage),
   },
   {
+    path: 'reset-password',
+    title: 'AppointMee | Restablecer contraseña',
+    loadComponent: () => import('./pages/reset-password/reset-password').then(module => module.ResetPasswordPage),
+  },
+  {
     path: 'olvide-mi-contrasena',
     title: 'AppointMee | Recuperar contraseña',
     loadComponent: () => import('./pages/forgot-password/forgot-password').then(module => module.ForgotPasswordPage),
@@ -147,12 +372,9 @@ export const routes: Routes = [
   },
   {
     path: 'registrarme',
+    canActivate: [guestGuard],
     title: 'AppointMee | Crear cuenta',
-    data: {
-      title: 'Crear cuenta',
-      description: 'Creá tu cuenta de AppointMee para reservar y gestionar turnos.',
-    },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () => import('./pages/registrarme/registrarme').then(module => module.Registrarme),
   },
   {
     path: 'admin',
@@ -163,7 +385,36 @@ export const routes: Routes = [
       roles: ['ADMINISTRADOR'],
       description: 'Panel interno disponible para usuarios con rol Administrador.',
     },
-    loadComponent: () => import('./pages/section/section').then((module) => module.Section),
+    loadComponent: () => import('./pages/admin/admin').then((module) => module.Administracion),
+  },
+  {
+    path: 'graficos/administrador',
+    canActivate: [authGuard],
+    title: 'AppointMee | Gráficos de administración',
+    data: {
+      title: 'Gráficos de administración',
+      roles: ['ADMINISTRADOR'],
+      rolGrafico: 'administrador',
+      description: 'Estadísticas globales de AppointMee.',
+    },
+    loadComponent: () => import('./pages/graficos/graficos').then((module) => module.Graficos),
+  },
+  {
+    path: 'graficos/empleador',
+    canActivate: [authGuard],
+    title: 'AppointMee | Gráficos de sucursal',
+    data: {
+      title: 'Gráficos de sucursal',
+      roles: ['EMPLEADOR'],
+      rolGrafico: 'empleador',
+      description: 'Estadísticas de las sucursales del empleador.',
+    },
+    loadComponent: () => import('./pages/graficos/graficos').then((module) => module.Graficos),
+  },
+  {
+    path: 'design-system',
+    title: 'AppointMee | Sistema de diseño',
+    loadComponent: () => import('./pages/design-system/design-system').then((m) => m.DesignSystemPage),
   },
   {
     path: '**',

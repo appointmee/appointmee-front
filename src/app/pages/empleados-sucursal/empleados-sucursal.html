@@ -1,0 +1,232 @@
+<section class="pagina" aria-label="Empleados de la sucursal">
+  @if (fotoSucursal()) {
+    <img
+      class="pagina__fondo-sucursal"
+      [src]="fotoSucursal()"
+      alt=""
+      aria-hidden="true"
+      (error)="marcarFotoSucursalFallida()"
+    />
+  }
+  <div class="pagina__inner">
+    <div class="pagina__acciones">
+      <a class="volver-gestor" [routerLink]="['/mis-sucursales']" [queryParams]="{ sucursalId: sucursalId }">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M11 18l-6-6 6-6" />
+        </svg>
+        Volver al gestor
+      </a>
+
+      @if (yaEsEmpleado()) {
+        <div class="aviso aviso--exito" role="status" aria-live="polite">
+          <p>Ya formás parte del equipo de esta sucursal.</p>
+        </div>
+      } @else {
+        <button
+          class="boton boton--principal auto__boton"
+          type="button"
+          [disabled]="cargando() || agregandome()"
+          [attr.aria-busy]="agregandome()"
+          (click)="agregarmeComoEmpleado()"
+        >
+          @if (cargando()) {
+            Comprobando…
+          } @else if (agregandome()) {
+            Agregándote…
+          } @else {
+            Agregarme como empleado
+          }
+        </button>
+      }
+    </div>
+
+    @if (errorAgregarme()) {
+      <p class="aviso__error" role="alert">{{ errorAgregarme() }}</p>
+    }
+
+    <section class="panel" aria-labelledby="listado-empleados-titulo">
+      <header class="panel__cabecera">
+        <h2 id="listado-empleados-titulo" class="panel__titulo">Equipo de la sucursal</h2>
+        @if (!cargando() && !error() && totalEmpleados() > 0) {
+          <span
+            class="panel__contador"
+            [attr.aria-label]="totalEmpleados() + (totalEmpleados() === 1 ? ' profesional en la sucursal' : ' profesionales en la sucursal')"
+          >
+            {{ totalEmpleados() }} {{ totalEmpleados() === 1 ? 'Profesional' : 'Profesionales' }}
+          </span>
+        }
+      </header>
+
+      @if (exitoEliminacion()) {
+        <div class="aviso aviso--exito" role="status" aria-live="polite">
+          <p>{{ exitoEliminacion() }}</p>
+        </div>
+      }
+
+      @if (errorEliminacion()) {
+        <div class="aviso aviso--error" role="alert">
+          <p class="aviso__error">{{ errorEliminacion() }}</p>
+        </div>
+      }
+
+      @if (cargando()) {
+        <div class="empleados__scroll" aria-busy="true">
+          <span class="sr-only" role="status" aria-live="polite">Cargando empleados…</span>
+          <ul class="lista lista--skeleton">
+            @for (item of [1, 2, 3, 4, 5]; track item) {
+              <li class="empleado empleado--skeleton" aria-hidden="true">
+                <span class="skeleton skeleton--avatar"></span>
+                <div class="empleado__body">
+                  <span class="skeleton skeleton--line skeleton--nombre"></span>
+                  <span class="skeleton skeleton--line skeleton--email"></span>
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
+      } @else if (error()) {
+        <div class="estado estado--error" role="alert" aria-live="assertive">
+          <span class="estado__icono" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </span>
+          <h3>No pudimos cargar los empleados</h3>
+          <p>{{ error() }}</p>
+          <button
+            class="boton boton--ghost"
+            type="button"
+            [disabled]="reintentando()"
+            [attr.aria-busy]="reintentando()"
+            (click)="reintentar()"
+          >
+            {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+          </button>
+        </div>
+      } @else if (totalEmpleados() === 0) {
+        <div class="estado estado--vacio" role="status" aria-live="polite">
+          <span class="estado__icono" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 0a4 4 0 1 0 0-8M22 21v-2a4 4 0 0 0-3-3.87" />
+            </svg>
+          </span>
+          <h3>Esta sucursal todavía no tiene empleados</h3>
+          <p>
+            Cuando sumes profesionales al equipo los vas a ver listados acá con su puntuación
+            promedio.
+          </p>
+        </div>
+      } @else {
+        @if (errorPuntuaciones()) {
+          <p class="aviso__error" role="status" aria-live="polite">{{ errorPuntuaciones() }}</p>
+        }
+
+        <div
+          class="empleados__scroll"
+          role="region"
+          tabindex="0"
+          aria-label="Listado de empleados de la sucursal"
+        >
+          <ul class="lista">
+            @for (empleado of empleados(); track trackById($index, empleado)) {
+              <li class="empleado">
+                <div class="empleado__contenido">
+                  <img
+                    class="empleado__foto"
+                    [src]="foto(empleado)"
+                    [alt]="'Fotografía de ' + nombreCompleto(empleado)"
+                    loading="lazy"
+                    decoding="async"
+                    referrerpolicy="no-referrer"
+                    (error)="onImageError($event)"
+                  />
+
+                  <div class="empleado__body">
+                    <p class="empleado__nombre">
+                      <span class="empleado__nombre-propio">{{ nombre(empleado) }}</span>
+                      <span class="empleado__apellido">{{ apellido(empleado) }}</span>
+                    </p>
+                    <p class="empleado__email">{{ email(empleado) }}</p>
+                  </div>
+
+                  <div class="empleado__rating">
+                    @if (tienePuntuacion(empleado)) {
+                      <span
+                        class="empleado__abejas"
+                        role="img"
+                        [attr.aria-label]="'Puntuación ' + puntuacionTexto(empleado)"
+                      >
+                        @for (llena of abejas(empleado); track $index) {
+                          <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
+                        }
+                      </span>
+                      <span class="empleado__resenias">{{ cantidadResenias(empleado) }}</span>
+                    } @else {
+                      <span class="empleado__sin-puntuacion">Sin puntuaciones</span>
+                    }
+
+                    <button
+                      dsButton
+                      size="sm"
+                      class="empleado__eliminar"
+                      type="button"
+                      [disabled]="eliminando()"
+                      [attr.aria-label]="
+                        'Eliminar a ' + nombreCompleto(empleado) + ' de la sucursal'
+                      "
+                      (clicked)="solicitarEliminacion(empleado)"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
+
+        @if (totalEmpleados() > 5) {
+          <p class="lista__ayuda">
+            Desplazá la lista para ver los {{ totalEmpleados() }} empleados de la sucursal.
+          </p>
+        }
+      }
+    </section>
+
+  </div>
+
+  <ds-modal
+    [open]="empleadoAEliminar() !== null"
+    ariaLabelledby="eliminar-empleado-titulo"
+    (close)="cancelarEliminacion()"
+  >
+    @if (empleadoAEliminar(); as empleado) {
+      <h2 id="eliminar-empleado-titulo" class="eliminar__titulo">Eliminar del equipo</h2>
+      <p class="eliminar__texto">
+        ¿Estás seguro de que deseas eliminar a
+        <strong>{{ nombreCompleto(empleado) }}</strong> de la sucursal?
+      </p>
+
+      <div class="eliminar__acciones">
+        <button
+          dsButton
+          type="button"
+          [disabled]="eliminando()"
+          (clicked)="cancelarEliminacion()"
+        >
+          Cancelar
+        </button>
+        <button
+          dsButton
+          variant="danger"
+          class="eliminar__confirmar"
+          type="button"
+          [loading]="eliminando()"
+          (clicked)="confirmarEliminacion()"
+        >
+          {{ eliminando() ? 'Eliminando…' : 'Sí, eliminar' }}
+        </button>
+      </div>
+    }
+  </ds-modal>
+</section>

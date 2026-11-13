@@ -4,9 +4,8 @@ import { Injectable } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class backendService {
 
-  // Dirección compartida por los servicios del backend.
-
-  readonly baseUrl = 'http://localhost:8080';
+  // El frontend estático usa backend local en desarrollo y HTTPS en producción.
+  readonly baseUrl = this.resolveBaseUrl();
 
 
   // Comprueba que los tokens solo se envíen a nuestra API.
@@ -22,5 +21,13 @@ export class backendService {
     } catch {
       return false;
     }
+  }
+
+  private resolveBaseUrl(): string {
+    const hostname = globalThis.location?.hostname;
+    return hostname === 'localhost' || hostname === '127.0.0.1'
+      ? 'http://localhost:8080'
+      // IMPORTANTE: si cambia la URL pública del backend, actualizar esta URL.
+      : 'https://appointrail-production.up.railway.app';
   }
 }

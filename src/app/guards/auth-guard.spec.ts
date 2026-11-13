@@ -16,6 +16,7 @@ describe('authGuard', () => {
     validarToken: vi.fn(),
     tieneAlgunRol: vi.fn(),
     limpiarSesion: vi.fn(),
+    expirado: vi.fn(),
   };
   beforeEach(() => {
     vi.resetAllMocks();
@@ -23,19 +24,23 @@ describe('authGuard', () => {
       providers: [provideRouter([]), { provide: authService, useValue: auth }],
     });
   });
-  async function ejecutar(roles?: string[]) {
+  async function ejecutar(roles?: string[], rolesExcluidos?: string[]) {
     const result = TestBed.runInInjectionContext(() =>
       authGuard(
-        { data: { roles } } as unknown as ActivatedRouteSnapshot,
+        { data: { roles, rolesExcluidos } } as unknown as ActivatedRouteSnapshot,
         { url: '/admin' } as RouterStateSnapshot,
       ),
     );
     return isObservable(result) ? firstValueFrom(result) : await result;
   }
-  it('sin credenciales redirige a login y conserva el destino', async () => {
+  it('sin credenciales redirige a la pantalla de error 401', async () => {
     const result = (await ejecutar()) as UrlTree;
-    expect(result.toString()).toBe('/login?returnTo=%2Fadmin');
+    expect(result.toString()).toBe('/error?status=401');
     expect(auth.validarToken).not.toHaveBeenCalled();
+  });
+  it('sin credenciales redirige a la pantalla de error 401 aunque la sesión expiró', async () => {
+    auth.expirado.mockReturnValue(true);
+    expect(((await ejecutar()) as UrlTree).toString()).toBe('/error?status=401');
   });
   it('valida en backend antes de permitir acceso', async () => {
     auth.getAccessToken.mockReturnValue('access');
@@ -54,12 +59,26 @@ describe('authGuard', () => {
     auth.tieneAlgunRol.mockReturnValue(true);
     expect(await ejecutar(['ADMINISTRADOR'])).toBe(true);
   });
-  it('entiende el 401 normalizado por el interceptor de errores', async () => {
+  it('rechaza el acceso cuando el usuario tiene un rol excluido', async () => {
+    auth.getAccessToken.mockReturnValue('access');
+    auth.validarToken.mockReturnValue(of({}));
+    auth.tieneAlgunRol.mockReturnValue(true);
+    expect(((await ejecutar(undefined, ['ADMINISTRADOR'])) as UrlTree).toString()).toBe(
+      '/error?status=403',
+    );
+  });
+  it('permite el acceso cuando no tiene el rol excluido', async () => {
+    auth.getAccessToken.mockReturnValue('access');
+    auth.validarToken.mockReturnValue(of({}));
+    auth.tieneAlgunRol.mockReturnValue(false);
+    expect(await ejecutar(undefined, ['ADMINISTRADOR'])).toBe(true);
+  });
+  it('entierra el 401 de la sesión en la pantalla de error', async () => {
     auth.getAccessToken.mockReturnValue('access');
     auth.validarToken.mockReturnValue(
       throwError(() => ({ status: 401, message: 'Sesión vencida' })),
     );
-    expect(((await ejecutar()) as UrlTree).toString()).toBe('/login?returnTo=%2Fadmin');
+    expect(((await ejecutar()) as UrlTree).toString()).toBe('/error?status=401');
     expect(auth.limpiarSesion).toHaveBeenCalled();
   });
   it('deja pasar y conserva credenciales ante un fallo de red', async () => {

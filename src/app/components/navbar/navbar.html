@@ -1,0 +1,244 @@
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<header class="navbar" [class.navbar--scrolled]="scrolled()">
+  <div class="navbar__inner">
+    <a class="brand" routerLink="/" (click)="closeAll()" aria-label="AppointMee, ir al inicio">
+      <span class="brand__mark">
+        <img src="appointmee-logo.png" alt="" width="34" height="34" />
+      </span>
+      <span class="brand__text">Appoint<span class="brand__accent">Mee</span></span>
+    </a>
+
+    @if (auth.autenticado() && !navbarSimple()) {
+      <nav class="nav" aria-label="Navegación principal">
+        <ul class="nav__list">
+          @for (link of primaryLinks(); track link.path) {
+            <li class="nav__item">
+              <a
+                class="nav__link"
+                [routerLink]="link.path"
+                routerLinkActive="nav__link--active"
+                [routerLinkActiveOptions]="{ exact: link.exact }"
+                ariaCurrentWhenActive="page"
+              >
+                {{ link.label }}
+              </a>
+            </li>
+          }
+        </ul>
+      </nav>
+    }
+
+    <div class="navbar__actions">
+      @if (navbarSimple()) {
+        <a class="navbar__cta navbar__cta--solid navbar__cta--auth" [routerLink]="enErrorComoInvitado() || enRegistro() ? '/login' : '/registrarme'">
+          {{ enErrorComoInvitado() || enRegistro() ? 'Iniciar sesión' : 'Crear cuenta' }}
+        </a>
+      } @else {
+      @if (auth.restaurando()) {
+        <!-- Placeholder durante la restauración de sesión (criterio 11). -->
+        <button dsButton
+          class="profile profile--placeholder"
+          type="button"
+          disabled
+          aria-label="Restaurando sesión"
+        >
+          <span class="skeleton skeleton--avatar"></span>
+          <span class="profile__copy">
+            <span class="skeleton skeleton--line"></span>
+            <span class="skeleton skeleton--line skeleton--line-short"></span>
+          </span>
+        </button>
+      } @else if (auth.visitante()) {
+        <a class="navbar__cta" routerLink="/login" (click)="closeAll()">Iniciar sesión</a>
+        <a class="navbar__cta navbar__cta--solid" routerLink="/registrarme" (click)="closeAll()">
+          Crear cuenta
+        </a>
+      } @else {
+        <div class="profile">
+          <button dsButton
+            class="profile__trigger"
+            type="button"
+            (click)="toggleProfile($event)"
+            [attr.aria-expanded]="profileOpen()"
+            aria-haspopup="menu"
+            aria-controls="profile-menu"
+            aria-label="Abrir menú de cuenta"
+          >
+            <!-- Foto del usuario o iniciales como fallback (criterio 5). -->
+            @if (fotoPerfil(); as foto) {
+              <span class="profile__avatar"><img [src]="foto" (error)="onFotoError(foto)" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></span>
+            } @else {
+              <span class="profile__avatar" aria-hidden="true">{{ auth.iniciales() }}</span>
+            }
+            <span class="profile__copy">
+              <span class="profile__name">{{ nombreUsuario() || 'Mi cuenta' }}</span>
+            </span>
+            <svg
+              class="profile__chevron"
+              [class.is-open]="profileOpen()"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path [attr.d]="icons.chevron" />
+            </svg>
+          </button>
+
+          @if (profileOpen()) {
+            <div class="menu" id="profile-menu" role="menu" aria-label="Cuenta">
+              <div class="menu__head">
+                @if (fotoPerfil(); as foto) {
+                  <span class="menu__avatar"><img [src]="foto" (error)="onFotoError(foto)" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></span>
+                } @else {
+                  <span class="menu__avatar" aria-hidden="true">{{ auth.iniciales() }}</span>
+                }
+                <div>
+                  <strong>{{ nombreUsuario() || 'Mi cuenta' }}</strong>
+                  <span>{{ auth.perfil()?.email ?? '' }}</span>
+                </div>
+              </div>
+              <div class="menu__divider"></div>
+              @for (link of cuentasVisibles(); track link.path) {
+                <a class="menu__link" [routerLink]="link.path" role="menuitem">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="link.icon" />
+                  </svg>
+                  <span>{{ link.label }}</span>
+                </a>
+              }
+              <div class="menu__divider"></div>
+              <button dsButton
+                class="menu__link menu__link--danger"
+                type="button"
+                role="menuitem"
+                (click)="logout()"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="icons.logout" />
+                </svg>
+                <span>Cerrar Sesión</span>
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <button dsButton
+        #burger
+        class="burger"
+        type="button"
+        [class.is-open]="mobileOpen()"
+        (click)="toggleMobile()"
+        [disabled]="auth.restaurando()"
+        [attr.aria-expanded]="mobileOpen()"
+        aria-controls="mobile-menu"
+        [attr.aria-label]="mobileOpen() ? 'Cerrar menú' : 'Abrir menú'"
+      >
+        <span></span>
+        <span></span>
+      </button>
+      }
+    </div>
+  </div>
+</header>
+
+@if (mobileOpen() && !navbarSimple()) {
+  <div class="scrim" (click)="closeMobile()" aria-hidden="true"></div>
+  <aside
+    #sheet
+    class="sheet"
+    id="mobile-menu"
+    aria-label="Menú de navegación"
+    (keydown.tab)="atraparFoco($event)"
+  >
+    <nav>
+      @if (auth.restaurando()) {
+        <p class="sheet__loading" role="status">Restaurando tu sesión…</p>
+      } @else if (auth.visitante()) {
+        <p class="sheet__label">Cuenta</p>
+        <ul class="sheet__list">
+          <li>
+            <a class="sheet__link" [routerLink]="['/login']" routerLinkActive="sheet__link--active" (click)="closeMobile()">
+              <span class="sheet__icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icons.user" /></svg>
+              </span>
+              <span>Iniciar sesión</span>
+              <svg class="sheet__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="icons.chevron" />
+              </svg>
+            </a>
+          </li>
+          <li>
+            <a class="sheet__link" [routerLink]="['/registrarme']" routerLinkActive="sheet__link--active" (click)="closeMobile()">
+              <span class="sheet__icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icons.plus" /></svg>
+              </span>
+              <span>Crear cuenta</span>
+              <svg class="sheet__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="icons.chevron" />
+              </svg>
+            </a>
+          </li>
+        </ul>
+      } @else {
+        <p class="sheet__label">Menú</p>
+        <ul class="sheet__list">
+          @for (link of primaryLinks(); track link.path) {
+            <li>
+              <a
+                class="sheet__link"
+                [routerLink]="link.path"
+                routerLinkActive="sheet__link--active"
+                [routerLinkActiveOptions]="{ exact: link.exact }"
+                ariaCurrentWhenActive="page"
+                (click)="closeMobile()"
+              >
+                <span class="sheet__icon">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="link.icon" />
+                  </svg>
+                </span>
+                <span>{{ link.label }}</span>
+                <svg class="sheet__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="icons.chevron" />
+                </svg>
+              </a>
+            </li>
+          }
+        </ul>
+
+        <p class="sheet__label">Cuenta</p>
+        <ul class="sheet__list">
+          @for (link of cuentasVisibles(); track link.path) {
+            <li>
+              <a
+                class="sheet__link"
+                [routerLink]="link.path"
+                routerLinkActive="sheet__link--active"
+                ariaCurrentWhenActive="page"
+                (click)="closeMobile()"
+              >
+                <span class="sheet__icon">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="link.icon" />
+                  </svg>
+                </span>
+                <span>{{ link.label }}</span>
+                <svg class="sheet__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="icons.chevron" />
+                </svg>
+              </a>
+            </li>
+          }
+        </ul>
+
+        <button dsButton class="sheet__logout" type="button" (click)="logout()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="icons.logout" />
+          </svg>
+          Cerrar Sesión
+        </button>
+      }
+    </nav>
+  </aside>
+}

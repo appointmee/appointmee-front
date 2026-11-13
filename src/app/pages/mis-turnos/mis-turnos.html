@@ -1,0 +1,647 @@
+<section class="mis-turnos" aria-labelledby="mis-turnos-titulo">
+  <div class="mis-turnos__inner">
+    <header class="mis-turnos__header">
+      <span class="eyebrow">
+        Tu agenda
+      </span>
+      <h1 id="mis-turnos-titulo">Mis turnos</h1>
+      <p>
+        Consultá todos los turnos que reservaste, filtrá por estado y abrí el detalle
+        para ver la sucursal, el servicio y los horarios.
+      </p>
+    </header>
+
+    <section class="panel" aria-labelledby="turnos-lista-titulo">
+      <header class="panel__cabecera">
+        <div>
+          <span class="panel__eyebrow">Historial</span>
+          <h2 id="turnos-lista-titulo">Todos tus turnos</h2>
+        </div>
+        @if (!cargando() && turnos().length > 0) {
+          <span
+            class="panel__contador"
+            [attr.aria-label]="
+              turnosFiltrados().length +
+              ' de ' +
+              turnos().length +
+              ' turnos visibles'
+            "
+          >
+            {{ turnosFiltrados().length }}
+          </span>
+        }
+      </header>
+
+      <div class="panel__filtros">
+        <ds-select
+          label="Filtrar por estado"
+          [value]="filtro()"
+          (change)="cambiarFiltro($event)"
+        >
+          @for (estado of estados; track estado.valor) {
+            <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+          }
+        </ds-select>
+
+        @if (filtro() !== 'TODOS') {
+          <button dsButton class="boton-secundario" type="button" (click)="limpiarFiltro()">
+            Ver todos
+          </button>
+        }
+      </div>
+
+      @if (reseniaExito(); as mensaje) {
+        <div class="aviso aviso--exito" role="status" aria-live="polite">
+          <span class="aviso__icono" aria-hidden="true">🐝</span>
+          <p>{{ mensaje }}</p>
+        </div>
+      }
+
+      @if (cargando() && turnos().length === 0) {
+        <div class="lista lista--skeleton" aria-busy="true" aria-live="polite">
+          <span class="sr-only">Cargando tus turnos…</span>
+          @for (item of [1, 2, 3, 4]; track item) {
+            <div class="turno-skeleton" aria-hidden="true">
+              <span class="skeleton skeleton--avatar"></span>
+              <span class="skeleton skeleton--line"></span>
+              <span class="skeleton skeleton--line skeleton--short"></span>
+            </div>
+          }
+        </div>
+      } @else if (error() && turnos().length === 0) {
+        <div class="estado estado--error" role="alert">
+          <span class="estado__icono" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </span>
+          <h3>No pudimos cargar tus turnos</h3>
+          <p>{{ error() }}</p>
+          <button
+            dsButton
+            class="boton"
+            type="button"
+            [disabled]="reintentando()"
+            [attr.aria-busy]="reintentando()"
+            (click)="reintentar()"
+          >
+            {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+          </button>
+        </div>
+      } @else {
+        @if (error()) {
+          <div class="aviso aviso--error" role="alert">
+            <p>{{ error() }}</p>
+            <button
+              dsButton
+              type="button"
+              [disabled]="reintentando()"
+              [attr.aria-busy]="reintentando()"
+              (click)="reintentar()"
+            >
+              {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+            </button>
+          </div>
+        }
+
+        @if (turnos().length === 0) {
+          <div class="estado estado--vacio" role="status">
+            <span class="estado__icono" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M7 2v4M17 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+              </svg>
+            </span>
+            <h3>Todavía no tenés turnos</h3>
+            <p>Cuando reserves un turno vas a poder consultarlo desde acá.</p>
+            <a class="boton" routerLink="/sucursales">Explorar sucursales</a>
+          </div>
+        } @else if (turnosFiltrados().length === 0) {
+          <div class="estado estado--vacio" role="status">
+            <span class="estado__icono" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 5h16v14H4zM8 9h8M8 13h5" />
+              </svg>
+            </span>
+            <h3>No tenés turnos con ese estado</h3>
+            <p>Probá con otro filtro para ver el resto de tus turnos.</p>
+            <button dsButton class="boton" type="button" (click)="limpiarFiltro()">
+              Ver todos los turnos
+            </button>
+          </div>
+        } @else {
+          <div class="lista-scroll" role="region" aria-label="Listado de turnos" tabindex="0">
+            <ul class="lista" aria-live="polite">
+              @for (turno of turnosFiltrados(); track turno.id) {
+                <li>
+                  <button
+                    class="turno"
+                    type="button"
+                    [attr.aria-label]="'Ver detalle del turno: ' + ariaLabelTurno(turno)"
+                    (click)="abrirDetalle(turno)"
+                  >
+                    <span class="turno__principal">
+                      <span class="turno__icono" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M7 2v4M17 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+                        </svg>
+                      </span>
+                      <span class="turno__copy">
+                        <strong>{{ turno.nombreServicio }}</strong>
+                        <span class="turno__fecha">{{ formatearFechaHora(turno.fechaTurno) }}</span>
+                      </span>
+                    </span>
+
+                    <span class="turno__meta">
+                      @if (turnoReseniado(turno)) {
+                        <span
+                          class="reseniado-chip"
+                          [attr.aria-label]="'Reseña publicada con ' + turno.puntuacion + ' de 5 abejas'"
+                        >
+                          <span aria-hidden="true">🐝</span> Reseñado
+                        </span>
+                      }
+                      <span class="estado-chip" [class]="'estado-chip estado-chip--' + claseEstado(turno.estadoTurno)">
+                        {{ etiquetaEstado(turno.estadoTurno) }}
+                      </span>
+                      <svg class="turno__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m9 18 6-6-6-6" />
+                      </svg>
+                    </span>
+                  </button>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      }
+    </section>
+  </div>
+
+  <ds-modal
+    [open]="turnoSeleccionado() !== null && !reseniaAbierta()"
+    ariaLabelledby="detalle-turno-titulo"
+    maxWidth="680px"
+    (close)="cerrarDetalle()"
+  >
+    <article class="detalle" [attr.aria-busy]="detalleCargando()">
+      <header class="detalle__cabecera">
+        <div class="detalle__titulo">
+          <span class="detalle__eyebrow">Detalle del turno</span>
+          <h2 id="detalle-turno-titulo">{{ detalleTitulo() }}</h2>
+          @if (detalleEstado(); as estado) {
+            <span class="estado-chip" [class]="'estado-chip estado-chip--' + claseEstado(estado)">
+              {{ etiquetaEstado(estado) }}
+            </span>
+          }
+        </div>
+
+        <button
+          class="detalle__cerrar"
+          type="button"
+          aria-label="Cerrar detalle del turno"
+          (click)="cerrarDetalle()"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </header>
+
+      @if (detalleCargando()) {
+        <div class="detalle__skeleton" aria-live="polite">
+          <span class="sr-only">Cargando el detalle del turno…</span>
+          <div class="skeleton skeleton--bloque" aria-hidden="true"></div>
+          <div class="skeleton skeleton--line" aria-hidden="true"></div>
+          <div class="skeleton skeleton--line skeleton--short" aria-hidden="true"></div>
+          <div class="skeleton skeleton--bloque" aria-hidden="true"></div>
+        </div>
+      } @else if (detalleError()) {
+        <div class="estado estado--error" role="alert">
+          <span class="estado__icono" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </span>
+          <h3>No pudimos cargar el detalle</h3>
+          <p>{{ detalleError() }}</p>
+          <button
+            dsButton
+            class="boton"
+            type="button"
+            [disabled]="detalleReintentando()"
+            [attr.aria-busy]="detalleReintentando()"
+            (click)="reintentarDetalle()"
+          >
+            {{ detalleReintentando() ? 'Reintentando…' : 'Reintentar' }}
+          </button>
+        </div>
+      } @else if (detalle(); as turno) {
+        <div class="detalle__contenido">
+          <section class="bloque" aria-labelledby="detalle-fechas-titulo">
+            <h3 id="detalle-fechas-titulo">Fechas del turno</h3>
+            <dl class="fechas">
+              <div class="fecha">
+                <dt>Registro</dt>
+                <dd>{{ formatearFecha(turno.fechaReserva) }}</dd>
+              </div>
+              <div class="fecha">
+                <dt>Inicio</dt>
+                <dd>{{ formatearFechaHora(turno.fechaHora) }}</dd>
+              </div>
+              <div class="fecha">
+                <dt>Fin estimado</dt>
+                <dd>{{ finDetalle() }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="bloque" aria-labelledby="detalle-sucursal-titulo">
+            <h3 id="detalle-sucursal-titulo">Sucursal</h3>
+
+            @if (sucursalCargando()) {
+              <div class="sucursal sucursal--skeleton" aria-hidden="true">
+                <span class="skeleton skeleton--foto"></span>
+                <span class="skeleton skeleton--line"></span>
+                <span class="skeleton skeleton--line skeleton--short"></span>
+              </div>
+            } @else if (sucursal(); as local) {
+              <div class="sucursal">
+                <span class="sucursal__foto">
+                  @if (fotoSucursal(); as foto) {
+                    <img
+                      [src]="foto"
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      referrerpolicy="no-referrer"
+                      (error)="onFotoSucursalError(foto)"
+                    />
+                  } @else {
+                    <span class="sucursal__placeholder" aria-hidden="true">🐝</span>
+                  }
+                </span>
+
+                <div class="sucursal__copy">
+                  <strong>{{ local.nombre }}</strong>
+                  <span class="sucursal__rating">
+                    <span class="sucursal__abejas" aria-hidden="true">
+                      @for (llena of abejasSucursal(); track $index) {
+                        <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
+                      }
+                    </span>
+                    <span>{{ puntuacionSucursal().toFixed(1) }} de 5</span>
+                    <span class="sucursal__muted">· {{ local.cantidadPuntuaciones }} reseñas</span>
+                  </span>
+                  <span class="sr-only">
+                    Puntuación {{ puntuacionSucursal().toFixed(1) }} de 5 sobre
+                    {{ local.cantidadPuntuaciones }} reseñas
+                  </span>
+                </div>
+
+                <a
+                  class="boton boton--secundario"
+                  [routerLink]="['/sucursal', local.id]"
+                  (click)="cerrarDetalle()"
+                >
+                  Ver sucursal
+                </a>
+              </div>
+            } @else {
+              <div class="detalle__fallback" role="status">
+                <p>{{ sucursalError() ?? 'No pudimos cargar los datos de la sucursal.' }}</p>
+                <button
+                  dsButton
+                  type="button"
+                  class="boton-secundario"
+                  [disabled]="sucursalCargando()"
+                  (click)="reintentarSucursal()"
+                >
+                  Reintentar
+                </button>
+              </div>
+            }
+          </section>
+
+          <section class="bloque" aria-labelledby="detalle-servicio-titulo">
+            <h3 id="detalle-servicio-titulo">Servicio</h3>
+            <dl class="datos">
+              <div class="dato">
+                <dt>Servicio</dt>
+                <dd>{{ turno.servicio.nombre }}</dd>
+              </div>
+              <div class="dato">
+                <dt>Precio</dt>
+                <dd>{{ formatearPrecio(turno.servicio.precio) }}</dd>
+              </div>
+              <div class="dato">
+                <dt>Duración</dt>
+                <dd>{{ turno.servicio.duracion }} min</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="bloque" aria-labelledby="detalle-personas-titulo">
+            <h3 id="detalle-personas-titulo">Personas</h3>
+            <dl class="datos">
+              <div class="dato">
+                <dt>Profesional</dt>
+                <dd>{{ turno.empleado.nombre }} {{ turno.empleado.apellido }}</dd>
+              </div>
+              <div class="dato">
+                <dt>Cliente</dt>
+                <dd>{{ turno.cliente.nombre }} {{ turno.cliente.apellido }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <footer class="detalle__acciones">
+            @if (detalleEstado() === 'REALIZADO') {
+              @if (detalleReseniado()) {
+                <div class="detalle__resenia-copy">
+                  <strong>Reseña publicada</strong>
+                  <p>Ya dejaste tu reseña de este turno.</p>
+                  @if (reseniaDetalle(); as resenia) {
+                    <span
+                      class="detalle__resenia-rating"
+                      [attr.aria-label]="'Puntuación ' + (resenia.puntuacion ?? 0) + ' de 5 abejas'"
+                    >
+                      <span class="sucursal__abejas" aria-hidden="true">
+                        @for (llena of abejasReseniaDetalle(); track $index) {
+                          <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
+                        }
+                      </span>
+                      @if (resenia.comentario) {
+                        <span class="detalle__resenia-comentario">{{ resenia.comentario }}</span>
+                      }
+                    </span>
+                  }
+                </div>
+                <span class="reseniado-chip">
+                  <span aria-hidden="true">🐝</span> Reseñado
+                </span>
+              } @else {
+                <div class="detalle__resenia-copy">
+                  <strong>Reseñar</strong>
+                  <p>Contanos cómo fue tu experiencia con este turno.</p>
+                </div>
+                <button dsButton class="boton" type="button" (click)="abrirResenia()">
+                  Reseñar
+                </button>
+              }
+            } @else {
+              <div class="detalle__resenia-copy">
+                <strong>Reseñar</strong>
+                <p id="detalle-resenia-ayuda">
+                  Podés dejar tu reseña cuando el turno figure como realizado.
+                </p>
+              </div>
+              <button
+                dsButton
+                class="boton"
+                type="button"
+                [disabled]="true"
+                aria-describedby="detalle-resenia-ayuda"
+              >
+                Reseñar
+              </button>
+            }
+          </footer>
+        </div>
+      }
+    </article>
+  </ds-modal>
+
+  <ds-modal
+    [open]="reseniaAbierta() && !reseniaConfirmacion()"
+    ariaLabelledby="resenar-turno-titulo"
+    maxWidth="560px"
+    (close)="cancelarResenia()"
+  >
+    <form class="resenia" (submit)="$event.preventDefault(); abrirConfirmacionResenia()" novalidate>
+      <header class="resenia__cabecera">
+        <div class="resenia__titulo">
+          <span class="detalle__eyebrow">Tu experiencia</span>
+          <h2 id="resenar-turno-titulo">Reseñar turno</h2>
+          <p class="resenia__subtitulo">
+            {{ detalleTitulo() }} · {{ formatearFechaHora(turnoSeleccionado()?.fechaTurno) }}
+          </p>
+        </div>
+        <button
+          class="detalle__cerrar"
+          type="button"
+          aria-label="Cerrar reseña"
+          [disabled]="reseniaEnviando()"
+          (click)="cancelarResenia()"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </header>
+
+      <div class="resenia__intro">
+        <span class="resenia__bee" aria-hidden="true">🐝</span>
+        <p>
+          ¿Cómo fue tu experiencia? Tu puntuación ayuda a otros clientes a elegir mejor
+          su próxima visita.
+        </p>
+      </div>
+
+      @if (errorPuntuacion() || errorComentario()) {
+        <div class="resenia__resumen" role="alert">
+          <p>Revisá estos datos antes de continuar:</p>
+          <ul>
+            @if (errorPuntuacion(); as error) {
+              <li>
+                <button type="button" (click)="enfocarPuntuacion()">{{ error }}</button>
+              </li>
+            }
+            @if (errorComentario(); as error) {
+              <li>
+                <button type="button" (click)="enfocarComentario()">{{ error }}</button>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      <fieldset
+        class="resenia__puntuacion"
+        [attr.aria-invalid]="errorPuntuacion() ? 'true' : null"
+        [attr.aria-describedby]="
+          errorPuntuacion()
+            ? 'resenia-puntuacion-ayuda resenia-puntuacion-error'
+            : 'resenia-puntuacion-ayuda'
+        "
+      >
+        <legend>
+          Puntuación <span class="resenia__obligatorio">(obligatoria)</span>
+        </legend>
+        <div class="resenia__abejas" role="radiogroup" aria-label="Puntuación del turno">
+          @for (valor of puntuaciones; track valor) {
+            <label
+              class="resenia-bee"
+              [class.resenia-bee--llena]="(reseniaPuntuacion() ?? 0) >= valor"
+            >
+              <input
+                class="resenia-bee__input"
+                type="radio"
+                name="resenia-puntuacion"
+                [value]="valor"
+                [checked]="reseniaPuntuacion() === valor"
+                [attr.aria-describedby]="
+                  errorPuntuacion()
+                    ? 'resenia-puntuacion-ayuda resenia-puntuacion-error'
+                    : 'resenia-puntuacion-ayuda'
+                "
+                (change)="seleccionarPuntuacion(valor)"
+              />
+              <span class="resenia-bee__emoji" aria-hidden="true">🐝</span>
+              <span class="sr-only">{{ valor }} {{ valor === 1 ? 'abeja' : 'abejas' }}</span>
+            </label>
+          }
+        </div>
+        <p id="resenia-puntuacion-ayuda" class="resenia__ayuda">
+          Elegí de 1 a 5 abejas. La puntuación es obligatoria.
+        </p>
+        @if (errorPuntuacion(); as error) {
+          <p id="resenia-puntuacion-error" class="resenia__error">{{ error }}</p>
+        }
+      </fieldset>
+
+      <div class="resenia__campo">
+        <label for="resenia-comentario">
+          Comentario <span class="resenia__opcional">(opcional)</span>
+        </label>
+        <textarea
+          id="resenia-comentario"
+          class="resenia__textarea"
+          rows="4"
+          [value]="reseniaComentario()"
+          [attr.maxlength]="comentarioMaximo"
+          [attr.aria-invalid]="errorComentario() ? 'true' : null"
+          [attr.aria-describedby]="
+            errorComentario()
+              ? 'resenia-comentario-ayuda resenia-comentario-error'
+              : 'resenia-comentario-ayuda'
+          "
+          (input)="actualizarComentario($event)"
+        ></textarea>
+        <div
+          class="resenia__contador"
+          [class.resenia__contador--limite]="comentarioCaracteres() >= comentarioMaximo"
+        >
+          <span id="resenia-comentario-ayuda" class="resenia__ayuda">
+            Mínimo {{ comentarioMinimo }} caracteres si escribís un comentario. Máximo
+            {{ comentarioMaximo }}.
+          </span>
+          <span class="resenia__contador-valor" aria-hidden="true">
+            {{ comentarioCaracteres() }} / {{ comentarioMaximo }}
+          </span>
+        </div>
+        <span class="sr-only">
+          {{ comentarioCaracteres() }} de {{ comentarioMaximo }} caracteres utilizados.
+        </span>
+        @if (errorComentario(); as error) {
+          <p id="resenia-comentario-error" class="resenia__error">{{ error }}</p>
+        }
+      </div>
+
+      <footer class="resenia__acciones">
+        <button
+          dsButton
+          class="boton-secundario"
+          type="button"
+          [disabled]="reseniaEnviando()"
+          (click)="cancelarResenia()"
+        >
+          Cancelar
+        </button>
+        <button dsButton class="boton" type="submit">Confirmar reseña</button>
+      </footer>
+    </form>
+  </ds-modal>
+
+  <ds-modal
+    [open]="reseniaConfirmacion()"
+    ariaLabelledby="confirmar-resenia-titulo"
+    maxWidth="480px"
+    (close)="volverAFormularioResenia()"
+  >
+    <article class="confirmacion">
+      <header class="confirmacion__cabecera">
+        <span class="confirmacion__icono" aria-hidden="true">🐝</span>
+        <div>
+          <span class="detalle__eyebrow">Un último paso</span>
+          <h2 id="confirmar-resenia-titulo">¿Publicar tu reseña?</h2>
+        </div>
+      </header>
+
+      <p class="confirmacion__texto">
+        Tu reseña de <strong>{{ detalleTitulo() }}</strong> se va a publicar en la
+        sucursal. Después de confirmarla no vas a poder editarla.
+      </p>
+
+      <div class="confirmacion__resumen">
+        <div class="confirmacion__fila">
+          <span class="confirmacion__etiqueta">Puntuación</span>
+          <span
+            class="confirmacion__abejas"
+            [attr.aria-label]="(reseniaPuntuacion() ?? 0) + ' de 5 abejas'"
+          >
+            @for (valor of puntuaciones; track valor) {
+              <span
+                class="abeja"
+                [class.abeja--vacia]="(reseniaPuntuacion() ?? 0) < valor"
+                aria-hidden="true"
+                >🐝</span
+              >
+            }
+          </span>
+        </div>
+        <div class="confirmacion__fila confirmacion__fila--comentario">
+          <span class="confirmacion__etiqueta">Comentario</span>
+          @if (reseniaComentarioPreview(); as comentario) {
+            <p class="confirmacion__comentario">{{ comentario }}</p>
+          } @else {
+            <p class="confirmacion__comentario confirmacion__comentario--vacio">
+              Sin comentario
+            </p>
+          }
+        </div>
+      </div>
+
+      @if (reseniaError(); as error) {
+        <div class="resenia__error-general" role="alert">
+          <strong>No pudimos publicar tu reseña</strong>
+          <p>{{ error }}</p>
+          <p class="resenia__error-ayuda">
+            Tus datos siguen cargados. Podés intentar de nuevo.
+          </p>
+        </div>
+      }
+
+      <footer class="resenia__acciones">
+        <button
+          dsButton
+          class="boton-secundario"
+          type="button"
+          [disabled]="reseniaEnviando()"
+          (click)="volverAFormularioResenia()"
+        >
+          Volver atrás
+        </button>
+        <button
+          dsButton
+          class="boton"
+          type="button"
+          [loading]="reseniaEnviando()"
+          [disabled]="reseniaEnviando()"
+          (click)="confirmarPublicacionResenia()"
+        >
+          {{ reseniaEnviando() ? 'Publicando…' : 'Confirmar publicación' }}
+        </button>
+      </footer>
+    </article>
+  </ds-modal>
+</section>

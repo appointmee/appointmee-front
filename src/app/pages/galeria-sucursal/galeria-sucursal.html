@@ -1,0 +1,64 @@
+<main class="galeria" aria-labelledby="galeria-titulo">
+  <div class="galeria__inner">
+    <a class="galeria__volver" [routerLink]="['/mis-sucursales']" [queryParams]="{ sucursalId: sucursalId }">
+      <span aria-hidden="true">←</span> Volver al gestor
+    </a>
+    <header class="galeria__cabecera">
+      <span class="eyebrow">Gestor de sucursal</span>
+      <h1 id="galeria-titulo">Galería de imágenes</h1>
+      <p>Mostrá los espacios de tu sucursal. Podés agregar hasta {{ maxImagenes }} imágenes.</p>
+    </header>
+
+    @if (error()) {
+      <div class="galeria__error" role="alert">
+        <span>{{ error() }}</span>
+        @if (imagenes().length === 0 && !cargando()) {
+          <button type="button" class="galeria__reintentar" (click)="cargar()">Reintentar</button>
+        }
+      </div>
+    }
+    @if (mensaje()) {
+      <p class="galeria__mensaje" role="status" aria-live="polite">{{ mensaje() }}</p>
+    }
+
+    @if (cargando()) {
+      <p class="galeria__estado" role="status" aria-live="polite">Cargando imágenes…</p>
+    } @else {
+      @if (imagenes().length === 0) {
+        <section class="galeria__vacia" aria-label="Galería vacía">
+          <span aria-hidden="true">▧</span>
+          <h2>Todavía no hay imágenes</h2>
+          <p>Agregá fotos para que las personas conozcan mejor tu sucursal.</p>
+        </section>
+      } @else {
+        <ul class="galeria__lista" aria-label="Imágenes de la sucursal">
+          @for (imagen of imagenes(); track imagen.id; let indice = $index) {
+            <li class="galeria__item">
+              @if (imagenesFallidas().has(imagen.id)) {
+                <div class="galeria__placeholder" role="img" [attr.aria-label]="'No se pudo cargar la imagen ' + (indice + 1)">
+                  <span aria-hidden="true">▧</span><span>Imagen no disponible</span>
+                </div>
+              } @else {
+                <img [src]="imagen.url" [alt]="'Imagen ' + (indice + 1) + ' de la sucursal'" loading="lazy" decoding="async" (error)="marcarImagenFallida(imagen.id)" />
+              }
+              <button type="button" class="galeria__quitar" [disabled]="eliminandoId() !== null || guardando()" [attr.aria-busy]="eliminandoId() === imagen.id" [attr.aria-label]="'Quitar imagen ' + (indice + 1)" (click)="eliminar(imagen)">
+                {{ eliminandoId() === imagen.id ? 'Quitando…' : 'Quitar imagen' }}
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (imagenes().length < maxImagenes) {
+        <label class="galeria__agregar" [class.galeria__agregar--ocupado]="guardando()" [attr.aria-busy]="guardando()">
+          <input type="file" accept="image/*" [disabled]="guardando()" (change)="subir($event)" />
+          <span aria-hidden="true">＋</span>
+          <strong>{{ guardando() ? 'Subiendo imagen…' : 'Agregar imagen' }}</strong>
+          <small>Elegí una imagen desde tu dispositivo</small>
+        </label>
+      } @else {
+        <p class="galeria__limite" role="status">Alcanzaste el máximo de {{ maxImagenes }} imágenes. Quitá una para agregar otra.</p>
+      }
+    }
+  </div>
+</main>

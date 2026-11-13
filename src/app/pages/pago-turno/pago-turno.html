@@ -1,0 +1,207 @@
+<section class="pago-turno" aria-labelledby="pago-turno-titulo">
+  <div class="pago-turno__inner">
+    <nav class="migas" aria-label="Navegación de la reserva">
+      <a class="volver" [routerLink]="volverLink()" [queryParams]="volverQueryParams()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M11 18l-6-6 6-6" />
+        </svg>
+        Volver a día y horario
+      </a>
+    </nav>
+
+    <header class="cabecera">
+      <span class="eyebrow">
+        Reserva de turno
+      </span>
+      <h1 id="pago-turno-titulo">Enlace de pago</h1>
+      <p class="paso" aria-label="Paso final: pago">
+        <span class="paso__numero" aria-hidden="true">4</span>
+        <span class="paso__texto">Paso final · Pago</span>
+      </p>
+    </header>
+
+    @if (sinContexto()) {
+      <div class="estado estado--contexto" role="alert" aria-live="assertive" aria-atomic="true">
+        <span class="estado__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M12 9v4M12 17h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+            />
+          </svg>
+        </span>
+        <h2>No pudimos identificar el turno</h2>
+        <p>
+          Falta la sucursal, el servicio, el profesional o el horario en la URL. Volvé a
+          elegir un día y horario para continuar con la reserva.
+        </p>
+        <a class="boton" [routerLink]="volverLink()" [queryParams]="volverQueryParams()">Volver a la reserva</a>
+      </div>
+    } @else {
+      @if (cargandoContexto()) {
+        <div class="estado estado--cargando" role="status" aria-live="polite" aria-busy="true">
+          <span class="estado__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 6v6l4 2" />
+            </svg>
+          </span>
+          <h2>Cargando el resumen de tu reserva</h2>
+          <p>Estamos preparando los datos del turno seleccionado.</p>
+        </div>
+      } @else if (errorContexto()) {
+        <div class="estado estado--contexto" role="alert" aria-live="assertive">
+          <span class="estado__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M12 9v4M12 17h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+              />
+            </svg>
+          </span>
+          <h2>No pudimos cargar el resumen</h2>
+          <p>{{ errorContexto() }}</p>
+          <a class="boton" [routerLink]="volverLink()" [queryParams]="volverQueryParams()">Volver a la reserva</a>
+        </div>
+      } @else if (resumenSeleccion(); as resumen) {
+        <div class="resumen-card" aria-label="Resumen de la reserva">
+          <section class="resumen-card__bloque" aria-label="Sucursal">
+            <img
+              class="resumen-card__imagen"
+              [src]="fotoSucursal()"
+              [alt]="'Fotografía de ' + (sucursal()?.nombre ?? 'Sucursal')"
+              loading="lazy"
+              decoding="async"
+              referrerpolicy="no-referrer"
+              (error)="onImageErrorSucursal($event)"
+            />
+            <div class="resumen-card__info">
+              <span class="resumen-card__etiqueta">Sucursal</span>
+              <span class="resumen-card__nombre">{{ sucursal()?.nombre ?? 'Sucursal' }}</span>
+              @if (sucursal()?.direccion) {
+                <span class="resumen-card__detalle">{{ sucursal()?.direccion }}</span>
+              }
+              @if (puntuacionSucursal().tienePuntuacion) {
+                <p class="resumen-card__rating">
+                  <span class="resumen-card__puntuacion">
+                    {{ puntuacionSucursal().numero }}
+                  </span>
+                  <span class="resumen-card__abejas" aria-hidden="true">
+                    @for (abeja of puntuacionSucursal().abejas; track $index) {
+                      <span class="resumen-card__abeja">🐝</span>
+                    }
+                  </span>
+
+                </p>
+              } @else {
+                <p class="resumen-card__sin-puntuacion">Todavía no tiene reseñas.</p>
+              }
+            </div>
+          </section>
+
+          <section class="resumen-card__bloque" aria-label="Servicio">
+            <img
+              class="resumen-card__imagen"
+              [src]="fotoServicio()"
+              [alt]="'Fotografía del servicio ' + (servicio()?.nombre ?? 'Servicio')"
+              loading="lazy"
+              decoding="async"
+              referrerpolicy="no-referrer"
+              (error)="onImageErrorServicio($event)"
+            />
+            <div class="resumen-card__info">
+              <span class="resumen-card__etiqueta">Servicio</span>
+              <span class="resumen-card__nombre">{{ servicio()?.nombre ?? 'Servicio' }}</span>
+              @if (puntuacionServicio().tienePuntuacion) {
+                <p class="resumen-card__rating">
+                  <span class="resumen-card__puntuacion">
+                    {{ puntuacionServicio().numero }}
+                  </span>
+                  <span class="resumen-card__abejas" aria-hidden="true">
+                    @for (abeja of puntuacionServicio().abejas; track $index) {
+                      <span class="resumen-card__abeja">🐝</span>
+                    }
+                  </span>
+
+                </p>
+              } @else {
+                <p class="resumen-card__sin-puntuacion">Todavía no tiene reseñas.</p>
+              }
+              <span class="resumen-card__precio">{{ resumen.precio }}</span>
+              <span class="resumen-card__duracion">{{ formatDuracion(servicio()?.duracion) }}</span>
+            </div>
+          </section>
+
+          <section class="resumen-card__bloque" aria-label="Profesional">
+            <img
+              class="resumen-card__imagen resumen-card__imagen--avatar"
+              [src]="fotoEmpleado()"
+              [alt]="'Fotografía de ' + (empleado() ? empleado()!.nombre + ' ' + empleado()!.apellido : 'Profesional')"
+              loading="lazy"
+              decoding="async"
+              referrerpolicy="no-referrer"
+              (error)="onImageErrorEmpleado($event)"
+            />
+            <div class="resumen-card__info">
+              <span class="resumen-card__etiqueta">Profesional</span>
+              <span class="resumen-card__nombre">{{ empleado() ? (empleado()!.nombre + ' ' + empleado()!.apellido).trim() : 'Profesional' }}</span>
+              @if (puntuacionEmpleado().tienePuntuacion) {
+                <p class="resumen-card__rating">
+                  <span class="resumen-card__puntuacion">
+                    {{ puntuacionEmpleado().numero }}
+                  </span>
+                  <span class="resumen-card__abejas" aria-hidden="true">
+                    @for (abeja of puntuacionEmpleado().abejas; track $index) {
+                      <span class="resumen-card__abeja">🐝</span>
+                    }
+                  </span>
+
+                </p>
+              } @else {
+                <p class="resumen-card__sin-puntuacion">Todavía no tiene reseñas.</p>
+              }
+            </div>
+          </section>
+
+          <div class="resumen-card__fila resumen-card__fila--horario">
+            <span class="resumen-card__etiqueta">Horario y fecha</span>
+            <div class="resumen-card__valor resumen-card__valor--bloque">
+              <span class="resumen-card__fecha">{{ resumen.fecha }}</span>
+              <span class="resumen-card__hora">{{ resumen.hora }} hs - {{ resumen.horaFin }} hs</span>
+            </div>
+          </div>
+
+          <div class="resumen-card__fila resumen-card__fila--total">
+            <span class="resumen-card__etiqueta">Precio total</span>
+            <span class="resumen-card__valor">{{ resumen.precio }}</span>
+          </div>
+        </div>
+
+        @if (errorPago()) {
+          <div class="estado estado--contexto" role="alert" aria-live="assertive">
+            <p>{{ errorPago() }}</p>
+          </div>
+        }
+
+        <div class="acciones-pago">
+          <div class="acciones">
+            <button
+              type="button"
+              class="boton boton--pago"
+              [disabled]="creandoPreferencia()"
+              [attr.aria-busy]="creandoPreferencia()"
+              (click)="pagarConMercadoPago()"
+            >
+              @if (creandoPreferencia()) {
+                Procesando pago…
+              } @else {
+                Pagar con Mercado Pago
+              }
+            </button>
+          </div>
+
+          <p class="ayuda">
+            Se abrirá Mercado Pago en una pestaña nueva. Esta página conservará tu reserva.
+          </p>
+        </div>
+      }
+    }
+  </div>
+</section>

@@ -11,6 +11,7 @@ describe('Login con Signal Forms', () => {
   const auth = { login: vi.fn() };
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     vi.resetAllMocks();
     sessionStorage.clear();
     // JSDOM does not implement native dialog methods; browser supplies focus trapping.
@@ -31,11 +32,45 @@ describe('Login con Signal Forms', () => {
     page = fixture.componentInstance;
     fixture.detectChanges();
   });
+  afterEach(() => TestBed.resetTestingModule());
 
   function completar() {
     page.loginModel.set({ email: 'ana@example.com', password: 'clave sin complejidad' });
     fixture.detectChanges();
   }
+
+  it('anuncia el cambio de contraseña recibido por estado de navegación', () => {
+    fixture.destroy();
+    vi.spyOn(TestBed.inject(Router), 'getCurrentNavigation').mockReturnValue({ extras: { state: { passwordActualizada: true } } } as any);
+    fixture = TestBed.createComponent(LoginPage);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain('Tu contraseña se actualizó. Ya podés iniciar sesión');
+  });
+
+  it('explica por seguridad el nuevo inicio de sesión tras cambiarla en Ajustes', () => {
+    fixture.destroy();
+    vi.spyOn(TestBed.inject(Router), 'getCurrentNavigation').mockReturnValue({ extras: { state: {
+      passwordActualizada: true, passwordDesdeAjustes: true,
+    } } } as any);
+    fixture = TestBed.createComponent(LoginPage);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain('Tu contraseña se actualizó. Iniciá sesión nuevamente por seguridad');
+  });
+
+  it('muestra el mensaje de sesión expirada conservando el destino de retorno', () => {
+    fixture.destroy();
+    Object.defineProperty(TestBed.inject(ActivatedRoute), 'snapshot', {
+      configurable: true,
+      value: { queryParamMap: convertToParamMap({ returnTo: '/perfil', expired: '1' }) },
+    });
+    fixture = TestBed.createComponent(LoginPage);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.login__error')?.textContent).toContain(
+      'Tu sesión expiró. Iniciá sesión para continuar.',
+    );
+    expect(TestBed.inject(ActivatedRoute).snapshot.queryParamMap.get('returnTo')).toBe('/perfil');
+  });
 
   function enviar() {
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
@@ -45,6 +80,8 @@ describe('Login con Signal Forms', () => {
   it('valida campos vacíos y email sin exigir complejidad de contraseña', () => {
     enviar(); expect(auth.login).not.toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Ingresá tu email.');
+    expect(fixture.nativeElement.querySelector('.login__summary a')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.login__summary').textContent).toContain('Contraseña: Ingresá tu contraseña.');
     page.loginModel.set({ email: 'invalido', password: 'x' });
     fixture.detectChanges(); enviar(); expect(auth.login).not.toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Ingresá un email válido.');
@@ -94,7 +131,7 @@ describe('Login con Signal Forms', () => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     completar(); enviar(); response.error({ status: 403, code: 'EMAIL_NOT_VERIFIED', verificationToken: 'ticket-prueba' }); fixture.detectChanges();
     fixture.nativeElement.querySelector('.verificacion-modal__aceptar').click(); fixture.detectChanges();
-    expect(navigate).toHaveBeenCalledWith(['/configuracion/verificar-email']);
+    expect(navigate).toHaveBeenCalledWith(['/configuracion/verificar-email'], { queryParams: { returnTo: '/perfil' } });
     expect(TestBed.inject(verificacionPendienteService).leer()?.email).toBe('ana@example.com');
     expect(page.modalVerificacion()).toBe(false);
   });
@@ -137,5 +174,20 @@ describe('Login con Signal Forms', () => {
     expect(fixture.nativeElement.querySelector('a[href="/registrarme"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.login__forgot').getAttribute('href')).toContain('/olvide-mi-contrasena');
     expect(fixture.nativeElement.querySelector('.login__feedback').getAttribute('aria-live')).toBe('polite');
+  });
+
+  it('en modo modal informa el éxito sin navegar fuera de la página del turno', () => {
+    fixture.componentRef.setInput('modoModal', true);
+    fixture.componentRef.setInput('destinoRetorno', '/sucursal/7/servicios/3/turnos?empleadoId=9');
+    fixture.detectChanges();
+    const completado = vi.fn();
+    page.sesionIniciada.subscribe(completado);
+    auth.login.mockReturnValue(of(undefined));
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigateByUrl');
+    completar(); enviar();
+    expect(completado).toHaveBeenCalledTimes(1);
+    expect(navegar).not.toHaveBeenCalled();
+    const registro = fixture.nativeElement.querySelector('a[href*="registrarme"]') as HTMLAnchorElement;
+    expect(new URL(registro.href).searchParams.get('returnTo')).toContain('/sucursal/7/servicios/3/turnos');
   });
 });

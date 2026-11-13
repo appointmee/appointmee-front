@@ -34,14 +34,13 @@
         <h1>No pudimos mostrar las reseñas</h1>
         <p>{{ error() }}</p>
         <div class="estado__acciones">
-          <button class="btn btn--primary" type="button" (click)="reintentar()">Reintentar</button>
+          <button dsButton class="btn btn--primary" type="button" (click)="reintentar()">Reintentar</button>
           <a class="btn btn--ghost" [routerLink]="volverLink()">Volver</a>
         </div>
       </div>
     } @else if (sucursal(); as s) {
       <header class="hero">
         <span class="eyebrow">
-          <span class="eyebrow__dot" aria-hidden="true"></span>
           Reseñas
         </span>
 

@@ -1,5 +1,6 @@
-import { HttpBackend, HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { HttpBackend, HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import {
   Observable,
   catchError,
@@ -15,15 +16,24 @@ import {
 
 import type { Tokens, UsuarioSesion, PerfilResponse, MensajeResponse, VerificacionEmailResponse, EstadoVerificacion } from '../models/auth';
 import { verificacionPendienteService } from './verificacion-pendiente-service';
+import type { RegistroRequest } from '../models/registro';
+import type { EstadoRecuperacion } from '../models/restablecer-password';
 import { backendService } from './backend-service';
+import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
+import { reservaContextoService } from './reserva-contexto-service';
 
 @Injectable({ providedIn: 'root' })
 export class authService {
+  private static readonly CLAVE_INICIO_SESION = 'appointmee.sesion-iniciada-en';
+  private static readonly VIGENCIA_MAXIMA_SESION_MS = 24 * 60 * 60 * 1000;
 
   // Dependencias HTTP
 
   private readonly api = inject(backendService);
   private readonly pendiente = inject(verificacionPendienteService);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly reservaContexto = inject(reservaContextoService);
 
   private readonly http = inject(HttpClient);
   // El refresh evita los interceptores para no generar un ciclo de errores 401.
@@ -34,10 +44,37 @@ export class authService {
 
   private readonly estado = signal<'visitante' | 'restaurando' | 'autenticado'>('visitante');
   private readonly usuario = signal<UsuarioSesion | null>(null);
+  private readonly sesionVencida = signal(false);
 
   private renovacion?: Observable<string>;
   private revision = 0;
   private cerrando = false;
+  private expiryTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    const sincronizarCierreEnOtraPestana = (event: StorageEvent): void => {
+      const seEliminoToken = event.key === 'token' && event.newValue === null;
+      const seLimpioStorage = event.key === null;
+      if ((!seEliminoToken && !seLimpioStorage) || this.visitante()) return;
+
+      const rutaActual = this.router.url;
+      const ruta = rutaActual.split(/[?#]/)[0];
+      this.limpiarSesion();
+      this.reservaContexto.limpiar();
+
+      if (ruta === '/login' || ruta === '/error') return;
+      void this.router.navigate(['/login'], {
+        queryParams: { returnTo: rutaActual },
+        replaceUrl: true,
+      });
+    };
+
+    window.addEventListener('storage', sincronizarCierreEnOtraPestana);
+    this.destroyRef.onDestroy(() => {
+      window.removeEventListener('storage', sincronizarCierreEnOtraPestana);
+      if (this.expiryTimer !== null) clearTimeout(this.expiryTimer);
+    });
+  }
 
 
   // Estado disponible para las pantallas y el navbar
@@ -45,6 +82,7 @@ export class authService {
   readonly autenticado = computed(() => this.estado() === 'autenticado');
   readonly visitante = computed(() => this.estado() === 'visitante');
   readonly restaurando = computed(() => this.estado() === 'restaurando');
+  readonly expirado = this.sesionVencida.asReadonly();
   readonly perfil = this.usuario.asReadonly();
 
   readonly iniciales = computed(() => {
@@ -87,6 +125,7 @@ export class authService {
           if (revision !== this.revision) throw new Error('Operación de sesión cancelada');
 
           this.guardarTokens(tokens);
+          this.iniciarVigenciaSesion();
 
           localStorage.setItem('email', email.trim().toLowerCase());
         }),
@@ -103,9 +142,39 @@ export class authService {
   }
 
 
+  registrar(datos: RegistroRequest): Observable<MensajeResponse> {
+    return this.http.post<MensajeResponse>(`${this.api.baseUrl}/auth/register`, datos);
+  }
+
+
   solicitarRecuperacion(email: string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.api.baseUrl}/auth/forgot-password`, { email });
   }
+
+  restablecerPassword(token: string, newPassword: string): Observable<MensajeResponse> {
+    return this.http.post<MensajeResponse>(`${this.api.baseUrl}/auth/reset-password`, { token, newPassword }).pipe(
+      tap(() => {
+        this.limpiarSesion();
+        this.pendiente.limpiar();
+      }),
+    );
+  }
+
+  validarEnlaceRecuperacion(token: string): Observable<EstadoRecuperacion> {
+    return this.http.post<EstadoRecuperacion>(`${this.api.baseUrl}/auth/reset-password/validate`, { token });
+  }
+
+  cambiarPassword(currentPassword: string, newPassword: string): Observable<MensajeResponse> {
+    return this.http.post<MensajeResponse>(`${this.api.baseUrl}/auth/change-password`,
+      { currentPassword, newPassword },
+      { context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true) },
+    ).pipe(tap(() => {
+      this.limpiarSesion();
+      this.pendiente.limpiar();
+    }));
+  }
+
+
 
 
   // Verificación de la cuenta (endpoints públicos)
@@ -192,13 +261,14 @@ export class authService {
     return respuesta;
   }
 
-  private guardarSesionVerificada(respuesta: VerificacionEmailResponse, email: string,
+  guardarSesionVerificada(respuesta: VerificacionEmailResponse, email: string,
       ticket: string | undefined, revision: number): void {
     if (!ticket || this.pendiente.leer()?.verificationToken !== ticket || this.revision !== revision) {
       throw new HttpErrorResponse({ status: 401 });
     }
     this.revision++;
     this.guardarTokens(respuesta);
+    this.iniciarVigenciaSesion();
     localStorage.setItem('email', email);
     this.usuario.set({ ...respuesta.usuario, email });
     this.estado.set('autenticado');
@@ -209,6 +279,11 @@ export class authService {
 
   inicializar(): Observable<void> {
     if (!this.getAccessToken() && !this.getRefreshToken()) return of(undefined);
+    if (this.superoVigenciaMaxima()) {
+      this.limpiarSesion(true);
+      return of(undefined);
+    }
+    this.programarExpiracion();
     this.estado.set('restaurando');
 
     const preparar = this.getAccessToken() ? of(this.getAccessToken()!) : this.renovarSesion();
@@ -218,8 +293,7 @@ export class authService {
 
       map(() => undefined),
       catchError((error) => {
-        if (error?.status === 401) this.limpiarSesion();
-        // Un fallo de conexión no debe borrar un refresh válido.
+        if (error?.status === 401) this.limpiarSesion(true);
         this.estado.set('visitante');
         return of(undefined);
       }),
@@ -231,6 +305,11 @@ export class authService {
 
   validarToken(): Observable<UsuarioSesion> {
     return defer(() => {
+      if (this.superoVigenciaMaxima()) {
+        this.limpiarSesion(true);
+        return throwError(() => new HttpErrorResponse({ status: 401 }));
+      }
+
       const revision = this.revision;
 
       return this.http.get<PerfilResponse>(`${this.api.baseUrl}/usuarios/me`).pipe(
@@ -253,6 +332,11 @@ export class authService {
 
   renovarSesion(): Observable<string> {
     if (this.renovacion) return this.renovacion;
+
+    if (this.superoVigenciaMaxima()) {
+      this.limpiarSesion(true);
+      return throwError(() => new HttpErrorResponse({ status: 401 }));
+    }
 
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) return throwError(() => new HttpErrorResponse({ status: 401 }));
@@ -292,6 +376,7 @@ export class authService {
         }),
 
         finalize(() => {
+          this.reservaContexto.limpiar();
           this.limpiarSesion();
           this.cerrando = false;
         }),
@@ -302,13 +387,65 @@ export class authService {
 
   // Limpieza local
 
-  limpiarSesion(): void {
+  limpiarSesion(expirada = false): void {
     this.revision++;
 
-    for (const key of ['token', 'refreshToken', 'email']) localStorage.removeItem(key);
+    for (const key of ['token', 'refreshToken', 'email', authService.CLAVE_INICIO_SESION]) {
+      localStorage.removeItem(key);
+    }
+    if (this.expiryTimer !== null) {
+      clearTimeout(this.expiryTimer);
+      this.expiryTimer = null;
+    }
 
     this.usuario.set(null);
+    this.sesionVencida.set(expirada);
     this.estado.set('visitante');
+  }
+
+
+  private iniciarVigenciaSesion(): void {
+    localStorage.setItem(authService.CLAVE_INICIO_SESION, String(Date.now()));
+    this.sesionVencida.set(false);
+    this.programarExpiracion();
+  }
+
+  /** Mantiene un límite absoluto de 24 h, aunque se renueven los tokens de acceso. */
+  private superoVigenciaMaxima(): boolean {
+    const valor = localStorage.getItem(authService.CLAVE_INICIO_SESION);
+    // No se puede conocer la antigüedad real de una sesión heredada o corrupta:
+    // exigir un nuevo login evita concederle otras 24 horas desde esta visita.
+    if (valor === null) return true;
+
+    const inicio = Number(valor);
+    if (!Number.isFinite(inicio) || inicio <= 0) return true;
+
+    return Date.now() - inicio >= authService.VIGENCIA_MAXIMA_SESION_MS;
+  }
+
+  private programarExpiracion(): void {
+    if (this.expiryTimer !== null) clearTimeout(this.expiryTimer);
+    const inicio = Number(localStorage.getItem(authService.CLAVE_INICIO_SESION));
+    const restante = authService.VIGENCIA_MAXIMA_SESION_MS - (Date.now() - inicio);
+
+    if (restante <= 0) {
+      this.expirarPorVigencia();
+      return;
+    }
+
+    this.expiryTimer = setTimeout(() => this.expirarPorVigencia(), restante);
+  }
+
+  private expirarPorVigencia(): void {
+    const rutaActual = this.router.url;
+    const ruta = rutaActual.split(/[?#]/)[0];
+    this.limpiarSesion(true);
+
+    if (ruta === '/login' || ruta === '/error') return;
+    void this.router.navigate(['/login'], {
+      queryParams: { returnTo: rutaActual, expired: '1' },
+      replaceUrl: true,
+    });
   }
 
 
@@ -320,5 +457,9 @@ export class authService {
 
     localStorage.setItem('token', access);
     localStorage.setItem('refreshToken', tokens.refreshToken);
+  }
+
+  revisionActual(): number {
+    return this.revision;
   }
 }

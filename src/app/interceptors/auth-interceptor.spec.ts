@@ -5,21 +5,28 @@ import { Component } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 import { verificacionPendienteService } from '../services/verificacion-pendiente-service';
 import { authService } from '../services/auth-service';
+import { verificacionService } from '../services/verificacion-service';
 import { backendService } from '../services/backend-service';
 import { apiErrorInterceptor } from '../http/api-errors-service';
+import { reservaContextoService } from '../services/reserva-contexto-service';
 import { authInterceptor } from './auth-interceptor';
 
 @Component({ template: '' })
-class TestPage {}
+class TestPage { }
+
+/// test unitario de autenticación (authService)
+
 
 describe('Autenticación e interceptor', () => {
   let API_URL: string;
   let http: HttpClient;
   let backend: HttpTestingController;
   let auth: authService;
+  let verificacion: verificacionService;
   let router: Router;
   const perfil = { id: 1, roles: ['CLIENTE'], fotoPerfil: null };
   const tokens = { token: 'access-nuevo', refreshToken: 'refresh-nuevo', expiresIn: 900 };
+
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({
@@ -37,19 +44,51 @@ describe('Autenticación e interceptor', () => {
     http = TestBed.inject(HttpClient);
     backend = TestBed.inject(HttpTestingController);
     auth = TestBed.inject(authService);
+    verificacion = TestBed.inject(verificacionService);
     router = TestBed.inject(Router);
   });
+
   afterEach(() => {
     backend.verify();
     localStorage.clear();
+    vi.useRealTimers();
   });
+
   function sesion() {
     localStorage.setItem('token', 'access-viejo');
     localStorage.setItem('refreshToken', 'refresh-viejo');
+    localStorage.setItem('appointmee.sesion-iniciada-en', String(Date.now()));
   }
+
   function rechazar(url: string) {
     backend.expectOne(url).flush({}, { status: 401, statusText: 'Unauthorized' });
   }
+
+  it('una contraseña actual incorrecta del backend anterior no renueva ni cierra la sesión', async () => {
+    sesion();
+    await router.navigateByUrl('/private');
+    let error: unknown;
+    auth.cambiarPassword('incorrecta', 'NuevaClave123!').subscribe({ error: cause => error = cause });
+    const request = backend.expectOne(`${API_URL}/auth/change-password`);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-viejo');
+    request.flush('Contraseña actual incorrecta', { status: 401, statusText: 'Unauthorized' });
+    backend.expectNone(`${API_URL}/auth/refresh`);
+    expect(error).toBeDefined();
+    expect(localStorage.getItem('token')).toBe('access-viejo');
+    expect(localStorage.getItem('refreshToken')).toBe('refresh-viejo');
+    expect(router.url).toBe('/private');
+  });
+
+  it('un access realmente vencido al cambiar contraseña sigue renovándose', () => {
+    sesion();
+    auth.cambiarPassword('Actual123!', 'NuevaClave123!').subscribe();
+    rechazar(`${API_URL}/auth/change-password`);
+    backend.expectOne(`${API_URL}/auth/refresh`).flush(tokens);
+    const request = backend.expectOne(`${API_URL}/auth/change-password`);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-nuevo');
+    request.flush({ message: 'Actualizada' });
+    expect(localStorage.getItem('token')).toBeNull();
+  });
 
   it('login usa el contrato real, guarda ambos tokens y carga el perfil', () => {
     auth.login('ana@example.com', 'Password123!').subscribe();
@@ -65,19 +104,25 @@ describe('Autenticación e interceptor', () => {
     expect(auth.perfil()?.email).toBe('ana@example.com');
     expect(localStorage.getItem('refreshToken')).toBe('refresh-nuevo');
   });
+
   it('no envía tokens a terceros ni a endpoints públicos', () => {
     sesion();
     for (const url of [
       'https://example.com/data',
-      `${API_URL}.example.com/data`,
+      'http://localhost.example.com:8080/data',
       `${API_URL}/auth/login`,
+      `${API_URL}/sucursales/listar/filtrar`,
+      `${API_URL}/servicios/listar/sucursal/7`,
+      `${API_URL}/turnos/disponibilidad/empleado/9/servicio/3`,
+      `${API_URL}/observabilidad/error`,
     ]) {
-      http.get(url).subscribe();
+      (url.endsWith('/observabilidad/error') ? http.post(url, { screen: 'error' }) : http.get(url)).subscribe();
       const request = backend.expectOne(url);
       expect(request.request.headers.has('Authorization')).toBe(false);
       request.flush({});
     }
   });
+
   it('dos respuestas 401 comparten un solo refresh y reintentan con el nuevo access', () => {
     sesion();
     http.get(`${API_URL}/uno`).subscribe();
@@ -95,6 +140,7 @@ describe('Autenticación e interceptor', () => {
     }
     expect(localStorage.getItem('refreshToken')).toBe('refresh-nuevo');
   });
+
   it('un 401 tardío usa el access ya renovado sin rotar de nuevo', () => {
     sesion();
     http.get(`${API_URL}/uno`).subscribe();
@@ -110,6 +156,7 @@ describe('Autenticación e interceptor', () => {
     expect(retry.request.headers.get('Authorization')).toBe('Bearer access-nuevo');
     retry.flush({});
   });
+
   it('refresh rechazado limpia la sesión y conserva returnTo', async () => {
     sesion();
     await router.navigateByUrl('/private?tab=history');
@@ -121,7 +168,10 @@ describe('Autenticación e interceptor', () => {
     expect(localStorage.getItem('refreshToken')).toBeNull();
     expect(router.url).toContain('/login?');
     expect(router.url).toContain('returnTo=%2Fprivate%3Ftab%3Dhistory');
+    expect(router.url).toContain('expired=1');
+    expect(router.url).not.toContain('expired-token');
   });
+
   it('un fallo de red del refresh conserva las credenciales', () => {
     sesion();
     http.get(`${API_URL}/privado`).subscribe({ error: () => undefined });
@@ -130,23 +180,102 @@ describe('Autenticación e interceptor', () => {
     expect(localStorage.getItem('refreshToken')).toBe('refresh-viejo');
     expect(localStorage.getItem('token')).toBe('access-viejo');
   });
+
   it('restaura desde refresh cuando falta el access', () => {
     localStorage.setItem('refreshToken', 'refresh-viejo');
+    localStorage.setItem('appointmee.sesion-iniciada-en', String(Date.now()));
     auth.inicializar().subscribe();
     expect(auth.restaurando()).toBe(true);
     backend.expectOne(`${API_URL}/auth/refresh`).flush(tokens);
     backend.expectOne(`${API_URL}/usuarios/me`).flush(perfil);
     expect(auth.autenticado()).toBe(true);
   });
+
+  it('restaura usuario y roles con GET /usuarios/me antes de mostrar la sesión', () => {
+    localStorage.setItem('token', 'access-viejo');
+    localStorage.setItem('refreshToken', 'refresh-viejo');
+    localStorage.setItem('email', 'ana@example.com');
+    localStorage.setItem('appointmee.sesion-iniciada-en', String(Date.now()));
+
+    auth.inicializar().subscribe();
+    expect(auth.restaurando()).toBe(true);
+    expect(auth.autenticado()).toBe(false);
+    const request = backend.expectOne(`${API_URL}/usuarios/me`);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-viejo');
+    request.flush(perfil);
+
+    expect(auth.restaurando()).toBe(false);
+    expect(auth.autenticado()).toBe(true);
+    expect(auth.perfil()).toEqual({ ...perfil, email: 'ana@example.com' });
+    expect(auth.tieneAlgunRol('CLIENTE')).toBe(true);
+  });
+
+  it('solicita login al restaurar una sesión que superó las 24 horas', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-12T12:00:00.000Z'));
+    localStorage.setItem('token', 'access-viejo');
+    localStorage.setItem('refreshToken', 'refresh-viejo');
+    localStorage.setItem(
+      'appointmee.sesion-iniciada-en',
+      String(Date.now() - 24 * 60 * 60 * 1000),
+    );
+
+    auth.inicializar().subscribe();
+
+    expect(auth.visitante()).toBe(true);
+    expect(auth.expirado()).toBe(true);
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('refreshToken')).toBeNull();
+    backend.expectNone(`${API_URL}/usuarios/me`);
+    backend.expectNone(`${API_URL}/auth/refresh`);
+  });
+
+  it('exige login al restaurar credenciales heredadas sin fecha de inicio', () => {
+    localStorage.setItem('token', 'access-heredado');
+    localStorage.setItem('refreshToken', 'refresh-heredado');
+
+    auth.inicializar().subscribe();
+
+    expect(auth.visitante()).toBe(true);
+    expect(auth.expirado()).toBe(true);
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('refreshToken')).toBeNull();
+    expect(localStorage.getItem('appointmee.sesion-iniciada-en')).toBeNull();
+    backend.expectNone(`${API_URL}/usuarios/me`);
+    backend.expectNone(`${API_URL}/auth/refresh`);
+  });
+
+  it('cierra una sesión activa al cumplir las 24 horas y conserva la ruta', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-12T12:00:00.000Z'));
+    sesion();
+    auth.inicializar().subscribe();
+    backend.expectOne(`${API_URL}/usuarios/me`).flush(perfil);
+    await router.navigateByUrl('/private?tab=history');
+
+    await vi.advanceTimersByTimeAsync(24 * 60 * 60 * 1000);
+    await vi.waitFor(() => expect(router.url).toContain('/login?'));
+
+    expect(auth.visitante()).toBe(true);
+    expect(router.url).toContain('returnTo=%2Fprivate%3Ftab%3Dhistory');
+    expect(router.url).toContain('expired=1');
+    expect(localStorage.getItem('token')).toBeNull();
+  });
+
   it('logout llama al servidor y limpia la sesión', () => {
     sesion();
+    const reserva = TestBed.inject(reservaContextoService);
+    reserva.guardar(7, 3);
     auth.logout().subscribe();
     const logout = backend.expectOne(`${API_URL}/auth/logout`);
     expect(logout.request.headers.get('Authorization')).toBe('Bearer access-viejo');
     logout.flush({});
     expect(auth.visitante()).toBe(true);
     expect(localStorage.getItem('refreshToken')).toBeNull();
+    expect(reserva.obtener()).toBeNull();
+    expect(sessionStorage.getItem('appointmee.reserva-contexto.v1')).toBeNull();
   });
+
   it('logout con access vencido renueva antes de revocar en el servidor', () => {
     sesion();
     auth.logout().subscribe();
@@ -158,6 +287,7 @@ describe('Autenticación e interceptor', () => {
     expect(localStorage.getItem('token')).toBeNull();
     expect(localStorage.getItem('refreshToken')).toBeNull();
   });
+
   it('un perfil tardío no revive una sesión cerrada', () => {
     sesion();
     auth.validarToken().subscribe({ error: () => undefined });
@@ -166,23 +296,44 @@ describe('Autenticación e interceptor', () => {
     me.flush(perfil);
     expect(auth.autenticado()).toBe(false);
   });
+
+  it('sincroniza el cierre de sesión de otra pestaña y conserva la ruta de retorno', async () => {
+    sesion();
+    localStorage.setItem('email', 'ana@example.com');
+    auth.validarToken().subscribe();
+    backend.expectOne(`${API_URL}/usuarios/me`).flush(perfil);
+    await router.navigateByUrl('/private?tab=history');
+
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: 'token', oldValue: 'access-viejo', newValue: null }),
+    );
+    await vi.waitFor(() => expect(router.url).toContain('/login?'));
+
+    expect(auth.visitante()).toBe(true);
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('refreshToken')).toBeNull();
+    expect(router.url).toContain('returnTo=%2Fprivate%3Ftab%3Dhistory');
+    expect(router.url).not.toContain('access-viejo');
+  });
+
   it('una petición anónima no intenta refresh ni fuerza navegación', () => {
     http.get(`${API_URL}/publico`).subscribe({ error: () => undefined });
     rechazar(`${API_URL}/publico`);
     backend.expectNone(`${API_URL}/auth/refresh`);
     expect(router.url).toBe('/');
   });
+
   it('los métodos de verificación son públicos y usan el contrato del backend', () => {
     sesion();
     TestBed.inject(verificacionPendienteService).guardarEmail('ana@example.com', 'ticket-prueba');
-    auth.solicitarVerificacion('ana@example.com').subscribe();
+    verificacion.solicitarVerificacion('ana@example.com').subscribe();
     const envio = backend.expectOne(`${API_URL}/auth/send-verification`);
     expect(envio.request.method).toBe('POST');
     expect(envio.request.body).toEqual({ email: 'ana@example.com', reenviar: true });
     expect(envio.request.headers.get('X-Verification-Token')).toBe('ticket-prueba');
     expect(envio.request.headers.has('Authorization')).toBe(false);
     envio.flush({ verificada: false, enviado: true, enviadoAhora: true, retryAfterSeconds: 15, attemptsRemaining: 5, expiresInSeconds: 300 }, { status: 202, statusText: 'Accepted' });
-    auth.verificarEmail('ana@example.com', '012345').subscribe();
+    verificacion.verificarEmail('ana@example.com', '012345').subscribe();
     const confirmacion = backend.expectOne(`${API_URL}/auth/verify-email`);
     expect(confirmacion.request.body).toEqual({ email: 'ana@example.com', codigo: '012345' });
     expect(confirmacion.request.headers.has('Authorization')).toBe(false);
@@ -195,7 +346,7 @@ describe('Autenticación e interceptor', () => {
   it('recupera una confirmación aplicada si se perdió su respuesta, sin decir código inválido', () => {
     const pending = TestBed.inject(verificacionPendienteService); pending.guardarEmail('ana@example.com', 'ticket');
     let exito = false;
-    auth.verificarEmail('ana@example.com', '012345').subscribe(() => { exito = true; });
+    verificacion.verificarEmail('ana@example.com', '012345').subscribe(() => { exito = true; });
     backend.expectOne(`${API_URL}/auth/verify-email`).error(new ProgressEvent('error'));
     const status = backend.expectOne(`${API_URL}/auth/verification-status`);
     expect(status.request.headers.get('X-Verification-Token')).toBe('ticket');
@@ -208,7 +359,7 @@ describe('Autenticación e interceptor', () => {
 
   it('una respuesta incompleta no guarda tokens ni marca autenticación antes de recuperarla', () => {
     TestBed.inject(verificacionPendienteService).guardarEmail('ana@example.com', 'ticket');
-    auth.verificarEmail('ana@example.com', '012345').subscribe({ error: () => undefined });
+    verificacion.verificarEmail('ana@example.com', '012345').subscribe({ error: () => undefined });
     backend.expectOne(`${API_URL}/auth/verify-email`).flush({ message: 'ok' });
     expect(localStorage.getItem('token')).toBeNull(); expect(auth.autenticado()).toBe(false);
     backend.expectOne(`${API_URL}/auth/verification-status`).flush({ verificada: false, enviado: true, enviadoAhora: false, retryAfterSeconds: 10, attemptsRemaining: 5, expiresInSeconds: 250 });
@@ -217,7 +368,7 @@ describe('Autenticación e interceptor', () => {
 
   it('cancelar mientras verifica no revive una sesión al llegar una respuesta tardía', () => {
     const pending = TestBed.inject(verificacionPendienteService); pending.guardarEmail('ana@example.com', 'ticket');
-    auth.verificarEmail('ana@example.com', '012345').subscribe({ error: () => undefined });
+    verificacion.verificarEmail('ana@example.com', '012345').subscribe({ error: () => undefined });
     pending.limpiar();
     backend.expectOne(`${API_URL}/auth/verify-email`).flush({ ...tokens, accessToken: tokens.token, message: 'ok', usuario: perfil });
     expect(auth.autenticado()).toBe(false); expect(localStorage.getItem('token')).toBeNull();

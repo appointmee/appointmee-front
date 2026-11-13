@@ -3,16 +3,18 @@ import { ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, provideRouter } f
 import { firstValueFrom, isObservable, of, throwError } from 'rxjs';
 import { verificationGuard } from './verification-guard';
 import { authService } from '../services/auth-service';
+import { verificacionService } from '../services/verificacion-service';
 import { verificacionPendienteService } from '../services/verificacion-pendiente-service';
 
 const estado = { verificada: false, enviado: true, enviadoAhora: false, retryAfterSeconds: 42, attemptsRemaining: 4, expiresInSeconds: 250 };
 
 describe('verificationGuard', () => {
-  const auth = { autenticado: vi.fn(), estadoVerificacion: vi.fn(), completarVerificacion: vi.fn() };
+  const auth = { autenticado: vi.fn() };
+  const verificacion = { estadoVerificacion: vi.fn(), completarVerificacion: vi.fn() };
   beforeEach(() => {
     sessionStorage.clear(); vi.resetAllMocks();
     auth.autenticado.mockReturnValue(false);
-    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: authService, useValue: auth }] });
+    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: authService, useValue: auth }, { provide: verificacionService, useValue: verificacion }] });
   });
   async function ejecutar() {
     const resultado = TestBed.runInInjectionContext(() => verificationGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot));
@@ -20,7 +22,7 @@ describe('verificationGuard', () => {
   }
   it('sin pasar por login no permite abrir la URL', async () => {
     expect((await ejecutar() as UrlTree).toString()).toBe('/login');
-    expect(auth.estadoVerificacion).not.toHaveBeenCalled();
+    expect(verificacion.estadoVerificacion).not.toHaveBeenCalled();
   });
   it('escribir solo un email en sessionStorage no autoriza', async () => {
     sessionStorage.setItem('verificacionPendiente', JSON.stringify({ email: 'ana@example.com', intentos: 0, reenviarDesde: 0 }));
@@ -28,18 +30,18 @@ describe('verificationGuard', () => {
   });
   it('confirma con backend la autorización obtenida del login', async () => {
     TestBed.inject(verificacionPendienteService).guardarEmail('ana@example.com', 'ticket');
-    auth.estadoVerificacion.mockReturnValue(of(estado)); expect(await ejecutar()).toBe(true);
+    verificacion.estadoVerificacion.mockReturnValue(of(estado)); expect(await ejecutar()).toBe(true);
   });
   it('un ticket manipulado o vencido es rechazado', async () => {
     const pendiente = TestBed.inject(verificacionPendienteService); pendiente.guardarEmail('ana@example.com', 'ticket-falso');
-    auth.estadoVerificacion.mockReturnValue(throwError(() => ({ status: 401 })));
+    verificacion.estadoVerificacion.mockReturnValue(throwError(() => ({ status: 401 })));
     expect((await ejecutar() as UrlTree).toString()).toBe('/login'); expect(pendiente.leer()).toBeNull();
   });
   it('si la confirmación anterior llegó al servidor, completa la sesión sin pedir otro código', async () => {
     const pendiente = TestBed.inject(verificacionPendienteService); pendiente.guardarEmail('ana@example.com', 'ticket');
-    auth.estadoVerificacion.mockReturnValue(of({ ...estado, verificada: true }));
-    auth.completarVerificacion.mockReturnValue(of({}));
+    verificacion.estadoVerificacion.mockReturnValue(of({ ...estado, verificada: true }));
+    verificacion.completarVerificacion.mockReturnValue(of({}));
     expect((await ejecutar() as UrlTree).toString()).toBe('/sucursales');
-    expect(auth.completarVerificacion).toHaveBeenCalledTimes(1); expect(pendiente.leer()).toBeNull();
+    expect(verificacion.completarVerificacion).toHaveBeenCalledTimes(1); expect(pendiente.leer()).toBeNull();
   });
 });
