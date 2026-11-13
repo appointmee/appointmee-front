@@ -39,6 +39,17 @@ describe('Crear sucursal', () => {
   });
   afterEach(() => TestBed.resetTestingModule());
 
+  it('organiza el alta en secciones de información, horarios e imagen', () => {
+    const formulario = fixture.nativeElement.querySelector('form.sucursal-form') as HTMLFormElement;
+    expect(formulario).not.toBeNull();
+    expect(formulario.querySelectorAll('.seccion')).toHaveLength(3);
+    expect(formulario.textContent).toContain('Información de la sucursal');
+    expect(formulario.textContent).toContain('Horarios de atención');
+    expect(formulario.textContent).toContain('Imagen principal');
+    expect(formulario.querySelector('label[for="sucursal-crear-foto"]')?.textContent)
+      .toContain('Foto de la sucursal');
+  });
+
   it('no envía el formulario si el nombre está vacío', () => {
     page.onSubmit(new Event('submit', { cancelable: true }));
     expect(api.crear).not.toHaveBeenCalled();

@@ -2,35 +2,70 @@
   display: contents;
 }
 
-/* Formulario de sucursal: la altura sigue al contenido para que el panel
-   crezca cuando aparecen mensajes de validación y se reduzca cuando
-   desaparecen, sin alturas fijas que corten los textos. */
-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4, 1rem);
-  height: auto;
+.sucursal-form {
+  display: grid;
+  gap: var(--space-6);
+  width: 100%;
+  min-width: 0;
+}
+
+.seccion {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+}
+
+.seccion__encabezado h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--font-size-lg);
+}
+
+.seccion__encabezado p {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.campos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  align-items: start;
+  gap: var(--space-4);
+  min-width: 0;
 }
 
 .campo {
   display: flex;
   flex-direction: column;
   gap: var(--space-1, 0.25rem);
+  min-width: 0;
 }
 
 .campo > label {
+  color: var(--text);
   font-weight: 600;
 }
+
+.campo--ancho { grid-column: 1 / -1; }
+.campo ds-input { width: 100%; }
+.campo :is(input:not([type="checkbox"]), select, textarea) { width: 100%; min-width: 0; }
+.campo textarea { min-height: 7rem; resize: vertical; }
 
 /* Error general del formulario (banner inline, sin salir de la pantalla). */
 .error-general {
   margin-bottom: var(--space-3, 0.75rem);
   padding: var(--space-3, 0.75rem);
-  border: 1px solid rgba(255, 122, 122, 0.35);
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
   border-radius: var(--radius-md, 0.5rem);
-  background: rgba(255, 122, 122, 0.08);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
   color: var(--danger);
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
 }
 
 /* Mensaje de error debajo del campo: en rojo y con tipografía pequeña. */
@@ -48,6 +83,31 @@ form {
   line-height: 1.4;
 }
 
+.campo__etiqueta { color: var(--text); font-size: var(--font-size-sm); font-weight: 600; }
+
+.foto-archivo {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px dashed var(--muted);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  color: var(--muted);
+}
+
+.foto-archivo:hover { border-color: var(--accent); }
+.foto-archivo::file-selector-button {
+  margin-inline-end: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.foto-archivo::file-selector-button:hover { border-color: var(--accent); background: var(--accent-soft); }
+
 /* Días de apertura: los que abren quedan resaltados. */
 .dias {
   display: flex;
@@ -59,14 +119,17 @@ form {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm, 0.375rem);
-  background: transparent;
+  border-radius: var(--radius-md);
+  background: var(--surface);
   color: var(--muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
   cursor: pointer;
   user-select: none;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
 }
 
 .dia-cuadrado input {
@@ -86,32 +149,40 @@ form {
   outline-offset: 2px;
 }
 
+.dia-cuadrado:hover { border-color: var(--accent); color: var(--text); }
+
 .dia-cuadrado--activo {
-  background: #1e7e34;
-  color: #fff;
-  border-color: #1e7e34;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
 }
 
 /* La vista previa se acota para que el panel no crezca de forma ilimitada
    cuando se elige una imagen. */
 .foto-preview {
   display: block;
-  width: 100%;
-  max-width: 200px;
+  width: min(100%, 32rem);
+  max-width: 100%;
   height: auto;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
   object-fit: cover;
+  object-position: center;
   border: 1px solid var(--line);
-  border-radius: var(--radius-md, 0.5rem);
+  border-radius: var(--radius-lg);
 }
 
 .acciones {
   display: flex;
-  gap: var(--space-3, 0.75rem);
+  gap: var(--space-3);
   align-items: center;
+  justify-content: flex-end;
   flex-wrap: wrap;
-  margin-top: var(--space-2, 0.5rem);
+  margin-top: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
 }
+
+.acciones button[type="submit"] { min-width: 11rem; }
 
 /* Confirmación de descarte: reemplaza al formulario para que la decisión
    quede sobre el mismo fondo oscurecido. */
@@ -139,4 +210,14 @@ form {
   flex-wrap: wrap;
   gap: var(--space-3, 0.75rem);
   margin-top: var(--space-2, 0.5rem);
+}
+
+@media (max-width: 560px) {
+  .seccion { padding: var(--space-4); }
+  .acciones { align-items: stretch; }
+  .acciones button[type="submit"] { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dia-cuadrado { transition: none; }
 }
