@@ -107,6 +107,10 @@ describe('Gráficos ECharts', () => {
     expect((opciones[2].series as { name: string }[])[0].name).toBe('Tasa de cancelación');
     expect(fixture.nativeElement.textContent).toContain('Demanda por servicio');
     expect(fixture.nativeElement.textContent).toContain('Sucursal: Sucursal');
+    const pagina = fixture.nativeElement.querySelector('main.graficos');
+    const fondo = fixture.nativeElement.querySelector('.graficos__fondo');
+    expect(fondo?.parentElement).toBe(pagina);
+    expect(pagina?.querySelector('.graficos__contenido .encabezado')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.graficos__fondo img')?.getAttribute('src'))
       .toBe('https://example.com/sucursal.jpg');
     expect(fixture.nativeElement.textContent).not.toMatch(/Gráfico [1-5]/);
