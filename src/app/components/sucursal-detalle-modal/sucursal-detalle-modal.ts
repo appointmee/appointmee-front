@@ -19,9 +19,11 @@ import { catchError, map, startWith, switchMap } from 'rxjs/operators';
 
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import { humanizarCategoria } from '../../models/solicitud-empleado';
+import { authService } from '../../services/auth-service';
 import { sucursalService } from '../../services/sucursal-service';
 import { ABREVIATURAS_DIAS, DIAS_SUCURSAL } from '../sucursal-form/sucursal-form.model';
 import { SucursalEditarModal } from '../sucursal-editar-modal/sucursal-editar-modal';
+import { SucursalEliminarModal } from '../sucursal-eliminar-modal/sucursal-eliminar-modal';
 
 /** Nombres de día que acepta el backend, traducidos al día de la semana. */
 const DIAS_ACEPTADOS: Readonly<Record<string, string>> = {
@@ -57,13 +59,20 @@ type ResultadoDetalle =
  */
 @Component({
   selector: 'app-sucursal-detalle-modal',
-  imports: [DsButtonComponent, DsModalComponent, RouterLink, SucursalEditarModal],
+  imports: [
+    DsButtonComponent,
+    DsModalComponent,
+    RouterLink,
+    SucursalEditarModal,
+    SucursalEliminarModal,
+  ],
   templateUrl: './sucursal-detalle-modal.html',
   styleUrl: './sucursal-detalle-modal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SucursalDetalleModal {
   private readonly api = inject(sucursalService);
+  private readonly auth = inject(authService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Identificador de la sucursal a mostrar. `null` mantiene el recuadro cerrado. */
@@ -72,6 +81,8 @@ export class SucursalDetalleModal {
   readonly cerrar = output<void>();
   /** Se emite cuando la sucursal fue modificada y hay que refrescar los datos. */
   readonly modificado = output<void>();
+  /** Se emite cuando la sucursal fue eliminada y hay que refrescar el listado. */
+  readonly eliminado = output<void>();
 
   protected readonly sucursal = signal<SucursalDetalleDTO | null>(null);
   protected readonly cargando = signal(false);
@@ -80,6 +91,16 @@ export class SucursalDetalleModal {
   protected readonly exito = signal<string | null>(null);
   /** Indica que el formulario de modificación está abierto por encima. */
   protected readonly editando = signal(false);
+  /** Indica que las confirmaciones de eliminación están abiertas por encima. */
+  protected readonly confirmandoEliminacion = signal(false);
+
+  /**
+   * Solo el empleador puede eliminar su sucursal: es el rol que autoriza el
+   * endpoint `DELETE /sucursales/borrar-sucursal-propia/{sucursalId}`. El
+   * backend sigue validando el permiso (y que la sucursal sea del empleador),
+   * así que esto solo evita mostrar una acción que el servidor va a rechazar.
+   */
+  protected readonly puedeEliminar = computed(() => this.auth.tieneAlgunRol('EMPLEADOR'));
 
   protected readonly dias = DIAS_SUCURSAL;
   protected readonly abreviaturas = ABREVIATURAS_DIAS;
@@ -140,6 +161,7 @@ export class SucursalDetalleModal {
           // y cierra lo que estuviera abierto por encima.
           this.exito.set(null);
           this.editando.set(false);
+          this.confirmandoEliminacion.set(false);
           return this.recargar$.pipe(startWith(undefined), map(() => id));
         }),
         switchMap((id) => this.cargarDetalle(id)),
@@ -188,11 +210,12 @@ export class SucursalDetalleModal {
   }
 
   /**
-   * Cierra el recuadro de detalle. Mientras el formulario de modificación está
-   * abierto por encima, el detalle no se cierra.
+   * Cierra el recuadro de detalle. Mientras el formulario de modificación o
+   * las confirmaciones de eliminación están abiertos por encima, el detalle
+   * no se cierra.
    */
   protected solicitarCierre(): void {
-    if (this.editando()) return;
+    if (this.editando() || this.confirmandoEliminacion()) return;
     this.cerrar.emit();
   }
 
@@ -206,6 +229,24 @@ export class SucursalDetalleModal {
   /** Cierra el formulario de modificación y vuelve al detalle. */
   protected cerrarEdicion(): void {
     this.editando.set(false);
+  }
+
+  /** Abre las confirmaciones de eliminación por encima del detalle. */
+  protected abrirEliminacion(): void {
+    if (!this.sucursal() || !this.puedeEliminar()) return;
+    this.exito.set(null);
+    this.confirmandoEliminacion.set(true);
+  }
+
+  /** El empleador canceló: se vuelve al detalle de la sucursal. */
+  protected onEliminacionCancelada(): void {
+    this.confirmandoEliminacion.set(false);
+  }
+
+  /** El backend confirmó la eliminación: la pantalla refresca el listado. */
+  protected onEliminado(): void {
+    this.confirmandoEliminacion.set(false);
+    this.eliminado.emit();
   }
 
   /**

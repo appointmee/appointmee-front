@@ -40,6 +40,8 @@ export class MisSucursales {
   protected readonly sucursalSeleccionadaId = signal<number | null>(null);
   /** El recuadro con los datos de la sucursal está abierto. */
   protected readonly detalleSucursalAbierto = signal(false);
+  /** Mensaje de éxito de la última sucursal eliminada. */
+  protected readonly exitoEliminacion = signal<string | null>(null);
 
   protected readonly sucursalSeleccionada = computed(() =>
     this.sucursales().find((sucursal) => sucursal.id === this.sucursalSeleccionadaId()) ?? null,
@@ -111,6 +113,7 @@ export class MisSucursales {
   protected seleccionarSucursal(id: number): void {
     this.sucursalSeleccionadaId.set(id);
     this.detalleSucursalAbierto.set(false);
+    this.exitoEliminacion.set(null);
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { sucursalId: id },
@@ -131,6 +134,23 @@ export class MisSucursales {
 
   /** La sucursal fue modificada: se refresca el listado para ver los cambios. */
   protected refrescarSucursales(): void {
+    this.recargar.next();
+  }
+
+  /**
+   * La sucursal fue eliminada: se avisa, se vuelve al listado y se vuelve a
+   * pedir para que la sucursal eliminada ya no aparezca. El listado no se
+   * vacía antes de que el backend confirme la eliminación.
+   */
+  protected onSucursalEliminada(): void {
+    this.exitoEliminacion.set('La sucursal se eliminó correctamente');
+    this.detalleSucursalAbierto.set(false);
+    this.sucursalSeleccionadaId.set(null);
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { sucursalId: null },
+      queryParamsHandling: 'merge',
+    });
     this.recargar.next();
   }
 

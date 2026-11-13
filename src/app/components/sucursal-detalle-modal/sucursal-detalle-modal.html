@@ -138,6 +138,17 @@
         <a class="detalle__boton detalle__boton--ir" [routerLink]="['/sucursal', local.id]">
           Ir a sucursal
         </a>
+        @if (puedeEliminar()) {
+          <button
+            dsButton
+            variant="danger"
+            type="button"
+            class="detalle__boton detalle__boton--eliminar"
+            (click)="abrirEliminacion()"
+          >
+            Eliminar sucursal
+          </button>
+        }
         <button
           dsButton
           variant="primary"
@@ -160,3 +171,10 @@
     (actualizado)="onActualizado()"
   />
 }
+
+<app-sucursal-eliminar-modal
+  [sucursal]="sucursal()"
+  [abierto]="confirmandoEliminacion()"
+  (cerrar)="onEliminacionCancelada()"
+  (eliminado)="onEliminado()"
+/>
