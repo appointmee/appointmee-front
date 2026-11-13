@@ -19,7 +19,7 @@
       [routerLink]="rol === 'empleador' ? '/mis-sucursales' : '/'"
       [queryParams]="rol === 'empleador' && sucursalId() ? { sucursalId: sucursalId() } : {}"
     >
-      {{ rol === 'empleador' ? 'Volver a Mis sucursales' : 'Volver al inicio' }}
+      {{ rol === 'empleador' ? 'Volver a la sucursal' : 'Volver al inicio' }}
     </a>
   </header>
 

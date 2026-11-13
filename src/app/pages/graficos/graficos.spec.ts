@@ -115,6 +115,10 @@ describe('Gráficos ECharts', () => {
     expect(fixture.nativeElement.textContent).toContain('Sucursal: Otra sucursal');
     expect(Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.filtros label'))
       .some((label) => label.textContent?.includes('Sucursal'))).toBe(false);
+    const volver = (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLAnchorElement>('.encabezado .volver');
+    expect(volver?.textContent).toContain('Volver a la sucursal');
+    expect(volver?.getAttribute('href')).toBe('/mis-sucursales?sucursalId=12');
   });
 
   it('no elige otra sucursal automáticamente cuando la ruta no lleva un ID válido', async () => {
