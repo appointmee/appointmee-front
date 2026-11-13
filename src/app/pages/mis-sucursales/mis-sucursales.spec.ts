@@ -20,7 +20,10 @@ describe('MisSucursales', () => {
         provideHttpClientTesting(),
         {
           provide: authService,
-          useValue: { perfil: signal({ id: 7, email: 'empleador@ejemplo.com' }) },
+          useValue: {
+            perfil: signal({ id: 7, email: 'empleador@ejemplo.com' }),
+            tieneAlgunRol: (...roles: string[]) => roles.includes('EMPLEADOR'),
+          },
         },
       ],
     }).compileComponents();
