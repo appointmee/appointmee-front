@@ -228,6 +228,30 @@ describe('SCRUM-262 · Consultar y modificar servicios de la sucursal', () => {
   });
 
   describe('formulario de modificación', () => {
+    it('presenta la edición en secciones con ayuda visible y diseño adaptable', async () => {
+      await abrir();
+      await abrirDetalle();
+      await abrirFormulario();
+
+      const modal = host().querySelector<HTMLElement>('app-servicio-editar-modal .ds-modal')!;
+      const formulario = host().querySelector<HTMLFormElement>(
+        'app-servicio-editar-modal form.editar-servicio__formulario',
+      )!;
+      expect(modal.style.maxWidth).toBe('720px');
+      expect(texto(modal.querySelector('#modificar-servicio-titulo')!)).toBe('Modificar servicio');
+      expect(texto(formulario.querySelector('#editar-servicio-detalles')!)).toBe(
+        'Información del servicio',
+      );
+      expect(texto(formulario.querySelector('#editar-servicio-foto-titulo')!)).toBe(
+        'Imagen del servicio',
+      );
+      expect(formulario.querySelectorAll('.editar-servicio__campo')).toHaveLength(4);
+      expect(formulario.querySelector('#servicio-editar-foto-ayuda')).not.toBeNull();
+      expect(texto(formulario.querySelector('.editar-servicio__vista-previa span')!)).toBe(
+        'Imagen actual',
+      );
+    });
+
     it('precarga los datos del servicio: nunca muestra los campos vacíos', async () => {
       await abrir();
       await abrirDetalle();

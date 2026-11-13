@@ -2,7 +2,8 @@
   [open]="abierto()"
   (close)="solicitarCierre()"
   ariaLabelledby="modificar-servicio-titulo"
-  maxWidth="560px"
+  maxWidth="720px"
+  style="--ds-modal-padding: var(--space-5)"
 >
   @if (confirmacionAbierta()) {
     <div
@@ -27,82 +28,90 @@
       </div>
     </div>
   } @else {
-    <h2 id="modificar-servicio-titulo">Modificar servicio</h2>
+    <header class="editar-servicio__encabezado">
+      <p class="editar-servicio__sobrelinea">Editar catálogo</p>
+      <h2 id="modificar-servicio-titulo">Modificar servicio</h2>
+      <p>Actualizá la información que tus clientes verán al reservar.</p>
+    </header>
 
     @if (errorGeneral()) {
       <div class="error-general" role="alert">{{ errorGeneral() }}</div>
     }
 
-    <form (submit)="onSubmit($event)" novalidate>
-      <ds-input label="Nombre" [error]="errorNombre() ?? ''">
-        <input
-          id="servicio-editar-nombre"
-          type="text"
-          [formField]="formulario.nombre"
-          autocomplete="off"
-        />
-      </ds-input>
+    <form class="editar-servicio__formulario" (submit)="onSubmit($event)" novalidate
+      [attr.aria-busy]="guardando() || subiendoFoto()">
+      <section class="editar-servicio__seccion" aria-labelledby="editar-servicio-detalles">
+        <div class="editar-servicio__seccion-cabecera">
+          <h3 id="editar-servicio-detalles">Información del servicio</h3>
+          <p>Revisá el nombre, la descripción, la duración y el precio.</p>
+        </div>
+        <div class="editar-servicio__campos">
+          <div class="editar-servicio__campo editar-servicio__campo--ancho">
+            <ds-input label="Nombre del servicio" [error]="errorNombre() ?? ''">
+              <input id="servicio-editar-nombre" type="text" [formField]="formulario.nombre"
+                autocomplete="off" placeholder="Ej. Corte de cabello" />
+            </ds-input>
+          </div>
 
-      <ds-input label="Descripción" [error]="errorDescripcion() ?? ''">
-        <textarea
-          id="servicio-editar-descripcion"
-          rows="3"
-          [formField]="formulario.descripcion"
-        ></textarea>
-      </ds-input>
+          <div class="editar-servicio__campo">
+            <ds-input label="Duración (minutos)" [error]="errorDuracion() ?? ''">
+              <input id="servicio-editar-duracion" type="number" step="1" inputmode="numeric"
+                [formField]="formulario.duracion" placeholder="Ej. 60" />
+            </ds-input>
+            <p class="editar-servicio__ayuda">En intervalos de 30 minutos.</p>
+          </div>
 
-      <ds-input label="Duración (en minutos)" [error]="errorDuracion() ?? ''">
-        <input
-          id="servicio-editar-duracion"
-          type="number"
-          step="1"
-          inputmode="numeric"
-          [formField]="formulario.duracion"
-        />
-      </ds-input>
+          <div class="editar-servicio__campo">
+            <ds-input label="Precio (ARS)" [error]="errorPrecio() ?? ''">
+              <input id="servicio-editar-precio" type="number" step="0.01" inputmode="decimal"
+                [formField]="formulario.precio" placeholder="Ej. 12000" />
+            </ds-input>
+            <p class="editar-servicio__ayuda">Importe en pesos argentinos.</p>
+          </div>
 
-      <ds-input label="Precio" [error]="errorPrecio() ?? ''">
-        <input
-          id="servicio-editar-precio"
-          type="number"
-          step="0.01"
-          inputmode="decimal"
-          [formField]="formulario.precio"
-        />
-      </ds-input>
+          <div class="editar-servicio__campo editar-servicio__campo--ancho">
+            <ds-input label="Descripción" [error]="errorDescripcion() ?? ''">
+              <textarea id="servicio-editar-descripcion" rows="4" [formField]="formulario.descripcion"
+                placeholder="Contá brevemente qué incluye el servicio."></textarea>
+            </ds-input>
+          </div>
+        </div>
+      </section>
 
-      <div class="campo-foto">
-        <label for="servicio-editar-foto">Foto</label>
-        <input
-          id="servicio-editar-foto"
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          [attr.aria-invalid]="errorFoto() ? 'true' : null"
-          [attr.aria-describedby]="errorFoto() ? 'servicio-editar-foto-error' : 'servicio-editar-foto-ayuda'"
-          (change)="onFileChange($event)"
-        />
-        @if (vistaPrevia(); as previa) {
-          <img class="foto-preview" [src]="previa" alt="Vista previa de la foto" />
-        }
-        <p id="servicio-editar-foto-ayuda" class="campo-foto__ayuda">
-          Si no elegís una imagen nueva se conserva la foto actual del servicio.
-        </p>
-        @if (errorFoto()) {
-          <span id="servicio-editar-foto-error" class="ds-error" role="alert">{{ errorFoto() }}</span>
-        }
-      </div>
+      <section class="editar-servicio__seccion editar-servicio__seccion--foto"
+        aria-labelledby="editar-servicio-foto-titulo">
+        <div class="editar-servicio__seccion-cabecera">
+          <h3 id="editar-servicio-foto-titulo">Imagen del servicio</h3>
+          <p>Podés conservar la imagen actual o elegir una nueva.</p>
+        </div>
+        <div class="campo-foto">
+          <label class="editar-servicio__etiqueta" for="servicio-editar-foto">Foto principal</label>
+          <input class="editar-servicio__archivo" id="servicio-editar-foto" type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            [attr.aria-invalid]="errorFoto() ? 'true' : null"
+            [attr.aria-describedby]="errorFoto() ? 'servicio-editar-foto-ayuda servicio-editar-foto-error' : 'servicio-editar-foto-ayuda'"
+            (change)="onFileChange($event)" />
+          <p id="servicio-editar-foto-ayuda" class="campo-foto__ayuda">
+            JPG, PNG, WEBP o GIF. Si no elegís otra, se conserva la foto actual.
+          </p>
+          @if (vistaPrevia(); as previa) {
+            <div class="editar-servicio__vista-previa">
+              <img class="foto-preview" [src]="previa" alt="Vista previa de la foto del servicio" />
+              <span>{{ fotoArchivo() ? 'Vista previa de la nueva imagen' : 'Imagen actual' }}</span>
+            </div>
+          }
+          @if (errorFoto()) {
+            <span id="servicio-editar-foto-error" class="ds-error" role="alert">{{ errorFoto() }}</span>
+          }
+        </div>
+      </section>
 
       <div class="modal__acciones">
-        <button
-          dsButton
-          variant="primary"
-          type="submit"
-          [disabled]="!puedeGuardar()"
-          [loading]="guardando()"
-        >
+        <button dsButton type="button" (clicked)="solicitarCierre()">Cancelar</button>
+        <button dsButton variant="primary" type="submit" [disabled]="!puedeGuardar()"
+          [loading]="guardando() || subiendoFoto()">
           Modificar servicio
         </button>
-        <button type="button" class="boton boton--ghost" (click)="solicitarCierre()">Cancelar</button>
       </div>
     </form>
   }
