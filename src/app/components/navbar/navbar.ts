@@ -111,7 +111,6 @@ export class Navbar {
   /** Disponibles solo con el rol correspondiente (criterio 3, 4). */
   protected readonly linksPorRol: readonly NavItem[] = [
     { label: 'Mis Sucursales', path: '/mis-sucursales', icon: ICONS.store, exact: false, roles: ['EMPLEADOR'] },
-    { label: 'Estadísticas', path: '/graficos/empleador', icon: ICONS.chart, exact: false, roles: ['EMPLEADOR'] },
     { label: 'Turnos asignados', path: '/turnos-asignados', icon: ICONS.calendar, exact: false, roles: ['EMPLEADO'] },
     { label: 'Administración', path: '/admin', icon: ICONS.shield, exact: false, roles: ['ADMINISTRADOR'] },
   ];

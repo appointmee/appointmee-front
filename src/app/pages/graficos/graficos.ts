@@ -76,6 +76,9 @@ export class Graficos {
   protected readonly agrupacion = signal<AgrupacionGrafico>('DIA');
   protected readonly sucursales = signal<readonly SucursalMiniDTO[]>([]);
   protected readonly sucursalId = signal<number | null>(null);
+  protected readonly sucursalActual = computed(() =>
+    this.sucursales().find((sucursal) => sucursal.id === this.sucursalId())?.nombre ?? '',
+  );
   protected readonly adminDatos = signal<AdminEstadisticas | null>(null);
   protected readonly empleadorDatos = signal<EmpleadorEstadisticas | null>(null);
   protected readonly cargando = signal(false);
@@ -108,7 +111,7 @@ export class Graficos {
       ...this.baseOption(),
       grid: { left: 48, right: 24, top: 24, bottom: 62 },
       xAxis: { type: 'category', data: filas.map((fila) => fila.periodo), axisLabel: { color: this.colorSecundario, rotate: 25 } },
-      yAxis: { type: 'value', minInterval: 1, axisLabel: { color: this.colorSecundario }, splitLine: { lineStyle: { color: this.colorLinea } } },
+       yAxis: { type: 'value', minInterval: 1, axisLabel: { color: this.colorSecundario }, splitLine: { lineStyle: { color: this.colorLinea } } },
       dataZoom: this.zoom(filas.length),
       series: [{ name: 'Nuevas sucursales', type: 'bar', data: filas.map((fila) => fila.nuevas), barMaxWidth: 34, itemStyle: { borderRadius: [6, 6, 0, 0] } }],
     };
@@ -145,9 +148,11 @@ export class Graficos {
     this.sucursalApi.listarPropias().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (sucursales) => {
         this.sucursales.set(sucursales);
-        this.sucursalId.set(sucursales[0]?.id ?? null);
+        const sucursalSolicitada = Number(this.route.snapshot.queryParamMap?.get('sucursalId'));
+        const sucursalInicial = sucursales.find((sucursal) => sucursal.id === sucursalSolicitada);
+        this.sucursalId.set(sucursalInicial?.id ?? null);
         this.primeraCargaSucursales.set(false);
-        if (sucursales.length) this.cargar();
+        if (sucursalInicial) this.cargar();
       },
       error: () => {
         this.error.set('No pudimos cargar tus sucursales.');
@@ -191,12 +196,6 @@ export class Graficos {
 
   protected cambiarAgrupacion(event: Event): void {
     this.agrupacion.set((event.target as HTMLSelectElement).value as AgrupacionGrafico);
-  }
-
-  protected cambiarSucursal(event: Event): void {
-    const id = Number((event.target as HTMLSelectElement).value);
-    this.sucursalId.set(Number.isInteger(id) && id > 0 ? id : null);
-    this.empleadorDatos.set(null);
   }
 
   protected estadoLabel(estado: EstadoTurnoGrafico): string {

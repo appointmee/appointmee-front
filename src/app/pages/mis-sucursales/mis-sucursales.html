@@ -147,6 +147,18 @@
             </svg>
           </a>
 
+          <a
+            class="tarjeta"
+            [routerLink]="['/graficos/empleador']"
+            [queryParams]="{ sucursalId: sucursal.id }"
+            [attr.aria-label]="'Estadísticas de ' + sucursal.nombre"
+          >
+            <span class="tarjeta__titulo">Estadísticas</span>
+            <svg class="tarjeta__icono" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 19V5m0 14h16M8 15v-4m4 4V7m4 8v-6m4 6V4" />
+            </svg>
+          </a>
+
           <button
             class="tarjeta"
             type="button"
