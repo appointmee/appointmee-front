@@ -7,6 +7,7 @@ export interface UsuarioResponseDTO {
   readonly apellido: string;
   readonly email: string;
   readonly urlFotoPerfil: string | null;
+  readonly fotoPerfil?: string | null;
 }
 
 /** Respuesta de `GET /usuarios/{userId}` (`UsuarioPerfilResponseDTO` del backend). */
@@ -17,6 +18,7 @@ export interface UsuarioPerfilDTO {
   readonly email: string;
   readonly fechaCreacion: string | null;
   readonly fotoPerfil: string | null;
+  readonly urlFotoPerfil?: string | null;
   readonly roles: readonly string[];
   readonly sucursalesEmpleado: readonly SucursalMiniDTO[];
 }

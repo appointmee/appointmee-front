@@ -15,6 +15,7 @@ import { Observable, Subject, catchError, map, of, startWith, switchMap, tap } f
 
 import { apiErrorsService } from '../../http/api-errors-service';
 import { EmpleadoDTO } from '../../models/empleado';
+import { fotoPerfilDe } from '../../shared/foto-perfil';
 import { empleadoService } from '../../services/empleado-service';
 
 const LIMITE_DETALLE = 5;
@@ -104,6 +105,10 @@ export class EquipoSucursal {
 
   protected nombreCompleto(empleado: EmpleadoDTO): string {
     return [this.nombre(empleado), this.apellido(empleado)].filter(Boolean).join(' ');
+  }
+
+  protected foto(empleado: EmpleadoDTO): string {
+    return fotoPerfilDe(empleado) ?? this.placeholderAvatar;
   }
 
   protected tienePuntuacion(empleado: EmpleadoDTO): boolean {

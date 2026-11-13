@@ -144,6 +144,31 @@
   margin: 0;
 }
 
+.contexto__item--empleado .contexto__empleado {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.contexto__empleado-foto {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(247, 198, 90, 0.35);
+  background: #10151d;
+}
+
+.contexto__empleado-info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  text-align: right;
+}
+
 .contexto__etiqueta {
   color: var(--muted);
   font-size: 0.72rem;
@@ -853,6 +878,14 @@
 
   .contexto__rating {
     justify-content: flex-start;
+  }
+
+  .contexto__item--empleado .contexto__empleado {
+    justify-content: flex-start;
+  }
+
+  .contexto__empleado-info {
+    text-align: left;
   }
 
   .paso {

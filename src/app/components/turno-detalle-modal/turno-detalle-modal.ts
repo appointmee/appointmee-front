@@ -18,6 +18,7 @@ import { Subscription } from 'rxjs';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { DsModalComponent } from '../../shared/ui/misc/misc.component';
 import { humanizarCategoria } from '../../models/solicitud-empleado';
+import { fotoPerfilDe } from '../../shared/foto-perfil';
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import {
   EstadoTurno,
@@ -192,7 +193,7 @@ export class TurnoDetalleModal {
   });
 
   protected readonly fotoEmpleado = computed(() => {
-    const foto = this.detalle()?.empleado.urlFotoPerfil?.trim();
+    const foto = fotoPerfilDe(this.detalle()?.empleado);
     return foto && foto !== this.fotoEmpleadoFallida() ? foto : null;
   });
 

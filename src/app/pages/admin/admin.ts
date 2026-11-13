@@ -31,6 +31,7 @@ import { Graficos } from '../graficos/graficos';
 import { usuarioService } from '../../services/usuario-service';
 import { UsuarioMiniAdminDTO, UsuarioPerfilDTO } from '../../models/usuario';
 import { DsModalComponent } from '../../shared/ui/misc/misc.component';
+import { fotoPerfilDe } from '../../shared/foto-perfil';
 
 type ResultadoLista =
   | { readonly ok: true; readonly solicitudes: readonly SolicitudEmpleadorMiniDTO[] }
@@ -263,6 +264,11 @@ export class Administracion {
 
   protected inicialesUsuario(usuario: UsuarioMiniAdminDTO): string {
     return `${usuario.nombre.trim().charAt(0)}${usuario.apellido.trim().charAt(0)}`.toLocaleUpperCase('es');
+  }
+
+  protected fotoUsuario(usuario: UsuarioMiniAdminDTO): string | null {
+    const foto = fotoPerfilDe(usuario as UsuarioMiniAdminDTO & { urlFotoPerfil?: string | null; fotoUrl?: string | null });
+    return foto && !this.fotosUsuariosFallidas().has(usuario.id) ? foto : null;
   }
 
   protected marcarFotoUsuarioFallida(id: number): void {

@@ -15,6 +15,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { catchError, filter, of, switchMap } from 'rxjs';
 import { authService } from '../../services/auth-service';
 import { usuarioService } from '../../services/usuario-service';
+import { fotoPerfilDe } from '../../shared/foto-perfil';
 
 interface NavItem {
   readonly label: string;
@@ -59,7 +60,7 @@ export class Navbar {
   protected readonly nombreUsuario = signal('');
   private readonly fotoFallida = signal<string | null>(null);
   protected readonly fotoPerfil = computed(() => {
-    const foto = this.auth.perfil()?.fotoPerfil?.trim();
+    const foto = fotoPerfilDe(this.auth.perfil() as { urlFotoPerfil?: string | null; fotoPerfil?: string | null } | null);
     return foto && foto !== this.fotoFallida() ? foto : null;
   });
 

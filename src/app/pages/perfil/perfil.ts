@@ -20,6 +20,7 @@ import { UsuarioPerfilDTO } from '../../models/usuario';
 import { authService } from '../../services/auth-service';
 import { sucursalService } from '../../services/sucursal-service';
 import { usuarioService } from '../../services/usuario-service';
+import { fotoPerfilDe } from '../../shared/foto-perfil';
 
 type ResultadoPerfil =
   | { readonly estado: 'ok'; readonly perfil: UsuarioPerfilDTO }
@@ -81,7 +82,7 @@ export class Perfil {
   protected readonly iniciales = computed(() => inicialesDeTexto(this.nombreCompleto()));
 
   protected readonly fotoPerfil = computed(() => {
-    const foto = this.perfil()?.fotoPerfil?.trim();
+    const foto = fotoPerfilDe(this.perfil());
     return foto && !this.fotoPerfilFallida() ? foto : null;
   });
 
@@ -170,12 +171,12 @@ export class Perfil {
   }
 
   protected imagenSucursal(sucursal: SucursalMiniDTO): string {
-    const foto = sucursal.fotoPerfil?.trim();
+    const foto = fotoPerfilDe(sucursal);
     return foto && !this.imagenesFallidas().has(sucursal.id) ? foto : PLACEHOLDER_SUCURSAL;
   }
 
   protected altImagenSucursal(sucursal: SucursalMiniDTO): string {
-    const foto = sucursal.fotoPerfil?.trim();
+    const foto = fotoPerfilDe(sucursal);
     return foto && !this.imagenesFallidas().has(sucursal.id)
       ? `Foto de ${sucursal.nombre}`
       : `Sin imagen disponible para ${sucursal.nombre}`;
