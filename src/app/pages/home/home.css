@@ -1690,3 +1690,13 @@ button.estado__link:disabled {
     justify-content: center;
   }
 }
+
+@media (max-width: 1024px) {
+  .how__story {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .booking-story {
+    display: none;
+  }
+}
