@@ -806,6 +806,13 @@
   cursor: not-allowed;
 }
 
+.detalle__pago-error {
+  margin: 6px 0 0;
+  color: #ffb0b0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .detalle__skeleton {
   display: grid;
   gap: 12px;

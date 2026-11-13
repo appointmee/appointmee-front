@@ -42,6 +42,11 @@ const DETALLE = {
   resenia: null,
 } as const;
 
+const DETALLE_PENDIENTE = {
+  ...DETALLE,
+  estadoTurno: 'PENDIENTE',
+} as const;
+
 const DETALLE_REALIZADO = {
   ...DETALLE,
   estadoTurno: 'REALIZADO',
@@ -592,5 +597,93 @@ describe('Mis Turnos', () => {
 
     expect(html.querySelector('[role="dialog"]')).toBeNull();
     expect(html.textContent).toContain('Todos tus turnos');
+  });
+
+  it('muestra el botón Pagar solo en el detalle de un turno pendiente', async () => {
+    flushLista();
+    await abrirDetalleDe('Corte de pelo', 1, DETALLE_PENDIENTE);
+
+    const modal = dialogo();
+    const pagar = Array.from(modal.querySelectorAll('button')).find(
+      (boton) => boton.textContent?.trim() === 'Pagar',
+    ) as HTMLButtonElement | undefined;
+    expect(pagar).toBeTruthy();
+    expect(pagar!.disabled).toBe(false);
+    expect(modal.textContent).toContain('Pago pendiente');
+  });
+
+  it('no muestra el botón Pagar en turnos con estado distinto de pendiente', async () => {
+    flushLista();
+    await abrirDetalleDe('Corte de pelo', 1, DETALLE);
+
+    const modal = dialogo();
+    expect(
+      Array.from(modal.querySelectorAll('button')).some(
+        (boton) => boton.textContent?.trim() === 'Pagar',
+      ),
+    ).toBe(false);
+  });
+
+  it('permite pagar un turno pendiente y actualiza solo su detalle cuando se confirma', async () => {
+    vi.useFakeTimers();
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    const setTimeoutSpy = vi
+      .spyOn(window, 'setTimeout')
+      .mockImplementation(((handler: TimerHandler) => {
+        if (typeof handler === 'function') {
+          queueMicrotask(() => handler());
+        }
+        return 1 as unknown as ReturnType<typeof setTimeout>;
+      }) as typeof setTimeout);
+    try {
+      flushLista();
+      await abrirDetalleDe('Corte de pelo', 1, DETALLE_PENDIENTE);
+
+      botonPorTexto('Pagar', dialogo()).click();
+      fixture.detectChanges();
+
+      const pagoReq = backend.expectOne(
+        (request) => request.url.endsWith('/pagos/1') && request.method === 'POST',
+      );
+      pagoReq.flush('https://mp.test/pago/1');
+      await Promise.resolve();
+      await Promise.resolve();
+      fixture.detectChanges();
+
+      expect(openSpy).toHaveBeenCalledWith(
+        'https://mp.test/pago/1',
+        '_blank',
+        'noopener,noreferrer',
+      );
+
+      await Promise.resolve();
+      fixture.detectChanges();
+
+      const seguimiento = backend.expectOne(
+        (request) =>
+          request.url.endsWith('/turnos/propios/detalles/1') && request.method === 'GET',
+      );
+      seguimiento.flush({ ...DETALLE_PENDIENTE, estadoTurno: 'CONFIRMADO' });
+      fixture.detectChanges();
+      await Promise.resolve();
+      fixture.detectChanges();
+
+      expect(dialogo().textContent).toContain('Confirmado');
+      expect(
+        Array.from(dialogo().querySelectorAll('button')).some(
+          (boton) => boton.textContent?.trim() === 'Pagar',
+        ),
+      ).toBe(false);
+
+      const turno = botonesTurno().find((boton) =>
+        boton.textContent?.includes('Corte de pelo'),
+      );
+      expect(turno?.textContent).toContain('Confirmado');
+      backend.expectNone((request) => request.url.endsWith('/turnos/propios'));
+    } finally {
+      setTimeoutSpy.mockRestore();
+      openSpy.mockRestore();
+      vi.useRealTimers();
+    }
   });
 });
