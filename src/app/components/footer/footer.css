@@ -134,8 +134,30 @@
     gap: calc(2 * var(--space-6));
   }
 
+  .site-footer__brand {
+    text-align: center;
+  }
+
+  .site-footer__brand-link {
+    justify-content: center;
+  }
+
+  .site-footer__brand p {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .site-footer__links section {
+    text-align: center;
+  }
+
+  .site-footer__links ul {
+    justify-items: center;
+  }
+
   .site-footer__bottom {
     margin-top: calc(2 * var(--space-6));
+    text-align: center;
   }
 }
 
@@ -176,6 +198,7 @@
   .site-footer__links section:last-child ul {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 8px 20px;
   }
 
