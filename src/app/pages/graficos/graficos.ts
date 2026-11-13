@@ -106,6 +106,16 @@ export class Graficos {
       ...this.baseOption(),
       legend: { top: 0, textStyle: { color: this.colorTexto } },
       grid: { left: 48, right: 24, top: 44, bottom: 62 },
+      ...(this.rol === 'administrador'
+        ? {
+            media: [
+              {
+                query: { maxWidth: 768 },
+                option: { grid: { top: 68 } },
+              },
+            ],
+          }
+        : {}),
       xAxis: { type: 'category', data: filas.map((fila) => fila.periodo), axisLabel: { color: this.colorSecundario, rotate: 25 } },
       yAxis: { type: 'value', minInterval: 1, axisLabel: { color: this.colorSecundario }, splitLine: { lineStyle: { color: this.colorLinea } } },
       dataZoom: this.zoom(filas.length),
