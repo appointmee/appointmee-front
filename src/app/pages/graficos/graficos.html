@@ -11,26 +11,26 @@
         @if (rol === 'administrador') {
           Seguimiento de turnos, altas de usuarios y sucursales de toda la plataforma.
         } @else {
-          Actividad, demanda y cancelaciones de la sucursal seleccionada.
+          Actividad, demanda y cancelaciones de esta sucursal.
         }
       </p>
+      @if (rol === 'empleador' && sucursalActual()) {
+        <p class="introduccion">Sucursal: <strong>{{ sucursalActual() }}</strong></p>
+      }
     </div>
-    @if (!incrustado()) {
-      <a class="volver" routerLink="/">Volver al inicio</a>
-    }
+    <a
+      class="volver"
+      [routerLink]="rol === 'empleador' ? '/mis-sucursales' : '/'"
+      [queryParams]="rol === 'empleador' && sucursalId() ? { sucursalId: sucursalId() } : {}"
+    >
+      <svg class="volver__icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M19 12H5m6 7-7-7 7-7" />
+      </svg>
+      {{ rol === 'empleador' ? 'Volver a la sucursal' : 'Volver al inicio' }}
+    </a>
   </header>
 
   <section class="filtros" aria-label="Filtros de estadísticas">
-    @if (rol === 'empleador') {
-      <label>
-        Sucursal
-        <select [value]="sucursalId() ?? ''" (change)="cambiarSucursal($event)" [disabled]="primeraCargaSucursales()">
-          @for (sucursal of sucursales(); track sucursal.id) {
-            <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
-          }
-        </select>
-      </label>
-    }
     <label>
       Desde
       <input type="date" [value]="desde()" (change)="cambiarDesde($event)" />
@@ -62,6 +62,12 @@
     </section>
   } @else if (rol === 'empleador' && sucursales().length === 0) {
     <p class="estado" role="status">Todavía no hay sucursales para mostrar.</p>
+  } @else if (rol === 'empleador' && sucursalId() === null) {
+    <section class="estado" role="status">
+      <h2>Elegí una sucursal</h2>
+      <p>Para ver las estadísticas, abrí esta sección desde la sucursal correspondiente.</p>
+      <a class="volver" routerLink="/mis-sucursales">Volver a Mis sucursales</a>
+    </section>
   } @else {
     @if (error()) {
       <p class="aviso-error" role="alert">{{ error() }} <button type="button" (click)="cargar()" [disabled]="cargando()">Reintentar</button></p>
@@ -72,7 +78,7 @@
 
     @if (rol === 'administrador' && adminDatos(); as datos) {
       <section class="panel" aria-labelledby="turnos-titulo">
-        <div class="panel__cabecera"><div><p class="sobrelinea">Gráfico 1</p><h2 id="turnos-titulo">Turnos por período y estado</h2></div></div>
+        <div class="panel__cabecera"><div><h2 id="turnos-titulo">Turnos por período y estado</h2></div></div>
         @if (datos.turnosPorPeriodo.length === 0) {
           <p class="vacio" role="status">No hay turnos en el período seleccionado.</p>
         } @else {
@@ -82,7 +88,7 @@
       </section>
 
       <section class="panel" aria-labelledby="usuarios-titulo">
-        <div class="panel__cabecera"><div><p class="sobrelinea">Gráfico 2</p><h2 id="usuarios-titulo">Crecimiento de usuarios</h2><p>Altas en el rango y usuarios marcados activos actualmente.</p></div></div>
+        <div class="panel__cabecera"><div><h2 id="usuarios-titulo">Crecimiento de usuarios</h2><p>Altas en el rango y usuarios marcados activos actualmente.</p></div></div>
         <ul class="metricas" aria-label="Usuarios activos actualmente">@for (rolUsuario of roles; track rolUsuario) { <li><strong>{{ datos.usuarios.activosActualesPorRol[rolUsuario] ?? 0 }}</strong><span>{{ rolLabel(rolUsuario) }} activos</span></li> }</ul>
         @if (datos.usuarios.nuevosPorPeriodo.length === 0) {
           <p class="vacio" role="status">No hay altas de usuarios en el período seleccionado.</p>
@@ -93,7 +99,7 @@
       </section>
 
       <section class="panel" aria-labelledby="sucursales-titulo">
-        <div class="panel__cabecera"><div><p class="sobrelinea">Gráfico 3</p><h2 id="sucursales-titulo">Sucursales activas y nuevas</h2><p>Estado actual y altas según fecha de creación.</p></div></div>
+        <div class="panel__cabecera"><div><h2 id="sucursales-titulo">Sucursales activas y nuevas</h2><p>Estado actual y altas según fecha de creación.</p></div></div>
         <ul class="metricas" aria-label="Estado actual de las sucursales"><li><strong>{{ datos.sucursales.activasActualmente }}</strong><span>Activas actualmente</span></li><li><strong>{{ datos.sucursales.inactivasActualmente }}</strong><span>Inactivas actualmente</span></li></ul>
         @if (datos.sucursales.nuevasPorPeriodo.length === 0) {
           <p class="vacio" role="status">No hay nuevas sucursales en el período seleccionado.</p>
@@ -106,7 +112,7 @@
 
     @if (rol === 'empleador' && empleadorDatos(); as datos) {
       <section class="panel" aria-labelledby="turnos-titulo">
-        <div class="panel__cabecera"><div><p class="sobrelinea">Gráfico 1</p><h2 id="turnos-titulo">Turnos por período y estado</h2></div></div>
+        <div class="panel__cabecera"><div><h2 id="turnos-titulo">Turnos por período y estado</h2></div></div>
         @if (datos.turnosPorPeriodo.length === 0) { <p class="vacio" role="status">No hay turnos en el período seleccionado.</p> }
         @else {
           <div class="grafico-echarts" echarts [options]="turnosEmpleadorOption()" [autoResize]="true" role="img" aria-label="Turnos por período, desglosados por estado"></div>
@@ -114,18 +120,15 @@
         }
       </section>
       <section class="panel" aria-labelledby="demanda-titulo">
-        <div class="panel__cabecera"><div><p class="sobrelinea">Gráfico 4</p><h2 id="demanda-titulo">Demanda por servicio</h2></div></div>
+        <div class="panel__cabecera"><div><h2 id="demanda-titulo">Demanda por servicio</h2></div></div>
         @if (datos.demandaPorServicio.length === 0) { <p class="vacio" role="status">No hay demanda de servicios en el período seleccionado.</p> }
         @else { <div class="grafico-echarts grafico-echarts--horizontal" echarts [options]="demandaOption()" [autoResize]="true" role="img" aria-label="Turnos registrados por servicio"></div><div class="tabla-contenedor"><table><caption>Turnos por servicio</caption><thead><tr><th scope="col">Servicio</th><th scope="col">Turnos</th></tr></thead><tbody>@for (fila of datos.demandaPorServicio; track fila.servicioId) { <tr><th scope="row">{{ fila.servicio }}</th><td>{{ fila.cantidad }}</td></tr> }</tbody></table></div> }
       </section>
       <section class="panel" aria-labelledby="cancelaciones-titulo">
-        <div class="panel__cabecera"><div><p class="sobrelinea">Gráfico 5</p><h2 id="cancelaciones-titulo">Cancelaciones</h2><p>{{ datos.cancelaciones.cantidad }} cancelaciones · {{ datos.cancelaciones.tasa }}% de turnos realizados o cancelados</p></div></div>
+        <div class="panel__cabecera"><div><h2 id="cancelaciones-titulo">Cancelaciones</h2><p>{{ datos.cancelaciones.cantidad }} cancelaciones · {{ datos.cancelaciones.tasa }}% de turnos realizados o cancelados</p></div></div>
         @if (datos.cancelaciones.porPeriodo.length === 0) { <p class="vacio" role="status">No hay turnos concluidos en el período para calcular la tasa.</p> }
         @else { <div class="grafico-echarts" echarts [options]="cancelacionesOption()" [autoResize]="true" role="img" aria-label="Tasa de cancelación por período"></div><div class="tabla-contenedor"><table><caption>Cancelaciones y tasa por período</caption><thead><tr><th scope="col">Período</th><th scope="col">Cancelados</th><th scope="col">Concluidos</th><th scope="col">Tasa</th></tr></thead><tbody>@for (fila of datos.cancelaciones.porPeriodo; track fila.periodo) { <tr><th scope="row">{{ fila.periodo }}</th><td>{{ fila.cancelados }}</td><td>{{ fila.turnosConcluidos }}</td><td>{{ fila.tasa }}%</td></tr> }</tbody></table></div> }
       </section>
-      @for (metrica of [{ titulo: 'Ocupación', detalle: datos.ocupacion }, { titulo: 'Ingresos y pagos', detalle: datos.ingresos }, { titulo: 'Ausencias', detalle: datos.ausencias }]; track metrica.titulo) {
-        @if (!metrica.detalle.disponible) { <aside class="no-disponible"><strong>{{ metrica.titulo }}: dato no disponible</strong><p>{{ metrica.detalle.motivo }}</p></aside> }
-      }
     }
   }
 </main>

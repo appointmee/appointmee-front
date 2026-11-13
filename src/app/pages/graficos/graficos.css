@@ -14,7 +14,31 @@
 .introduccion, .panel__cabecera p:not(.sobrelinea) { color: var(--muted); line-height: 1.55; }
 .introduccion { margin: .5rem 0 0; }
 .sobrelinea { margin: 0 0 .35rem; color: var(--accent-strong); font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.volver { color: var(--accent-strong); font-weight: 600; }
+.volver {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line));
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  box-shadow: var(--shadow-sm);
+  color: var(--accent-strong);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color .2s, border-color .2s, transform .2s, box-shadow .2s;
+}
+.volver:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow: var(--shadow-md);
+}
+.volver:active { transform: translateY(0); }
+.volver__icono { width: 1.1rem; height: 1.1rem; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .volver:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 
 .graficos--incrustado { width: 100%; margin: 0; padding: 0; }
@@ -47,9 +71,6 @@ td { color: var(--muted); font-variant-numeric: tabular-nums; }
 .estado--error, .aviso-error { border-color: #a84444; color: #ffd1d1; }
 .aviso-error { padding: .9rem 1rem; border: 1px solid; border-radius: .7rem; }
 .aviso-error button { margin-left: .75rem; color: inherit; font: inherit; text-decoration: underline; background: none; border: 0; cursor: pointer; }
-.no-disponible { padding: .9rem 1rem; border-left: 3px solid var(--accent); background: var(--accent-soft); color: var(--text); }
-.no-disponible p { margin: .4rem 0 0; color: var(--muted); line-height: 1.5; }
-
 @media (max-width: 650px) {
   .graficos { width: min(100% - 1.5rem, 76rem); padding-top: calc(var(--nav-h) + 1.25rem); }
   .encabezado { flex-direction: column; }

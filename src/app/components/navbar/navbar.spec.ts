@@ -124,12 +124,15 @@ describe('Acceso a Mis Turnos', () => {
     const html = await renderizar(['ADMINISTRADOR']);
     expect(html.querySelector('.nav a[href="/mis-turnos"]')).toBeNull();
     expect(html.querySelector('.nav a[href="/admin"]')).not.toBeNull();
-    expect(html.querySelector('.nav a[href="/graficos/administrador"]')).toBeNull();
+    
+  expect(html.querySelector('.nav a[href="/graficos/administrador"]')).not.toBeNull();
   });
 
   it('muestra Mis Turnos a clientes y empleadores', async () => {
     const html = await renderizar(['CLIENTE', 'EMPLEADOR']);
     expect(html.querySelector('.nav a[href="/mis-turnos"]')).not.toBeNull();
+    expect(html.querySelector('.nav a[href="/mis-sucursales"]')).not.toBeNull();
+    expect(html.querySelector('.nav a[href="/graficos/empleador"]')).toBeNull();
   });
 });
 
