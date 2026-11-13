@@ -57,22 +57,53 @@ describe('MisSucursales', () => {
     const req = backend.expectOne((request) =>
       request.url.endsWith('/sucursales/listar/propias'),
     );
-    req.flush([{ id: 5, nombre: 'Sucursal Uno', categoria: 'BARBERIA', fotoPerfil: null, puntuacion: 4, cantidadPuntuaciones: 2 }]);
+    req.flush([{ id: 5, nombre: 'Sucursal Uno', categoria: 'BARBERIA', fotoPerfil: 'https://imagenes.example/sucursal-uno.jpg', puntuacion: 4, cantidadPuntuaciones: 2 }]);
 
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.textContent).toContain('Sucursal Uno');
-
-    const gestionar = host.querySelector<HTMLButtonElement>('.sucursal-card__accion');
-    gestionar?.click();
+    const foto = host.querySelector<HTMLImageElement>('.sucursal-card__portada img');
+    expect(foto?.getAttribute('src')).toBe('https://imagenes.example/sucursal-uno.jpg');
+    const fondoTarjeta = host.querySelector<HTMLImageElement>('.sucursal-card__fondo');
+    expect(fondoTarjeta?.getAttribute('src')).toBe('https://imagenes.example/sucursal-uno.jpg');
+    expect(getComputedStyle(fondoTarjeta!).filter).toBe('blur(18px)');
+    const accion = host.querySelector<HTMLButtonElement>('.sucursal-card__accion');
+    accion?.dispatchEvent(new Event('mouseenter'));
     fixture.detectChanges();
+    expect(host.querySelector('.gestion__fondo img')?.getAttribute('src'))
+      .toBe('https://imagenes.example/sucursal-uno.jpg');
+    accion?.dispatchEvent(new Event('mouseleave'));
+    fixture.detectChanges();
+    expect(host.querySelector('.gestion__fondo img')).toBeNull();
+
+    accion?.click();
+    fixture.detectChanges();
+
+    const fondo = host.querySelector<HTMLImageElement>('.gestion__fondo img');
+    expect(fondo?.getAttribute('src')).toBe('https://imagenes.example/sucursal-uno.jpg');
+    expect(getComputedStyle(fondo!).filter).toBe('blur(18px)');
 
     expect(host.textContent).toContain('Servicios');
     expect(host.textContent).toContain('Empleados');
     expect(host.textContent).toContain('Galería de imágenes');
     expect(host.textContent).toContain('Turnos');
     expect(host.textContent).toContain('Solicitudes');
+    expect(getComputedStyle(host.querySelector('.tarjeta')!).backdropFilter).toContain('blur(18px)');
     expect(host.textContent).toContain('Sucursal');
     expect(host.querySelector('.gestor')?.previousElementSibling?.classList.contains('volver-gestor')).toBe(true);
+  });
+
+  it('muestra las iniciales si la imagen principal de la tarjeta no carga', () => {
+    backend.expectOne((request) => request.url.endsWith('/sucursales/listar/propias')).flush([
+      { id: 6, nombre: 'Sucursal Dos', categoria: 'BARBERIA', fotoPerfil: 'https://imagenes.example/rota.jpg', puntuacion: 4, cantidadPuntuaciones: 2 },
+    ]);
+
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    host.querySelector<HTMLImageElement>('.sucursal-card__portada img')?.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+
+    expect(host.querySelector('.sucursal-card__portada img')).toBeNull();
+    expect(host.querySelector('.sucursal-card__placeholder')?.textContent?.trim()).toBe('S');
   });
 });

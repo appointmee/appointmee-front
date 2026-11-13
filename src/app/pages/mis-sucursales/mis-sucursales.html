@@ -1,4 +1,9 @@
 <section class="gestion" aria-label="Mis sucursales">
+  <div class="gestion__fondo" [class.gestion__fondo--visible]="fotoFondo() !== null" aria-hidden="true">
+    @if (fotoFondo(); as foto) {
+      <img [src]="foto" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" (error)="onFotoSucursalError(foto)" />
+    }
+  </div>
   <div class="gestion__inner">
     @if (exitoEliminacion()) {
       <p class="aviso aviso--exito" role="status" aria-live="polite">
@@ -163,13 +168,35 @@
               class="sucursal-card__accion"
               type="button"
               (click)="seleccionarSucursal(sucursal.id)"
+              (mouseenter)="resaltarSucursal(sucursal)"
+              (mouseleave)="limpiarSucursalResaltada()"
+              (focus)="resaltarSucursal(sucursal)"
+              (blur)="limpiarSucursalResaltada()"
               [attr.aria-label]="'Gestionar sucursal ' + sucursal.nombre"
             >
+              @if (fotoPrincipal(sucursal); as foto) {
+                <img
+                  class="sucursal-card__fondo"
+                  [src]="foto"
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                  decoding="async"
+                  referrerpolicy="no-referrer"
+                  (error)="onFotoSucursalError(foto)"
+                />
+              }
               <span class="sucursal-card__info">
-                <span class="sucursal-card__avatar" aria-hidden="true">
-                  {{ sucursal.nombre.charAt(0).toUpperCase() }}
+                <span class="sucursal-card__portada" aria-hidden="true">
+                  @if (fotoPrincipal(sucursal); as foto) {
+                    <img [src]="foto" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" (error)="onFotoSucursalError(foto)" />
+                  } @else {
+                    <span class="sucursal-card__placeholder">
+                      {{ sucursal.nombre.charAt(0).toUpperCase() }}
+                    </span>
+                  }
                 </span>
-                <span>
+                <span class="sucursal-card__copy">
                   <span class="sucursal-card__nombre">{{ sucursal.nombre }}</span>
                   <span class="sucursal-card__categoria">{{ humanizarCategoria(sucursal.categoria) }}</span>
                 </span>
