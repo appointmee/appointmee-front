@@ -267,6 +267,22 @@ export class ElegirTurno {
     );
   });
 
+  protected readonly placeholderAvatar = `data:image/svg+xml;utf8,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240"><rect width="240" height="240" fill="#10151d"/><circle cx="120" cy="92" r="38" fill="#39424f"/><path d="M48 216c9-47 36-72 72-72s63 25 72 72" fill="#39424f"/></svg>',
+  )}`;
+
+  protected fotoEmpleado(): string {
+    return this.empleado()?.urlFotoPerfil?.trim() || this.placeholderAvatar;
+  }
+
+  protected onImageErrorEmpleado(event: Event): void {
+    const img = event.target as HTMLImageElement | null;
+    if (img) {
+      img.onerror = null;
+      img.src = this.placeholderAvatar;
+    }
+  }
+
   protected readonly volverLink = computed<readonly (string | number)[]>(() => {
     const sucursalId = this.sucursalId();
     const servicioId = this.servicioId();
