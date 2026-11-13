@@ -845,10 +845,23 @@ export class ElegirTurno {
   }
 
   private sincronizarUrl(): void {
+    const scrollY = typeof window === 'undefined' ? 0 : window.scrollY;
+    const scrollX = typeof window === 'undefined' ? 0 : window.scrollX;
+
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: this.queryParamsSeleccion(),
       replaceUrl: true,
+    }).then(() => {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      try {
+        window.scrollTo({ top: scrollY, left: scrollX });
+      } catch {
+        // jsdom no implementa scrollTo; en navegador preserva la posición.
+      }
     });
   }
 
