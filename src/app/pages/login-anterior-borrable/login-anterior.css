@@ -113,3 +113,20 @@
 .login__alt a:hover {
   text-decoration: underline;
 }
+
+@media (max-width: 600px) {
+  .login {
+    padding: 24px 16px max(32px, env(safe-area-inset-bottom));
+  }
+
+  .login__card {
+    width: 100%;
+    padding: 26px 20px;
+    border-radius: 16px;
+  }
+
+  .login__field input {
+    min-height: 46px;
+    font-size: 16px;
+  }
+}

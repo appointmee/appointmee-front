@@ -36,3 +36,15 @@
   gap: var(--space-3, 0.75rem);
   justify-content: flex-end;
 }
+
+@media (max-width: 480px) {
+  .eliminar__acciones {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .eliminar__acciones > button {
+    width: 100%;
+    min-height: 44px;
+  }
+}
