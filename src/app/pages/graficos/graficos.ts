@@ -74,6 +74,9 @@ export class Graficos {
   protected readonly agrupacion = signal<AgrupacionGrafico>('DIA');
   protected readonly sucursales = signal<readonly SucursalMiniDTO[]>([]);
   protected readonly sucursalId = signal<number | null>(null);
+  protected readonly sucursalActual = computed(() =>
+    this.sucursales().find((sucursal) => sucursal.id === this.sucursalId())?.nombre ?? '',
+  );
   protected readonly adminDatos = signal<AdminEstadisticas | null>(null);
   protected readonly empleadorDatos = signal<EmpleadorEstadisticas | null>(null);
   protected readonly cargando = signal(false);
@@ -144,11 +147,10 @@ export class Graficos {
       next: (sucursales) => {
         this.sucursales.set(sucursales);
         const sucursalSolicitada = Number(this.route.snapshot.queryParamMap?.get('sucursalId'));
-        const sucursalInicial = sucursales.find((sucursal) => sucursal.id === sucursalSolicitada)
-          ?? sucursales[0];
+        const sucursalInicial = sucursales.find((sucursal) => sucursal.id === sucursalSolicitada);
         this.sucursalId.set(sucursalInicial?.id ?? null);
         this.primeraCargaSucursales.set(false);
-        if (sucursales.length) this.cargar();
+        if (sucursalInicial) this.cargar();
       },
       error: () => {
         this.error.set('No pudimos cargar tus sucursales.');
@@ -192,12 +194,6 @@ export class Graficos {
 
   protected cambiarAgrupacion(event: Event): void {
     this.agrupacion.set((event.target as HTMLSelectElement).value as AgrupacionGrafico);
-  }
-
-  protected cambiarSucursal(event: Event): void {
-    const id = Number((event.target as HTMLSelectElement).value);
-    this.sucursalId.set(Number.isInteger(id) && id > 0 ? id : null);
-    this.empleadorDatos.set(null);
   }
 
   protected estadoLabel(estado: EstadoTurnoGrafico): string {

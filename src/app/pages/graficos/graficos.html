@@ -7,24 +7,23 @@
         @if (rol === 'administrador') {
           Seguimiento de turnos, altas de usuarios y sucursales de toda la plataforma.
         } @else {
-          Actividad, demanda y cancelaciones de la sucursal seleccionada.
+          Actividad, demanda y cancelaciones de esta sucursal.
         }
       </p>
+      @if (rol === 'empleador' && sucursalActual()) {
+        <p class="introduccion">Sucursal: <strong>{{ sucursalActual() }}</strong></p>
+      }
     </div>
-    <a class="volver" routerLink="/">Volver al inicio</a>
+    <a
+      class="volver"
+      [routerLink]="rol === 'empleador' ? '/mis-sucursales' : '/'"
+      [queryParams]="rol === 'empleador' && sucursalId() ? { sucursalId: sucursalId() } : {}"
+    >
+      {{ rol === 'empleador' ? 'Volver a Mis sucursales' : 'Volver al inicio' }}
+    </a>
   </header>
 
   <section class="filtros" aria-label="Filtros de estadísticas">
-    @if (rol === 'empleador') {
-      <label>
-        Sucursal
-        <select [value]="sucursalId() ?? ''" (change)="cambiarSucursal($event)" [disabled]="primeraCargaSucursales()">
-          @for (sucursal of sucursales(); track sucursal.id) {
-            <option [value]="sucursal.id" [selected]="sucursal.id === sucursalId()">{{ sucursal.nombre }}</option>
-          }
-        </select>
-      </label>
-    }
     <label>
       Desde
       <input type="date" [value]="desde()" (change)="cambiarDesde($event)" />
@@ -56,6 +55,12 @@
     </section>
   } @else if (rol === 'empleador' && sucursales().length === 0) {
     <p class="estado" role="status">Todavía no hay sucursales para mostrar.</p>
+  } @else if (rol === 'empleador' && sucursalId() === null) {
+    <section class="estado" role="status">
+      <h2>Elegí una sucursal</h2>
+      <p>Para ver las estadísticas, abrí esta sección desde la sucursal correspondiente.</p>
+      <a class="volver" routerLink="/mis-sucursales">Volver a Mis sucursales</a>
+    </section>
   } @else {
     @if (error()) {
       <p class="aviso-error" role="alert">{{ error() }} <button type="button" (click)="cargar()" [disabled]="cargando()">Reintentar</button></p>
