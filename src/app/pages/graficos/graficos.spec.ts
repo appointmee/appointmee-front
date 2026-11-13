@@ -91,6 +91,7 @@ describe('Gráficos ECharts', () => {
     expect(opciones[1].series).toHaveLength(3);
     expect(fixture.nativeElement.querySelectorAll('table').length).toBeGreaterThanOrEqual(2);
     expect(fixture.nativeElement.querySelectorAll('[role="img"]').length).toBe(3);
+    expect(fixture.nativeElement.textContent).not.toMatch(/Gráfico [1-5]/);
   });
 
   it('renderiza gráficos de turnos, demanda y cancelaciones para el empleador', async () => {
@@ -104,6 +105,7 @@ describe('Gráficos ECharts', () => {
     expect((opciones[2].series as { name: string }[])[0].name).toBe('Tasa de cancelación');
     expect(fixture.nativeElement.textContent).toContain('Demanda por servicio');
     expect(fixture.nativeElement.textContent).toContain('Sucursal: Sucursal');
+    expect(fixture.nativeElement.textContent).not.toMatch(/Gráfico [1-5]/);
     expect(fixture.nativeElement.textContent).not.toContain('Ocupación: dato no disponible');
     expect(fixture.nativeElement.textContent).not.toContain('Ingresos y pagos: dato no disponible');
     expect(fixture.nativeElement.textContent).not.toContain('Ausencias: dato no disponible');

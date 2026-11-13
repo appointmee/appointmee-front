@@ -74,7 +74,7 @@
 
     @if (rol === 'administrador' && adminDatos(); as datos) {
       <section class="panel" aria-labelledby="turnos-titulo">
-        <div class="panel__cabecera"><div><p class="sobrelinea">Gráfico 1</p><h2 id="turnos-titulo">Turnos por período y estado</h2></div></div>
+        <div class="panel__cabecera"><div><h2 id="turnos-titulo">Turnos por período y estado</h2></div></div>
         @if (datos.turnosPorPeriodo.length === 0) {
           <p class="vacio" role="status">No hay turnos en el período seleccionado.</p>
         } @else {
@@ -84,7 +84,7 @@
       </section>
 
       <section class="panel" aria-labelledby="usuarios-titulo">
-        <div class="panel__cabecera"><div><p class="sobrelinea">Gráfico 2</p><h2 id="usuarios-titulo">Crecimiento de usuarios</h2><p>Altas en el rango y usuarios marcados activos actualmente.</p></div></div>
+        <div class="panel__cabecera"><div><h2 id="usuarios-titulo">Crecimiento de usuarios</h2><p>Altas en el rango y usuarios marcados activos actualmente.</p></div></div>
         <ul class="metricas" aria-label="Usuarios activos actualmente">@for (rolUsuario of roles; track rolUsuario) { <li><strong>{{ datos.usuarios.activosActualesPorRol[rolUsuario] ?? 0 }}</strong><span>{{ rolLabel(rolUsuario) }} activos</span></li> }</ul>
         @if (datos.usuarios.nuevosPorPeriodo.length === 0) {
           <p class="vacio" role="status">No hay altas de usuarios en el período seleccionado.</p>
@@ -95,7 +95,7 @@
       </section>
 
       <section class="panel" aria-labelledby="sucursales-titulo">
-        <div class="panel__cabecera"><div><p class="sobrelinea">Gráfico 3</p><h2 id="sucursales-titulo">Sucursales activas y nuevas</h2><p>Estado actual y altas según fecha de creación.</p></div></div>
+        <div class="panel__cabecera"><div><h2 id="sucursales-titulo">Sucursales activas y nuevas</h2><p>Estado actual y altas según fecha de creación.</p></div></div>
         <ul class="metricas" aria-label="Estado actual de las sucursales"><li><strong>{{ datos.sucursales.activasActualmente }}</strong><span>Activas actualmente</span></li><li><strong>{{ datos.sucursales.inactivasActualmente }}</strong><span>Inactivas actualmente</span></li></ul>
         @if (datos.sucursales.nuevasPorPeriodo.length === 0) {
           <p class="vacio" role="status">No hay nuevas sucursales en el período seleccionado.</p>
@@ -108,7 +108,7 @@
 
     @if (rol === 'empleador' && empleadorDatos(); as datos) {
       <section class="panel" aria-labelledby="turnos-titulo">
-        <div class="panel__cabecera"><div><p class="sobrelinea">Gráfico 1</p><h2 id="turnos-titulo">Turnos por período y estado</h2></div></div>
+        <div class="panel__cabecera"><div><h2 id="turnos-titulo">Turnos por período y estado</h2></div></div>
         @if (datos.turnosPorPeriodo.length === 0) { <p class="vacio" role="status">No hay turnos en el período seleccionado.</p> }
         @else {
           <div class="grafico-echarts" echarts [options]="turnosEmpleadorOption()" [autoResize]="true" role="img" aria-label="Turnos por período, desglosados por estado"></div>
@@ -116,12 +116,12 @@
         }
       </section>
       <section class="panel" aria-labelledby="demanda-titulo">
-        <div class="panel__cabecera"><div><p class="sobrelinea">Gráfico 4</p><h2 id="demanda-titulo">Demanda por servicio</h2></div></div>
+        <div class="panel__cabecera"><div><h2 id="demanda-titulo">Demanda por servicio</h2></div></div>
         @if (datos.demandaPorServicio.length === 0) { <p class="vacio" role="status">No hay demanda de servicios en el período seleccionado.</p> }
         @else { <div class="grafico-echarts grafico-echarts--horizontal" echarts [options]="demandaOption()" [autoResize]="true" role="img" aria-label="Turnos registrados por servicio"></div><div class="tabla-contenedor"><table><caption>Turnos por servicio</caption><thead><tr><th scope="col">Servicio</th><th scope="col">Turnos</th></tr></thead><tbody>@for (fila of datos.demandaPorServicio; track fila.servicioId) { <tr><th scope="row">{{ fila.servicio }}</th><td>{{ fila.cantidad }}</td></tr> }</tbody></table></div> }
       </section>
       <section class="panel" aria-labelledby="cancelaciones-titulo">
-        <div class="panel__cabecera"><div><p class="sobrelinea">Gráfico 5</p><h2 id="cancelaciones-titulo">Cancelaciones</h2><p>{{ datos.cancelaciones.cantidad }} cancelaciones · {{ datos.cancelaciones.tasa }}% de turnos realizados o cancelados</p></div></div>
+        <div class="panel__cabecera"><div><h2 id="cancelaciones-titulo">Cancelaciones</h2><p>{{ datos.cancelaciones.cantidad }} cancelaciones · {{ datos.cancelaciones.tasa }}% de turnos realizados o cancelados</p></div></div>
         @if (datos.cancelaciones.porPeriodo.length === 0) { <p class="vacio" role="status">No hay turnos concluidos en el período para calcular la tasa.</p> }
         @else { <div class="grafico-echarts" echarts [options]="cancelacionesOption()" [autoResize]="true" role="img" aria-label="Tasa de cancelación por período"></div><div class="tabla-contenedor"><table><caption>Cancelaciones y tasa por período</caption><thead><tr><th scope="col">Período</th><th scope="col">Cancelados</th><th scope="col">Concluidos</th><th scope="col">Tasa</th></tr></thead><tbody>@for (fila of datos.cancelaciones.porPeriodo; track fila.periodo) { <tr><th scope="row">{{ fila.periodo }}</th><td>{{ fila.cancelados }}</td><td>{{ fila.turnosConcluidos }}</td><td>{{ fila.tasa }}%</td></tr> }</tbody></table></div> }
       </section>
