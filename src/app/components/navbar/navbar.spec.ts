@@ -40,6 +40,9 @@ describe('Buscador del navbar', () => {
     expect(fixture.nativeElement.querySelector('.profile__name').textContent).toContain('Ana Pérez');
     const photo = fixture.nativeElement.querySelector('.profile__avatar img') as HTMLImageElement;
     expect(photo.src).toContain('avatar.jpg');
+    expect(getComputedStyle(photo).objectFit).toBe('cover');
+    expect(getComputedStyle(photo).aspectRatio).toBe('1 / 1');
+    expect(getComputedStyle(photo.parentElement!).overflow).toBe('hidden');
     photo.dispatchEvent(new Event('error'));
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.profile__avatar img')).toBeNull();
