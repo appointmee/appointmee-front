@@ -132,6 +132,63 @@ describe('Acceso a Mis Turnos', () => {
   });
 });
 
+describe('Acceso a Solicitudes en el menú de cuenta', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  async function renderizar(roles: readonly string[]) {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([
+          { path: 'sucursales', component: EmptyPage },
+          { path: 'perfil', component: EmptyPage },
+          { path: 'configuracion', component: EmptyPage },
+        ]),
+        usuariosMock,
+        {
+          provide: authService,
+          useValue: {
+            autenticado: signal(true),
+            visitante: signal(false),
+            restaurando: signal(false),
+            perfil: signal(null),
+            iniciales: signal('AM'),
+            tieneAlgunRol: (...solicitados: string[]) =>
+              solicitados.some((rol) => roles.includes(rol)),
+          },
+        },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/sucursales');
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('oculta Solicitudes del menú de cuenta a administradores', async () => {
+    const fixture = await renderizar(['ADMINISTRADOR']);
+    fixture.nativeElement.querySelector('.profile__trigger')?.click();
+    fixture.detectChanges();
+
+    const menu = fixture.nativeElement.querySelector('.menu');
+    expect(menu).not.toBeNull();
+    expect(menu?.querySelector('a[href="/solicitudes"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/perfil"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/configuracion"]')).not.toBeNull();
+  });
+
+  it('mantiene Solicitudes en el menú de cuenta para clientes y empleados', async () => {
+    const fixture = await renderizar(['CLIENTE', 'EMPLEADOR']);
+    fixture.nativeElement.querySelector('.profile__trigger')?.click();
+    fixture.detectChanges();
+
+    const menu = fixture.nativeElement.querySelector('.menu');
+    expect(menu).not.toBeNull();
+    expect(menu?.querySelector('a[href="/solicitudes"]')).not.toBeNull();
+  });
+});
+
 describe('Navbar en la vista de error', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
