@@ -70,14 +70,96 @@
       </header>
       <div class="campos-grid">
         <div class="campo">
-          <ds-input label="Hora de apertura" [error]="errorDe('horaApertura', formulario.horaApertura()) ?? ''">
-            <input [id]="id('horaApertura')" type="time" [formField]="formulario.horaApertura" />
-          </ds-input>
+          <div class="hora-campo">
+            <span class="hora-campo__etiqueta">Hora de apertura</span>
+            <button dsButton class="hora-trigger" type="button" [id]="id('horaApertura-selector-trigger')"
+              aria-label="Elegir hora de apertura" aria-haspopup="dialog"
+              [attr.aria-expanded]="selectorHora() === 'horaApertura'"
+              [attr.aria-controls]="selectorHora() === 'horaApertura' ? id('horaApertura-selector') : null"
+              (click)="abrirSelectorHora('horaApertura')">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+              </svg>
+              <span>{{ model().horaApertura || 'Elegir hora' }}</span>
+              <span class="hora-trigger__accion">Seleccionar</span>
+            </button>
+            @if (selectorHora() === 'horaApertura') {
+              <div class="hora-selector" [id]="id('horaApertura-selector')" role="dialog"
+                [attr.aria-labelledby]="id('horaApertura-selector-titulo')"
+                (keydown.escape)="cerrarSelectorHora()">
+                <h3 [id]="id('horaApertura-selector-titulo')">Elegí la hora de apertura</h3>
+                <div class="hora-selector__campos">
+                  <label [attr.for]="id('horaApertura-selector-hora')">Hora
+                    <select [id]="id('horaApertura-selector-hora')" [value]="horaTemporalParte('hora')"
+                      (change)="actualizarHoraTemporal('hora', $event)">
+                      @for (hora of horasDisponibles; track hora) { <option [value]="hora">{{ hora }}</option> }
+                    </select>
+                  </label>
+                  <span class="hora-selector__separador" aria-hidden="true">:</span>
+                  <label [attr.for]="id('horaApertura-selector-minuto')">Minutos
+                    <select [id]="id('horaApertura-selector-minuto')" [value]="horaTemporalParte('minuto')"
+                      (change)="actualizarHoraTemporal('minuto', $event)">
+                      @for (minuto of minutosDisponibles; track minuto) { <option [value]="minuto">{{ minuto }}</option> }
+                    </select>
+                  </label>
+                </div>
+                <div class="hora-selector__acciones">
+                  <button dsButton type="button" (click)="cerrarSelectorHora()">Cancelar</button>
+                  <button dsButton variant="primary" type="button" (click)="confirmarHora()">Aplicar hora</button>
+                </div>
+              </div>
+            }
+          </div>
+          @if (errorDe('horaApertura', formulario.horaApertura()); as error) {
+            <p class="error" role="alert">{{ error }}</p>
+          }
         </div>
         <div class="campo">
-          <ds-input label="Hora de cierre" [error]="errorDe('horaCierre', formulario.horaCierre()) ?? ''">
-            <input [id]="id('horaCierre')" type="time" [formField]="formulario.horaCierre" />
-          </ds-input>
+          <div class="hora-campo">
+            <span class="hora-campo__etiqueta">Hora de cierre</span>
+            <button dsButton class="hora-trigger" type="button" [id]="id('horaCierre-selector-trigger')"
+              aria-label="Elegir hora de cierre" aria-haspopup="dialog"
+              [attr.aria-expanded]="selectorHora() === 'horaCierre'"
+              [attr.aria-controls]="selectorHora() === 'horaCierre' ? id('horaCierre-selector') : null"
+              (click)="abrirSelectorHora('horaCierre')">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+              </svg>
+              <span>{{ model().horaCierre || 'Elegir hora' }}</span>
+              <span class="hora-trigger__accion">Seleccionar</span>
+            </button>
+            @if (selectorHora() === 'horaCierre') {
+              <div class="hora-selector" [id]="id('horaCierre-selector')" role="dialog"
+                [attr.aria-labelledby]="id('horaCierre-selector-titulo')"
+                (keydown.escape)="cerrarSelectorHora()">
+                <h3 [id]="id('horaCierre-selector-titulo')">Elegí la hora de cierre</h3>
+                <div class="hora-selector__campos">
+                  <label [attr.for]="id('horaCierre-selector-hora')">Hora
+                    <select [id]="id('horaCierre-selector-hora')" [value]="horaTemporalParte('hora')"
+                      (change)="actualizarHoraTemporal('hora', $event)">
+                      @for (hora of horasDisponibles; track hora) { <option [value]="hora">{{ hora }}</option> }
+                    </select>
+                  </label>
+                  <span class="hora-selector__separador" aria-hidden="true">:</span>
+                  <label [attr.for]="id('horaCierre-selector-minuto')">Minutos
+                    <select [id]="id('horaCierre-selector-minuto')" [value]="horaTemporalParte('minuto')"
+                      (change)="actualizarHoraTemporal('minuto', $event)">
+                      @for (minuto of minutosDisponibles; track minuto) { <option [value]="minuto">{{ minuto }}</option> }
+                    </select>
+                  </label>
+                </div>
+                <div class="hora-selector__acciones">
+                  <button dsButton type="button" (click)="cerrarSelectorHora()">Cancelar</button>
+                  <button dsButton variant="primary" type="button" (click)="confirmarHora()">Aplicar hora</button>
+                </div>
+              </div>
+            }
+          </div>
+          @if (errorDe('horaCierre', formulario.horaCierre()); as error) {
+            <p class="error" role="alert">{{ error }}</p>
+          }
           @if (formulario.horaApertura().touched() && formulario.horaCierre().touched() && horariosInvalidos()) {
             <p class="error" role="alert">La hora de cierre debe ser posterior a la de apertura.</p>
           }

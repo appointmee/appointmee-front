@@ -57,6 +57,70 @@
 .campo :is(input:not([type="checkbox"]), select, textarea) { width: 100%; min-width: 0; }
 .campo textarea { min-height: 7rem; resize: vertical; }
 
+.hora-campo {
+  position: relative;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.hora-campo__etiqueta {
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+}
+
+.hora-trigger {
+  display: flex;
+  width: 100%;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-3);
+  border-color: var(--line);
+  background: var(--surface);
+  text-align: left;
+}
+
+.hora-trigger:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+.hora-trigger svg { width: 1.25rem; height: 1.25rem; color: var(--accent); flex: 0 0 auto; }
+.hora-trigger__accion { margin-left: auto; color: var(--muted); font-size: var(--font-size-xs); }
+
+.hora-selector {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  display: grid;
+  gap: var(--space-4);
+  width: min(100%, 26rem);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.hora-selector h3 { margin: 0; color: var(--text); font-size: var(--font-size-md); }
+.hora-selector__campos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: var(--space-2);
+}
+.hora-selector__campos label { display: grid; gap: var(--space-1); color: var(--muted); font-size: var(--font-size-sm); }
+.hora-selector__campos select {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--page-bg);
+  color: var(--text);
+  font: inherit;
+}
+.hora-selector__separador { padding-bottom: var(--space-3); color: var(--muted); font-weight: 700; }
+.hora-selector__acciones { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--space-2); }
+
 /* Error general del formulario (banner inline, sin salir de la pantalla). */
 .error-general {
   margin-bottom: var(--space-3, 0.75rem);
@@ -214,6 +278,8 @@
 
 @media (max-width: 560px) {
   .seccion { padding: var(--space-4); }
+  .hora-selector { width: min(100%, 22rem); }
+  .hora-selector__acciones > button { flex: 1 1 auto; }
   .acciones { align-items: stretch; }
   .acciones button[type="submit"] { width: 100%; }
 }

@@ -55,6 +55,33 @@ describe('Crear sucursal', () => {
     expect(api.crear).not.toHaveBeenCalled();
   });
 
+  it('abre el selector visual de hora y aplica hora y minutos elegidos', async () => {
+    const root = fixture.nativeElement as HTMLElement;
+    const abrir = root.querySelector('#sucursal-crear-horaApertura-selector-trigger') as HTMLButtonElement;
+    abrir.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const selector = root.querySelector('#sucursal-crear-horaApertura-selector') as HTMLElement;
+    const [hora, minuto] = Array.from(selector.querySelectorAll('select')) as HTMLSelectElement[];
+    expect(selector.getAttribute('role')).toBe('dialog');
+    expect(hora.options).toHaveLength(24);
+    expect(minuto.options).toHaveLength(60);
+
+    hora.value = '10';
+    hora.dispatchEvent(new Event('change'));
+    minuto.value = '30';
+    minuto.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    Array.from(selector.querySelectorAll('button'))
+      .find((button) => button.textContent?.includes('Aplicar hora'))!.click();
+    fixture.detectChanges();
+
+    expect(page.model().horaApertura).toBe('10:30');
+    expect(root.querySelector('#sucursal-crear-horaApertura-selector')).toBeNull();
+    expect(abrir.textContent).toContain('10:30');
+  });
+
   it('envía los datos y navega al éxito', async () => {
     api.crear.mockReturnValue(of({ id: 1, nombre: 'Nueva' } as any));
     page.model.set({

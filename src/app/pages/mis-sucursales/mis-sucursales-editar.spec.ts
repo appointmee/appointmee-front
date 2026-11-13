@@ -325,11 +325,15 @@ describe('SCRUM-265 · Ver y modificar los datos de la sucursal', () => {
         formulario.querySelector<HTMLTextAreaElement>('#sucursal-editar-descripcion')!.value,
       ).toBe('Peluquería/barbería con servicios de corte y color.');
       expect(
-        formulario.querySelector<HTMLInputElement>('#sucursal-editar-horaApertura')!.value,
-      ).toBe('10:00');
-      expect(formulario.querySelector<HTMLInputElement>('#sucursal-editar-horaCierre')!.value).toBe(
-        '18:00',
-      );
+        formulario.querySelector<HTMLButtonElement>(
+          '#sucursal-editar-horaApertura-selector-trigger',
+        )?.textContent,
+      ).toContain('10:00');
+      expect(
+        formulario.querySelector<HTMLButtonElement>(
+          '#sucursal-editar-horaCierre-selector-trigger',
+        )?.textContent,
+      ).toContain('18:00');
       expect(
         formulario.querySelector<HTMLSelectElement>('#sucursal-editar-categoria')!.value,
       ).toBe('BARBERIA');
