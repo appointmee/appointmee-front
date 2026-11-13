@@ -148,6 +148,21 @@ describe('SCRUM-261 · Crear servicios de la sucursal', () => {
     expect(router.url).toBe('/mis-sucursales?sucursalId=7');
   });
 
+  it('presenta crear servicio en un modal con secciones claras y campos agrupados', async () => {
+    await abrir();
+    expect(texto(host().querySelector('.servicios__acciones button')!)).toBe('Crear servicio');
+    abrirModal();
+
+    const modal = host().querySelector<HTMLElement>('.ds-modal')!;
+    const formulario = modal.querySelector<HTMLFormElement>('form.formulario-crear-servicio')!;
+    expect(modal.style.maxWidth).toBe('720px');
+    expect(texto(modal.querySelector('#crear-servicio-titulo')!)).toBe('Crear servicio');
+    expect(texto(formulario.querySelector('#crear-servicio-detalles')!)).toBe('Detalles del servicio');
+    expect(texto(formulario.querySelector('#crear-servicio-foto-titulo')!)).toBe('Imagen del servicio');
+    expect(formulario.querySelectorAll('.crear-servicio__campo')).toHaveLength(4);
+    expect(formulario.querySelector('#servicio-foto-ayuda')).not.toBeNull();
+  });
+
   describe('mensajes de error debajo de cada campo', () => {
     it('muestra un mensaje claro debajo del campo cuando se envía el formulario vacío', async () => {
       await abrir();

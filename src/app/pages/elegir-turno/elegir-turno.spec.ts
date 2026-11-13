@@ -1,4 +1,5 @@
 import { Component, signal } from '@angular/core';
+import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import {
@@ -398,7 +399,7 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
     await seleccionarDia('2030-12-20');
     await seleccionarHora('10:00:00');
 
-    expect(router.parseUrl(router.url).queryParams).toEqual({
+    expect(router.parseUrl(TestBed.inject(Location).path()).queryParams).toEqual({
       empleadoId: '9',
       fecha: '2030-12-20',
       hora: '10:00:00',
@@ -868,7 +869,7 @@ describe('US-TURN-08 · Ver disponibilidad y elegir horario', () => {
 
     expect(texto()).toContain('Tu cuenta no tiene permiso para reservar');
     expect(host().querySelector<HTMLAnchorElement>('.aviso__salida')?.getAttribute('href')).toBe('/');
-    expect(router.url).toContain('/turnos?');
+    expect(TestBed.inject(Location).path()).toContain('/turnos?');
     expect(host().querySelector('app-login-modal')).toBeNull();
   });
 
