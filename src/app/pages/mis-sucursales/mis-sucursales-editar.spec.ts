@@ -226,6 +226,7 @@ describe('SCRUM-265 · Ver y modificar los datos de la sucursal', () => {
       expect(texto(detalle)).toContain('15/01/2024');
       expect(texto(detalle)).toContain('Barberia');
       expect(texto(detalle)).toContain('10:00 - 02:00');
+      expect(texto(detalle)).toContain('Peluquería/barbería con servicios de corte y color.');
     });
 
     it('no inventa el teléfono cuando la sucursal no tiene uno', async () => {
@@ -234,7 +235,7 @@ describe('SCRUM-265 · Ver y modificar los datos de la sucursal', () => {
 
       const detalle = host().querySelector<HTMLElement>('.detalle')!;
       expect(texto(detalle)).not.toContain('Teléfono');
-      expect(detalle.querySelectorAll('.dato').length).toBe(7);
+      expect(detalle.querySelectorAll('.dato').length).toBe(8);
     });
 
     it('resalta en amarillo los días que abre y apaga los que no', async () => {

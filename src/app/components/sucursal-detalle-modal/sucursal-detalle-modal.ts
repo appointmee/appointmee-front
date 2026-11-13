@@ -77,12 +77,16 @@ export class SucursalDetalleModal {
 
   /** Identificador de la sucursal a mostrar. `null` mantiene el recuadro cerrado. */
   readonly sucursalId = input<number | null>(null);
+  /** En administración solo se permite consultar y dar de baja la sucursal. */
+  readonly modo = input<'empleador' | 'administrador'>('empleador');
   /** Se emite cuando el usuario pide cerrar el recuadro. */
   readonly cerrar = output<void>();
   /** Se emite cuando la sucursal fue modificada y hay que refrescar los datos. */
   readonly modificado = output<void>();
   /** Se emite cuando la sucursal fue eliminada y hay que refrescar el listado. */
   readonly eliminado = output<void>();
+  /** Se emite con el ID de la sucursal cuando el administrador la dio de baja. */
+  readonly eliminada = output<number>();
 
   protected readonly sucursal = signal<SucursalDetalleDTO | null>(null);
   protected readonly cargando = signal(false);
@@ -93,7 +97,6 @@ export class SucursalDetalleModal {
   protected readonly editando = signal(false);
   /** Indica que las confirmaciones de eliminación están abiertas por encima. */
   protected readonly confirmandoEliminacion = signal(false);
-
   /**
    * Solo el empleador puede eliminar su sucursal: es el rol que autoriza el
    * endpoint `DELETE /sucursales/borrar-sucursal-propia/{sucursalId}`. El
@@ -101,6 +104,8 @@ export class SucursalDetalleModal {
    * así que esto solo evita mostrar una acción que el servidor va a rechazar.
    */
   protected readonly puedeEliminar = computed(() => this.auth.tieneAlgunRol('EMPLEADOR'));
+  protected readonly eliminando = signal(false);
+  protected readonly errorEliminacion = signal<string | null>(null);
 
   protected readonly dias = DIAS_SUCURSAL;
   protected readonly abreviaturas = ABREVIATURAS_DIAS;
@@ -162,6 +167,8 @@ export class SucursalDetalleModal {
           this.exito.set(null);
           this.editando.set(false);
           this.confirmandoEliminacion.set(false);
+          this.eliminando.set(false);
+          this.errorEliminacion.set(null);
           return this.recargar$.pipe(startWith(undefined), map(() => id));
         }),
         switchMap((id) => this.cargarDetalle(id)),
@@ -215,8 +222,45 @@ export class SucursalDetalleModal {
    * no se cierra.
    */
   protected solicitarCierre(): void {
-    if (this.editando() || this.confirmandoEliminacion()) return;
+    if (this.editando() || this.confirmandoEliminacion() || this.eliminando()) return;
+    this.confirmandoEliminacion.set(false);
+    this.errorEliminacion.set(null);
     this.cerrar.emit();
+  }
+
+  protected solicitarEliminacion(): void {
+    if (this.modo() !== 'administrador' || !this.sucursal() || this.eliminando()) return;
+    this.errorEliminacion.set(null);
+    this.confirmandoEliminacion.set(true);
+  }
+
+  protected cancelarEliminacion(): void {
+    if (this.eliminando()) return;
+    this.confirmandoEliminacion.set(false);
+    this.errorEliminacion.set(null);
+  }
+
+  protected confirmarEliminacion(): void {
+    const id = this.sucursal()?.id;
+    if (this.modo() !== 'administrador' || id === undefined || this.eliminando()) return;
+
+    this.eliminando.set(true);
+    this.errorEliminacion.set(null);
+    this.api
+      .eliminarComoAdministrador(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.eliminando.set(false);
+          this.confirmandoEliminacion.set(false);
+          this.eliminada.emit(id);
+          this.cerrar.emit();
+        },
+        error: (error: HttpErrorResponse) => {
+          this.eliminando.set(false);
+          this.errorEliminacion.set(this.mensajeErrorEliminacion(error));
+        },
+      });
   }
 
   /** Abre el formulario de modificación por encima del detalle. */
@@ -323,5 +367,14 @@ export class SucursalDetalleModal {
       return 'No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.';
     }
     return 'No pudimos cargar los datos de la sucursal. Intentá de nuevo en unos segundos.';
+  }
+
+  private mensajeErrorEliminacion(error: HttpErrorResponse): string {
+    if (error.status === 0) return 'No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.';
+    if (error.status === 401) return 'Tu sesión expiró. Volvé a iniciar sesión para eliminar la sucursal.';
+    if (error.status === 403) return 'No tenés permisos para eliminar esta sucursal.';
+    if (error.status === 404) return 'No encontramos la sucursal que querés eliminar.';
+    if (error.status >= 500) return 'Tuvimos un problema al eliminar la sucursal. Probá de nuevo en unos segundos.';
+    return 'No pudimos eliminar la sucursal. Intentá de nuevo en unos segundos.';
   }
 }

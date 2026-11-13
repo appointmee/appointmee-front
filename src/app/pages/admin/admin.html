@@ -4,10 +4,9 @@
       <span class="eyebrow">
         Panel interno
       </span>
-      <h1 id="admin-titulo">Solicitudes de empleador</h1>
+      <h1 id="admin-titulo">Administración</h1>
       <p>
-        Revisá los pedidos recibidos, consultá el detalle y aprobá o rechazá las solicitudes
-        pendientes.
+        Consultá las sucursales activas de la plataforma y revisá las solicitudes de nuevos empleadores.
       </p>
     </header>
 
@@ -20,7 +19,77 @@
       </div>
     }
 
-    <section class="panel" aria-labelledby="admin-lista-titulo">
+    <nav class="admin__secciones" aria-label="Secciones de administración">
+      <button
+        class="admin__seccion"
+        [class.admin__seccion--activa]="seccionActiva() === 'usuarios'"
+        type="button"
+        [attr.aria-pressed]="seccionActiva() === 'usuarios'"
+        aria-controls="admin-usuarios-panel"
+        (click)="seleccionarSeccion('usuarios')"
+      >
+        <span class="admin__seccion-texto">
+          <span class="admin__seccion-titulo">Usuarios</span>
+          <span class="admin__seccion-descripcion">Listar, filtrar y gestionar cuentas</span>
+        </span>
+        <svg class="admin__seccion-icono" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7-7a4 4 0 0 1 0 8m2 3a4 4 0 0 1 4 4v2" />
+        </svg>
+      </button>
+
+      <button
+        class="admin__seccion"
+        [class.admin__seccion--activa]="seccionActiva() === 'sucursales'"
+        type="button"
+        [attr.aria-pressed]="seccionActiva() === 'sucursales'"
+        aria-controls="sucursales-admin-panel"
+        (click)="seleccionarSeccion('sucursales')"
+      >
+        <span class="admin__seccion-texto">
+          <span class="admin__seccion-titulo">Sucursales activas</span>
+          <span class="admin__seccion-descripcion">Consultar y localizar sucursales</span>
+        </span>
+        <svg class="admin__seccion-icono" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
+        </svg>
+      </button>
+
+      <button
+        class="admin__seccion"
+        [class.admin__seccion--activa]="seccionActiva() === 'solicitudes'"
+        type="button"
+        [attr.aria-pressed]="seccionActiva() === 'solicitudes'"
+        aria-controls="admin-solicitudes-panel"
+        (click)="seleccionarSeccion('solicitudes')"
+      >
+        <span class="admin__seccion-texto">
+          <span class="admin__seccion-titulo">Solicitudes recibidas</span>
+          <span class="admin__seccion-descripcion">Revisar solicitudes de empleador</span>
+        </span>
+        <svg class="admin__seccion-icono" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5" />
+        </svg>
+      </button>
+
+      <button
+        class="admin__seccion"
+        [class.admin__seccion--activa]="seccionActiva() === 'estadisticas'"
+        type="button"
+        [attr.aria-pressed]="seccionActiva() === 'estadisticas'"
+        aria-controls="admin-estadisticas-panel"
+        (click)="seleccionarSeccion('estadisticas')"
+      >
+        <span class="admin__seccion-texto">
+          <span class="admin__seccion-titulo">Estadísticas</span>
+          <span class="admin__seccion-descripcion">Consultar todas las métricas de AppointMee</span>
+        </span>
+        <svg class="admin__seccion-icono" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 19V5m0 14h16M8 15l3-4 3 2 5-7" />
+        </svg>
+      </button>
+    </nav>
+
+    <section id="admin-solicitudes-panel" class="panel" aria-labelledby="admin-lista-titulo" [hidden]="seccionActiva() !== 'solicitudes'">
       <header class="panel__cabecera">
         <div>
           <span class="panel__eyebrow">Pendientes de revisión</span>
@@ -127,5 +196,213 @@
         }
       }
     </section>
+
+    <section id="sucursales-admin-panel" class="panel" aria-labelledby="sucursales-admin-titulo" [hidden]="seccionActiva() !== 'sucursales'">
+      <header class="panel__cabecera">
+        <div>
+          <span class="panel__eyebrow">Gestión global</span>
+          <h2 id="sucursales-admin-titulo">Sucursales activas</h2>
+        </div>
+        <span class="panel__contador">{{ sucursales().length }} activas</span>
+      </header>
+
+      <p class="panel__ayuda">El listado disponible incluye solo sucursales activas. Localizalas por nombre, categoría o número.</p>
+      <div class="sucursales-admin__busqueda">
+        <ds-input label="Buscar sucursales" placeholder="Nombre, categoría o número">
+          <input
+            class="ds-input"
+            type="search"
+            [value]="busquedaSucursal()"
+            (input)="buscarSucursales($any($event.target).value)"
+            aria-controls="admin-sucursales-lista"
+          />
+        </ds-input>
+      </div>
+
+      @if (sucursalesCargando()) {
+        <div class="lista" aria-busy="true" aria-live="polite">
+          <span class="sr-only">Cargando sucursales…</span>
+          @for (item of [1, 2, 3]; track item) {
+            <div class="solicitud-skeleton" aria-hidden="true">
+              <span class="skeleton skeleton--avatar"></span>
+              <span class="skeleton skeleton--line"></span>
+              <span class="skeleton skeleton--line skeleton--short"></span>
+            </div>
+          }
+        </div>
+      } @else if (sucursalesError() && sucursales().length === 0) {
+        <div class="estado estado--error" role="alert">
+          <h3>No pudimos cargar las sucursales</h3>
+          <p>Ocurrió un problema al consultar el listado. Probá nuevamente.</p>
+          <button dsButton type="button" [disabled]="sucursalesReintentando()" [attr.aria-busy]="sucursalesReintentando()" (click)="reintentarSucursales()">
+            {{ sucursalesReintentando() ? 'Reintentando…' : 'Reintentar' }}
+          </button>
+        </div>
+      } @else if (sucursalesFiltradas().length === 0) {
+        <div class="estado estado--vacio" role="status">
+          <h3>{{ sucursales().length === 0 ? 'Todavía no hay sucursales activas' : 'No encontramos sucursales' }}</h3>
+          <p>{{ sucursales().length === 0 ? 'Las sucursales activas aparecerán en este panel.' : 'Probá con otro nombre, categoría o número.' }}</p>
+        </div>
+      } @else {
+        @if (sucursalesError()) {
+          <div class="aviso aviso--error" role="alert">
+            <p>No pudimos actualizar el listado. Se muestran los últimos datos cargados.</p>
+            <button dsButton type="button" [disabled]="sucursalesReintentando()" [attr.aria-busy]="sucursalesReintentando()" (click)="reintentarSucursales()">Reintentar</button>
+          </div>
+        }
+        <ul id="admin-sucursales-lista" class="lista sucursales-admin" aria-live="polite">
+          @for (sucursal of sucursalesFiltradas(); track sucursal.id) {
+            <li class="sucursal-admin">
+              <div>
+                <h3>{{ sucursal.nombre }}</h3>
+                <p>{{ sucursal.categoria }} · #{{ sucursal.id }}</p>
+              </div>
+              <button
+                dsButton
+                type="button"
+                [attr.aria-label]="'Ver detalle de sucursal ' + sucursal.nombre"
+                (clicked)="verDetalleSucursal(sucursal.id)"
+              >
+                Ver detalle
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section id="admin-estadisticas-panel" class="panel panel--estadisticas" aria-label="Estadísticas de administración" [hidden]="seccionActiva() !== 'estadisticas'">
+      @if (seccionActiva() === 'estadisticas') {
+        <app-graficos [incrustado]="true" />
+      }
+    </section>
+
+    <section id="admin-usuarios-panel" class="panel" aria-labelledby="admin-usuarios-titulo" [hidden]="seccionActiva() !== 'usuarios'">
+      <header class="panel__cabecera">
+        <div>
+          <span class="panel__eyebrow">Gestión de cuentas</span>
+          <h2 id="admin-usuarios-titulo">Usuarios</h2>
+        </div>
+      </header>
+
+      @if (usuarioActualizado()) {
+        <p class="aviso aviso--exito" role="status" aria-live="polite">{{ usuarioActualizado() }}</p>
+      }
+
+      <div class="usuarios-filtros">
+        <label class="usuarios-filtros__estado">
+          Estado de cuenta
+          <select aria-label="Filtrar usuarios por estado de cuenta" [value]="filtroEstadoUsuario()" (change)="cambiarFiltroUsuario($any($event.target).value)">
+            <option value="todos">Todos</option>
+            <option value="activos">Activos</option>
+            <option value="inactivos">Inactivos</option>
+          </select>
+        </label>
+      </div>
+
+      @if (usuariosCargando()) {
+        <div class="lista" aria-busy="true" aria-live="polite">
+          <span class="sr-only">Cargando usuarios…</span>
+          @for (item of [1, 2, 3]; track item) {
+            <div class="solicitud-skeleton" aria-hidden="true"><span class="skeleton skeleton--avatar"></span><span class="skeleton skeleton--line"></span><span class="skeleton skeleton--line skeleton--short"></span></div>
+          }
+        </div>
+      } @else if (usuariosError() && usuarios().length === 0) {
+        <div class="estado estado--error" role="alert">
+          <h3>No pudimos cargar los usuarios</h3>
+          <p>Ocurrió un problema al consultar el listado. Probá nuevamente.</p>
+          <button dsButton type="button" [disabled]="usuariosReintentando()" [attr.aria-busy]="usuariosReintentando()" (clicked)="reintentarUsuarios()">{{ usuariosReintentando() ? 'Reintentando…' : 'Reintentar' }}</button>
+        </div>
+      } @else if (usuarios().length === 0) {
+        <div class="estado estado--vacio" role="status">
+          <h3>No encontramos usuarios</h3>
+          <p>Revisá el filtro de estado o probá con otra opción.</p>
+        </div>
+      } @else {
+        @if (usuariosError()) {
+          <div class="aviso aviso--error" role="alert"><p>No se pudo actualizar la lista. Se muestran los últimos resultados.</p><button dsButton type="button" [disabled]="usuariosReintentando()" (clicked)="reintentarUsuarios()">Reintentar</button></div>
+        }
+        <ul class="lista usuarios-admin" aria-label="Resultados de usuarios" aria-live="polite">
+          @for (usuario of usuarios(); track usuario.id) {
+            <li class="usuario-admin">
+              <span class="usuario-admin__foto" aria-hidden="true">
+                @if (usuario.fotoPerfil && !fotosUsuariosFallidas().has(usuario.id)) {
+                  <img
+                    [src]="usuario.fotoPerfil"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    (error)="marcarFotoUsuarioFallida(usuario.id)"
+                  />
+                } @else {
+                  <span>{{ inicialesUsuario(usuario) }}</span>
+                }
+              </span>
+              <div class="usuario-admin__datos">
+                <h3>{{ usuario.nombre }} {{ usuario.apellido }}</h3>
+                <p>Usuario #{{ usuario.id }} · <span [class.usuario-admin__estado--inactivo]="!usuario.estado">{{ usuario.estado ? 'Activo' : 'Inactivo' }}</span></p>
+              </div>
+              <div class="usuario-admin__acciones">
+                <button dsButton type="button" [attr.aria-label]="'Ver detalle de ' + usuario.nombre + ' ' + usuario.apellido" (clicked)="verDetalleUsuario(usuario.id)">Ver detalle</button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
   </div>
+  <app-sucursal-detalle-modal
+    modo="administrador"
+    [sucursalId]="sucursalDetalleId()"
+    (cerrar)="cerrarDetalleSucursal()"
+    (eliminada)="quitarSucursalEliminada($event)"
+  />
+  <ds-modal [open]="usuarioDetalleId() !== null" (close)="cerrarDetalleUsuario()" ariaLabelledby="usuario-detalle-titulo" maxWidth="640px">
+    <header class="usuario-modal__cabecera">
+      <h2 id="usuario-detalle-titulo">Detalle del usuario</h2>
+      <button dsButton type="button" aria-label="Cerrar detalle del usuario" (clicked)="cerrarDetalleUsuario()">Cerrar</button>
+    </header>
+    @if (detalleUsuarioCargando()) {
+      <p role="status" aria-live="polite">Cargando el detalle del usuario…</p>
+    } @else if (detalleUsuarioError()) {
+      <div class="estado estado--error" role="alert"><p>{{ detalleUsuarioError() }}</p><button dsButton type="button" (clicked)="reintentarDetalleUsuario()">Reintentar</button></div>
+    } @else if (usuarioDetalle(); as detalle) {
+      <dl class="usuario-modal__datos">
+        <div><dt>Nombre</dt><dd>{{ detalle.nombre }} {{ detalle.apellido }}</dd></div>
+        <div><dt>Email</dt><dd>{{ detalle.email }}</dd></div>
+        <div><dt>ID</dt><dd>{{ detalle.id }}</dd></div>
+        <div><dt>Fecha de creación</dt><dd>{{ detalle.fechaCreacion || 'No disponible' }}</dd></div>
+        <div><dt>Roles</dt><dd>{{ detalle.roles.join(', ') || 'Sin roles' }}</dd></div>
+        <div class="usuario-modal__sucursales"><dt>Sucursales como empleado</dt><dd>{{ sucursalesDelUsuario(detalle) }}</dd></div>
+      </dl>
+      @if (usuarioDetalleEstado() === false) {
+        <div class="usuario-modal__reactivacion">
+          <p>Esta cuenta está inactiva.</p>
+          @if (errorActivarUsuario()) { <p class="usuario-modal__error" role="alert">{{ errorActivarUsuario() }}</p> }
+          <button dsButton type="button" [disabled]="activandoUsuario()" [attr.aria-busy]="activandoUsuario()" (clicked)="activarUsuario(detalle.id)">
+            {{ activandoUsuario() ? 'Activando…' : 'Activar usuario' }}
+          </button>
+        </div>
+      } @else if (usuarioDetalleEstado() === true) {
+        <p class="usuario-modal__estado-activo" role="status" aria-live="polite">Esta cuenta está activa.</p>
+      }
+      @if (usuarioDetalleEstado() === true) {
+        <footer class="usuario-modal__acciones">
+          <button dsButton variant="danger" type="button" (clicked)="solicitarEliminarUsuario({ id: detalle.id, nombre: detalle.nombre, apellido: detalle.apellido, estado: true, fotoPerfil: detalle.fotoPerfil })">Eliminar usuario</button>
+        </footer>
+      }
+    }
+  </ds-modal>
+
+  <ds-modal [open]="usuarioAEliminar() !== null" (close)="cancelarEliminarUsuario()" ariaLabelledby="confirmar-eliminar-usuario-titulo" maxWidth="480px">
+    <h2 id="confirmar-eliminar-usuario-titulo">Confirmar eliminación</h2>
+    @if (usuarioAEliminar(); as usuario) {
+      <p>¿Estás seguro de que querés eliminar al usuario <strong>{{ usuario.nombre }} {{ usuario.apellido }}</strong>? Se desactivará su cuenta y se revocarán sus sesiones.</p>
+      @if (errorEliminarUsuario()) { <p class="usuario-modal__error" role="alert">{{ errorEliminarUsuario() }}</p> }
+      <div class="usuario-modal__acciones">
+        <button dsButton type="button" [disabled]="eliminandoUsuario()" (clicked)="cancelarEliminarUsuario()">Cancelar</button>
+        <button dsButton variant="danger" type="button" [loading]="eliminandoUsuario()" (clicked)="confirmarEliminarUsuario()">{{ eliminandoUsuario() ? 'Eliminando…' : 'Confirmar eliminación' }}</button>
+      </div>
+    }
+  </ds-modal>
 </section>

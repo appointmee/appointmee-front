@@ -124,6 +124,7 @@ describe('Acceso a Mis Turnos', () => {
     const html = await renderizar(['ADMINISTRADOR']);
     expect(html.querySelector('.nav a[href="/mis-turnos"]')).toBeNull();
     expect(html.querySelector('.nav a[href="/admin"]')).not.toBeNull();
+    expect(html.querySelector('.nav a[href="/graficos/administrador"]')).toBeNull();
   });
 
   it('muestra Mis Turnos a clientes y empleadores', async () => {
