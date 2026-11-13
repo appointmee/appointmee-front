@@ -69,17 +69,32 @@
         <p>Indicá el horario habitual y los días en que abrís.</p>
       </header>
       <div class="campos-grid">
-        <div class="campo">
-          <ds-input label="Hora de apertura" [error]="errorDe('horaApertura', formulario.horaApertura()) ?? ''">
-            <input [id]="id('horaApertura')" type="time" [formField]="formulario.horaApertura" />
-          </ds-input>
-        </div>
-        <div class="campo">
-          <ds-input label="Hora de cierre" [error]="errorDe('horaCierre', formulario.horaCierre()) ?? ''">
-            <input [id]="id('horaCierre')" type="time" [formField]="formulario.horaCierre" />
-          </ds-input>
-          @if (formulario.horaApertura().touched() && formulario.horaCierre().touched() && horariosInvalidos()) {
-            <p class="error" role="alert">La hora de cierre debe ser posterior a la de apertura.</p>
+        <div class="campo campo--ancho">
+          <p class="campo__ayuda">Elegí a qué hora abrís y a qué hora termina la atención.</p>
+          <div class="horario-rango" role="group" aria-label="Horario de apertura y cierre">
+            <div class="campo">
+              <ds-input label="Abre a las" [error]="errorDe('horaApertura', formulario.horaApertura()) ?? ''">
+                <input [id]="id('horaApertura')" type="time" [formField]="formulario.horaApertura" />
+              </ds-input>
+            </div>
+            <span class="horario-rango__conector" aria-hidden="true">→</span>
+            <div class="campo">
+              <ds-input label="Cierra a las" [error]="errorDe('horaCierre', formulario.horaCierre()) ?? ''">
+                <input [id]="id('horaCierre')" type="time" [formField]="formulario.horaCierre" />
+              </ds-input>
+              @if (formulario.horaApertura().touched() && formulario.horaCierre().touched() && horariosInvalidos()) {
+                <p class="error" role="alert">La hora de cierre debe ser posterior a la de apertura.</p>
+              }
+            </div>
+          </div>
+          @if (model().horaApertura && model().horaCierre && !horariosInvalidos()) {
+            <p class="horario-rango__resumen">
+              Atención de <strong>{{ model().horaApertura }}</strong> a <strong>{{ model().horaCierre }}</strong>
+            </p>
+          } @else {
+            <p class="horario-rango__resumen horario-rango__resumen--vacio">
+              Completá ambas horas para ver el horario de atención.
+            </p>
           }
         </div>
         <div class="campo campo--ancho">
