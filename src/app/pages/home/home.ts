@@ -514,14 +514,4 @@ export class Home implements OnInit, AfterViewInit {
       this.animationContext = null;
     });
   }
-
-  protected scrollToSection(event: Event, sectionId: string): void {
-    event.preventDefault();
-    const element = document.getElementById(sectionId);
-    if (element) {
-      const navHeight = 86;
-      const top = element.getBoundingClientRect().top + window.scrollY - navHeight;
-      window.scrollTo({ top, behavior: 'smooth' });
-    }
-  }
 }
