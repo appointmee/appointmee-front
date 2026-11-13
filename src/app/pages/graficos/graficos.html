@@ -88,7 +88,7 @@
         @if (datos.turnosPorPeriodo.length === 0) {
           <p class="vacio" role="status">No hay turnos en el período seleccionado.</p>
         } @else {
-          <div class="grafico-echarts grafico-echarts--turnos-admin" echarts [options]="turnosAdminOption()" [autoResize]="true" role="img" aria-label="Turnos por período, desglosados por estado"></div>
+          <div class="grafico-echarts grafico-echarts--turnos-periodo" echarts [options]="turnosAdminOption()" [autoResize]="true" role="img" aria-label="Turnos por período, desglosados por estado"></div>
           <div class="tabla-contenedor"><table><caption>Desglose de turnos por estado</caption><thead><tr><th scope="col">Período</th>@for (estado of estados; track estado) { <th scope="col">{{ estadoLabel(estado) }}</th> }</tr></thead><tbody>@for (fila of datos.turnosPorPeriodo; track fila.periodo) { <tr><th scope="row">{{ fila.periodo }}</th>@for (estado of estados; track estado) { <td>{{ fila.estados[estado] ?? 0 }}</td> }</tr> }</tbody></table></div>
         }
       </section>
@@ -121,7 +121,7 @@
         <div class="panel__cabecera"><div><h2 id="turnos-titulo">Turnos por período y estado</h2></div></div>
         @if (datos.turnosPorPeriodo.length === 0) { <p class="vacio" role="status">No hay turnos en el período seleccionado.</p> }
         @else {
-          <div class="grafico-echarts" echarts [options]="turnosEmpleadorOption()" [autoResize]="true" role="img" aria-label="Turnos por período, desglosados por estado"></div>
+          <div class="grafico-echarts grafico-echarts--turnos-periodo" echarts [options]="turnosEmpleadorOption()" [autoResize]="true" role="img" aria-label="Turnos por período, desglosados por estado"></div>
           <div class="tabla-contenedor"><table><caption>Turnos por período y estado</caption><thead><tr><th scope="col">Período</th>@for (estado of estados; track estado) { <th scope="col">{{ estadoLabel(estado) }}</th> }</tr></thead><tbody>@for (fila of datos.turnosPorPeriodo; track fila.periodo) { <tr><th scope="row">{{ fila.periodo }}</th>@for (estado of estados; track estado) { <td>{{ fila.estados[estado] ?? 0 }}</td> }</tr> }</tbody></table></div>
         }
       </section>

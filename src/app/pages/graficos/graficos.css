@@ -119,7 +119,7 @@ td { color: var(--muted); font-variant-numeric: tabular-nums; }
 }
 
 @media (max-width: 768px) {
-  .grafico-echarts--turnos-admin { height: 20rem; }
+  .grafico-echarts--turnos-periodo { height: 20rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
