@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { Location } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -95,6 +96,7 @@ export class ElegirTurno {
   private readonly turnosApi = inject(turnoService);
   private readonly reservaContexto = inject(reservaContextoService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly location = inject(Location);
 
   protected readonly sucursalId = signal<number | null>(null);
   protected readonly servicioId = signal<number | null>(null);
@@ -844,12 +846,15 @@ export class ElegirTurno {
     return params;
   }
 
-  private sincronizarUrl(): void {
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: this.queryParamsSeleccion(),
-      replaceUrl: true,
-    });
+    private sincronizarUrl(): void {
+    const url = this.router
+      .createUrlTree([], {
+        relativeTo: this.route,
+        queryParams: this.queryParamsSeleccion(),
+      })
+      .toString();
+
+    this.location.replaceState(url);
   }
 
   private aplicarErrorEmpleados(error: HttpErrorResponse): void {
