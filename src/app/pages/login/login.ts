@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   DestroyRef,
   inject,
   input,
@@ -62,16 +61,6 @@ export class LoginPage {
 
   cargando = signal(false);
   erroresBackend = signal<Record<string, string>>({});
-  resumenErrores = computed(() => {
-    const lista: { id: string; label: string; message: string }[] = [];
-    if (this.loginForm.email().touched() && this.loginForm.email().invalid()) {
-      lista.push({ id: 'login-email', label: 'Email', message: this.loginForm.email().errors()[0]?.message ?? 'Revisá este campo.' });
-    }
-    if (this.loginForm.password().touched() && this.loginForm.password().invalid()) {
-      lista.push({ id: 'login-password', label: 'Contraseña', message: this.loginForm.password().errors()[0]?.message ?? 'Revisá este campo.' });
-    }
-    return lista;
-  });
   mostrarPassword = signal(false);
   puedeReintentar = signal(false);
   emailSinVerificar = signal(false);

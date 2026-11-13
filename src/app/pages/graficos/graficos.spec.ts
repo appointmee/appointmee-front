@@ -90,6 +90,10 @@ describe('Gráficos ECharts', () => {
 
     expect(opciones).toHaveLength(3);
     expect(opciones[0].series).toHaveLength(5);
+    expect(opciones[0].media).toEqual([
+      { query: { maxWidth: 768 }, option: { grid: { top: 92 } } },
+    ]);
+    expect(fixture.nativeElement.querySelector('.grafico-echarts--turnos-periodo')).not.toBeNull();
     expect(opciones[1].series).toHaveLength(3);
     expect(fixture.nativeElement.querySelectorAll('table').length).toBeGreaterThanOrEqual(2);
     expect(fixture.nativeElement.querySelectorAll('[role="img"]').length).toBe(3);
@@ -103,6 +107,10 @@ describe('Gráficos ECharts', () => {
       .map((nodo) => nodo.injector.get(EchartsStubDirective).options);
 
     expect(opciones).toHaveLength(3);
+    expect(opciones[0].media).toEqual([
+      { query: { maxWidth: 768 }, option: { grid: { top: 92 } } },
+    ]);
+    expect(fixture.nativeElement.querySelector('.grafico-echarts--turnos-periodo')).not.toBeNull();
     expect((opciones[1].series as { name: string }[])[0].name).toBe('Turnos');
     expect((opciones[2].series as { name: string }[])[0].name).toBe('Tasa de cancelación');
     expect(fixture.nativeElement.textContent).toContain('Demanda por servicio');

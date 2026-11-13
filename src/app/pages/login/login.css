@@ -260,3 +260,38 @@ button.login__link {
 .registro-notificacion button:focus-visible {
   outline: 2px solid var(--accent);
 }
+
+@media (max-width: 600px) {
+  .login {
+    min-height: calc(100dvh - var(--nav-h));
+    padding: 24px 16px max(32px, env(safe-area-inset-bottom));
+  }
+
+  .login__card {
+    width: 100%;
+    padding: 26px 20px;
+    border-radius: 16px;
+  }
+
+  .login__titulo {
+    font-size: clamp(1.35rem, 6vw, 1.5rem);
+  }
+
+  .login__field input {
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  .login__toggle {
+    min-height: 40px;
+  }
+
+  .registro-notificacion {
+    top: calc(var(--nav-h) + 10px);
+    right: 12px;
+    left: 12px;
+    width: auto;
+    gap: 10px;
+    padding: 14px;
+  }
+}

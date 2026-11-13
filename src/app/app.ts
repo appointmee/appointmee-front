@@ -21,7 +21,6 @@ export class App {
 
   protected readonly rutaFallida = signal<string | null>(null);
   protected readonly reintentando = signal(false);
-  protected readonly mostrarFooter = signal(this.router.url.split(/[?#]/)[0] !== '/');
 
   constructor() {
     this.router.events.pipe(takeUntilDestroyed()).subscribe(event => {
@@ -29,7 +28,6 @@ export class App {
         this.rutaFallida.set(event.url);
         this.reintentando.set(false);
       } else if (event instanceof NavigationEnd) {
-        this.mostrarFooter.set(event.urlAfterRedirects.split(/[?#]/)[0] !== '/');
         this.rutaFallida.set(null);
         this.reintentando.set(false);
         if (!this.esRutaDeReserva(event.urlAfterRedirects)) {

@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { App } from './app';
 
-@Component({ template: '<footer class="landing-footer">Footer de Home</footer>' })
+@Component({ template: '<p>Home</p>' })
 class HomeTestPage {}
 
 @Component({ template: '<p>Otra página</p>' })
@@ -39,7 +39,7 @@ describe('App', () => {
     expect(compiled.querySelector('app-navbar')).toBeTruthy();
   });
 
-  it('evita duplicar el footer en Home y muestra el global en otras rutas', async () => {
+  it('muestra el footer global en Home y en las otras rutas', async () => {
     const fixture = TestBed.createComponent(App);
     const router = TestBed.inject(Router);
     fixture.detectChanges();
@@ -47,8 +47,8 @@ describe('App', () => {
     await router.navigateByUrl('/');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('footer')).toHaveLength(1);
-    expect(fixture.nativeElement.querySelector('.landing-footer')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('app-footer')).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-footer .site-footer')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.landing-footer')).toBeNull();
 
     await router.navigateByUrl('/otra');
     fixture.detectChanges();

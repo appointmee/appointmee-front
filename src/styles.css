@@ -201,3 +201,114 @@ a {
 ::-webkit-scrollbar-thumb:hover {
   background: #303a49;
 }
+
+/* Base responsive compartida: evita desbordes por contenido largo, controles y
+   superficies multimedia en cualquier ruta, incluidas las vistas de gestión. */
+html,
+body {
+  width: 100%;
+  min-width: 320px;
+  overflow-x: clip;
+}
+
+app-root,
+main,
+app-navbar,
+app-footer {
+  min-width: 0;
+}
+
+main :is(img, video, canvas, iframe, svg) {
+  max-width: 100%;
+}
+
+main :is(input, select, textarea, button) {
+  max-width: 100%;
+}
+
+main :is(input, select, textarea) {
+  min-width: 0;
+}
+
+main :is(table) {
+  max-width: 100%;
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --nav-h: 72px;
+  }
+
+  main :is(.admin__secciones, .solicitudes__layout, .sucursales__layout) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --nav-h: 64px;
+  }
+
+  main [class$='__inner'] {
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  main :is(table, [role='table']) {
+    display: block;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  dialog {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  main :is(.admin, .pagina, .ajustes, .historial, .home, .sucursales, .servicios) {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  main :is(button, [role='button']) {
+    min-height: 44px;
+  }
+
+  main :is(input, select, textarea) {
+    font-size: 16px !important;
+  }
+
+  main :is(.acciones, .modal__acciones, .modal__botones, .detalle__acciones,
+    .verificacion__acciones-verificar, .solicitud-modal__acciones) {
+    flex-wrap: wrap;
+  }
+
+  main :is(.acciones, .modal__acciones, .modal__botones, .detalle__acciones,
+    .solicitud-modal__acciones) > button,
+  main :is(.acciones, .modal__acciones, .modal__botones, .detalle__acciones,
+    .solicitud-modal__acciones) > a {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  dialog {
+    width: calc(100vw - 24px);
+    padding: 20px;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 380px) {
+  :root {
+    --space-6: 1.125rem;
+    --space-8: 1.5rem;
+  }
+
+  main [class$='__inner'] {
+    width: 100% !important;
+  }
+}

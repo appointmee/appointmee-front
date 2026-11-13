@@ -284,7 +284,7 @@ export class Home implements OnInit, AfterViewInit {
         x: () => {
           if (!beeFlight || !bee) return 0;
           const beeLeft = bee.getBoundingClientRect().left;
-          return Math.max(0, window.innerWidth - beeLeft + 48);
+          return Math.max(0, window.innerWidth - beeLeft + 900);
         },
         y: () => (window.innerWidth < 720 ? -24 : -70),
         rotation: 12,
@@ -295,7 +295,7 @@ export class Home implements OnInit, AfterViewInit {
           start: () => {
             const hero = this.host.nativeElement.querySelector('.hero');
             return hero
-              ? hero.getBoundingClientRect().top + window.scrollY + window.innerHeight * 0.2
+              ? hero.getBoundingClientRect().top + window.scrollY + window.innerHeight * 0.05
               : window.innerHeight * 0.2;
           },
           end: 'bottom top',
@@ -513,15 +513,5 @@ export class Home implements OnInit, AfterViewInit {
       animationContext.revert();
       this.animationContext = null;
     });
-  }
-
-  protected scrollToSection(event: Event, sectionId: string): void {
-    event.preventDefault();
-    const element = document.getElementById(sectionId);
-    if (element) {
-      const navHeight = 86;
-      const top = element.getBoundingClientRect().top + window.scrollY - navHeight;
-      window.scrollTo({ top, behavior: 'smooth' });
-    }
   }
 }

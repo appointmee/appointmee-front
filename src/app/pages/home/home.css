@@ -1025,106 +1025,6 @@
   gap: 12px;
 }
 
-.landing-footer {
-  border-top: 1px solid var(--line);
-  background: radial-gradient(600px circle at 50% 0%, rgba(247, 198, 90, 0.06), transparent 70%);
-}
-
-.landing-footer__inner {
-  width: min(100% - 48px, 1180px);
-  margin: 0 auto;
-  display: grid;
-  gap: 26px;
-  padding: 40px 0 28px;
-}
-
-.landing-footer__top {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: clamp(30px, 8vw, 80px);
-}
-
-.landing-footer__brand-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.landing-footer__mark {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid rgba(247, 198, 90, 0.28);
-  background: radial-gradient(
-    circle at 30% 20%,
-    rgba(247, 198, 90, 0.26),
-    rgba(247, 198, 90, 0.06)
-  );
-}
-
-.landing-footer__mark img {
-  width: 36px;
-  height: 36px;
-}
-
-.landing-footer__brand-text {
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: -0.035em;
-}
-
-.landing-footer__accent {
-  background: linear-gradient(135deg, #ffe6a3, #f7c65a 55%, #d99a2b);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.landing-footer__desc {
-  margin: 16px 0 0;
-  max-width: 420px;
-  color: var(--muted);
-  line-height: 1.8;
-}
-
-.landing-footer__nav {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-}
-
-.landing-footer__nav h4 {
-  margin: 0 0 12px;
-  color: var(--text);
-}
-
-.landing-footer__nav ul {
-  display: grid;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.landing-footer__nav a {
-  color: var(--muted);
-  text-decoration: none;
-  transition: color 0.2s var(--ease);
-}
-
-.landing-footer__nav a:hover {
-  color: var(--text);
-}
-
-.landing-footer__bottom {
-  padding-top: 18px;
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 13px;
-}
-
 @keyframes hero-glow {
   0%,
   100% {
@@ -1149,10 +1049,6 @@
 
   .hero-card--float {
     right: 10%;
-  }
-
-  .landing-footer__top {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -1197,10 +1093,6 @@
     display: grid;
     justify-items: center;
     gap: 14px;
-  }
-
-  .landing-footer__inner {
-    width: calc(100% - 32px);
   }
 }
 
@@ -1688,5 +1580,15 @@ button.estado__link:disabled {
 
   .categorias {
     justify-content: center;
+  }
+}
+
+@media (max-width: 1024px) {
+  .how__story {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .booking-story {
+    display: none;
   }
 }

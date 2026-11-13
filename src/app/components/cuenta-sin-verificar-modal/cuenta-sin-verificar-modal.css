@@ -56,3 +56,21 @@
   outline: 2px solid var(--accent-strong, #f7c65a);
   outline-offset: 3px;
 }
+
+@media (max-width: 480px) {
+  .verificacion-modal {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: 20px;
+  }
+
+  .verificacion-modal__acciones {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .verificacion-modal__acciones button {
+    width: 100%;
+    min-height: 44px;
+  }
+}

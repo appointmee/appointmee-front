@@ -34,3 +34,11 @@
 .login-modal__cerrar:focus-visible {
   outline: 2px solid var(--accent);
 }
+
+@media (max-width: 480px) {
+  .login-modal {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    border-radius: 16px;
+  }
+}
