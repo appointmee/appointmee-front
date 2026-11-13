@@ -75,11 +75,24 @@
 }
 
 .section__inner {
+  position: relative;
+  z-index: 1;
   width: min(100% - 48px, 1180px);
   margin: 0 auto;
   display: grid;
   gap: clamp(40px, 8vw, 80px);
   align-items: center;
+}
+
+.section__glow {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 48%, var(--accent-soft), transparent 68%);
+  filter: blur(48px);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.94);
 }
 
 .section__header {
@@ -171,6 +184,22 @@
   letter-spacing: -0.06em;
   line-height: 0.98;
   color: #f6f8fb;
+}
+
+.hero__title-accent {
+  background: linear-gradient(
+    100deg,
+    #fff1c2 12%,
+    #f7c65a 38%,
+    #fff8df 52%,
+    #e4ae3f 72%,
+    #fff1c2 92%
+  );
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-position: 100% 50%;
 }
 
 .hero__subtitle {
@@ -412,9 +441,23 @@
   position: relative;
   display: grid;
   place-items: center;
-  perspective: 1100px;
-  perspective-origin: 50% 45%;
-  transform-style: preserve-3d;
+}
+
+.hero__bee-flight {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  will-change: transform;
+}
+
+.hero__bee {
+  display: block;
+  width: min(100%, 420px);
+  height: auto;
+  filter: drop-shadow(0 24px 36px rgba(247, 198, 90, 0.22));
+  will-change: transform;
 }
 
 .hero__visual::before {
@@ -424,7 +467,7 @@
   background: radial-gradient(ellipse, rgba(247, 198, 90, 0.2), transparent 68%);
   filter: blur(22px);
   content: '';
-  transform: translateZ(-70px);
+  transform: scale(0.92);
   animation: hero-glow 7s ease-in-out infinite;
 }
 
@@ -438,39 +481,32 @@
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
   box-shadow:
-  0 60px 90px rgba(0, 0, 0, 0.55),
-  0 0 60px rgba(247, 198, 90, 0.16);
+    0 60px 90px rgba(0, 0, 0, 0.55),
+    0 0 60px rgba(247, 198, 90, 0.16);
   overflow: hidden;
-  transform-style: preserve-3d;
   will-change: transform;
-  animation: hero-card-3d 7s ease-in-out infinite;
   transition:
     box-shadow 350ms ease,
     border-color 350ms ease,
     transform 120ms ease-out;
 }
 
-
-
 .hero-card:not(.hero-card--float):hover {
   border-color: rgba(247, 198, 90, 0.6);
-box-shadow:
-  0 70px 110px rgba(0, 0, 0, 0.62),
-  0 0 80px rgba(247, 198, 90, 0.26);
-  animation-play-state: paused;
-  transform:
-    translateY(-8px)
-    rotateX(calc(3deg + var(--pointer-rotate-x, 0deg)))
-    rotateY(calc(-4deg + var(--pointer-rotate-y, 0deg)))
-    scale(1.015);
+  box-shadow:
+    0 70px 110px rgba(0, 0, 0, 0.62),
+    0 0 80px rgba(247, 198, 90, 0.26);
+  transform: translateY(-8px) scale(1.015);
 }
 
 .hero-card--float {
   position: absolute;
+  z-index: 2;
   bottom: -26px;
   right: -10px;
   width: auto;
-  animation-delay: 1.2s;
+  visibility: hidden;
+  opacity: 0;
 }
 
 .hero-card__header {
@@ -479,7 +515,6 @@ box-shadow:
   gap: 12px;
   padding: 16px 22px;
   border-bottom: 1px solid var(--line);
-  transform: translateZ(18px);
 }
 
 .hero-card__dots {
@@ -537,12 +572,26 @@ box-shadow:
   font-size: 13px;
 }
 
+.booking-card__stage {
+  position: relative;
+  min-width: 105px;
+  min-height: 1.2em;
+  text-align: right;
+}
+
+.booking-card__stage-label:not(:first-child) {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  opacity: 0;
+  white-space: nowrap;
+}
+
 .hero-card__calendar {
   border-radius: 16px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.02);
   overflow: hidden;
-  transform: translateZ(28px);
 }
 
 .hero-card__cal-head {
@@ -569,18 +618,19 @@ box-shadow:
   font-size: 13px;
 }
 
-.hero-card__slot--active {
-  border-color: rgba(247, 198, 90, 0.4);
-  background: linear-gradient(135deg, rgba(255, 221, 143, 0.9), rgba(247, 198, 90, 0.8));
-  color: #211704;
-  font-weight: 600;
-  box-shadow: 0 14px 30px rgba(247, 198, 90, 0.18);
+.hero-card__slot-check {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .hero-card__footer {
   display: flex;
   gap: 10px;
-  transform: translateZ(16px);
 }
 
 .hero-card__badge {
@@ -601,7 +651,6 @@ box-shadow:
   background: rgba(125, 255, 177, 0.16);
   color: #d8ffe9;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-  transform: translateZ(50px);
 }
 
 .hero-card__mini svg {
@@ -794,10 +843,63 @@ box-shadow:
 }
 
 .steps {
+  position: relative;
   display: grid;
   gap: 16px;
-  width: min(100% - 48px, 980px);
-  margin: 0 auto;
+  width: 100%;
+  max-width: 980px;
+  margin: 0;
+}
+
+.how__story {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.4fr);
+  align-items: start;
+  gap: clamp(28px, 5vw, 64px);
+}
+
+.booking-story {
+  position: sticky;
+  top: calc(var(--nav-h) + var(--space-6));
+  align-self: start;
+  padding: var(--space-4) 0;
+}
+
+.booking-story__label {
+  margin: 0 0 var(--space-4);
+  color: var(--accent);
+  text-align: center;
+}
+
+.booking-story__card {
+  width: 100%;
+  animation: none;
+}
+
+.steps__track {
+  position: absolute;
+  z-index: 0;
+  top: 4px;
+  bottom: 4px;
+  left: -16px;
+  width: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.steps__track-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    to bottom,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 22%, transparent)
+  );
+  transform: scaleY(1);
+  transform-origin: top;
 }
 
 .step {
@@ -1023,65 +1125,15 @@ box-shadow:
   font-size: 13px;
 }
 
-.reveal {
-  opacity: 0;
-  transform: translateY(18px);
-  animation: rise-in 0.8s var(--ease) forwards;
-  animation-delay: var(--delay, 0s);
-}
-
-@keyframes rise-in {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-12px);
-  }
-}
-
-@keyframes hero-card-3d {
-  0%,
-  100% {
-    transform:
-      translateY(0)
-      rotateX(var(--pointer-rotate-x, 0deg))
-      rotateY(var(--pointer-rotate-y, 0deg));
-  }
-  50% {
-    transform:
-      translateY(-12px)
-      rotateX(calc(2deg + var(--pointer-rotate-x, 0deg)))
-      rotateY(calc(-3deg + var(--pointer-rotate-y, 0deg)));
-  }
-}
-
 @keyframes hero-glow {
   0%,
   100% {
     opacity: 0.65;
-    transform: translate3d(0, 0, -70px) scale(0.92);
+    transform: scale(0.92);
   }
   50% {
     opacity: 1;
-    transform: translate3d(0, -8px, -70px) scale(1.08);
-  }
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 4px rgba(247, 198, 90, 0.12);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(247, 198, 90, 0.06);
+    transform: translateY(-8px) scale(1.08);
   }
 }
 
@@ -1123,6 +1175,19 @@ box-shadow:
     justify-items: center;
   }
 
+  .how__story {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .booking-story {
+    width: min(100%, 420px);
+    margin: 0 auto var(--space-4);
+  }
+
+  .steps__track {
+    left: -12px;
+  }
+
   .hero-card--float {
     position: static;
     margin-top: 16px;
@@ -1149,6 +1214,43 @@ box-shadow:
 
   .hero__visual::before {
     animation: none;
+  }
+
+  .section__glow {
+    opacity: 0.35;
+    transform: none;
+  }
+
+  .steps__track-fill {
+    transform: none;
+  }
+
+  .booking-card__stage--available,
+  .booking-card__stage--selected {
+    display: none;
+  }
+
+  .hero-card--float,
+  .hero-card__slot-check {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .booking-card__stage .booking-card__stage--confirmed {
+    position: static;
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .booking-card__slot--chosen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border-color: rgba(247, 198, 90, 0.4);
+    background: linear-gradient(135deg, rgba(255, 221, 143, 0.9), rgba(247, 198, 90, 0.8));
+    color: #211704;
+    box-shadow: 0 14px 30px rgba(247, 198, 90, 0.18);
   }
 
   .hero-card:not(.hero-card--float):hover {
