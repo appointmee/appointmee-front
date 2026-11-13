@@ -87,6 +87,11 @@ describe('SCRUM-262 · Consultar y modificar servicios de la sucursal', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
+    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush({
+      id: 7,
+      nombre: 'Sucursal de prueba',
+      fotoPerfil: 'https://example.com/sucursal.jpg',
+    });
     backend.expectOne((request) => request.url.includes('/servicios/listar/sucursal')).flush(servicios);
     fixture.detectChanges();
     await fixture.whenStable();

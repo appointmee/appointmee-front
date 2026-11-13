@@ -25,6 +25,11 @@ describe('GaleriaSucursal', () => {
     fixture = TestBed.createComponent(GaleriaSucursal);
     http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
+    http.expectOne((request) => request.url.endsWith('/sucursales/12')).flush({
+      id: 12,
+      nombre: 'Sucursal de prueba',
+      fotoPerfil: 'https://img.ejemplo/sucursal.jpg',
+    });
   });
 
   afterEach(() => {
@@ -39,7 +44,9 @@ describe('GaleriaSucursal', () => {
     ]);
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
-    const imagen = host.querySelector<HTMLImageElement>('img')!;
+    expect(host.querySelector('.galeria__fondo img')?.getAttribute('src'))
+      .toBe('https://img.ejemplo/sucursal.jpg');
+    const imagen = host.querySelector<HTMLImageElement>('.galeria__item img')!;
     expect(imagen.alt).toBe('Imagen 1 de la sucursal');
     expect(imagen.src).toBe('https://img.ejemplo/uno.jpg');
     imagen.dispatchEvent(new Event('error'));
