@@ -2,29 +2,21 @@ import { Component, signal } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { of } from 'rxjs';
 import { Navbar } from './navbar';
 import { authService } from '../../services/auth-service';
 import { BranchSearch } from '../../services/branch-search';
-import { usuarioService } from '../../services/usuario-service';
 
 @Component({ selector: 'app-navbar-test-page', template: '' })
 class EmptyPage {}
 
-const usuariosMock = {
-  provide: usuarioService,
-  useValue: { obtenerPerfil: () => of({ nombre: 'Ana', apellido: 'Pérez' }) },
-};
-
 describe('Buscador del navbar', () => {
   beforeEach(() => TestBed.resetTestingModule());
   it('muestra iniciales si la foto falla y vuelve a intentar cuando cambia la URL', async () => {
-    const perfil = signal({ id: 1, fotoPerfil: 'https://res.cloudinary.com/demo/image/upload/avatar.jpg', email: 'ana@example.com' });
+    const perfil = signal({ fotoPerfil: 'https://res.cloudinary.com/demo/image/upload/avatar.jpg', email: 'ana@example.com' });
     TestBed.configureTestingModule({
       imports: [Navbar],
       providers: [
         provideRouter([{ path: 'sucursales', component: EmptyPage }]),
-        usuariosMock,
         { provide: authService, useValue: {
           autenticado: signal(true), visitante: signal(false), restaurando: signal(false),
           perfil, iniciales: signal('AN'), tieneAlgunRol: () => false,
@@ -35,9 +27,6 @@ describe('Buscador del navbar', () => {
     await router.navigateByUrl('/sucursales');
     const fixture = TestBed.createComponent(Navbar);
     fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.profile__name').textContent).toContain('Ana Pérez');
     const photo = fixture.nativeElement.querySelector('.profile__avatar img') as HTMLImageElement;
     expect(photo.src).toContain('avatar.jpg');
     photo.dispatchEvent(new Event('error'));
@@ -46,7 +35,6 @@ describe('Buscador del navbar', () => {
     expect(fixture.nativeElement.querySelector('.profile__avatar').textContent).toContain('AN');
     fixture.nativeElement.querySelector('.profile__trigger').click();
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.menu__head strong').textContent).toContain('Ana Pérez');
     expect(fixture.nativeElement.querySelector('.menu__avatar').textContent).toContain('AN');
     perfil.set({ ...perfil(), fotoPerfil: 'https://res.cloudinary.com/demo/image/upload/nueva.jpg' });
     fixture.detectChanges();
@@ -61,7 +49,6 @@ describe('Buscador del navbar', () => {
           { path: '', component: EmptyPage },
           { path: 'sucursales', component: EmptyPage },
         ]),
-        usuariosMock,
         { provide: authService, useValue: {
           autenticado: signal(false), visitante: signal(true), restaurando: signal(false),
         } },
@@ -95,7 +82,6 @@ describe('Acceso a Mis Turnos', () => {
           { path: 'mis-turnos', component: EmptyPage },
           { path: 'admin', component: EmptyPage },
         ]),
-        usuariosMock,
         {
           provide: authService,
           useValue: {
@@ -137,7 +123,6 @@ describe('Navbar en la vista de error', () => {
       imports: [Navbar],
       providers: [
         provideRouter([{ path: 'error', component: EmptyPage }]),
-        usuariosMock,
         { provide: authService, useValue: {
           autenticado: signal(false), visitante: signal(true), restaurando: signal(false),
         } },
@@ -160,7 +145,6 @@ describe('Navbar en la vista de error', () => {
       imports: [Navbar],
       providers: [
         provideRouter([{ path: 'error', component: EmptyPage }]),
-        usuariosMock,
         { provide: authService, useValue: {
           autenticado: signal(true), visitante: signal(false), restaurando: signal(false),
           perfil: signal(null), iniciales: signal('AM'), tieneAlgunRol: () => false,
@@ -186,7 +170,6 @@ describe('Restauración de sesión en el navbar', () => {
       imports: [Navbar],
       providers: [
         provideRouter([{ path: 'private', component: EmptyPage }]),
-        usuariosMock,
         {
           provide: authService,
           useValue: {

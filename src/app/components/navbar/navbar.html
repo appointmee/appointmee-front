@@ -72,7 +72,8 @@
               <span class="profile__avatar" aria-hidden="true">{{ auth.iniciales() }}</span>
             }
             <span class="profile__copy">
-              <span class="profile__name">{{ nombreUsuario() || 'Mi cuenta' }}</span>
+              <span class="profile__name">{{ auth.perfil()?.email?.split('@')[0] ?? 'Mi cuenta' }}</span>
+              <span class="profile__hint">AppointMee</span>
             </span>
             <svg
               class="profile__chevron"
@@ -93,7 +94,7 @@
                   <span class="menu__avatar" aria-hidden="true">{{ auth.iniciales() }}</span>
                 }
                 <div>
-                  <strong>{{ nombreUsuario() || 'Mi cuenta' }}</strong>
+                  <strong>AppointMee</strong>
                   <span>{{ auth.perfil()?.email ?? '' }}</span>
                 </div>
               </div>

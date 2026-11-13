@@ -420,8 +420,6 @@
   background: transparent;
   cursor: pointer;
   transition:
-    gap 0.55s var(--ease),
-    padding 0.55s var(--ease),
     background 0.2s,
     border-color 0.2s;
 }
@@ -429,20 +427,25 @@
 .profile__trigger:hover,
 .profile__trigger[aria-expanded='true'] {
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 0 2px rgba(247, 198, 90, 0.18);
 }
 
 .profile__trigger:hover .profile__avatar {
-  transform: scale(1.04);
+  animation: profile-pulse 2s infinite;
+  transform: scale(1.12) rotate(-6deg);
+  box-shadow:
+    0 0 0 5px rgba(247, 198, 90, 0.35),
+    0 6px 20px rgba(247, 198, 90, 0.3);
 }
 
 .profile__trigger:hover .profile__name {
-  color: var(--text);
-  text-shadow: none;
+  color: var(--accent-strong);
+  text-shadow: 0 0 8px rgba(255, 215, 122, 0.5);
 }
 
 .profile__trigger:hover .profile__chevron {
-  color: var(--text);
+  color: var(--accent);
   transform: rotate(-90deg) scale(1.15);
 }
 
@@ -469,53 +472,6 @@
   flex-direction: column;
   text-align: left;
   line-height: 1.15;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .profile__trigger:not(:hover):not(:focus-visible):not([aria-expanded='true']) {
-    gap: 0;
-    padding-right: 4px;
-  }
-
-  .profile__copy {
-    max-width: 0;
-    overflow: hidden;
-    opacity: 0;
-    transform: translateX(-6px);
-    white-space: nowrap;
-    transition:
-      max-width 0.65s var(--ease),
-      opacity 0.3s ease,
-      transform 0.35s var(--ease);
-  }
-
-  .profile__trigger:hover .profile__copy,
-  .profile__trigger:focus-visible .profile__copy,
-  .profile__trigger[aria-expanded='true'] .profile__copy {
-    max-width: 180px;
-    opacity: 1;
-    transform: translateX(0);
-    transition-delay: 0s, 0.2s, 0.2s;
-  }
-
-  .profile__chevron {
-    width: 0;
-    overflow: hidden;
-    opacity: 0;
-    transition:
-      width 0.55s var(--ease),
-      opacity 0.25s ease,
-      transform 0.25s var(--ease),
-      color 0.2s;
-  }
-
-  .profile__trigger:hover .profile__chevron,
-  .profile__trigger:focus-visible .profile__chevron,
-  .profile__trigger[aria-expanded='true'] .profile__chevron {
-    width: 18px;
-    opacity: 1;
-    transition-delay: 0.38s, 0.38s, 0s, 0s;
-  }
 }
 
 .profile__name {
@@ -1030,6 +986,17 @@
 
   75% {
     transform: rotate(-6deg) scale(1.08);
+  }
+}
+
+@keyframes profile-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(247, 198, 90, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(247, 198, 90, 0.15);
   }
 }
 
