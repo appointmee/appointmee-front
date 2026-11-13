@@ -1,8 +1,12 @@
-<main class="graficos" aria-labelledby="graficos-titulo">
-  <header class="encabezado">
+<main class="graficos" [class.graficos--incrustado]="incrustado()" aria-labelledby="graficos-titulo">
+  <header class="encabezado" [class.encabezado--incrustado]="incrustado()">
     <div>
       <p class="sobrelinea">AppointMee · {{ rol === 'administrador' ? 'Administración' : 'Empleador' }}</p>
-      <h1 id="graficos-titulo">{{ titulo }}</h1>
+      @if (incrustado()) {
+        <h2 id="graficos-titulo">{{ titulo }}</h2>
+      } @else {
+        <h1 id="graficos-titulo">{{ titulo }}</h1>
+      }
       <p class="introduccion">
         @if (rol === 'administrador') {
           Seguimiento de turnos, altas de usuarios y sucursales de toda la plataforma.
@@ -11,7 +15,9 @@
         }
       </p>
     </div>
-    <a class="volver" routerLink="/">Volver al inicio</a>
+    @if (!incrustado()) {
+      <a class="volver" routerLink="/">Volver al inicio</a>
+    }
   </header>
 
   <section class="filtros" aria-label="Filtros de estadísticas">

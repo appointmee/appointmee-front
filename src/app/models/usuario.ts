@@ -20,3 +20,12 @@ export interface UsuarioPerfilDTO {
   readonly roles: readonly string[];
   readonly sucursalesEmpleado: readonly SucursalMiniDTO[];
 }
+
+/** Registro resumido devuelto por los endpoints administrativos de usuarios. */
+export interface UsuarioMiniAdminDTO {
+  readonly id: number;
+  readonly nombre: string;
+  readonly apellido: string;
+  readonly estado: boolean;
+  readonly fotoPerfil: string | null;
+}

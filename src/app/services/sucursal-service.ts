@@ -192,6 +192,14 @@ export class sucursalService {
       .pipe(map(() => undefined));
   }
 
+  /** Baja lógica administrativa: el backend exige el rol ADMINISTRADOR. */
+  eliminarComoAdministrador(idSucursal: number): Observable<string> {
+    return this.http.delete(`${this.api.baseUrl}/sucursales/eliminar/${idSucursal}`, {
+      context: contextoSilenciado(true),
+      responseType: 'text',
+    });
+  }
+
   private contextoSinAvisoGlobal(): HttpContext {
     return new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true);
   }
