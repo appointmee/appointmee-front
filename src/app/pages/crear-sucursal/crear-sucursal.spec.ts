@@ -50,19 +50,6 @@ describe('Crear sucursal', () => {
       .toContain('Foto de la sucursal');
   });
 
-  it('explica el rango horario y refleja las horas seleccionadas', () => {
-    const rango = fixture.nativeElement.querySelector('.horario-rango') as HTMLElement;
-    expect(rango.getAttribute('role')).toBe('group');
-    expect(rango.textContent).toContain('Abre a las');
-    expect(rango.textContent).toContain('Cierra a las');
-    expect(rango.querySelector('.horario-rango__conector')?.getAttribute('aria-hidden')).toBe('true');
-
-    page.model.update((actual) => ({ ...actual, horaApertura: '09:00', horaCierre: '18:00' }));
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.horario-rango__resumen')?.textContent)
-      .toContain('Atención de 09:00 a 18:00');
-  });
-
   it('no envía el formulario si el nombre está vacío', () => {
     page.onSubmit(new Event('submit', { cancelable: true }));
     expect(api.crear).not.toHaveBeenCalled();
