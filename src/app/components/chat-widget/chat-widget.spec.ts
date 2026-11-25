@@ -16,9 +16,13 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
   let widget: chatWidgetService;
   let fixture: ComponentFixture<ChatWidget>;
   let html: HTMLElement;
+  let reducirMovimiento: boolean;
 
   beforeEach(async () => {
     TestBed.resetTestingModule();
+    sessionStorage.clear();
+    reducirMovimiento = false;
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: reducirMovimiento })));
     roles = signal<string[]>(['CLIENTE']);
     autenticado = signal(true);
 
@@ -57,6 +61,8 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
     fixture.destroy();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    sessionStorage.clear();
   });
 
   function burbuja(): HTMLButtonElement {
@@ -127,5 +133,43 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
     fixture.detectChanges();
     expect(widget.abierto()).toBe(false);
     expect(burbuja().getAttribute('aria-label')).toBe('Abrir mensajes');
+  });
+
+  it('la abeja vuela al arrancar y dice bzz bzz una vez por sesión', () => {
+    const abeja = html.querySelector('.abeja');
+    expect(abeja).toBeTruthy();
+    expect(abeja?.textContent).toContain('bzz bzz');
+    expect(sessionStorage.getItem('appointmee.chat-abeja-vista')).toBe('1');
+
+    fixture.destroy();
+    const otra = TestBed.createComponent(ChatWidget);
+    otra.detectChanges();
+    expect(otra.nativeElement.querySelector('.abeja')).toBeNull();
+    otra.destroy();
+  });
+
+  it('oculta la abeja cuando termina el vuelo', () => {
+    const abeja = html.querySelector('.abeja')!;
+    const fin = new Event('animationend', { bubbles: true });
+    Object.defineProperty(fin, 'animationName', { value: 'abeja-vuelo' });
+
+    abeja.dispatchEvent(fin);
+    fixture.detectChanges();
+
+    expect(html.querySelector('.abeja')).toBeNull();
+  });
+
+  it('no muestra la abeja con prefers-reduced-motion', () => {
+    fixture.destroy();
+    sessionStorage.clear();
+    reducirMovimiento = true;
+
+    const otra = TestBed.createComponent(ChatWidget);
+    otra.detectChanges();
+
+    expect(otra.nativeElement.querySelector('.abeja')).toBeNull();
+    expect(sessionStorage.getItem('appointmee.chat-abeja-vista')).toBe('1');
+    otra.destroy();
+    reducirMovimiento = false;
   });
 });
