@@ -79,6 +79,8 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
   it('muestra la burbuja solo para usuarios autenticados con roles de chat', () => {
     expect(burbuja()).toBeTruthy();
     expect(burbuja().getAttribute('aria-label')).toBe('Abrir mensajes');
+    expect(burbuja().querySelector('.chat-widget__logo ellipse')).toBeTruthy();
+    expect(burbuja().querySelector('.chat-widget__logo path')).toBeTruthy();
     expect(html.querySelector('[role="dialog"]')).toBeNull();
 
     roles.set(['ADMINISTRADOR']);
