@@ -29,6 +29,9 @@ const CONVERSACIONES: ConversacionResumenChat[] = [
     noLeidos: 2,
     interlocutor: 'Ana Pérez',
     rol: 'CLIENTE',
+    servicioNombre: 'Corte de cabello',
+    clienteNombre: 'Gonzalo López',
+    profesionalNombre: 'Ana Pérez',
   },
   {
     id: 51,
@@ -41,6 +44,9 @@ const CONVERSACIONES: ConversacionResumenChat[] = [
     noLeidos: 0,
     interlocutor: 'Luis Gómez',
     rol: 'EMPLEADO',
+    servicioNombre: null,
+    clienteNombre: 'María Ruiz',
+    profesionalNombre: 'Luis Gómez',
   },
 ];
 
@@ -162,19 +168,40 @@ describe('Chat (US-CHAT-04)', () => {
     fixture.detectChanges();
   }
 
-  it('muestra carga y luego el interlocutor, sucursal, último mensaje y no leídos', () => {
+  it('muestra el local, el servicio, el cliente, el profesional y los no leídos', () => {
     expect(html.querySelector('[aria-busy="true"]')).toBeTruthy();
 
     flushLista();
 
     const botones = Array.from(html.querySelectorAll<HTMLButtonElement>('button.conversacion'));
     expect(botones).toHaveLength(2);
-    expect(botones[0]!.textContent).toContain('Ana Pérez');
-    expect(botones[0]!.textContent).toContain('Sucursal Centro');
+    expect(botones[0]!.textContent).toContain('Sucursal Centro · Corte de cabello');
+    expect(botones[0]!.textContent).toContain('Cliente: Gonzalo López · Profesional: Ana Pérez');
     expect(botones[0]!.textContent).toContain('Nos vemos mañana');
     expect(botones[0]!.querySelector('.conversacion__no-leidos')?.textContent).toContain('2');
     expect(botones[0]!.getAttribute('aria-label')).toContain('2 mensajes no leídos');
+    expect(botones[0]!.getAttribute('aria-label')).toContain('Profesional: Ana Pérez');
+    expect(botones[1]!.textContent).toContain('Sucursal Norte · Reserva #13');
+    expect(botones[1]!.textContent).toContain('Profesional: Luis Gómez');
     expect(botones[1]!.textContent).toContain('Sin mensajes');
+  });
+
+  it('muestra "Consulta general" cuando la conversación no tiene turno', () => {
+    flushLista([
+      {
+        ...CONVERSACIONES[0]!,
+        id: 52,
+        turnoId: null,
+        servicioNombre: null,
+        clienteNombre: null,
+        profesionalNombre: null,
+        sucursalNombre: 'Sucursal Oeste',
+      },
+    ]);
+
+    const boton = html.querySelector<HTMLButtonElement>('button.conversacion')!;
+    expect(boton.textContent).toContain('Sucursal Oeste · Consulta general');
+    expect(boton.textContent).not.toContain('Cliente:');
   });
 
   it('muestra el estado vacío cuando no hay conversaciones', () => {
@@ -214,6 +241,12 @@ describe('Chat (US-CHAT-04)', () => {
     expect(
       html.querySelector('button.conversacion')?.getAttribute('aria-current'),
     ).toBe('true');
+    expect(html.querySelector('#hilo-titulo')?.textContent).toContain(
+      'Sucursal Centro · Corte de cabello',
+    );
+    expect(html.querySelector('.hilo__titulo p')?.textContent).toContain(
+      'Cliente: Gonzalo López · Profesional: Ana Pérez',
+    );
   });
 
   it('muestra fecha, autor y estado de entrega con texto, no solo con color', () => {
