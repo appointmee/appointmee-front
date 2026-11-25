@@ -72,7 +72,9 @@
 
           <div class="dato">
             <dt>Dirección</dt>
-            <dd>{{ local.direccion?.trim() || 'Sin dirección informada.' }}</dd>
+            <dd [attr.title]="local.direccion?.trim() || null">
+              {{ direccionResumida(local.direccion) }}
+            </dd>
           </div>
 
           @if (telefono()) {

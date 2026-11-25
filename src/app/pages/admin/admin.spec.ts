@@ -160,7 +160,7 @@ describe('Administración · solicitudes de empleador', () => {
     backend.expectOne((request) => request.url.endsWith('/sucursales/41')).flush({
       id: 41,
       nombre: 'Centro',
-      direccion: 'Av. Siempre Viva 123',
+      direccion: '25 de Mayo 2899, B7600GWG Mar del Plata, Provincia de Buenos Aires, Argentina',
       telefono: '1112345678',
       descripcion: 'Sucursal de prueba',
       fechaCreacion: '2026-10-01',
@@ -176,7 +176,14 @@ describe('Administración · solicitudes de empleador', () => {
     fixture.detectChanges();
 
     expect(host.textContent).toContain('Sucursal de prueba');
-    expect(host.textContent).toContain('Av. Siempre Viva 123');
+    expect(host.textContent).toContain('25 de Mayo 2899, Mar del Plata');
+    expect(host.textContent).not.toContain('B7600GWG');
+    expect(host.textContent).not.toContain('Provincia de Buenos Aires');
+    expect(
+      Array.from(host.querySelectorAll('.detalle__datos .dato')).find(
+        (dato) => dato.querySelector('dt')?.textContent === 'Dirección',
+      )?.querySelector('dd')?.getAttribute('title'),
+    ).toContain('B7600GWG Mar del Plata');
     expect(host.querySelector('.detalle__acciones button')?.textContent).toContain('Eliminar sucursal');
     expect(host.querySelector<HTMLButtonElement>('.detalle__boton--eliminar')).not.toBeNull();
     expect(host.querySelector<HTMLAnchorElement>('.detalle__acciones a')?.getAttribute('href')).toBe('/sucursal/41');

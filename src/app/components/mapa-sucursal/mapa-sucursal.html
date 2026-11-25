@@ -1,0 +1,31 @@
+<div class="mapa">
+  <div class="mapa__marco" #marco>
+    @if (sinUbicacion()) {
+      <p class="mapa__aviso" role="status">
+        Esta sucursal todavía no tiene una ubicación registrada.
+      </p>
+    } @else if (sinMapa()) {
+      <p class="mapa__aviso" role="status">
+        No pudimos mostrar el mapa en este momento.
+        @if (direccion()) {
+          La dirección de la sucursal es {{ direccion() }}.
+        }
+      </p>
+    } @else if (mostrarMapa() && urlMapa(); as url) {
+      <iframe
+        class="mapa__iframe"
+        [src]="url"
+        [attr.title]="'Mapa de ubicación de ' + sucursal().nombre"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        (error)="falloCarga.set(true)"
+      ></iframe>
+    } @else {
+      <div class="mapa__placeholder" aria-hidden="true"></div>
+    }
+  </div>
+
+  @if (!sinUbicacion() && !sinMapa()) {
+    <p class="mapa__nota">Ubicación aproximada · Google Maps</p>
+  }
+</div>

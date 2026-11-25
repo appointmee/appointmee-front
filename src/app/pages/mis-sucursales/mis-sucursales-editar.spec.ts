@@ -221,7 +221,11 @@ describe('SCRUM-265 · Ver y modificar los datos de la sucursal', () => {
 
       const detalle = host().querySelector<HTMLElement>('.detalle')!;
       expect(texto(detalle)).toContain('Barber House');
-      expect(texto(detalle)).toContain('Av. Corrientes 1234, piso 2');
+      expect(texto(detalle)).toContain('Av. Corrientes 1234');
+      expect(texto(detalle)).not.toContain('piso 2');
+      expect(
+        detalle.querySelector('.dato dd[title]')?.getAttribute('title'),
+      ).toBe('Av. Corrientes 1234, piso 2');
       expect(texto(detalle)).toContain('1134567890');
       expect(texto(detalle)).toContain('15/01/2024');
       expect(texto(detalle)).toContain('Barberia');

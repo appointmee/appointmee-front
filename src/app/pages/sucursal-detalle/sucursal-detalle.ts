@@ -15,11 +15,13 @@ import { Observable, Subject, catchError, map, of, startWith, switchMap, tap } f
 
 import { ErrorPage } from '../error/error';
 import { EquipoSucursal } from '../../components/equipo-sucursal/equipo-sucursal';
+import { MapaSucursal } from '../../components/mapa-sucursal/mapa-sucursal';
 import { ReseniasSucursal } from '../../components/resenias-sucursal/resenias-sucursal';
 import { apiErrorsService } from '../../http/api-errors-service';
 import { reservaContextoService } from '../../services/reserva-contexto-service';
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import { sucursalService } from '../../services/sucursal-service';
+import { formatearDireccionResumida } from '../../shared/direccion';
 
 type CargaResultado =
   | { readonly estado: 'ok'; readonly sucursal: SucursalDetalleDTO }
@@ -42,7 +44,7 @@ const LARGO_DESCRIPCION_COLGADA = 280;
 
 @Component({
   selector: 'app-sucursal-detalle',
-  imports: [DsButtonComponent, ErrorPage, EquipoSucursal, ReseniasSucursal, RouterLink],
+  imports: [DsButtonComponent, ErrorPage, EquipoSucursal, MapaSucursal, ReseniasSucursal, RouterLink],
   templateUrl: './sucursal-detalle.html',
   styleUrl: './sucursal-detalle.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -171,6 +173,11 @@ export class SucursalDetalle {
       .map((dia) => NOMBRES_DIAS[dia?.toUpperCase?.() ?? ''] ?? null)
       .filter((dia): dia is string => !!dia);
   });
+
+  /** Dirección resumida para el detalle; el texto completo se conserva en `title`. */
+  protected readonly direccion = computed(() =>
+    formatearDireccionResumida(this.sucursal()?.direccion),
+  );
 
   protected readonly telefono = computed(() => this.sucursal()?.telefono?.trim() ?? '');
 

@@ -21,6 +21,7 @@ import { SucursalDetalleDTO } from '../../models/sucursal';
 import { humanizarCategoria } from '../../models/solicitud-empleado';
 import { authService } from '../../services/auth-service';
 import { sucursalService } from '../../services/sucursal-service';
+import { formatearDireccionResumida } from '../../shared/direccion';
 import { ABREVIATURAS_DIAS, DIAS_SUCURSAL } from '../sucursal-form/sucursal-form.model';
 import { SucursalEditarModal } from '../sucursal-editar-modal/sucursal-editar-modal';
 import { SucursalEliminarModal } from '../sucursal-eliminar-modal/sucursal-eliminar-modal';
@@ -121,6 +122,11 @@ export class SucursalDetalleModal {
 
   /** Categoría de la sucursal, con el formato que usa el resto de la aplicación. */
   protected readonly categoria = computed(() => humanizarCategoria(this.sucursal()?.categoria));
+
+  /** Dirección resumida del detalle; el valor completo queda en `title`. */
+  protected direccionResumida(direccion: string | null | undefined): string {
+    return formatearDireccionResumida(direccion) || 'Sin dirección informada.';
+  }
 
   /** Teléfono de la sucursal: puede no tener uno cargado. */
   protected readonly telefono = computed(() => this.sucursal()?.telefono?.trim() ?? '');
