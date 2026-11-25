@@ -69,6 +69,13 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
     return html.querySelector<HTMLButtonElement>('.chat-widget__burbuja')!;
   }
 
+  function terminarAbeja(contenedor: HTMLElement, animationName: string): void {
+    const abeja = contenedor.querySelector('.abeja');
+    const fin = new Event('animationend', { bubbles: true });
+    Object.defineProperty(fin, 'animationName', { value: animationName });
+    abeja?.dispatchEvent(fin);
+  }
+
   it('muestra la burbuja solo para usuarios autenticados con roles de chat', () => {
     expect(burbuja()).toBeTruthy();
     expect(burbuja().getAttribute('aria-label')).toBe('Abrir mensajes');
@@ -139,6 +146,10 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
     const abeja = html.querySelector('.abeja');
     expect(abeja).toBeTruthy();
     expect(abeja?.textContent).toContain('bzz bzz');
+    expect(sessionStorage.getItem('appointmee.chat-abeja-vista')).toBeNull();
+
+    terminarAbeja(html, 'abeja-bzz');
+    fixture.detectChanges();
     expect(sessionStorage.getItem('appointmee.chat-abeja-vista')).toBe('1');
 
     fixture.destroy();
@@ -148,15 +159,27 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
     otra.destroy();
   });
 
-  it('oculta la abeja cuando termina el vuelo', () => {
-    const abeja = html.querySelector('.abeja')!;
-    const fin = new Event('animationend', { bubbles: true });
-    Object.defineProperty(fin, 'animationName', { value: 'abeja-vuelo' });
-
-    abeja.dispatchEvent(fin);
+  it('oculta la abeja cuando termina el bzz bzz', () => {
+    terminarAbeja(html, 'abeja-vuelo');
     fixture.detectChanges();
+    expect(html.querySelector('.abeja')).toBeTruthy();
 
+    terminarAbeja(html, 'abeja-bzz');
+    fixture.detectChanges();
     expect(html.querySelector('.abeja')).toBeNull();
+  });
+
+  it('?abeja=1 fuerza la animación aunque ya se vio en la sesión', () => {
+    sessionStorage.setItem('appointmee.chat-abeja-vista', '1');
+    window.history.replaceState({}, '', '/?abeja=1');
+
+    fixture.destroy();
+    const otra = TestBed.createComponent(ChatWidget);
+    otra.detectChanges();
+
+    expect(otra.nativeElement.querySelector('.abeja')).toBeTruthy();
+    otra.destroy();
+    window.history.replaceState({}, '', '/');
   });
 
   it('no muestra la abeja con prefers-reduced-motion', () => {
