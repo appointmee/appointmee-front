@@ -23,6 +23,10 @@ export interface ConversacionResumenChat {
   /** Ya calculado por el backend: el otro participante, según el rol de quien consulta. */
   interlocutor: string;
   rol: RolEnConversacion;
+  /** Datos del turno asociado; pueden faltar si la conversación no tiene turno. */
+  servicioNombre?: string | null;
+  clienteNombre?: string | null;
+  profesionalNombre?: string | null;
 }
 
 export interface ConversacionDetalleChat {
@@ -32,6 +36,9 @@ export interface ConversacionDetalleChat {
   turnoId: number | null;
   fechaCreacion: string | null;
   participantes: ParticipanteChat[];
+  servicioNombre?: string | null;
+  clienteNombre?: string | null;
+  profesionalNombre?: string | null;
 }
 
 export interface MensajeChat {

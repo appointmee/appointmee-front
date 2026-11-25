@@ -62,8 +62,10 @@
                   {{ iniciales(conversacion.interlocutor) }}
                 </span>
                 <span class="conversacion__contenido">
-                  <span class="conversacion__nombre">{{ conversacion.interlocutor }}</span>
-                  <span class="conversacion__sucursal">{{ conversacion.sucursalNombre }}</span>
+                  <span class="conversacion__nombre">{{ tituloConversacion(conversacion) }}</span>
+                  @if (participantesConversacion(conversacion); as participantes) {
+                    <span class="conversacion__participantes">{{ participantes }}</span>
+                  }
                   <span class="conversacion__ultimo">
                     {{ conversacion.ultimoMensaje ?? 'Sin mensajes' }}
                   </span>
@@ -110,8 +112,14 @@
             <span aria-hidden="true">←</span> Volver
           </button>
           <div class="hilo__titulo">
-            <h2 id="hilo-titulo">{{ conversacion.interlocutor }}</h2>
-            <p>{{ conversacion.sucursalNombre }} · {{ etiquetaRol() }}</p>
+            <h2 id="hilo-titulo">{{ tituloConversacion(conversacion) }}</h2>
+            <p>
+              @if (participantesConversacion(conversacion); as participantes) {
+                {{ participantes }}
+              } @else {
+                {{ conversacion.sucursalNombre }} · {{ etiquetaRol() }}
+              }
+            </p>
           </div>
           <span class="hilo__conexion" role="status" aria-live="polite">
             {{ conectado() ? 'Conectado' : 'Conectando…' }}

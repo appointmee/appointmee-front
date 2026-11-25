@@ -309,12 +309,27 @@ export class Chat implements OnDestroy {
     );
   }
 
+  /** Local + servicio (o número de reserva) que identifica la conversación. */
+  tituloConversacion(conversacion: ConversacionResumenChat): string {
+    const servicio =
+      conversacion.servicioNombre ||
+      (conversacion.turnoId !== null ? `Reserva #${conversacion.turnoId}` : 'Consulta general');
+    return `${conversacion.sucursalNombre} · ${servicio}`;
+  }
+
+  /** Cliente y profesional que intervienen en el turno (no el interlocutor del chat). */
+  participantesConversacion(conversacion: ConversacionResumenChat): string | null {
+    if (!conversacion.clienteNombre && !conversacion.profesionalNombre) return null;
+    return `Cliente: ${conversacion.clienteNombre ?? '—'} · Profesional: ${conversacion.profesionalNombre ?? '—'}`;
+  }
+
   ariaLabelConversacion(conversacion: ConversacionResumenChat): string {
     const noLeidos =
       conversacion.noLeidos > 0
         ? `${conversacion.noLeidos} mensajes no leídos.`
         : 'Sin mensajes no leídos.';
-    return `${conversacion.interlocutor}, ${conversacion.sucursalNombre}. ${noLeidos} ${conversacion.ultimoMensaje ?? 'Sin mensajes'}`;
+    const participantes = this.participantesConversacion(conversacion) ?? '';
+    return `${this.tituloConversacion(conversacion)}. ${participantes} ${noLeidos} ${conversacion.ultimoMensaje ?? 'Sin mensajes'}`;
   }
 
   private marcarLeido(conversacion: ConversacionResumenChat): void {
