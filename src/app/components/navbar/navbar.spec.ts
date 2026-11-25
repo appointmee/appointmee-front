@@ -5,6 +5,7 @@ import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { Navbar } from './navbar';
 import { authService } from '../../services/auth-service';
+import { chatWidgetService } from '../../services/chat-widget-service';
 import { BranchSearch } from '../../services/branch-search';
 import { usuarioService } from '../../services/usuario-service';
 
@@ -238,6 +239,55 @@ describe('Navbar en la vista de error', () => {
     const html = fixture.nativeElement as HTMLElement;
     expect(html.querySelector('.nav')).not.toBeNull();
     expect(html.querySelector('.profile__trigger')).not.toBeNull();
+  });
+});
+
+describe('Acceso a Mensajes desde el navbar', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  async function renderizar(roles: readonly string[]): Promise<{ html: HTMLElement; widget: chatWidgetService }> {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([{ path: 'sucursales', component: EmptyPage }]),
+        usuariosMock,
+        {
+          provide: authService,
+          useValue: {
+            autenticado: signal(true),
+            visitante: signal(false),
+            restaurando: signal(false),
+            perfil: signal(null),
+            iniciales: signal('AM'),
+            tieneAlgunRol: (...solicitados: string[]) =>
+              solicitados.some((rol) => roles.includes(rol)),
+          },
+        },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/sucursales');
+    fixture.detectChanges();
+    return { html: fixture.nativeElement as HTMLElement, widget: TestBed.inject(chatWidgetService) };
+  }
+
+  it('abre el widget en vez de navegar a /chat', async () => {
+    const { html, widget } = await renderizar(['CLIENTE']);
+    const boton = html.querySelector<HTMLButtonElement>('.nav__link--chat')!;
+
+    expect(boton).toBeTruthy();
+    expect(boton.textContent?.trim()).toBe('Mensajes');
+    expect(html.querySelector('a[href="/chat"]')).toBeNull();
+    expect(widget.abierto()).toBe(false);
+
+    boton.click();
+    expect(widget.abierto()).toBe(true);
+  });
+
+  it('no ofrece Mensajes a roles sin acceso al chat', async () => {
+    const { html } = await renderizar(['ADMINISTRADOR']);
+    expect(html.querySelector('.nav__link--chat')).toBeNull();
   });
 });
 
