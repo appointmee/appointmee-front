@@ -50,7 +50,9 @@ Por defecto, el frontend consume el backend en `http://localhost:8080`. Para usa
 | Comando | Descripción |
 | --- | --- |
 | `npm start` | Inicia Angular en `http://localhost:4200`. |
+| `npm run start:maps` | Inicia Angular con la API key local de Google Maps (ver [docs/google-maps.md](docs/google-maps.md)). |
 | `npm run build` | Genera el build de producción en `dist/`. |
+| `npm run build:maps` | Genera el build de producción usando la API key local de Google Maps. |
 | `npm test -- --watch=false` | Ejecuta las pruebas unitarias con Vitest y jsdom una vez. |
 | `npm run watch` | Compila en desarrollo y observa cambios. |
 

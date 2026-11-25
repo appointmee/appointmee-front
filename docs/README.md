@@ -20,6 +20,7 @@ Guía técnica y funcional del proyecto. Se documenta el estado observado en el 
 - [Arquitectura y rutas](arquitectura.md)
 - [Contratos API consumidos](contratos-api.md)
 - [Infraestructura y operación](infraestructura.md)
+- [Integración de Google Maps](google-maps.md)
 - [Pendientes y decisiones](pendientes.md)
 
 ## Fuentes y alcance de verificación
