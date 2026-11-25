@@ -5,6 +5,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { Router, RouterOutlet, provideRouter } from '@angular/router';
 
 import { authService } from '../../services/auth-service';
+import { GOOGLE_MAPS_CONFIG } from '../../services/google-maps-service';
 import { destinoDespuesDelLogin } from '../../guards/login-destination';
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import { SucursalDetalle } from './sucursal-detalle';
@@ -67,6 +68,7 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: authService, useValue: auth },
+        { provide: GOOGLE_MAPS_CONFIG, useValue: { apiKey: 'clave-de-prueba' } },
         { provide: ReporteError, useValue: { registrar: vi.fn() } },
       ],
     }).compileComponents();
@@ -282,6 +284,27 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
     fixture.detectChanges();
 
     expect(navegarPorUrl).toHaveBeenCalledTimes(1);
+  });
+
+  it('muestra el mapa con los geodatos que ya devuelve el detalle público', async () => {
+    const host = await abrirConSucursal({
+      ...SUCURSAL,
+      googlePlaceId: 'ChIJ_detalle',
+      latitud: -34.6037,
+      longitud: -58.3816,
+    });
+
+    expect(host.querySelector('.panel--mapa h2')?.textContent).toContain('Cómo llegar');
+    const src = host.querySelector('.panel--mapa iframe')?.getAttribute('src') ?? '';
+    expect(new URL(src).searchParams.get('q')).toBe('place_id:ChIJ_detalle');
+  });
+
+  it('con sucursal antigua sin ubicación conserva el detalle y el CTA de reserva', async () => {
+    const host = await abrirConSucursal(SUCURSAL);
+
+    expect(texto(host)).toContain('todavía no tiene una ubicación registrada');
+    expect(host.querySelector('.panel--mapa iframe')).toBeNull();
+    expect(botonReserva(host).textContent).toContain('Reservar turno');
   });
 
   it('si la sucursal no existe muestra el estado de no encontrada con salida al listado', async () => {
