@@ -19,6 +19,7 @@ Antes de tocar código:
 4. Crear la rama desde `origin/develop` **antes** de editar.
 5. Identificar la historia de Jira (`SCRUM-<id>`). Si no existe, pedirla o proponer el
    nombre de rama; **no inventar IDs**.
+6. **Antes de cada `git push`, hacer pull obligatorio con rebase** (ver §3).
 
 ---
 
@@ -123,12 +124,28 @@ Verificar el sprint real antes de planificar.
 git fetch origin develop
 git switch -c SCRUM-<id>-<slug> origin/develop
 # ... implementar ...
-git fetch origin develop && git rebase origin/develop
+git fetch origin develop
+git pull --rebase origin develop   # OBLIGATORIO antes de pushear
 git push -u origin HEAD
 gh pr create --base develop --head SCRUM-<id>-<slug> \
   --title "tipo(scope): resumen" --body-file /tmp/pr-body.md
 gh pr view <n> --json number,title,baseRefName,headRefName,state,url,commits
 ```
+
+### Pull obligatorio antes de pushear
+
+**Nunca pushear sin sincronizar antes con `develop`.** Repetir el pull justo antes de **cada**
+push, no solo al crear la rama ni al abrir el PR:
+
+```bash
+git fetch origin develop
+git pull --rebase origin develop
+```
+
+- Si hay conflictos, resolverlos y volver a correr tests/build antes de pushear.
+- Si la rama ya estaba publicada y el rebase reescribió historia, actualizarla con
+  `git push --force-with-lease` **solo en tu rama de historia**; nunca sobre `develop`/`main`.
+- Esto evita pushes rechazados, merges innecesarios y PRs con commits de otros.
 
 Reglas:
 
@@ -261,7 +278,7 @@ npm run e2e
 1. `git diff` y `git status` sin archivos ajenos.
 2. `npx ng test --watch=false` en verde.
 3. `npx ng build` en verde.
-4. Rebase sobre `origin/develop`.
+4. Pull obligatorio con rebase sobre `origin/develop` (`git pull --rebase origin develop`).
 5. Push + PR a `develop` con: qué cambió, cómo se probó, capturas si aplica, riesgos.
 6. Verificar PR (`baseRefName=develop`) y dejar issue en `En revisión`.
 
