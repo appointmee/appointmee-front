@@ -147,6 +147,17 @@ export const routes: Routes = [
       import('./pages/mis-turnos/mis-turnos').then((module) => module.MisTurnos),
   },
   {
+    path: 'chat',
+    canActivate: [authGuard],
+    title: 'AppointMee | Mensajes',
+    data: {
+      title: 'Mensajes',
+      description: 'Conversá con quien solicitó o quien realizó el turno.',
+      roles: ['CLIENTE', 'EMPLEADO', 'EMPLEADOR'],
+    },
+    loadComponent: () => import('./pages/chat/chat').then((module) => module.Chat),
+  },
+  {
     path: 'mis-sucursales',
     canActivate: [authGuard],
     title: 'AppointMee | Mis Sucursales',
