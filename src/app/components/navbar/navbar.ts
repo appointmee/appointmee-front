@@ -14,7 +14,6 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { catchError, filter, of, switchMap } from 'rxjs';
 import { authService } from '../../services/auth-service';
-import { chatWidgetService } from '../../services/chat-widget-service';
 import { usuarioService } from '../../services/usuario-service';
 import { fotoPerfilDe } from '../../shared/foto-perfil';
 
@@ -36,7 +35,6 @@ const ICONS = {
   store: 'M3 9h18M4 9l1.5-5h13L20 9M5 9v11h14V9M9 20v-6h6v6',
   user: 'M20 21a8 8 0 0 0-16 0M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
   inbox: 'M4 4h16v16H4zM4 13h4l2 3h4l2-3h4',
-  mensaje: 'M21 12a8 8 0 0 1-8 8H8l-5 3 1.6-4.4A8 8 0 1 1 21 12Z',
   settings:
     'M4 7h6M14 7h6M4 12h10M18 12h2M4 17h2M10 17h2M10 7a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM6 12a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM14 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z',
   shield: 'M12 3 19 6v5c0 4.4-3 8.2-7 9-4-.8-7-4.6-7-9V6l7-3Z',
@@ -59,7 +57,6 @@ export class Navbar {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(authService);
   private readonly usuarios = inject(usuarioService);
-  private readonly chatWidget = inject(chatWidgetService);
   protected readonly nombreUsuario = signal('');
   private readonly fotoFallida = signal<string | null>(null);
   protected readonly fotoPerfil = computed(() => {
@@ -143,16 +140,6 @@ export class Navbar {
       this.auth.tieneAlgunRol(...(link.roles ?? [])),
     ),
   ]);
-
-  /** El chat dejó de ser una ruta: se abre como widget flotante. */
-  protected readonly puedeChatear = computed(() =>
-    this.auth.tieneAlgunRol('CLIENTE', 'EMPLEADO', 'EMPLEADOR'),
-  );
-
-  protected abrirMensajes(): void {
-    this.closeAll();
-    this.chatWidget.abrirConEnfoque();
-  }
 
   private accesoExcluido(link: NavItem): boolean {
     return (

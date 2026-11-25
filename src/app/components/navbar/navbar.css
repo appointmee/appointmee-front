@@ -236,20 +236,6 @@
   transform: scale(0.96);
 }
 
-.nav__link--chat {
-  border: 0;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-button.sheet__link {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  font-family: inherit;
-  text-align: left;
-}
-
 .navbar__search-wrap {
   position: relative;
   width: min(300px, 26vw);

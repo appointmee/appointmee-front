@@ -25,18 +25,6 @@
               </a>
             </li>
           }
-          @if (puedeChatear()) {
-            <li class="nav__item">
-              <button
-                dsButton
-                type="button"
-                class="nav__link nav__link--chat"
-                (click)="abrirMensajes()"
-              >
-                Mensajes
-              </button>
-            </li>
-          }
         </ul>
       </nav>
     }
@@ -215,21 +203,6 @@
                   <path [attr.d]="icons.chevron" />
                 </svg>
               </a>
-            </li>
-          }
-          @if (puedeChatear()) {
-            <li>
-              <button dsButton type="button" class="sheet__link" (click)="abrirMensajes()">
-                <span class="sheet__icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path [attr.d]="icons.mensaje" />
-                  </svg>
-                </span>
-                <span>Mensajes</span>
-                <svg class="sheet__chevron" viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="icons.chevron" />
-                </svg>
-              </button>
             </li>
           }
         </ul>
