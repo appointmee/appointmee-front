@@ -63,6 +63,7 @@ export class googleMapsService {
   private temporizador: ReturnType<typeof setTimeout> | null = null;
   private globalsActuales: Record<string, unknown> | null = null;
   private callbackActual: string | null = null;
+  private scriptActual: HTMLScriptElement | null = null;
 
   readonly estado = this.estadoInterno.asReadonly();
   readonly fallo = this.falloInterno.asReadonly();
@@ -123,6 +124,8 @@ export class googleMapsService {
 
       const fallar = (fallo: GoogleMapsFallo): void => {
         limpiarCallback();
+        this.scriptActual?.remove();
+        this.scriptActual = null;
         this.marcarError(fallo);
         reject(this.crearError(fallo));
       };
@@ -135,6 +138,7 @@ export class googleMapsService {
         }
 
         limpiarCallback();
+        this.scriptActual = null;
         this.estadoInterno.set('listo');
         this.falloInterno.set(null);
         resolve(namespace);
@@ -151,16 +155,11 @@ export class googleMapsService {
       script.src = url.toString();
       script.async = true;
       script.dataset[MARCADOR_SCRIPT] = 'true';
-      script.addEventListener('error', () => {
-        script.remove();
-        fallar('carga-fallida');
-      }, { once: true });
+      script.addEventListener('error', () => fallar('carga-fallida'), { once: true });
 
-      this.temporizador = setTimeout(() => {
-        script.remove();
-        fallar('carga-fallida');
-      }, TIEMPO_ESPERA_MS);
+      this.temporizador = setTimeout(() => fallar('carga-fallida'), TIEMPO_ESPERA_MS);
 
+      this.scriptActual = script;
       this.document.head.appendChild(script);
     });
   }
