@@ -15,6 +15,7 @@ import { Observable, Subject, catchError, map, of, startWith, switchMap, tap } f
 
 import { ErrorPage } from '../error/error';
 import { EquipoSucursal } from '../../components/equipo-sucursal/equipo-sucursal';
+import { MapaSucursal } from '../../components/mapa-sucursal/mapa-sucursal';
 import { ReseniasSucursal } from '../../components/resenias-sucursal/resenias-sucursal';
 import { apiErrorsService } from '../../http/api-errors-service';
 import { reservaContextoService } from '../../services/reserva-contexto-service';
@@ -42,7 +43,7 @@ const LARGO_DESCRIPCION_COLGADA = 280;
 
 @Component({
   selector: 'app-sucursal-detalle',
-  imports: [DsButtonComponent, ErrorPage, EquipoSucursal, ReseniasSucursal, RouterLink],
+  imports: [DsButtonComponent, ErrorPage, EquipoSucursal, MapaSucursal, ReseniasSucursal, RouterLink],
   templateUrl: './sucursal-detalle.html',
   styleUrl: './sucursal-detalle.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
