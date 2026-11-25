@@ -28,6 +28,30 @@
       </section>
     }
 
+    @if (abejaVisible()) {
+      <div class="abeja" (animationend)="onFinAbeja($event)" aria-hidden="true">
+        <span class="abeja__bzz">bzz bzz</span>
+        <svg class="abeja__cuerpo" viewBox="0 0 64 64">
+          <g class="abeja__alas" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5">
+            <ellipse cx="22" cy="19" rx="11" ry="7" transform="rotate(-35 22 19)" />
+            <ellipse cx="42" cy="19" rx="11" ry="7" transform="rotate(35 42 19)" />
+          </g>
+          <ellipse cx="32" cy="37" rx="15" ry="18" fill="var(--accent)" />
+          <rect x="20" y="31" width="24" height="5" rx="2.5" fill="var(--on-accent)" />
+          <rect x="21" y="41" width="22" height="5" rx="2.5" fill="var(--on-accent)" />
+          <circle cx="32" cy="18" r="8" fill="var(--on-accent)" />
+          <circle cx="29" cy="17" r="1.6" fill="var(--surface)" />
+          <circle cx="35" cy="17" r="1.6" fill="var(--surface)" />
+          <path
+            d="M28 11l-3-6M36 11l3-6"
+            stroke="var(--on-accent)"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </div>
+    }
+
     <button
       #burbuja
       dsButton

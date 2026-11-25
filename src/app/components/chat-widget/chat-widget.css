@@ -94,6 +94,81 @@
   stroke-width: 1.8;
 }
 
+.abeja {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  pointer-events: none;
+  animation: abeja-vuelo 1.8s var(--ease) both;
+}
+
+.abeja__cuerpo {
+  width: 36px;
+  height: 36px;
+}
+
+.abeja__alas {
+  transform-origin: 32px 19px;
+  animation: abeja-alas 0.18s ease-in-out infinite alternate;
+}
+
+.abeja__bzz {
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  opacity: 0;
+  animation: abeja-bzz 1s 1.25s both;
+}
+
+@keyframes abeja-vuelo {
+  0% {
+    transform: translate(-46vw, -38vh) rotate(-18deg) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-22vw, -18vh) rotate(12deg) scale(1);
+  }
+  75% {
+    transform: translate(-6vw, -4vh) rotate(-8deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0);
+    opacity: 1;
+  }
+}
+
+@keyframes abeja-alas {
+  from {
+    transform: scaleY(0.75);
+  }
+  to {
+    transform: scaleY(1.15);
+  }
+}
+
+@keyframes abeja-bzz {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.9);
+  }
+  20%,
+  80% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (max-width: 600px) {
   .chat-widget {
     right: var(--space-3);

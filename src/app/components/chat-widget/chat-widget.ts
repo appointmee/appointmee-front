@@ -5,7 +5,9 @@ import {
   HostListener,
   afterRenderEffect,
   computed,
+  effect,
   inject,
+  signal,
 } from '@angular/core';
 
 import { Chat } from '../../pages/chat/chat';
@@ -15,6 +17,7 @@ import { DsButtonComponent } from '../../shared/ui/button/button.component';
 
 const ICONO_MENSAJE = 'M21 12a8 8 0 0 1-8 8H8l-5 3 1.6-4.4A8 8 0 1 1 21 12Z';
 const ICONO_CERRAR = 'M6 6l12 12M18 6 6 18';
+const CLAVE_ABEJA_VISTA = 'appointmee.chat-abeja-vista';
 
 /** Widget flotante de mensajes, disponible en todas las páginas para los roles que chatean. */
 @Component({
@@ -42,6 +45,10 @@ export class ChatWidget {
     this.widget.abierto() ? 'Cerrar mensajes' : 'Abrir mensajes',
   );
 
+  /** Animación de bienvenida: una abeja vuela hasta la burbuja del chat. */
+  protected readonly abejaVisible = signal(false);
+  private animacionIniciada = false;
+
   constructor() {
     // El botón de cierre se crea junto con el panel: se enfoca después del render.
     afterRenderEffect(() => {
@@ -49,6 +56,12 @@ export class ChatWidget {
         this.widget.consumirEnfoque();
         this.botonCerrar()?.focus();
       }
+    });
+
+    effect(() => {
+      if (this.animacionIniciada || !this.puedeChatear() || this.widget.abierto()) return;
+      this.animacionIniciada = true;
+      this.mostrarAbejaSiCorresponde();
     });
   }
 
@@ -60,7 +73,24 @@ export class ChatWidget {
       return;
     }
 
+    this.abejaVisible.set(false);
     this.widget.abrirConEnfoque();
+  }
+
+  protected onFinAbeja(event: AnimationEvent): void {
+    if (event.animationName === 'abeja-vuelo') this.abejaVisible.set(false);
+  }
+
+  private mostrarAbejaSiCorresponde(): void {
+    try {
+      if (sessionStorage.getItem(CLAVE_ABEJA_VISTA)) return;
+      sessionStorage.setItem(CLAVE_ABEJA_VISTA, '1');
+    } catch {
+      return;
+    }
+
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    this.abejaVisible.set(true);
   }
 
   protected cerrar(devolverFoco: boolean = true): void {
