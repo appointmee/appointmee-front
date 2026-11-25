@@ -84,9 +84,14 @@
   background: var(--accent-strong);
 }
 
-.chat-widget__logo {
-  width: 30px;
-  height: 30px;
+.chat-widget__burbuja svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .abeja {

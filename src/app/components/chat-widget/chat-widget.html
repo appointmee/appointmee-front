@@ -62,20 +62,8 @@
       [attr.aria-controls]="widget.abierto() ? 'chat-widget-panel' : null"
       (click)="toggle()"
     >
-      <svg class="chat-widget__logo" viewBox="0 0 48 48" aria-hidden="true">
-        <path
-          d="M6 21a15 15 0 0 1 15-15h6a15 15 0 0 1 15 15v5a15 15 0 0 1-15 15H17l-9 7v-10a15 15 0 0 1-2-7v-5Z"
-          fill="none"
-          stroke="currentColor"
-          stroke-linejoin="round"
-          stroke-width="2.5"
-        />
-        <ellipse cx="17" cy="14" rx="6" ry="3.5" transform="rotate(-35 17 14)" fill="var(--surface)" stroke="currentColor" stroke-width="1.5" />
-        <ellipse cx="31" cy="14" rx="6" ry="3.5" transform="rotate(35 31 14)" fill="var(--surface)" stroke="currentColor" stroke-width="1.5" />
-        <ellipse cx="24" cy="25" rx="9" ry="11" fill="currentColor" />
-        <path d="M16 23h16M16 29h16" stroke="var(--accent)" stroke-linecap="round" stroke-width="3" />
-        <circle cx="24" cy="14" r="5" fill="currentColor" />
-        <path d="M21 10l-2-3M27 10l2-3" stroke="currentColor" stroke-linecap="round" stroke-width="1.8" />
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path [attr.d]="iconoMensaje" />
       </svg>
     </button>
   </div>
