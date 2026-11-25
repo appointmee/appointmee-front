@@ -17,6 +17,10 @@ export interface SucursalFormModel {
   horaApertura: string;
   horaCierre: string;
   diasApertura: string[];
+  /** Datos geográficos vigentes. Pueden faltar en sucursales anteriores a US-MAP-04. */
+  latitud?: number | null;
+  longitud?: number | null;
+  googlePlaceId?: string | null;
 }
 
 /** Categoría disponible para el formulario, con el id que espera el backend. */
@@ -57,6 +61,9 @@ export const SUCURSAL_FORM_VACIO: SucursalFormModel = {
   horaApertura: '',
   horaCierre: '',
   diasApertura: [],
+  latitud: null,
+  longitud: null,
+  googlePlaceId: null,
 };
 
 /**
@@ -77,4 +84,12 @@ export interface SucursalFormDatos {
   diasApertura: string[];
   fotoUrl: string | null;
   fotoPublicId: string | null;
+  /**
+   * Ubicación elegida en Google Places. Se envían los tres valores juntos o
+   * ninguno: en la modificación, no enviarlos significa conservar la ubicación
+   * anterior.
+   */
+  latitud?: number | null;
+  longitud?: number | null;
+  googlePlaceId?: string | null;
 }

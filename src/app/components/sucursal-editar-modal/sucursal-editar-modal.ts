@@ -84,6 +84,9 @@ export class SucursalEditarModal {
       horaApertura: sucursal?.horaApertura ?? '',
       horaCierre: sucursal?.horaCierre ?? '',
       diasApertura: [...(sucursal?.diasApertura ?? [])],
+      latitud: sucursal?.latitud ?? null,
+      longitud: sucursal?.longitud ?? null,
+      googlePlaceId: sucursal?.googlePlaceId ?? null,
     };
   });
 
@@ -156,6 +159,9 @@ export class SucursalEditarModal {
       diasApertura: readonly string[];
       fotoUrl?: string;
       fotoPublicId?: string | null;
+      latitud?: number | null;
+      longitud?: number | null;
+      googlePlaceId?: string | null;
     } = {
       nombre: datos.nombre,
       direccion: datos.direccion,
@@ -170,6 +176,14 @@ export class SucursalEditarModal {
     if (datos.fotoUrl) {
       payload.fotoUrl = datos.fotoUrl;
       payload.fotoPublicId = datos.fotoPublicId;
+    }
+
+    // El formulario solo emite ubicación cuando se eligió otra dirección. Si
+    // no cambió, no se envía nada y el backend conserva la ubicación vigente.
+    if (datos.googlePlaceId && datos.latitud != null && datos.longitud != null) {
+      payload.latitud = datos.latitud;
+      payload.longitud = datos.longitud;
+      payload.googlePlaceId = datos.googlePlaceId;
     }
 
     return payload;
