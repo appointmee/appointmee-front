@@ -48,6 +48,9 @@ export class ChatWidget {
   /** Animación de bienvenida: una abeja vuela hasta la burbuja del chat. */
   protected readonly abejaVisible = signal(false);
   private animacionIniciada = false;
+  /** `?abeja=1` permite volver a ver la animación durante el desarrollo. */
+  private readonly forzarAbeja =
+    new URLSearchParams(window.location.search).get('abeja') === '1';
 
   constructor() {
     // El botón de cierre se crea junto con el panel: se enfoca después del render.
@@ -73,24 +76,40 @@ export class ChatWidget {
       return;
     }
 
+    if (this.abejaVisible()) this.marcarAbejaVista();
     this.abejaVisible.set(false);
     this.widget.abrirConEnfoque();
   }
 
   protected onFinAbeja(event: AnimationEvent): void {
-    if (event.animationName === 'abeja-vuelo') this.abejaVisible.set(false);
+    if (event.animationName === 'abeja-bzz') {
+      this.abejaVisible.set(false);
+      this.marcarAbejaVista();
+    }
   }
 
   private mostrarAbejaSiCorresponde(): void {
-    try {
-      if (sessionStorage.getItem(CLAVE_ABEJA_VISTA)) return;
-      sessionStorage.setItem(CLAVE_ABEJA_VISTA, '1');
-    } catch {
-      return;
+    if (!this.forzarAbeja) {
+      try {
+        if (sessionStorage.getItem(CLAVE_ABEJA_VISTA)) return;
+      } catch {
+        return;
+      }
     }
 
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      this.marcarAbejaVista();
+      return;
+    }
     this.abejaVisible.set(true);
+  }
+
+  private marcarAbejaVista(): void {
+    try {
+      sessionStorage.setItem(CLAVE_ABEJA_VISTA, '1');
+    } catch {
+      // sessionStorage puede estar bloqueado: no es crítico para la animación.
+    }
   }
 
   protected cerrar(devolverFoco: boolean = true): void {

@@ -124,7 +124,7 @@
   font-size: var(--font-size-xs);
   font-weight: 700;
   opacity: 0;
-  animation: abeja-bzz 1s 1.25s both;
+  animation: abeja-bzz 1.6s 1.35s both;
 }
 
 @keyframes abeja-vuelo {
