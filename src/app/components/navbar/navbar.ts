@@ -14,6 +14,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { catchError, filter, of, switchMap } from 'rxjs';
 import { authService } from '../../services/auth-service';
+import { chatWidgetService } from '../../services/chat-widget-service';
 import { usuarioService } from '../../services/usuario-service';
 import { fotoPerfilDe } from '../../shared/foto-perfil';
 
@@ -58,6 +59,7 @@ export class Navbar {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(authService);
   private readonly usuarios = inject(usuarioService);
+  private readonly chatWidget = inject(chatWidgetService);
   protected readonly nombreUsuario = signal('');
   private readonly fotoFallida = signal<string | null>(null);
   protected readonly fotoPerfil = computed(() => {
@@ -112,13 +114,6 @@ export class Navbar {
 
   /** Disponibles solo con el rol correspondiente (criterio 3, 4). */
   protected readonly linksPorRol: readonly NavItem[] = [
-    {
-      label: 'Mensajes',
-      path: '/chat',
-      icon: ICONS.mensaje,
-      exact: false,
-      roles: ['CLIENTE', 'EMPLEADO', 'EMPLEADOR'],
-    },
     { label: 'Mis Sucursales', path: '/mis-sucursales', icon: ICONS.store, exact: false, roles: ['EMPLEADOR'] },
     { label: 'Turnos asignados', path: '/turnos-asignados', icon: ICONS.calendar, exact: false, roles: ['EMPLEADO'] },
     { label: 'Administración', path: '/admin', icon: ICONS.shield, exact: false, roles: ['ADMINISTRADOR'] },
@@ -148,6 +143,16 @@ export class Navbar {
       this.auth.tieneAlgunRol(...(link.roles ?? [])),
     ),
   ]);
+
+  /** El chat dejó de ser una ruta: se abre como widget flotante. */
+  protected readonly puedeChatear = computed(() =>
+    this.auth.tieneAlgunRol('CLIENTE', 'EMPLEADO', 'EMPLEADOR'),
+  );
+
+  protected abrirMensajes(): void {
+    this.closeAll();
+    this.chatWidget.abrirConEnfoque();
+  }
 
   private accesoExcluido(link: NavItem): boolean {
     return (

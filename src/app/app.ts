@@ -2,13 +2,14 @@ import { Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationError, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { Navbar } from './components/navbar/navbar';
+import { ChatWidget } from './components/chat-widget/chat-widget';
 import { Footer } from './components/footer/footer';
 import { ApiErrors } from './http/api-errors';
 import { NavigationHistory } from './navigation-history';
 import { reservaContextoService } from './services/reserva-contexto-service';
 
 @Component({
-  imports: [RouterOutlet, RouterLink, Navbar, Footer],
+  imports: [RouterOutlet, RouterLink, Navbar, ChatWidget, Footer],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',

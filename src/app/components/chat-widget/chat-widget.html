@@ -1,0 +1,46 @@
+@if (puedeChatear()) {
+  <div class="chat-widget">
+    @if (widget.abierto()) {
+      <section
+        class="chat-widget__panel"
+        id="chat-widget-panel"
+        role="dialog"
+        aria-label="Mensajes"
+      >
+        <header class="chat-widget__header">
+          <h2>Mensajes</h2>
+          <button
+            #cerrarBoton
+            dsButton
+            class="chat-widget__cerrar"
+            type="button"
+            aria-label="Cerrar mensajes"
+            (click)="cerrar()"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="iconoCerrar" />
+            </svg>
+          </button>
+        </header>
+        <div class="chat-widget__body">
+          <app-chat />
+        </div>
+      </section>
+    }
+
+    <button
+      #burbuja
+      dsButton
+      class="chat-widget__burbuja"
+      type="button"
+      [attr.aria-label]="etiquetaBurbuja()"
+      [attr.aria-expanded]="widget.abierto()"
+      [attr.aria-controls]="widget.abierto() ? 'chat-widget-panel' : null"
+      (click)="toggle()"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path [attr.d]="iconoMensaje" />
+      </svg>
+    </button>
+  </div>
+}

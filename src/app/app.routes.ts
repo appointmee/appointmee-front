@@ -147,15 +147,9 @@ export const routes: Routes = [
       import('./pages/mis-turnos/mis-turnos').then((module) => module.MisTurnos),
   },
   {
+    // El chat dejó de ser una página: se abre desde el widget flotante del navbar.
     path: 'chat',
-    canActivate: [authGuard],
-    title: 'AppointMee | Mensajes',
-    data: {
-      title: 'Mensajes',
-      description: 'Conversá con quien solicitó o quien realizó el turno.',
-      roles: ['CLIENTE', 'EMPLEADO', 'EMPLEADOR'],
-    },
-    loadComponent: () => import('./pages/chat/chat').then((module) => module.Chat),
+    redirectTo: '',
   },
   {
     path: 'mis-sucursales',

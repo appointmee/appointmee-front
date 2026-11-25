@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  OnDestroy,
   computed,
   inject,
   signal,
@@ -30,6 +31,7 @@ import {
   fusionarMensajes,
   chatRealtimeService,
 } from '../../services/chat-realtime-service';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
 
 const LIMITE_MENSAJE = 2000;
 
@@ -42,11 +44,12 @@ const ETIQUETAS_ESTADO: Readonly<Record<EstadoEntregaChat, string>> = {
 /** Vista de conversaciones: listado, hilo y envío en tiempo real. */
 @Component({
   selector: 'app-chat',
+  imports: [DsButtonComponent],
   templateUrl: './chat.html',
   styleUrl: './chat.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Chat {
+export class Chat implements OnDestroy {
   private readonly chatApi = inject(chatService);
   private readonly realtime = inject(chatRealtimeService);
   private readonly destroyRef = inject(DestroyRef);
@@ -129,6 +132,10 @@ export class Chat {
 
   ngOnInit(): void {
     this.cargarConversaciones();
+  }
+
+  ngOnDestroy(): void {
+    this.realtime.desconectar();
   }
 
   cargarConversaciones(): void {

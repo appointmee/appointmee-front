@@ -1,13 +1,5 @@
-<section class="chat" aria-labelledby="chat-titulo">
-  <header class="chat__header">
-    <span class="eyebrow">Mensajes</span>
-    <h1 id="chat-titulo">Tus conversaciones</h1>
-    <p>
-      Conversá con quien solicitó o quien realizó el turno, sin salir de AppointMee.
-    </p>
-  </header>
-
-  <div class="chat__layout">
+<section class="chat" aria-label="Tus conversaciones">
+  <div class="chat__layout" [class.chat__layout--hilo]="!!seleccionada()">
     <section class="conversaciones" aria-labelledby="conversaciones-titulo">
       <header class="conversaciones__header">
         <h2 id="conversaciones-titulo">Conversaciones</h2>
@@ -38,6 +30,7 @@
           <h3>No pudimos cargar tus conversaciones</h3>
           <p>{{ errorLista() }}</p>
           <button
+            dsButton
             type="button"
             class="boton"
             [disabled]="cargandoLista()"
@@ -142,6 +135,7 @@
             <h3>No pudimos cargar el historial</h3>
             <p>{{ errorHistorial() }}</p>
             <button
+              dsButton
               type="button"
               class="boton"
               [disabled]="detalleCargando()"
@@ -156,6 +150,7 @@
             <div class="aviso aviso--error" role="alert">
               <span>{{ errorHistorial() }}</span>
               <button
+                dsButton
                 type="button"
                 class="boton boton--chico"
                 [disabled]="detalleCargando()"
@@ -228,6 +223,7 @@
           }
 
           <button
+            dsButton
             type="submit"
             class="boton"
             [disabled]="!puedeEnviar()"
