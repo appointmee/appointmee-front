@@ -15,7 +15,6 @@ import { authService } from '../../services/auth-service';
 import { chatWidgetService } from '../../services/chat-widget-service';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 
-const ICONO_MENSAJE = 'M21 12a8 8 0 0 1-8 8H8l-5 3 1.6-4.4A8 8 0 1 1 21 12Z';
 const ICONO_CERRAR = 'M6 6l12 12M18 6 6 18';
 const CLAVE_ABEJA_VISTA = 'appointmee.chat-abeja-vista';
 
@@ -32,7 +31,6 @@ export class ChatWidget {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly widget = inject(chatWidgetService);
-  protected readonly iconoMensaje = ICONO_MENSAJE;
   protected readonly iconoCerrar = ICONO_CERRAR;
 
   protected readonly puedeChatear = computed(
