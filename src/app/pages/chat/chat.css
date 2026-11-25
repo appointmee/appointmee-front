@@ -51,6 +51,16 @@
   text-align: center;
 }
 
+.conversaciones__ayuda {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+}
+
 .conversaciones__lista {
   display: grid;
   flex: 1 1 auto;

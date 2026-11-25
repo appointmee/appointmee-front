@@ -373,7 +373,10 @@ export class Chat implements OnDestroy {
 
   private mensajeError(error: unknown, fallback: string): string {
     if (!navigator.onLine) return 'Sin conexión. Revisá tu red e intentá de nuevo.';
-    if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)) {
+    if (error instanceof HttpErrorResponse && error.status === 403) {
+      return 'Esta conversación ya no está disponible. Solo podés chatear durante el turno y hasta 3 días después.';
+    }
+    if (error instanceof HttpErrorResponse && error.status === 401) {
       return 'No tenés permisos para ver estas conversaciones.';
     }
     return fallback;
