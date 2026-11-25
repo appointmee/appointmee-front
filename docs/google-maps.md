@@ -60,6 +60,16 @@ El namespace expuesto tiene un tipado mínimo. Cuando se implemente una funciona
 - En la modificación, si la dirección no cambia, no se envían geodatos y el backend conserva los anteriores. Si cambia, viajan los cuatro valores a la vez.
 - No se construye un mapa ni un marcador y no se pide geolocalización (`Permissions-Policy` la mantiene deshabilitada).
 
+## Mapa en el detalle público (US-MAP-05)
+
+`src/app/components/mapa-sucursal/` agrega un iframe de **Google Maps Embed API** únicamente a la pantalla pública `/sucursal/:id`. No se incorporó a modales, tarjetas ni vistas de gestión.
+
+- La URL se arma en el frontend con los geodatos que ya trae `GET /sucursales/{id}`: si hay `googlePlaceId` se usa el modo `place` (`q=place_id:…`); si no, el modo `view` con `latitud,longitud` y zoom fijo. No se llama a Places, Geocoding, Maps JavaScript API ni al backend.
+- Se reutiliza la clave de `GOOGLE_MAPS_CONFIG`. Sin clave válida no se crea el iframe: se muestra la dirección como texto y no se hace ninguna solicitud a Google. En Google Cloud, la clave debe permitir también **Maps Embed API** además de las APIs ya habilitadas.
+- El iframe tiene `loading="lazy"` y, además, se crea recién cuando la sección se acerca al viewport mediante `IntersectionObserver` (con fallback a navegadores sin soporte). Eso evita consumir crédito al abrir la pantalla aunque el mapa quede fuera de pantalla.
+- Las sucursales anteriores a US-MAP-02, sin coordenadas ni Place ID, muestran un mensaje claro. Si el iframe falla, se muestra un estado alternativo sin afectar la consulta ni la reserva.
+- No hizo falta cambiar la CSP: `frame-src https://www.google.com` ya habilita el origen del embed.
+
 ## Política de CSP
 
 `src/index.html` y `vercel.json` permiten los dominios necesarios para el script, fuentes, imágenes y conexiones de Google Maps. Para US-MAP-04 se agregó `https://places.googleapis.com` a `connect-src`, porque Autocomplete (New) y `fetchFields()` consultan ese origen (la guía de CSP de Google recomienda habilitar los dominios `googleapis.com` usados por la API). No se habilitaron APIs adicionales ni geolocalización. Es posible que una funcionalidad futura (por ejemplo, Street View o un servicio con otro dominio) requiera ajustar la CSP; hacerlo de forma puntual y documentada.
@@ -70,4 +80,4 @@ El namespace expuesto tiene un tipado mínimo. Cuando se implemente una funciona
 - 8 pruebas unitarias nuevas del loader y 8 del servicio de Places: correctas.
 - 11 pruebas del formulario y 6 del alta de sucursal con Places simulado: correctas.
 - Suite completa: sin regresiones nuevas; queda la falla preexistente de `navbar.spec.ts` (`oculta Mis Turnos a administradores`), reproducida en un worktree limpio sobre `origin/develop`.
-- **No se probó contra Google Cloud**: no hay API key disponible y no se hicieron solicitudes a Google. La comprobación real con credenciales, el aspecto de las sugerencias y el consumo real de la sesión quedan pendientes.
+- **No se probó contra Google Cloud**: no hay API key disponible y no se hicieron solicitudes a Google. La comprobación real con credenciales, el aspecto de las sugerencias y el consumo real de la sesión quedan pendientes. Tampoco se hicieron solicitudes para verificar el iframe de US-MAP-05: sus estados se cubren con tests unitarios.
