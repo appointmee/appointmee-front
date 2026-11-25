@@ -45,10 +45,76 @@
             </select>
           </ds-input>
         </div>
-        <div class="campo campo--ancho">
-          <ds-input label="Dirección" [error]="errorDe('direccion', formulario.direccion()) ?? ''">
-            <input [id]="id('direccion')" type="text" autocomplete="street-address" [formField]="formulario.direccion" />
+        <div class="campo campo--ancho direccion-campo">
+          <ds-input
+            label="Dirección"
+            [error]="errorDe('direccion', formulario.direccion()) ?? errorUbicacion() ?? ''"
+          >
+            <input
+              [id]="id('direccion')"
+              type="text"
+              autocomplete="street-address"
+              role="combobox"
+              aria-autocomplete="list"
+              [attr.aria-expanded]="listaAbierta()"
+              [attr.aria-controls]="listaAbierta() ? id('direccion-sugerencias') : null"
+              [attr.aria-activedescendant]="indiceActivo() >= 0 ? idSugerencia(indiceActivo()) : null"
+              [attr.aria-busy]="preparandoPlaces() || buscandoDirecciones() || obteniendoDetalles()"
+              [formField]="formulario.direccion"
+              (input)="onDireccionInput($event)"
+              (keydown)="onDireccionKeydown($event)"
+            />
           </ds-input>
+          @if (preparandoPlaces()) {
+            <p class="direccion-estado" role="status" aria-live="polite">Preparando la búsqueda de direcciones…</p>
+          } @else if (buscandoDirecciones()) {
+            <p class="direccion-estado" role="status" aria-live="polite">Buscando direcciones…</p>
+          } @else if (obteniendoDetalles()) {
+            <p class="direccion-estado" role="status" aria-live="polite">
+              Obteniendo los datos de la dirección…
+            </p>
+          }
+          @if (listaAbierta() || sinResultados()) {
+            <ul
+              class="direccion-sugerencias"
+              [id]="id('direccion-sugerencias')"
+              role="listbox"
+              aria-label="Sugerencias de direcciones"
+            >
+              @for (sugerencia of sugerencias(); track sugerencia.id; let indice = $index) {
+                <li
+                  class="direccion-sugerencias__opcion"
+                  role="option"
+                  [id]="idSugerencia(indice)"
+                  [class.direccion-sugerencias__opcion--activa]="indice === indiceActivo()"
+                  [attr.aria-selected]="indice === indiceActivo()"
+                  (click)="seleccionarSugerencia(indice)"
+                  (mousedown)="$event.preventDefault()"
+                >
+                  {{ sugerencia.descripcion }}
+                </li>
+              }
+            </ul>
+            @if (sinResultados()) {
+              <p class="campo__ayuda" role="status">No encontramos direcciones para esa búsqueda.</p>
+            }
+          }
+          @if (errorUbicacion()) {
+            <div class="direccion-reintentar">
+              <button
+                dsButton
+                type="button"
+                [loading]="preparandoPlaces() || buscandoDirecciones() || obteniendoDetalles()"
+                (clicked)="reintentarUbicacion()"
+              >
+                Reintentar búsqueda
+              </button>
+            </div>
+          } @else {
+            <p class="campo__ayuda">
+              Escribí al menos 3 caracteres y elegí una sugerencia para guardar la ubicación.
+            </p>
+          }
         </div>
         <div class="campo campo--ancho">
           <ds-input label="Descripción" [error]="errorDe('descripcion', formulario.descripcion()) ?? ''">

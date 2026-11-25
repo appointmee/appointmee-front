@@ -23,6 +23,11 @@ import { map } from 'rxjs/operators';
 
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../../http/error-handling-context';
 import { backendService } from '../../services/backend-service';
+import {
+  SugerenciaDireccion,
+  UbicacionDireccion,
+  googlePlacesService,
+} from '../../services/google-places-service';
 import { sucursalService } from '../../services/sucursal-service';
 import {
   ABREVIATURAS_DIAS,
@@ -41,6 +46,14 @@ type EstadoCampo = {
 };
 
 type CampoHorario = 'horaApertura' | 'horaCierre';
+
+/** No se consulta Places hasta que haya texto suficiente para sugerir. */
+const LONGITUD_MINIMA_DIRECCION = 3;
+const RETARDO_DEBOUNCE_MS = 350;
+const MENSAJE_UBICACION_ALTA =
+  'Seleccioná una dirección de las sugerencias para guardar la ubicación.';
+const MENSAJE_UBICACION_MODIFICACION =
+  'Seleccioná una dirección de las sugerencias para actualizar la ubicación.';
 
 /** Resultado de subir una imagen a Cloudinary. */
 interface FotoSubida {
@@ -73,6 +86,7 @@ export class SucursalForm {
   private readonly destroyRef = inject(DestroyRef);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+  private readonly lugares = inject(googlePlacesService);
 
   /** Modo del formulario: alta o modificación de una sucursal existente. */
   readonly modo = input<'crear' | 'modificar'>('crear');
@@ -105,6 +119,39 @@ export class SucursalForm {
   /** Valores del formulario. */
   readonly model = signal<SucursalFormModel>({ ...SUCURSAL_FORM_VACIO });
 
+  /** Sugerencias de Google Places para el texto escrito por el empleador. */
+  protected readonly sugerencias = signal<SugerenciaDireccion[]>([]);
+  /** El cargador de Google está preparando el namespace de Places. */
+  protected readonly preparandoPlaces = signal(false);
+  /** Hay una consulta de Autocomplete en curso. */
+  protected readonly buscandoDirecciones = signal(false);
+  /** Se está pidiendo el detalle de la sugerencia elegida. */
+  protected readonly obteniendoDetalles = signal(false);
+  /** Places no se pudo cargar: no se puede ofrecer autocompletado. */
+  protected readonly placesNoDisponible = signal(false);
+  /** El panel de sugerencias está visible. */
+  protected readonly listaAbierta = signal(false);
+  /** Sugerencia resaltada con las flechas del teclado. */
+  protected readonly indiceActivo = signal(-1);
+  /** La última búsqueda no devolvió direcciones. */
+  protected readonly sinResultados = signal(false);
+  /** Fallo de Places o de la ubicación, recuperable desde el propio campo. */
+  protected readonly errorUbicacion = signal<string | null>(null);
+
+  /** Texto que está actualmente en el campo de dirección. */
+  private readonly textoDireccion = signal('');
+  /** Dirección que corresponde a los datos geográficos guardados en `ubicacion`. */
+  private readonly direccionAceptada = signal<string | null>(null);
+  private readonly ubicacion = signal<UbicacionDireccion | null>(null);
+  private readonly ubicacionInicial = signal<UbicacionDireccion | null>(null);
+  private readonly ubicacionCambio = signal(false);
+  private ultimaSugerencia: SugerenciaDireccion | null = null;
+  private sesion: unknown = null;
+  private consultaSugerencias = '';
+  private ultimaConsulta = '';
+  private temporizadorBusqueda: ReturnType<typeof setTimeout> | null = null;
+  private secuenciaBusqueda = 0;
+
   /** Estado del selector visual para editar apertura o cierre. */
   protected readonly selectorHora = signal<CampoHorario | null>(null);
   protected readonly horaTemporal = signal('09:00');
@@ -122,11 +169,21 @@ export class SucursalForm {
     maxLength(campos.nombre, 120, { message: 'El nombre no puede superar los 120 caracteres.' });
 
     required(campos.direccion, { message: 'Ingresá la dirección.' });
-    minLength(campos.direccion, 10, { message: 'La dirección debe tener al menos 10 caracteres.' });
-    maxLength(campos.direccion, 60, { message: 'La dirección no puede superar los 60 caracteres.' });
-    pattern(campos.direccion, /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\d\s.,#-]+$/, {
-      message: 'La dirección solo puede contener letras y números.',
+    // Las reglas históricas siguen vigentes para el texto escrito a mano. Una
+    // dirección formateada por Google (o ya guardada) se respeta tal cual: el
+    // backend aplica sus propios límites sobre ese valor.
+    minLength(campos.direccion, (ctx) => (this.esDireccionAceptada(ctx.value()) ? undefined : 10), {
+      message: 'La dirección debe tener al menos 10 caracteres.',
     });
+    maxLength(campos.direccion, (ctx) => (this.esDireccionAceptada(ctx.value()) ? undefined : 60), {
+      message: 'La dirección no puede superar los 60 caracteres.',
+    });
+    pattern(
+      campos.direccion,
+      (ctx) =>
+        this.esDireccionAceptada(ctx.value()) ? undefined : /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\d\s.,#-]+$/,
+      { message: 'La dirección solo puede contener letras y números.' },
+    );
 
     pattern(campos.telefono, /^\d*$/, { message: 'El teléfono solo puede contener números.' });
 
@@ -182,11 +239,13 @@ export class SucursalForm {
     if (this.fotoRequerida() && !this.tieneFoto()) return false;
     if (this.formulario().invalid()) return false;
     if (this.horariosInvalidos()) return false;
+    // La ubicación se valida al enviar para poder mostrar el error inline.
     return true;
   });
 
   constructor() {
     this.cargarCategorias();
+    this.destroyRef.onDestroy(() => this.cancelarBusquedaPendiente());
 
     // Precarga: al abrir el formulario de modificación se cargan los datos
     // que ya pertenecen a la sucursal, nunca campos vacíos.
@@ -246,8 +305,22 @@ export class SucursalForm {
       horaApertura: valores.horaApertura ?? '',
       horaCierre: valores.horaCierre ?? '',
       diasApertura: [...(valores.diasApertura ?? [])],
+      latitud: valores.latitud ?? null,
+      longitud: valores.longitud ?? null,
+      googlePlaceId: valores.googlePlaceId ?? null,
     };
 
+    const ubicacionPrevia = this.ubicacionDesdeModelo(valores);
+    this.cancelarBusquedaPendiente();
+    this.limpiarSesion();
+    this.ubicacion.set(ubicacionPrevia);
+    this.ubicacionInicial.set(ubicacionPrevia);
+    this.ubicacionCambio.set(false);
+    this.direccionAceptada.set(valores.direccion || null);
+    this.textoDireccion.set(valores.direccion ?? '');
+    this.errorUbicacion.set(null);
+    this.placesNoDisponible.set(false);
+    this.cerrarPanel();
     this.model.set(modelo);
     this.original.set(modelo);
     this.fotoArchivo.set(null);
@@ -280,6 +353,275 @@ export class SucursalForm {
     if (!estado.invalid()) return null;
     if (!estado.touched() && !this.intentadoEnviar()) return null;
     return estado.errors()[0]?.message ?? null;
+  }
+
+  /** Construye la ubicación solo si los tres valores están completos. */
+  private ubicacionDesdeModelo(valores: SucursalFormModel): UbicacionDireccion | null {
+    const direccion = valores.direccion?.trim() ?? '';
+    const googlePlaceId = valores.googlePlaceId?.trim() ?? '';
+    const { latitud, longitud } = valores;
+    if (
+      !direccion ||
+      !googlePlaceId ||
+      typeof latitud !== 'number' ||
+      typeof longitud !== 'number' ||
+      !Number.isFinite(latitud) ||
+      !Number.isFinite(longitud)
+    ) {
+      return null;
+    }
+    return { direccion, latitud, longitud, googlePlaceId };
+  }
+
+  /** La dirección actual es la que se guardó o la que devolvió Google Places. */
+  private esDireccionAceptada(valor: string | undefined): boolean {
+    return !!valor && valor === this.direccionAceptada();
+  }
+
+  /** Los datos geográficos que se envían al backend, siempre completos o ausentes. */
+  private datosUbicacion(): Pick<
+    SucursalFormDatos,
+    'latitud' | 'longitud' | 'googlePlaceId'
+  > {
+    const ubicacion = this.ubicacion();
+    if (
+      !ubicacion ||
+      !this.ubicacionCambio() ||
+      this.model().direccion.trim() !== this.direccionAceptada()
+    ) {
+      return { latitud: null, longitud: null, googlePlaceId: null };
+    }
+    return {
+      latitud: ubicacion.latitud,
+      longitud: ubicacion.longitud,
+      googlePlaceId: ubicacion.googlePlaceId,
+    };
+  }
+
+  /**
+   * El formulario no puede guardar una dirección sin su ubicación, ni datos
+   * geográficos que ya no corresponden al texto visible.
+   */
+  private ubicacionIncompleta(): boolean {
+    const direccion = this.model().direccion.trim();
+    if (!direccion) return false;
+
+    const ubicacion = this.ubicacion();
+    const aceptada = this.direccionAceptada();
+    if (ubicacion) return direccion !== aceptada;
+
+    if (this.modo() === 'crear') return true;
+    return direccion !== (this.original()?.direccion.trim() ?? '');
+  }
+
+  /** Id del option de sugerencia, para aria-activedescendant. */
+  protected idSugerencia(indice: number): string {
+    return this.id(`direccion-opcion-${indice}`);
+  }
+
+  private cancelarBusquedaPendiente(): void {
+    if (this.temporizadorBusqueda !== null) {
+      clearTimeout(this.temporizadorBusqueda);
+      this.temporizadorBusqueda = null;
+    }
+    this.preparandoPlaces.set(false);
+  }
+
+  /** Cierra el panel sin tocar la dirección ni los datos geográficos. */
+  private cerrarPanel(): void {
+    this.listaAbierta.set(false);
+    this.sugerencias.set([]);
+    this.sinResultados.set(false);
+    this.indiceActivo.set(-1);
+  }
+
+  /** Cada búsqueda usa una sesión nueva; los detalles deben usar la misma. */
+  private limpiarSesion(): void {
+    this.sesion = null;
+    this.consultaSugerencias = '';
+    this.ultimaSugerencia = null;
+  }
+
+  /** Al volver a la dirección original se recupera su ubicación sin consultar. */
+  private restaurarUbicacionInicial(): void {
+    this.ubicacion.set(this.ubicacionInicial());
+    this.direccionAceptada.set(this.original()?.direccion || null);
+    this.ubicacionCambio.set(false);
+    this.limpiarSesion();
+    this.ultimaConsulta = '';
+  }
+
+  /** El empleador escribió en el campo de dirección. */
+  protected onDireccionInput(event: Event): void {
+    const texto = (event.target as HTMLInputElement).value;
+    this.textoDireccion.set(texto);
+    this.cancelarBusquedaPendiente();
+    this.errorUbicacion.set(null);
+    this.placesNoDisponible.set(false);
+    this.sinResultados.set(false);
+    this.indiceActivo.set(-1);
+    this.ultimaSugerencia = null;
+
+    const limpio = texto.trim();
+    if (limpio && limpio === this.original()?.direccion.trim()) {
+      this.restaurarUbicacionInicial();
+      this.cerrarPanel();
+      return;
+    }
+    if (limpio && limpio === this.direccionAceptada() && this.ubicacion()) {
+      this.cerrarPanel();
+      return;
+    }
+
+    if (limpio.length < LONGITUD_MINIMA_DIRECCION) {
+      this.cerrarPanel();
+      this.limpiarSesion();
+      this.ultimaConsulta = '';
+      return;
+    }
+
+    // Debounce: una sola consulta por pausa de escritura, nunca por tecla.
+    this.temporizadorBusqueda = setTimeout(() => {
+      this.temporizadorBusqueda = null;
+      void this.buscarDirecciones(limpio, false);
+    }, RETARDO_DEBOUNCE_MS);
+  }
+
+  /** Navegación accesible del combobox con flechas, Enter y Escape. */
+  protected onDireccionKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.cerrarPanel();
+      return;
+    }
+
+    const total = this.sugerencias().length;
+    if (!total) return;
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const actual = this.indiceActivo();
+      const siguiente =
+        event.key === 'ArrowDown' ? (actual + 1) % total : actual <= 0 ? total - 1 : actual - 1;
+      this.indiceActivo.set(siguiente);
+      this.listaAbierta.set(true);
+      return;
+    }
+
+    if (event.key === 'Enter' && this.indiceActivo() >= 0) {
+      event.preventDefault();
+      this.seleccionarSugerencia(this.indiceActivo());
+    }
+  }
+
+  /** Pide sugerencias solo cuando cambió el texto o el usuario reintentó. */
+  private async buscarDirecciones(texto: string, fuerza: boolean): Promise<void> {
+    if (!fuerza && texto === this.ultimaConsulta && this.sesion) return;
+
+    const secuencia = ++this.secuenciaBusqueda;
+    this.ultimaConsulta = texto;
+    this.buscandoDirecciones.set(true);
+    this.errorUbicacion.set(null);
+    this.sinResultados.set(false);
+    this.sugerencias.set([]);
+    this.indiceActivo.set(-1);
+
+    try {
+      if (!this.sesion) {
+        this.preparandoPlaces.set(true);
+        try {
+          this.sesion = await this.lugares.iniciarSesion();
+          this.placesNoDisponible.set(false);
+        } catch {
+          this.placesNoDisponible.set(true);
+          this.errorUbicacion.set(
+            'Google Places no está disponible. Seguí escribiendo la dirección o intentá de nuevo.',
+          );
+          this.cerrarPanel();
+          return;
+        } finally {
+          this.preparandoPlaces.set(false);
+        }
+      }
+      if (secuencia !== this.secuenciaBusqueda) return;
+
+      const encontradas = await this.lugares.buscar(texto, this.sesion);
+      if (secuencia !== this.secuenciaBusqueda) return;
+
+      this.consultaSugerencias = texto;
+      this.sugerencias.set(encontradas);
+      this.sinResultados.set(encontradas.length === 0);
+      this.listaAbierta.set(encontradas.length > 0);
+    } catch (error) {
+      if (secuencia !== this.secuenciaBusqueda) return;
+      const detalle = error instanceof Error ? error.message : '';
+      this.errorUbicacion.set(
+        this.lugares.fallo()
+          ? `Google Places no está disponible. ${detalle}`
+          : 'No pudimos buscar direcciones en este momento. Podés seguir escribiendo o intentar de nuevo.',
+      );
+      this.cerrarPanel();
+    } finally {
+      if (secuencia === this.secuenciaBusqueda) this.buscandoDirecciones.set(false);
+    }
+  }
+
+  /** Elige una sugerencia: recién ahí se piden los detalles con la misma sesión. */
+  protected seleccionarSugerencia(indice: number): void {
+    const sugerencia = this.sugerencias()[indice];
+    const token = this.sesion;
+    if (!sugerencia || !token || this.obteniendoDetalles()) return;
+    if (this.textoDireccion().trim() !== this.consultaSugerencias) {
+      this.cerrarPanel();
+      return;
+    }
+    this.obtenerDetalles(sugerencia, token);
+  }
+
+  private obtenerDetalles(sugerencia: SugerenciaDireccion, token: unknown): void {
+    const secuencia = ++this.secuenciaBusqueda;
+    const consulta = this.consultaSugerencias;
+    this.buscandoDirecciones.set(false);
+    this.obteniendoDetalles.set(true);
+    this.errorUbicacion.set(null);
+
+    void (async () => {
+      try {
+        const ubicacion = await this.lugares.obtenerDetalles(sugerencia, token);
+        if (secuencia !== this.secuenciaBusqueda || this.textoDireccion().trim() !== consulta) {
+          return;
+        }
+        this.direccionAceptada.set(ubicacion.direccion);
+        this.ubicacion.set(ubicacion);
+        this.ubicacionCambio.set(true);
+        this.textoDireccion.set(ubicacion.direccion);
+        this.model.update((actual) => ({ ...actual, direccion: ubicacion.direccion }));
+        this.limpiarSesion();
+        this.ultimaConsulta = '';
+        this.cerrarPanel();
+      } catch {
+        if (secuencia !== this.secuenciaBusqueda) return;
+        this.ultimaSugerencia = sugerencia;
+        this.errorUbicacion.set(
+          'No pudimos obtener los datos completos de la dirección. Podés elegir otra sugerencia o intentar de nuevo.',
+        );
+      } finally {
+        if (secuencia === this.secuenciaBusqueda) this.obteniendoDetalles.set(false);
+      }
+    })();
+  }
+
+  /** Reintenta la última operación de Places sin cerrar el formulario. */
+  protected reintentarUbicacion(): void {
+    if (this.obteniendoDetalles() || this.buscandoDirecciones()) return;
+    const sugerencia = this.ultimaSugerencia;
+    const token = this.sesion;
+    if (sugerencia && token) {
+      this.ultimaSugerencia = null;
+      this.obtenerDetalles(sugerencia, token);
+      return;
+    }
+    const texto = this.textoDireccion().trim();
+    if (texto.length >= LONGITUD_MINIMA_DIRECCION) void this.buscarDirecciones(texto, true);
   }
 
   /** Marca o desmarca un día de apertura. */
@@ -377,6 +719,7 @@ export class SucursalForm {
     if (actual.horaApertura !== original.horaApertura) return true;
     if (actual.horaCierre !== original.horaCierre) return true;
     if (actual.diasApertura.join(',') !== original.diasApertura.join(',')) return true;
+    if (this.ubicacionCambio()) return true;
     if (this.fotoArchivo() !== null) return true;
     return false;
   }
@@ -425,8 +768,20 @@ export class SucursalForm {
 
     const dias = this.model().diasApertura ?? [];
     const faltaFoto = this.fotoRequerida() && !this.tieneFoto();
+    const faltaUbicacion = this.ubicacionIncompleta();
+    if (faltaUbicacion) {
+      this.errorUbicacion.set(
+        this.modo() === 'crear' ? MENSAJE_UBICACION_ALTA : MENSAJE_UBICACION_MODIFICACION,
+      );
+    }
 
-    if (this.formulario().invalid() || dias.length === 0 || faltaFoto || this.horariosInvalidos()) {
+    if (
+      this.formulario().invalid() ||
+      dias.length === 0 ||
+      faltaFoto ||
+      this.horariosInvalidos() ||
+      faltaUbicacion
+    ) {
       this.enfocarPrimerCampoInvalido();
       return;
     }
@@ -468,6 +823,7 @@ export class SucursalForm {
       categoriaId: this.categoriaIdDe(actual.categoria),
       fotoUrl,
       fotoPublicId,
+      ...this.datosUbicacion(),
     };
   }
 
@@ -538,6 +894,16 @@ export class SucursalForm {
         // El campo puede no tener un control nativo asociado.
       }
       return;
+    }
+
+    if (this.errorUbicacion()) {
+      try {
+        this.host.nativeElement
+          .querySelector<HTMLInputElement>(`#${this.id('direccion')}`)
+          ?.focus();
+      } catch {
+        // El campo puede no estar montado.
+      }
     }
   }
 }

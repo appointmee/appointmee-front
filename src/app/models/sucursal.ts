@@ -50,6 +50,10 @@ export interface SucursalDetalleDTO {
   readonly cantidadPuntuaciones: number | null;
   readonly fotoPerfil: string | null;
   readonly imagenes?: readonly (string | SucursalImagenDTO)[] | null;
+  /** Pueden ser null en sucursales creadas antes de seleccionar ubicación. */
+  readonly latitud?: number | null;
+  readonly longitud?: number | null;
+  readonly googlePlaceId?: string | null;
 }
 
 export interface SucursalPayload {
@@ -79,6 +83,9 @@ export interface SucursalCrearPayload {
   readonly diasApertura: readonly string[];
   readonly fotoUrl: string;
   readonly fotoPublicId: string | null;
+  readonly latitud?: number | null;
+  readonly longitud?: number | null;
+  readonly googlePlaceId?: string | null;
 }
 
 /**
@@ -99,4 +106,8 @@ export interface SucursalModificarPayload {
   readonly diasApertura: readonly string[];
   readonly fotoUrl?: string | null;
   readonly fotoPublicId?: string | null;
+  /** Solo se envían cuando se eligió otra ubicación; van siempre los tres juntos. */
+  readonly latitud?: number | null;
+  readonly longitud?: number | null;
+  readonly googlePlaceId?: string | null;
 }
