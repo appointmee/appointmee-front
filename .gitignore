@@ -46,4 +46,7 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 
+# Google Maps API key (archivo local ignorado; nunca versionar)
+/src/environments/environment.local.ts
+
 agents.md

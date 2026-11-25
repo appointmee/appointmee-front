@@ -4,7 +4,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --host localhost --port 4200",
+    "start:maps": "ng serve --host localhost --port 4200 --configuration development-local",
     "build": "ng build",
+    "build:maps": "ng build --configuration production-local",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "e2e": "playwright test",
