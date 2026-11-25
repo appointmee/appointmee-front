@@ -14,6 +14,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import { GOOGLE_MAPS_CONFIG } from '../../services/google-maps-service';
+import { formatearDireccionResumida } from '../../shared/direccion';
 
 const URL_EMBED = 'https://www.google.com/maps/embed/v1';
 const CLAVE_EJEMPLO = 'REEMPLAZAR_CON_API_KEY_DE_GOOGLE';
@@ -77,7 +78,9 @@ export class MapaSucursal implements AfterViewInit {
     return { latitud, longitud };
   });
 
-  protected readonly direccion = computed(() => this.sucursal().direccion?.trim() ?? '');
+  protected readonly direccion = computed(() =>
+    formatearDireccionResumida(this.sucursal().direccion),
+  );
 
   protected readonly sinUbicacion = computed(
     () => !this.placeId() && !this.coordenadas(),

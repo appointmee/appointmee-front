@@ -21,6 +21,7 @@ import { apiErrorsService } from '../../http/api-errors-service';
 import { reservaContextoService } from '../../services/reserva-contexto-service';
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import { sucursalService } from '../../services/sucursal-service';
+import { formatearDireccionResumida } from '../../shared/direccion';
 
 type CargaResultado =
   | { readonly estado: 'ok'; readonly sucursal: SucursalDetalleDTO }
@@ -172,6 +173,11 @@ export class SucursalDetalle {
       .map((dia) => NOMBRES_DIAS[dia?.toUpperCase?.() ?? ''] ?? null)
       .filter((dia): dia is string => !!dia);
   });
+
+  /** Dirección resumida para el detalle; el texto completo se conserva en `title`. */
+  protected readonly direccion = computed(() =>
+    formatearDireccionResumida(this.sucursal()?.direccion),
+  );
 
   protected readonly telefono = computed(() => this.sucursal()?.telefono?.trim() ?? '');
 

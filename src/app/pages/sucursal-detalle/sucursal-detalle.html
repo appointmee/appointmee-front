@@ -226,7 +226,7 @@
           }
 
           <div class="datos">
-            @if (s.direccion?.trim()) {
+            @if (direccion()) {
               <article class="dato">
                 <span class="dato__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
@@ -236,7 +236,7 @@
                 </span>
                 <div class="dato__content">
                   <h3>Dirección</h3>
-                  <p>{{ s.direccion }}</p>
+                  <p [attr.title]="s.direccion?.trim() || null">{{ direccion() }}</p>
                 </div>
               </article>
             }
