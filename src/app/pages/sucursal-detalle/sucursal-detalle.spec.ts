@@ -307,6 +307,22 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
     expect(botonReserva(host).textContent).toContain('Reservar turno');
   });
 
+  it('muestra solo calle y localidad en la dirección del detalle público', async () => {
+    const host = await abrirConSucursal({
+      ...SUCURSAL,
+      direccion: '25 de Mayo 2899, B7600GWG Mar del Plata, Provincia de Buenos Aires, Argentina',
+    });
+
+    const dato = Array.from(host.querySelectorAll('.datos .dato')).find(
+      (articulo) => articulo.querySelector('h3')?.textContent === 'Dirección',
+    );
+    const direccion = dato?.querySelector('p');
+
+    expect(direccion?.textContent).toBe('25 de Mayo 2899, Mar del Plata');
+    expect(direccion?.getAttribute('title')).toContain('B7600GWG Mar del Plata');
+    expect(texto(host)).not.toContain('Provincia de Buenos Aires');
+  });
+
   it('si la sucursal no existe muestra el estado de no encontrada con salida al listado', async () => {
     await router.navigateByUrl('/sucursal/999');
     fixture.detectChanges();
