@@ -24,6 +24,7 @@ import type {
 import { authService } from '../../services/auth-service';
 import { chatWidgetService } from '../../services/chat-widget-service';
 import { notificacionService } from '../../services/notificacion-service';
+import { notificacionRealtimeService } from '../../services/notificacion-realtime-service';
 import { notificacionesCambiosService } from '../../services/notificaciones-cambios-service';
 import {
   ariaNotificacion,
@@ -70,6 +71,7 @@ export class NotificacionesCentro {
   private readonly auth = inject(authService);
   private readonly notificacionesService = inject(notificacionService);
   private readonly cambios = inject(notificacionesCambiosService);
+  private readonly realtime = inject(notificacionRealtimeService);
   private readonly chatWidget = inject(chatWidgetService);
 
   private readonly campana = viewChild('campana', { read: ElementRef<HTMLButtonElement> });
@@ -126,6 +128,13 @@ export class NotificacionesCentro {
   );
 
   constructor() {
+    // Conecta cuando la sesión ya tiene perfil (puede restaurarse después del arranque).
+    effect(() => {
+      if (this.auth.autenticado?.() && !this.auth.visitante?.() && !this.auth.restaurando?.()) {
+        this.realtime.conectar();
+      }
+    });
+
     // Un marcado en /notificaciones debe reflejarse también en el panel.
     effect(() => {
       const revision = this.cambios.version();
