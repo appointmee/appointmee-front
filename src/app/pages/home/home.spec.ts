@@ -76,20 +76,6 @@ describe('Home branch autocomplete', () => {
     expect(fixture.nativeElement.querySelectorAll('.section__glow')).toHaveLength(3);
   });
 
-  it('muestra los créditos dentro de ¿Quiénes somos? sin iniciar sesión', () => {
-    const fixture = TestBed.createComponent(Home);
-    fixture.detectChanges();
-    const html = fixture.nativeElement as HTMLElement;
-    const about = html.querySelector('#quienes-somos')!;
-
-    expect(about.querySelector('app-creditos')).toBeTruthy();
-    expect(about.textContent).toContain('Gonzalo Leonel López');
-    expect(about.textContent).toContain('Giovanni Morro Bai');
-    expect(about.querySelector('app-creditos .creditos--integrado')).toBeTruthy();
-    expect(about.querySelector('app-creditos h3')?.textContent).toContain('Desarrollado por');
-    expect(about.querySelectorAll('a.creditos__github')).toHaveLength(0);
-  });
-
   it('muestra la abeja proporcionada en el hero como imagen decorativa', () => {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();

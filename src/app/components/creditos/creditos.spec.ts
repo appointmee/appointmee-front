@@ -60,23 +60,17 @@ describe('Creditos · RF47', () => {
     expect(enlaces[0]!.textContent).toContain('Gonzalo Leonel López');
   });
 
-  it('en modo integrado muestra solo el equipo, sin tarjeta ni duplicar la información de la plataforma', async () => {
+  it('sin tarjeta conserva todo el contenido para integrarse en un panel', async () => {
     await TestBed.configureTestingModule({ imports: [Creditos] }).compileComponents();
     const fixture = TestBed.createComponent(Creditos);
-    fixture.componentRef.setInput('nivel', 3);
-    fixture.componentRef.setInput('integrado', true);
+    fixture.componentRef.setInput('tarjeta', false);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
 
-    expect(html.querySelector('.creditos--integrado')).toBeTruthy();
-    expect(html.querySelector('.creditos__eyebrow')).toBeNull();
-    expect(html.querySelector('.creditos__descripcion')).toBeNull();
-    expect(html.querySelector('.creditos__subtitulo')).toBeNull();
-    expect(html.textContent).not.toContain('Sobre la plataforma');
-    expect(html.textContent).toContain('Gonzalo Leonel López');
-    expect(html.textContent).toContain('Giovanni Morro Bai');
-    expect(html.querySelectorAll('ul.creditos__lista > li')).toHaveLength(2);
-    expect(html.querySelectorAll('a.creditos__github')).toHaveLength(0);
+    expect(html.querySelector('.creditos--sin-tarjeta')).toBeTruthy();
+    expect(html.textContent).toContain('Equipo de desarrollo');
+    expect(html.textContent).toContain('Sobre la plataforma');
+    expect(html.querySelectorAll('a.creditos__github')).toHaveLength(2);
   });
 
   it('permite personalizar el título visible', async () => {

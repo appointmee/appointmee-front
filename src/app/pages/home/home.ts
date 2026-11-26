@@ -1,4 +1,3 @@
-import { Creditos } from '../../components/creditos/creditos';
 import { DsInputComponent } from '../../shared/ui/input/input.component';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
@@ -37,7 +36,6 @@ function comparisonKey(value: string): string {
 @Component({
   selector: 'app-home',
   imports: [
-    Creditos,
     DsInputComponent,
     DsButtonComponent,
     ReactiveFormsModule,

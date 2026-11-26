@@ -17,8 +17,6 @@ export class Creditos {
   readonly titulo = input('Créditos del sistema');
   /** Nivel del encabezado para encajar en la jerarquía de cada pantalla. */
   readonly nivel = input<2 | 3>(2);
-  /** Presentación sin tarjeta, para insertarse dentro de una sección existente. */
-  readonly integrado = input(false);
   /** Si es false, el contenido se muestra sin el contenedor visual propio. */
   readonly tarjeta = input(true);
   readonly integrantes = INTEGRANTES;
