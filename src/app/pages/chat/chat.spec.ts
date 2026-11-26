@@ -340,7 +340,7 @@ describe('Chat (US-CHAT-04)', () => {
     }
   });
 
-  it('muestra error de historial con reintento que conserve la conversación', () => {
+  it('muestra error de historial con reintento que recupera detalle e historial', () => {
     flushLista();
     const boton = html.querySelector<HTMLButtonElement>('button.conversacion')!;
     boton.click();
@@ -360,18 +360,87 @@ describe('Chat (US-CHAT-04)', () => {
       (elemento) => elemento.textContent?.trim() === 'Reintentar',
     )!;
     reintentar.click();
+
+    backend
+      .expectOne((request) => request.url.endsWith('/conversaciones/50') && request.method === 'GET')
+      .flush(DETALLE);
     backend
       .expectOne((request) => request.url.includes('/conversaciones/50/mensajes'))
       .flush(HISTORIAL);
+    backend
+      .expectOne((request) => request.url.endsWith('/conversaciones/50/leido'))
+      .flush({});
     fixture.detectChanges();
 
     expect(html.querySelectorAll('li.mensaje')).toHaveLength(3);
     expect(realtime.conectar).toHaveBeenCalledWith(50, 3);
+    expect(html.textContent).not.toContain('No pudimos cargar el historial');
   });
 
-  it('permite volver al listado desde el hilo con teclado', () => {
+  it('muestra el error de detalle con reintento y bloquea el doble clic', () => {
     flushLista();
-    abrirPrimeraConversacion();
+    html.querySelector<HTMLButtonElement>('button.conversacion')!.click();
+    fixture.detectChanges();
+
+    backend
+      .expectOne((request) => request.url.endsWith('/conversaciones/50') && request.method === 'GET')
+      .flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
+    backend
+      .expectOne((request) => request.url.includes('/conversaciones/50/mensajes'))
+      .flush(HISTORIAL);
+    backend
+      .expectOne((request) => request.url.endsWith('/conversaciones/50/leido'))
+      .flush({});
+    fixture.detectChanges();
+
+    const alerta = Array.from(html.querySelectorAll<HTMLElement>('[role="alert"]')).find(
+      (elemento) => elemento.textContent?.includes('No pudimos cargar el detalle'),
+    )!;
+    expect(alerta).toBeTruthy();
+
+    const reintentar = alerta.querySelector<HTMLButtonElement>('button')!;
+    reintentar.click();
+    reintentar.click();
+    fixture.detectChanges();
+
+    expect(html.textContent).not.toContain('No pudimos cargar el detalle');
+
+    // `expectOne` falla si el doble clic generó un segundo par de pedidos.
+    backend
+      .expectOne((request) => request.url.endsWith('/conversaciones/50') && request.method === 'GET')
+      .flush(DETALLE);
+    backend
+      .expectOne((request) => request.url.includes('/conversaciones/50/mensajes'))
+      .flush(HISTORIAL);
+    backend
+      .expectOne((request) => request.url.endsWith('/conversaciones/50/leido'))
+      .flush({});
+    fixture.detectChanges();
+
+    expect(html.textContent).not.toContain('No pudimos cargar el detalle');
+  });
+
+  it('mueve el foco al hilo al abrir y lo devuelve al listado al cerrar', () => {
+    flushLista();
+    const boton = html.querySelector<HTMLButtonElement>('button.conversacion')!;
+    boton.focus();
+    boton.click();
+    fixture.detectChanges();
+
+    backend
+      .expectOne((request) => request.url.endsWith('/conversaciones/50') && request.method === 'GET')
+      .flush(DETALLE);
+    backend
+      .expectOne((request) => request.url.includes('/conversaciones/50/mensajes'))
+      .flush(HISTORIAL);
+    backend
+      .expectOne((request) => request.url.endsWith('/conversaciones/50/leido'))
+      .flush({});
+    fixture.detectChanges();
+
+    const hilo = html.querySelector<HTMLElement>('section.hilo')!;
+    expect(hilo.getAttribute('tabindex')).toBe('-1');
+    expect(document.activeElement).toBe(hilo);
 
     const volver = html.querySelector<HTMLButtonElement>('.hilo__volver')!;
     expect(volver.getAttribute('aria-label')).toBe('Volver al listado de conversaciones');
@@ -382,5 +451,6 @@ describe('Chat (US-CHAT-04)', () => {
     expect(realtime.desconectar).toHaveBeenCalledTimes(2);
     expect(html.querySelector('#hilo-titulo')?.textContent).toContain('Elegí una conversación');
     expect(html.querySelectorAll('button.conversacion')).toHaveLength(2);
+    expect(document.activeElement).toBe(boton);
   });
 });
