@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /** Integrantes del equipo, tal como se muestran en los créditos del sistema. */
-const INTEGRANTES = ['Gonzalo Leonel López', 'Giovanni Morro Bai'] as const;
+const INTEGRANTES = [
+  { nombre: 'Gonzalo Leonel López', github: 'https://github.com/gonnnza' },
+  { nombre: 'Giovanni Morro Bai', github: 'https://github.com/giovannimb1' },
+] as const;
 
 /** Créditos del sistema: contenido estático, sin endpoints ni dependencia de roles. */
 @Component({

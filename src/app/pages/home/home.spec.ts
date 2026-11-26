@@ -87,6 +87,7 @@ describe('Home branch autocomplete', () => {
     expect(about.textContent).toContain('Giovanni Morro Bai');
     expect(about.querySelector('app-creditos .creditos--integrado')).toBeTruthy();
     expect(about.querySelector('app-creditos h3')?.textContent).toContain('Desarrollado por');
+    expect(about.querySelectorAll('a.creditos__github')).toHaveLength(0);
   });
 
   it('muestra la abeja proporcionada en el hero como imagen decorativa', () => {

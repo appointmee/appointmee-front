@@ -46,6 +46,20 @@ describe('Creditos · RF47', () => {
     expect(html.querySelector('h3')?.textContent).toContain('Créditos del sistema');
   });
 
+  it('enlaza el GitHub de cada integrante en la vista de detalle', async () => {
+    const fixture = await renderizar();
+    const html = fixture.nativeElement as HTMLElement;
+    const enlaces = [...html.querySelectorAll<HTMLAnchorElement>('a.creditos__github')];
+
+    expect(enlaces).toHaveLength(2);
+    expect(enlaces[0]!.getAttribute('href')).toBe('https://github.com/gonnnza');
+    expect(enlaces[1]!.getAttribute('href')).toBe('https://github.com/giovannimb1');
+    expect(enlaces[0]!.getAttribute('target')).toBe('_blank');
+    expect(enlaces[0]!.getAttribute('rel')).toContain('noopener');
+    expect(enlaces[0]!.getAttribute('aria-label')).toContain('Gonzalo Leonel López');
+    expect(enlaces[0]!.textContent).toContain('Gonzalo Leonel López');
+  });
+
   it('en modo integrado muestra solo el equipo, sin tarjeta ni duplicar la información de la plataforma', async () => {
     await TestBed.configureTestingModule({ imports: [Creditos] }).compileComponents();
     const fixture = TestBed.createComponent(Creditos);
@@ -62,6 +76,7 @@ describe('Creditos · RF47', () => {
     expect(html.textContent).toContain('Gonzalo Leonel López');
     expect(html.textContent).toContain('Giovanni Morro Bai');
     expect(html.querySelectorAll('ul.creditos__lista > li')).toHaveLength(2);
+    expect(html.querySelectorAll('a.creditos__github')).toHaveLength(0);
   });
 
   it('permite personalizar el título visible', async () => {

@@ -15,5 +15,11 @@ describe('CreditosPage · RF47', () => {
     expect(html.querySelector('[aria-labelledby="creditos-pagina-titulo"]')).toBeTruthy();
     expect(html.querySelector('app-creditos')?.textContent).toContain('Gonzalo Leonel López');
     expect(html.querySelector('app-creditos')?.textContent).toContain('Giovanni Morro Bai');
+
+    const enlaces = [...html.querySelectorAll<HTMLAnchorElement>('app-creditos a.creditos__github')];
+    expect(enlaces.map((enlace) => enlace.getAttribute('href'))).toEqual([
+      'https://github.com/gonnnza',
+      'https://github.com/giovannimb1',
+    ]);
   });
 });
