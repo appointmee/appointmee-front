@@ -163,17 +163,6 @@
   animation: abeja-revoloteo 0.6s ease-in-out infinite alternate;
 }
 
-.abeja__bzz {
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  opacity: 0;
-  animation: abeja-bzz 1.6s 1.35s both;
-}
-
 @keyframes abeja-vuelo {
   0% {
     transform: translate(-46vw, -38vh) rotate(-18deg) scale(0.8);
@@ -200,19 +189,6 @@
   }
   to {
     transform: translateY(2px) rotate(5deg);
-  }
-}
-
-@keyframes abeja-bzz {
-  0%,
-  100% {
-    opacity: 0;
-    transform: translateY(4px) scale(0.9);
-  }
-  20%,
-  80% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 
