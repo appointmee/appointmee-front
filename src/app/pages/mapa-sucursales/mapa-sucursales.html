@@ -61,10 +61,39 @@
       >
         Limpiar filtros
       </button>
+
+      @if (!ubicacionCompartida()) {
+        <button
+          dsButton
+          type="button"
+          variant="primary"
+          class="mapa__compartir-ubicacion"
+          [disabled]="!mapaListo()"
+          [loading]="cargandoUbicacion()"
+          (click)="abrirConfirmacionUbicacion()"
+        >
+          Compartir ubicación
+        </button>
+      }
     </div>
 
     @if (avisoCategorias()) {
       <p class="mapa__aviso" role="status">{{ avisoCategorias() }}</p>
+    }
+
+    @if (errorUbicacion()) {
+      <ds-alert>
+        <p>{{ errorUbicacion() }}</p>
+        <button
+          dsButton
+          type="button"
+          size="sm"
+          [loading]="cargandoUbicacion()"
+          (click)="reintentarUbicacion()"
+        >
+          Reintentar
+        </button>
+      </ds-alert>
     }
 
     @if (errorDatos()) {
@@ -122,6 +151,15 @@
         </p>
       }
 
+      @if (cargandoUbicacion()) {
+        <p
+          class="mapa__estado mapa__estado--flotante mapa__estado--ubicacion"
+          role="status"
+        >
+          Obteniendo tu ubicación…
+        </p>
+      }
+
       @if (errorMapa()) {
         <div class="mapa__capa mapa__capa--error">
           <ds-alert>
@@ -144,4 +182,24 @@
       sucursales de AppointMee.
     </p>
   </div>
+
+  <ds-modal
+    [open]="confirmandoUbicacion()"
+    (close)="cancelarUbicacion()"
+    ariaLabelledby="compartir-ubicacion-titulo"
+    maxWidth="520px"
+  >
+    <h2 id="compartir-ubicacion-titulo" class="mapa__modal-titulo">
+      Compartir ubicación
+    </h2>
+    <p class="mapa__modal-texto">{{ mensajeCompartirUbicacion }}</p>
+    <div class="mapa__acciones-modal">
+      <button dsButton type="button" (click)="cancelarUbicacion()">
+        Cancelar
+      </button>
+      <button dsButton type="button" variant="primary" (click)="confirmarUbicacion()">
+        Aceptar
+      </button>
+    </div>
+  </ds-modal>
 </section>

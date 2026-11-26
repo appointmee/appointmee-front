@@ -1,6 +1,7 @@
 import {
   SucursalMapaDTO,
   iconoIndicadorMapa,
+  iconoUbicacionClienteMapa,
   textoIndicadorMapa,
 } from './mapa-sucursales-datos';
 import {
@@ -391,5 +392,58 @@ describe('US-MAP-06 · motor de indicadores', () => {
     expect(marcadores.every((marcador) => marcador.removido)).toBe(true);
     expect(motor.cantidadMarcadores).toBe(0);
     expect(mapa.listenerMapa).toBeNull();
+  });
+});
+
+describe('US-MAP-07 · indicador del cliente', () => {
+  const contenido = (sucursalActual: SucursalMapaDTO) =>
+    `${sucursalActual.nombre}`;
+
+  it('agrega una abeja accesible, centra el mapa y conserva las sucursales', () => {
+    const { api, mapa, marcadores } = crearApi();
+    const motor = new MotorMapaSucursales(api, mapa);
+    const iconoCliente = iconoUbicacionClienteMapa('#5aa0f7', '#eef2f7');
+
+    motor.actualizar([sucursal(1, -34.6), sucursal(2, -35.2)], contenido, icono);
+    motor.mostrarUbicacionCliente({ lat: -34.55, lng: -58.4 }, iconoCliente);
+
+    const cliente = marcadores.at(-1)!;
+    expect(motor.ubicacionClienteVisible).toBe(true);
+    expect(marcadores).toHaveLength(3);
+    expect(marcadores.slice(0, 2).every((marcador) => marcador.mapa === mapa)).toBe(
+      true,
+    );
+    expect(cliente.opciones['map']).toBe(mapa);
+    expect(cliente.opciones['title']).toBe('Tu ubicación');
+    expect(cliente.opciones['zIndex']).toBe(1000);
+    expect(cliente.opciones['icon']).toBe(iconoCliente);
+    expect(motor.origenCliente).toEqual({ lat: -34.55, lng: -58.4 });
+    expect(mapa.centros.at(-1)).toEqual({ lat: -34.55, lng: -58.4 });
+
+    motor.actualizar([sucursal(1, -34.6)], contenido, icono);
+    expect(motor.ubicacionClienteVisible).toBe(true);
+    expect(cliente.mapa).toBe(mapa);
+    expect(motor.cantidadMarcadores).toBe(1);
+  });
+
+  it('reemplaza el indicador anterior y lo libera al destruir', () => {
+    const { api, mapa, marcadores } = crearApi();
+    const motor = new MotorMapaSucursales(api, mapa);
+    const iconoCliente = iconoUbicacionClienteMapa('#5aa0f7', '#eef2f7');
+
+    motor.mostrarUbicacionCliente({ lat: -34.55, lng: -58.4 }, iconoCliente);
+    motor.mostrarUbicacionCliente({ lat: -34.56, lng: -58.41 }, iconoCliente);
+
+    expect(marcadores[0].removido).toBe(true);
+    expect(marcadores[1].opciones['position']).toEqual({
+      lat: -34.56,
+      lng: -58.41,
+    });
+    expect(motor.origenCliente).toEqual({ lat: -34.56, lng: -58.41 });
+
+    motor.destruir();
+    expect(marcadores[1].removido).toBe(true);
+    expect(motor.ubicacionClienteVisible).toBe(false);
+    expect(motor.origenCliente).toBeNull();
   });
 });

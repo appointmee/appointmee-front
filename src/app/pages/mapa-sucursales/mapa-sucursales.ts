@@ -14,12 +14,19 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 
+import {
+  ErrorGeolocalizacion,
+  FalloGeolocalizacion,
+  PosicionCliente,
+  geolocalizacionService,
+} from '../../services/geolocalizacion-service';
 import { googleMapsService } from '../../services/google-maps-service';
 import { sucursalService } from '../../services/sucursal-service';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   DsAlertComponent,
   DsEmptyStateComponent,
+  DsModalComponent,
   DsSelectComponent,
   DsSkeletonComponent,
 } from '../../shared/ui/misc/misc.component';
@@ -37,6 +44,7 @@ import {
   filtrarSucursalesMapa,
   humanizarCategoria,
   iconoIndicadorMapa,
+  iconoUbicacionClienteMapa,
   puntuacionMapa,
   terminoDeBusquedaMapa,
   textoIndicadorMapa,
@@ -51,6 +59,10 @@ import {
 const CENTRO_INICIAL = { lat: -34.6037, lng: -58.3816 };
 const ZOOM_INICIAL = 5;
 
+/** Texto exacto del cuadro de confirmación de US-MAP-07. */
+const MENSAJE_COMPARTIR_UBICACION =
+  '¡Compartí tu ubicación! Si aceptás, aparecerás en el mapa como una abeja para que puedas identificar fácilmente dónde estás respecto a las sucursales. Tu ubicación no se guardará ni se enviará al servidor';
+
 /** Mismo reemplazo que usa el detalle de sucursal cuando no hay foto. */
 const IMAGEN_SIN_FOTO = `data:image/svg+xml;utf8,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400"><rect width="640" height="400" fill="#0d1117"/><g fill="none" stroke="#98a2b3" stroke-width="3"><rect x="220" y="110" width="200" height="150" rx="16"/><circle cx="280" cy="160" r="20"/><path d="220 230l55-50 40 34 35-28 70 60"/></g><text x="320" y="310" text-anchor="middle" fill="#98a2b3" font-size="18" font-family="sans-serif">Sin imagen</text></svg>',
@@ -63,7 +75,8 @@ const IMAGEN_SIN_FOTO = `data:image/svg+xml;utf8,${encodeURIComponent(
  * locales, por nombre y categoría, y nunca vuelven a consultar el backend. La
  * Maps JavaScript API se carga con el loader centralizado únicamente cuando el
  * lienzo se acerca al viewport, y los indicadores se reconcilian sin
- * reconstruir el mapa.
+ * reconstruir el mapa. US-MAP-07 agrega, solo tras confirmación explícita, una
+ * geolocalización puntual y un indicador propio para el cliente.
  */
 @Component({
   selector: 'app-mapa-sucursales',
@@ -72,6 +85,7 @@ const IMAGEN_SIN_FOTO = `data:image/svg+xml;utf8,${encodeURIComponent(
     DsButtonComponent,
     DsEmptyStateComponent,
     DsInputComponent,
+    DsModalComponent,
     DsSelectComponent,
     DsSkeletonComponent,
   ],
@@ -82,6 +96,7 @@ const IMAGEN_SIN_FOTO = `data:image/svg+xml;utf8,${encodeURIComponent(
 export class MapaSucursales implements AfterViewInit {
   private readonly service = inject(sucursalService);
   private readonly googleMaps = inject(googleMapsService);
+  private readonly geolocalizacion = inject(geolocalizacionService);
   private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
@@ -103,6 +118,12 @@ export class MapaSucursales implements AfterViewInit {
   protected readonly errorMapa = signal<string | null>(null);
   protected readonly mapaListo = signal(false);
   private readonly motor = signal<MotorMapaSucursales | null>(null);
+
+  protected readonly mensajeCompartirUbicacion = MENSAJE_COMPARTIR_UBICACION;
+  protected readonly confirmandoUbicacion = signal(false);
+  protected readonly cargandoUbicacion = signal(false);
+  protected readonly ubicacionCompartida = signal(false);
+  protected readonly errorUbicacion = signal<string | null>(null);
 
   protected readonly categorias = computed(() => {
     const delServicio = this.categoriasServicio();
@@ -278,6 +299,89 @@ export class MapaSucursales implements AfterViewInit {
     void this.inicializarMapa(elemento);
   }
 
+  protected abrirConfirmacionUbicacion(): void {
+    if (this.ubicacionCompartida() || this.cargandoUbicacion() || !this.mapaListo()) {
+      return;
+    }
+    this.errorUbicacion.set(null);
+    this.confirmandoUbicacion.set(true);
+  }
+
+  protected cancelarUbicacion(): void {
+    this.confirmandoUbicacion.set(false);
+  }
+
+  protected confirmarUbicacion(): void {
+    if (!this.confirmandoUbicacion()) {
+      return;
+    }
+    this.cancelarUbicacion();
+    void this.obtenerUbicacion();
+  }
+
+  protected reintentarUbicacion(): void {
+    void this.obtenerUbicacion();
+  }
+
+  private async obtenerUbicacion(): Promise<void> {
+    if (
+      this.cargandoUbicacion() ||
+      this.ubicacionCompartida() ||
+      !this.mapaListo()
+    ) {
+      return;
+    }
+    const motor = this.motor();
+    if (!motor) {
+      return;
+    }
+
+    this.cargandoUbicacion.set(true);
+    this.errorUbicacion.set(null);
+    try {
+      const posicion: PosicionCliente =
+        await this.geolocalizacion.obtenerPosicion();
+      if (this.destruido) {
+        return;
+      }
+      motor.mostrarUbicacionCliente(posicion, this.iconoUbicacionCliente());
+      this.ubicacionCompartida.set(true);
+    } catch (error) {
+      if (this.destruido) {
+        return;
+      }
+      const tipo =
+        error instanceof ErrorGeolocalizacion ? error.tipo : ('error' as const);
+      this.errorUbicacion.set(this.mensajeErrorUbicacion(tipo));
+    } finally {
+      if (!this.destruido) {
+        this.cargandoUbicacion.set(false);
+      }
+    }
+  }
+
+  private iconoUbicacionCliente(): string {
+    const estilos = this.document.defaultView?.getComputedStyle(
+      this.document.documentElement,
+    );
+    const color = estilos?.getPropertyValue('--info').trim() || '';
+    const texto = estilos?.getPropertyValue('--text').trim() || '';
+    return iconoUbicacionClienteMapa(color, texto);
+  }
+
+  private mensajeErrorUbicacion(tipo: FalloGeolocalizacion): string {
+    switch (tipo) {
+      case 'sin-soporte':
+        return 'Tu navegador no permite compartir la ubicación. Probá desde otro navegador o dispositivo.';
+      case 'denegado':
+        return 'No pudimos acceder a tu ubicación porque no diste permiso. Habilitalo en el navegador y volvé a intentar.';
+      case 'timeout':
+        return 'Se agotó el tiempo para obtener tu ubicación. Intentá de nuevo.';
+      default:
+        return 'No pudimos obtener tu ubicación. Intentá de nuevo.';
+    }
+  }
+
   private cargarDatos(): void {
     this.cargandoDatos.set(true);
     this.errorDatos.set(null);
@@ -440,7 +544,7 @@ export class MapaSucursales implements AfterViewInit {
       this.estilizarBotonVentana(llegar, false);
       this.registrarEnVentana(llegar, 'click', () => {
         this.document.defaultView?.open(
-          urlCómoLlegar(coordenadas),
+          urlCómoLlegar(coordenadas, this.motor()?.origenCliente),
           '_blank',
           'noopener,noreferrer',
         );

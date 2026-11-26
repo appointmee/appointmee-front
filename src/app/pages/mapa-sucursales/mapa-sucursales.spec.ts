@@ -5,6 +5,11 @@ import { Observable, of, throwError } from 'rxjs';
 
 import { SucursalMiniDTO } from '../../models/sucursal';
 import {
+  ErrorGeolocalizacion,
+  PosicionCliente,
+  geolocalizacionService,
+} from '../../services/geolocalizacion-service';
+import {
   googleMapsService,
   GoogleMapsNamespace,
 } from '../../services/google-maps-service';
@@ -14,6 +19,9 @@ import { MapaSucursales } from './mapa-sucursales';
 
 @Component({ template: '' })
 class EmptyPage {}
+
+const MENSAJE_UBICACION =
+  '¡Compartí tu ubicación! Si aceptás, aparecerás en el mapa como una abeja para que puedas identificar fácilmente dónde estás respecto a las sucursales. Tu ubicación no se guardará ni se enviará al servidor';
 
 const SUCURSALES: readonly SucursalMapaDTO[] = [
   {
@@ -182,6 +190,7 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
   let filtrar: ReturnType<typeof vi.fn>;
   let categorias: ReturnType<typeof vi.fn>;
   let cargar: ReturnType<typeof vi.fn>;
+  let obtenerPosicion: ReturnType<typeof vi.fn>;
   let mapa: MapaFalso;
   let ventana: VentanaFalsa;
   let marcadores: MarcadorFalso[];
@@ -231,6 +240,9 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
     cargar = vi.fn<() => Promise<GoogleMapsNamespace>>(() =>
       Promise.resolve(apiFalsa),
     );
+    obtenerPosicion = vi.fn<() => Promise<PosicionCliente>>(() =>
+      Promise.resolve({ lat: -34.55, lng: -58.4 }),
+    );
 
     TestBed.configureTestingModule({
       imports: [MapaSucursales],
@@ -241,6 +253,7 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
         ]),
         { provide: sucursalService, useValue: { listar, filtrar, categorias } },
         { provide: googleMapsService, useValue: { cargar } },
+        { provide: geolocalizacionService, useValue: { obtenerPosicion } },
       ],
     });
 
@@ -275,6 +288,31 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     await vi.advanceTimersByTimeAsync(350);
+    fixture.detectChanges();
+  }
+
+  function botonCompartir(): HTMLButtonElement | null {
+    return host.querySelector<HTMLButtonElement>('.mapa__compartir-ubicacion');
+  }
+
+  function dialogo(): HTMLElement | null {
+    return host.querySelector<HTMLElement>('ds-modal .ds-modal');
+  }
+
+  function abrirDialogo(): void {
+    botonCompartir()!.click();
+    fixture.detectChanges();
+  }
+
+  function accionDialogo(indice: number): void {
+    dialogo()!.querySelectorAll<HTMLButtonElement>('button')[indice].click();
+    fixture.detectChanges();
+  }
+
+  async function confirmarUbicacion(): Promise<void> {
+    abrirDialogo();
+    accionDialogo(1);
+    await fixture.whenStable();
     fixture.detectChanges();
   }
 
@@ -457,6 +495,9 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
       'destination',
     );
     expect(destino).toBe('-34.6,-58.3');
+    expect(
+      new URL(abrir.mock.calls[0][0] as string).searchParams.has('origin'),
+    ).toBe(false);
 
     botones[0].click();
     fixture.detectChanges();
@@ -575,5 +616,198 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
 
     expect(cargar).toHaveBeenCalledTimes(2);
     expect(host.querySelector('.mapa__capa--error')).toBeNull();
+  });
+
+  it('muestra el botón en el mapa y cancelar no pide la ubicación', async () => {
+    await crear();
+
+    const boton = botonCompartir();
+    expect(boton).not.toBeNull();
+    expect(boton!.textContent?.trim()).toBe('Compartir ubicación');
+    expect(boton!.disabled).toBe(true);
+    boton!.click();
+    fixture.detectChanges();
+    expect(dialogo()).toBeNull();
+    expect(obtenerPosicion).not.toHaveBeenCalled();
+
+    await revelar();
+    expect(botonCompartir()!.disabled).toBe(false);
+    abrirDialogo();
+
+    expect(dialogo()?.textContent).toContain(MENSAJE_UBICACION);
+    expect(
+      Array.from(dialogo()!.querySelectorAll('button')).map((accion) =>
+        accion.textContent?.trim(),
+      ),
+    ).toEqual(['Cancelar', 'Aceptar']);
+    expect(obtenerPosicion).not.toHaveBeenCalled();
+
+    accionDialogo(0);
+    expect(dialogo()).toBeNull();
+    expect(obtenerPosicion).not.toHaveBeenCalled();
+    expect(botonCompartir()).not.toBeNull();
+    expect(marcadores).toHaveLength(2);
+
+    const select = host.querySelector<HTMLSelectElement>('ds-select select')!;
+    select.value = 'SPA';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(marcadores).toHaveLength(2);
+    expect(marcadores[1].mapa).toBeNull();
+  });
+
+  it('cierra el cuadro de confirmación desde el fondo sin solicitar permiso', async () => {
+    await crear();
+    await revelar();
+    abrirDialogo();
+
+    host.querySelector<HTMLElement>('.ds-modal-backdrop')!.click();
+    fixture.detectChanges();
+
+    expect(dialogo()).toBeNull();
+    expect(obtenerPosicion).not.toHaveBeenCalled();
+    expect(botonCompartir()).not.toBeNull();
+  });
+
+  it('dibuja la abeja del cliente, centra el mapa, conserva sucursales y oculta el botón', async () => {
+    await crear();
+    await revelar();
+    await confirmarUbicacion();
+
+    expect(obtenerPosicion).toHaveBeenCalledTimes(1);
+    expect(marcadores).toHaveLength(3);
+    expect(marcadores[0].mapa).toBe(mapa);
+    expect(marcadores[1].mapa).toBe(mapa);
+
+    const cliente = marcadores[2];
+    expect(cliente.opciones['map']).toBe(mapa);
+    expect(cliente.opciones['title']).toBe('Tu ubicación');
+    expect(cliente.opciones['zIndex']).toBe(1000);
+    const svg = decodeURIComponent(String(cliente.opciones['icon']));
+    expect(svg).toContain('width="88"');
+    expect(svg).toContain('🐝');
+    expect(svg).toContain('>VOS<');
+    expect(mapa.centros.at(-1)).toEqual({ lat: -34.55, lng: -58.4 });
+    expect(botonCompartir()).toBeNull();
+    expect(host.querySelector('[role="alert"]')).toBeNull();
+
+    await buscar('Norte');
+    expect(marcadores[0].mapa).toBeNull();
+    expect(marcadores[1].mapa).toBe(mapa);
+    expect(cliente.mapa).toBe(mapa);
+  });
+
+  it('muestra carga, bloquea solicitudes simultáneas y oculta el botón solo al éxito', async () => {
+    let resolver!: (posicion: PosicionCliente) => void;
+    obtenerPosicion.mockReturnValue(
+      new Promise<PosicionCliente>((resolve) => {
+        resolver = resolve;
+      }),
+    );
+    await crear();
+    await revelar();
+    abrirDialogo();
+    accionDialogo(1);
+    fixture.detectChanges();
+
+    const boton = botonCompartir()!;
+    expect(obtenerPosicion).toHaveBeenCalledTimes(1);
+    expect(boton.disabled).toBe(true);
+    expect(boton.getAttribute('aria-busy')).toBe('true');
+    expect(host.querySelector('.mapa__estado--ubicacion')?.textContent).toContain(
+      'Obteniendo tu ubicación',
+    );
+    expect(botonCompartir()).not.toBeNull();
+
+    (
+      fixture.componentInstance as unknown as {
+        obtenerUbicacion: () => Promise<void>;
+      }
+    ).obtenerUbicacion();
+    expect(obtenerPosicion).toHaveBeenCalledTimes(1);
+
+    resolver({ lat: -34.55, lng: -58.4 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(botonCompartir()).toBeNull();
+    expect(host.querySelector('.mapa__estado--ubicacion')).toBeNull();
+  });
+
+  it('no dibuja marcador al denegar permiso y permite reintentar', async () => {
+    obtenerPosicion
+      .mockRejectedValueOnce(new ErrorGeolocalizacion('denegado'))
+      .mockResolvedValueOnce({ lat: -34.55, lng: -58.4 });
+    await crear();
+    await revelar();
+    await confirmarUbicacion();
+
+    expect(obtenerPosicion).toHaveBeenCalledTimes(1);
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain(
+      'no diste permiso',
+    );
+    expect(marcadores).toHaveLength(2);
+    expect(botonCompartir()).not.toBeNull();
+
+    const reintentar = host.querySelector<HTMLButtonElement>('ds-alert button')!;
+    reintentar.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(obtenerPosicion).toHaveBeenCalledTimes(2);
+    expect(host.querySelector('[role="alert"]')).toBeNull();
+    expect(marcadores).toHaveLength(3);
+    expect(botonCompartir()).toBeNull();
+  });
+
+  it('informa sin soporte, timeout y error genérico en español con reintento', async () => {
+    const casos = [
+      { tipo: 'sin-soporte', texto: 'no permite compartir' },
+      { tipo: 'timeout', texto: 'Se agotó el tiempo' },
+      { tipo: 'error', texto: 'No pudimos obtener tu ubicación' },
+    ] as const;
+
+    await crear();
+    await revelar();
+
+    for (const [indice, caso] of casos.entries()) {
+      obtenerPosicion.mockRejectedValueOnce(
+        new ErrorGeolocalizacion(caso.tipo),
+      );
+      if (indice === 0) {
+        await confirmarUbicacion();
+      } else {
+        host.querySelector<HTMLButtonElement>('ds-alert button')!.click();
+        await fixture.whenStable();
+        fixture.detectChanges();
+      }
+
+      expect(host.querySelector('[role="alert"]')?.textContent).toContain(
+        caso.texto,
+      );
+      expect(marcadores).toHaveLength(2);
+      expect(botonCompartir()).not.toBeNull();
+    }
+
+    expect(obtenerPosicion).toHaveBeenCalledTimes(3);
+  });
+
+  it('usa la ubicación compartida como origen al navegar hasta una sucursal', async () => {
+    await crear();
+    await revelar();
+    await confirmarUbicacion();
+    const abrir = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    marcadores[0].listener?.();
+    fixture.detectChanges();
+    const botones = (ventana.contenido as HTMLElement).querySelectorAll(
+      'button',
+    );
+    botones[1].click();
+
+    const url = new URL(abrir.mock.calls[0][0] as string);
+    expect(url.searchParams.get('origin')).toBe('-34.55,-58.4');
+    expect(url.searchParams.get('destination')).toBe('-34.6,-58.3');
+    expect(url.searchParams.get('api')).toBe('1');
   });
 });

@@ -8,6 +8,7 @@ import {
   filtrarSucursalesMapa,
   humanizarCategoria,
   iconoIndicadorMapa,
+  iconoUbicacionClienteMapa,
   puntuacionMapa,
   terminoDeBusquedaMapa,
   textoIndicadorMapa,
@@ -101,6 +102,21 @@ describe('US-MAP-06 · datos del mapa global', () => {
     expect(url.searchParams.has('origin')).toBe(false);
   });
 
+  it('agrega el origen compartido por el cliente a Cómo llegar', () => {
+    const url = new URL(
+      urlCómoLlegar(
+        { lat: -34.6, lng: -58.3 },
+        { lat: -34.55, lng: -58.4 },
+      ),
+    );
+
+    expect(url.origin + url.pathname).toBe('https://www.google.com/maps/dir/');
+    expect(url.searchParams.get('origin')).toBe('-34.55,-58.4');
+    expect(url.searchParams.get('destination')).toBe('-34.6,-58.3');
+    expect(url.searchParams.get('api')).toBe('1');
+    expect(url.searchParams.has('key')).toBe(false);
+  });
+
   it('humaniza categorías con el mismo formato del listado tradicional', () => {
     expect(humanizarCategoria('CENTRO_DE_BELLEZA')).toBe('Centro De Belleza');
     expect(humanizarCategoria(null)).toBe('');
@@ -166,6 +182,30 @@ describe('US-MAP-06 · datos del mapa global', () => {
       expect(decodeURIComponent(iconoIndicadorMapa('3', 'url(x)'))).toContain(
         'fill="#f7c65a"',
       );
+    });
+
+    it('dibuja la abeja del cliente con forma y colores propios', () => {
+      const svg = decodeURIComponent(
+        iconoUbicacionClienteMapa('#5aa0f7', '#eef2f7'),
+      );
+
+      expect(svg).toContain('width="88"');
+      expect(svg).toContain('height="88"');
+      expect(svg).toContain(ABEJA_MAPA);
+      expect(svg).toContain('>VOS<');
+      expect(svg).toContain('fill="#5aa0f7"');
+      expect(svg).toContain('stroke="#eef2f7"');
+      expect(svg).not.toContain('width="44"');
+      expect(svg).not.toContain('width="62"');
+    });
+
+    it('descarta colores inválidos en el indicador del cliente', () => {
+      const svg = decodeURIComponent(
+        iconoUbicacionClienteMapa('url(x)', 'expresion(0)'),
+      );
+
+      expect(svg).toContain('fill="#5aa0f7"');
+      expect(svg).toContain('stroke="#eef2f7"');
     });
 
     it('llena las abejas hasta el valor redondeado', () => {

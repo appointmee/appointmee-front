@@ -85,6 +85,8 @@ export class MotorMapaSucursales {
   private readonly marcadores = new Map<number, EntradaMarcador>();
   private readonly ventana: VentanaGoogle;
   private readonly listenerMapa: ListenerGoogle;
+  private ubicacionCliente: MarcadorGoogle | null = null;
+  private coordenadasCliente: CoordenadasMapa | null = null;
   private seleccion: number | null = null;
   private abierta = false;
 
@@ -100,6 +102,39 @@ export class MotorMapaSucursales {
 
   get cantidadMarcadores(): number {
     return this.marcadores.size;
+  }
+
+  get ubicacionClienteVisible(): boolean {
+    return this.ubicacionCliente !== null;
+  }
+
+  /** Origen ya obtenido por US-MAP-07, reutilizado para calcular la ruta. */
+  get origenCliente(): CoordenadasMapa | null {
+    return this.coordenadasCliente;
+  }
+
+  /**
+   * US-MAP-07 · Dibuja un único indicador propio para el cliente y centra el
+   * mapa en él. No toca los marcadores de sucursales ni sus filtros.
+   */
+  mostrarUbicacionCliente(
+    coordenadas: CoordenadasMapa,
+    icono: string,
+    titulo = 'Tu ubicación',
+  ): void {
+    if (this.ubicacionCliente) {
+      this.ubicacionCliente.setMap(null);
+    }
+    this.coordenadasCliente = coordenadas;
+    const posicion = new this.api.maps.LatLng(coordenadas.lat, coordenadas.lng);
+    this.ubicacionCliente = new this.api.maps.Marker({
+      position: posicion,
+      map: this.mapa,
+      icon: icono,
+      title: titulo,
+      zIndex: 1000,
+    });
+    this.mapa.setCenter(posicion);
   }
 
   get seleccionActual(): number | null {
@@ -210,6 +245,11 @@ export class MotorMapaSucursales {
   destruir(): void {
     this.cerrarVentana();
     this.listenerMapa.remove();
+    if (this.ubicacionCliente) {
+      this.ubicacionCliente.setMap(null);
+      this.ubicacionCliente = null;
+    }
+    this.coordenadasCliente = null;
     for (const [id, entrada] of this.marcadores) {
       this.removerMarcador(id, entrada);
     }
