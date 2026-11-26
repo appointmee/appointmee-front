@@ -194,6 +194,97 @@
   margin-top: var(--space-6);
 }
 
+.notificaciones__filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.notificaciones__filtros label {
+  color: var(--muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.notificaciones__filtros select {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--font-size-sm);
+}
+
+.notificaciones__limpiar {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.notificaciones__acciones {
+  margin-bottom: var(--space-3);
+}
+
+.notificaciones__acciones button {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.notificaciones__acciones button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.notificaciones__accion-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--text);
+  font-size: var(--font-size-sm);
+}
+
+.notificaciones__item {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.notificaciones__marcar {
+  justify-self: start;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.notificaciones__marcar:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 @media (max-width: 640px) {
   .notificaciones {
     width: calc(100% - var(--space-4));

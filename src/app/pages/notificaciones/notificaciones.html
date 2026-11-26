@@ -9,6 +9,58 @@
     <a class="notificaciones__volver" routerLink="/">Volver al inicio</a>
   </header>
 
+  <div class="notificaciones__filtros" role="group" aria-label="Filtrar notificaciones">
+    <label for="filtro-tipo">Tipo de notificación</label>
+    <select id="filtro-tipo" [value]="filtroTipo()" (change)="cambiarFiltroTipo($event)">
+      <option value="TODOS">Todos los tipos</option>
+      @for (tipo of tipos; track tipo) {
+        <option [value]="tipo">{{ etiquetaTipo(tipo) }}</option>
+      }
+    </select>
+    <label for="filtro-lectura">Estado de lectura</label>
+    <select
+      id="filtro-lectura"
+      [value]="filtroLectura()"
+      (change)="cambiarFiltroLectura($event)"
+    >
+      <option value="TODAS">Todas</option>
+      <option value="NO_LEIDAS">Sin leer</option>
+      <option value="LEIDAS">Leídas</option>
+    </select>
+    @if (hayFiltros()) {
+      <button type="button" class="notificaciones__limpiar" (click)="limpiarFiltros()">
+        Limpiar filtros
+      </button>
+    }
+  </div>
+
+  <div class="notificaciones__acciones">
+    <button
+      dsButton
+      type="button"
+      [disabled]="!puedeMarcarTodas()"
+      [loading]="marcandoTodas()"
+      (click)="marcarTodas()"
+    >
+      {{ marcandoTodas() ? 'Marcando…' : 'Marcar todas como leídas' }}
+    </button>
+  </div>
+
+  @if (accionError()) {
+    <div class="notificaciones__accion-error" role="alert" aria-live="assertive" aria-atomic="true">
+      <span>{{ accionError() }}</span>
+      <button
+        dsButton
+        type="button"
+        [disabled]="idEnProceso() !== null || marcandoTodas()"
+        [loading]="idEnProceso() !== null || marcandoTodas()"
+        (click)="reintentarAccion()"
+      >
+        Reintentar
+      </button>
+    </div>
+  }
+
   @if (sinConexion()) {
     <div class="notificaciones__aviso" role="status" aria-live="polite">
       Sin conexión a internet. Podés reintentar cuando vuelva la conexión.
@@ -60,6 +112,7 @@
     <ol class="notificaciones__lista" aria-label="Listado de notificaciones">
       @for (notificacion of notificaciones(); track notificacion.id) {
         <li>
+          <div class="notificaciones__item">
           <button
             class="notificacion"
             type="button"
@@ -88,6 +141,19 @@
               </ds-badge>
             </span>
           </button>
+            @if (!notificacion.leida) {
+              <button
+                class="notificaciones__marcar"
+                type="button"
+                [disabled]="idEnProceso() !== null || marcandoTodas() || cargando() || reintentando()"
+                [attr.aria-busy]="idEnProceso() === notificacion.id"
+                [attr.aria-label]="'Marcar como leída: ' + notificacion.titulo"
+                (click)="marcarLeida(notificacion)"
+              >
+                {{ idEnProceso() === notificacion.id ? 'Marcando…' : 'Marcar como leída' }}
+              </button>
+            }
+          </div>
         </li>
       }
     </ol>

@@ -56,6 +56,64 @@
         </button>
       </header>
 
+      <div class="panel__filtros" role="group" aria-label="Filtrar notificaciones">
+        <label class="sr-only" for="panel-filtro-tipo">Tipo de notificación</label>
+        <select
+          id="panel-filtro-tipo"
+          [value]="filtroTipo()"
+          (change)="cambiarFiltroTipo($event)"
+        >
+          <option value="TODOS">Todos los tipos</option>
+          @for (tipo of tipos; track tipo) {
+            <option [value]="tipo">{{ etiquetaTipo(tipo) }}</option>
+          }
+        </select>
+        <label class="sr-only" for="panel-filtro-lectura">Estado de lectura</label>
+        <select
+          id="panel-filtro-lectura"
+          [value]="filtroLectura()"
+          (change)="cambiarFiltroLectura($event)"
+        >
+          <option value="TODAS">Todas</option>
+          <option value="NO_LEIDAS">Sin leer</option>
+          <option value="LEIDAS">Leídas</option>
+        </select>
+        @if (hayFiltros()) {
+          <button class="panel__limpiar" type="button" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        }
+      </div>
+
+      <div class="panel__acciones">
+        <button
+          dsButton
+          class="panel__marcar-todas"
+          type="button"
+          [disabled]="!puedeMarcarTodas()"
+          [loading]="marcandoTodas()"
+          (click)="marcarTodas()"
+        >
+          {{ marcandoTodas() ? 'Marcando…' : 'Marcar todas como leídas' }}
+        </button>
+      </div>
+
+      @if (accionError()) {
+        <div class="panel__accion-error" role="alert" aria-live="assertive" aria-atomic="true">
+          <span>{{ accionError() }}</span>
+          <button
+            dsButton
+            class="panel__accion"
+            type="button"
+            [disabled]="idEnProceso() !== null || marcandoTodas()"
+            [loading]="idEnProceso() !== null || marcandoTodas()"
+            (click)="reintentarAccion()"
+          >
+            Reintentar
+          </button>
+        </div>
+      }
+
       @if (sinConexion()) {
         <div class="panel__aviso" role="status" aria-live="polite">
           Sin conexión a internet. Podés reintentar cuando vuelva la conexión.
@@ -119,6 +177,7 @@
         <ol class="panel__lista" aria-label="Listado de notificaciones">
           @for (notificacion of notificaciones(); track notificacion.id) {
             <li class="panel__item">
+              <div class="panel__item-contenido">
               <button
                 class="notificacion"
                 type="button"
@@ -147,6 +206,19 @@
                   </ds-badge>
                 </span>
               </button>
+                @if (!notificacion.leida) {
+                  <button
+                    class="panel__marcar"
+                    type="button"
+                    [disabled]="idEnProceso() !== null || marcandoTodas() || cargando() || reintentando()"
+                    [attr.aria-busy]="idEnProceso() === notificacion.id"
+                    [attr.aria-label]="'Marcar como leída: ' + notificacion.titulo"
+                    (click)="marcarLeida(notificacion)"
+                  >
+                    {{ idEnProceso() === notificacion.id ? 'Marcando…' : 'Marcar como leída' }}
+                  </button>
+                }
+              </div>
             </li>
           }
         </ol>
