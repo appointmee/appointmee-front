@@ -13,19 +13,29 @@ import { verificacionPendienteService } from '../../services/verificacion-pendie
 import { authService } from '../../services/auth-service';
 import { verificacionService } from '../../services/verificacion-service';
 import { CambiarPassword } from '../../components/cambiar-password/cambiar-password';
+import { Creditos } from '../../components/creditos/creditos';
 import { EliminarCuenta } from '../../components/eliminar-cuenta/eliminar-cuenta';
 
 import { EditarPerfil } from '../../components/editar-perfil/editar-perfil';
 
 @Component({
-  imports: [DsInputComponent, DsButtonComponent, CambiarPassword, EliminarCuenta, EditarPerfil],
+  imports: [
+    Creditos,
+    DsInputComponent,
+    DsButtonComponent,
+    CambiarPassword,
+    EliminarCuenta,
+    EditarPerfil,
+  ],
   selector: 'app-configuracion',
   templateUrl: './configuracion.html',
   styleUrl: './configuracion.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Configuracion implements OnInit {
-  seccion = signal<'perfil' | 'verificacion' | 'password' | 'eliminar'>('verificacion');
+  seccion = signal<'perfil' | 'verificacion' | 'password' | 'eliminar' | 'creditos'>(
+    'verificacion',
+  );
 
   auth = inject(authService);
   private verificacion = inject(verificacionService);

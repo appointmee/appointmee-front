@@ -1,0 +1,24 @@
+.creditos-pagina {
+  display: grid;
+  gap: var(--space-3);
+  width: min(100%, 52rem);
+  margin-inline: auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+.creditos-pagina h1 {
+  margin: 0;
+  color: var(--text);
+}
+
+.creditos-pagina > p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+  .creditos-pagina {
+    padding: var(--space-4) var(--space-3);
+  }
+}

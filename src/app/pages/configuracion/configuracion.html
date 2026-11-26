@@ -6,6 +6,8 @@
   <nav class="ajustes__pestanas" aria-label="Secciones de ajustes">
     <button dsButton type="button" class="ajustes__pestana" [class.ajustes__pestana--activa]="seccion() === 'verificacion'"
       [attr.aria-pressed]="seccion() === 'verificacion'" (click)="seccion.set('verificacion')">Verificar cuenta</button>
+    <button dsButton type="button" class="ajustes__pestana" [class.ajustes__pestana--activa]="seccion() === 'creditos'"
+      [attr.aria-pressed]="seccion() === 'creditos'" (click)="seccion.set('creditos')">Créditos</button>
     @if (auth.autenticado()) {
       <button dsButton type="button" class="ajustes__pestana" [class.ajustes__pestana--activa]="seccion() === 'perfil'"
         [attr.aria-pressed]="seccion() === 'perfil'" (click)="seccion.set('perfil')">Datos personales</button>
@@ -22,6 +24,8 @@
     <app-cambiar-password />
   } @else if (seccion() === 'eliminar') {
     <app-eliminar-cuenta />
+  } @else if (seccion() === 'creditos') {
+    <app-creditos [titulo]="'Créditos del sistema'" />
   } @else {
   <section class="verificacion" aria-labelledby="verificacion-titulo">
     <div class="verificacion__cabecera">

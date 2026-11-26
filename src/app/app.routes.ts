@@ -350,6 +350,16 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/configuracion/configuracion').then(module => module.Configuracion),
   },
   {
+    path: 'creditos',
+    title: 'AppointMee | Créditos del sistema',
+    data: {
+      title: 'Créditos',
+      description: 'Equipo de desarrollo e información general de AppointMee.',
+    },
+    loadComponent: () =>
+      import('./pages/creditos/creditos-page').then((module) => module.CreditosPage),
+  },
+  {
     path: 'error',
     title: 'AppointMee | Algo salió mal',
     loadComponent: () => import('./pages/error/error').then((module) => module.ErrorPage),

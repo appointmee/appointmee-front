@@ -1,0 +1,36 @@
+<section class="creditos" [attr.aria-label]="titulo()">
+  <div class="creditos__contenido">
+    @switch (nivel()) {
+      @case (2) {
+        <h2 class="creditos__titulo">{{ titulo() }}</h2>
+      }
+      @default {
+        <h3 class="creditos__titulo">{{ titulo() }}</h3>
+      }
+    }
+
+    <p class="creditos__descripcion">
+      AppointMee es una plataforma para encontrar servicios y gestionar turnos de forma simple,
+      rápida y organizada.
+    </p>
+
+    <div class="creditos__bloques">
+      <div class="creditos__bloque">
+        <p class="creditos__subtitulo"><strong>Equipo de desarrollo</strong></p>
+        <ul class="creditos__lista">
+          @for (integrante of integrantes; track integrante) {
+            <li class="creditos__integrante">{{ integrante }}</li>
+          }
+        </ul>
+      </div>
+
+      <div class="creditos__bloque">
+        <p class="creditos__subtitulo"><strong>Sobre la plataforma</strong></p>
+        <p class="creditos__texto">
+          Conectamos clientes con establecimientos para reservar y administrar turnos en un solo
+          lugar.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

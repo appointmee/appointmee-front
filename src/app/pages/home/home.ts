@@ -1,3 +1,4 @@
+import { Creditos } from '../../components/creditos/creditos';
 import { DsInputComponent } from '../../shared/ui/input/input.component';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
@@ -35,7 +36,13 @@ function comparisonKey(value: string): string {
 
 @Component({
   selector: 'app-home',
-  imports: [DsInputComponent, DsButtonComponent, ReactiveFormsModule, RouterLink],
+  imports: [
+    Creditos,
+    DsInputComponent,
+    DsButtonComponent,
+    ReactiveFormsModule,
+    RouterLink,
+  ],
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
