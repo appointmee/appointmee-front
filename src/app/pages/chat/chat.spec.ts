@@ -14,6 +14,7 @@ import type {
   MensajeChat,
 } from '../../models/chat';
 import { chatRealtimeService } from '../../services/chat-realtime-service';
+import { chatWidgetService } from '../../services/chat-widget-service';
 
 import { Chat } from './chat';
 
@@ -473,5 +474,24 @@ describe('Chat (US-CHAT-04)', () => {
     expect(html.querySelector('#hilo-titulo')?.textContent).toContain('Elegí una conversación');
     expect(html.querySelectorAll('button.conversacion')).toHaveLength(2);
     expect(document.activeElement).toBe(boton);
+  });
+
+  it('abre automáticamente la conversación pedida por una notificación', () => {
+    TestBed.inject(chatWidgetService).abrirConversacion(50);
+    flushLista();
+
+    backend
+      .expectOne((request) => request.url.endsWith('/conversaciones/50') && request.method === 'GET')
+      .flush(DETALLE);
+    backend
+      .expectOne((request) => request.url.includes('/conversaciones/50/mensajes'))
+      .flush(HISTORIAL);
+    backend
+      .expectOne((request) => request.url.endsWith('/conversaciones/50/leido'))
+      .flush({});
+    fixture.detectChanges();
+
+    expect(html.querySelector('#hilo-titulo')?.textContent).toContain('Sucursal Centro');
+    expect(TestBed.inject(chatWidgetService).conversacionId()).toBeNull();
   });
 });

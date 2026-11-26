@@ -77,14 +77,15 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
     abeja?.dispatchEvent(fin);
   }
 
-  it('muestra la burbuja solo para usuarios autenticados con roles de chat', () => {
+  it('muestra la burbuja para usuarios autenticados con roles de chat, incluido administrador', () => {
     expect(burbuja()).toBeTruthy();
     expect(burbuja().getAttribute('aria-label')).toBe('Abrir mensajes');
     expect(html.querySelector('[role="dialog"]')).toBeNull();
 
+    // Los administradores pueden abrir el chat: una notificación MENSAJE los lleva al widget.
     roles.set(['ADMINISTRADOR']);
     fixture.detectChanges();
-    expect(burbuja()).toBeNull();
+    expect(burbuja()).not.toBeNull();
 
     roles.set([]);
     autenticado.set(false);

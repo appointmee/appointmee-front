@@ -258,6 +258,109 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     expect(TestBed.inject(chatWidgetService).abierto()).toBe(true);
   });
 
+  it('abre la entidad concreta cuando el backend informa destino', async () => {
+    const casos = [
+      {
+        tipo: 'RESERVA', destinoTipo: 'TURNO', destinoId: 41, sucursalId: 7,
+        ruta: '/mis-turnos?turnoId=41&sucursalId=7',
+      },
+      {
+        tipo: 'PAGO', destinoTipo: 'PAGO', destinoId: 42, sucursalId: 7,
+        ruta: '/pago/resultado?turnoId=42&sucursalId=7',
+      },
+      {
+        tipo: 'SOLICITUD', destinoTipo: 'SOLICITUD', destinoId: 43, sucursalId: null,
+        ruta: '/solicitudes?solicitudId=43',
+      },
+    ] as const;
+
+    for (const caso of casos) {
+      TestBed.resetTestingModule();
+      roles = ['CLIENTE'];
+      listar = vi.fn(() => of(pagina([{
+        id: caso.destinoId,
+        tipo: caso.tipo,
+        titulo: 'Aviso concreto',
+        mensaje: 'Revisá el detalle.',
+        fecha: '2026-11-26T09:00:00',
+        leida: true,
+        destinoTipo: caso.destinoTipo,
+        destinoId: caso.destinoId,
+        sucursalId: caso.sucursalId,
+      }], 0)));
+      TestBed.configureTestingModule({
+        imports: [NotificacionesCentro],
+        providers: [
+          provideRouter([
+            { path: '', component: DestinoPrueba },
+            { path: 'mis-turnos', component: DestinoPrueba },
+            { path: 'pago/resultado', component: DestinoPrueba },
+            { path: 'solicitudes', component: DestinoPrueba },
+          ]),
+          { provide: notificacionService, useValue: servicio },
+          {
+            provide: authService,
+            useValue: {
+              autenticado: () => true,
+              visitante: () => false,
+              restaurando: () => false,
+              tieneAlgunRol: (...solicitados: string[]) =>
+                solicitados.some((rol) => roles.includes(rol)),
+            },
+          },
+        ],
+      });
+      const routerLocal = TestBed.inject(Router);
+      await routerLocal.navigateByUrl('/');
+      const fixture = TestBed.createComponent(NotificacionesCentro);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      abrirPanel(fixture);
+      (fixture.nativeElement.querySelector('.notificacion') as HTMLButtonElement).click();
+      await fixture.whenStable();
+      expect(routerLocal.url).toBe(caso.ruta);
+    }
+
+    TestBed.resetTestingModule();
+    listar = vi.fn(() => of(pagina([{
+      id: 5,
+      tipo: 'MENSAJE',
+      titulo: 'Mensaje nuevo',
+      mensaje: 'Tenés un mensaje nuevo.',
+      fecha: '2026-11-26T09:00:00',
+      leida: true,
+      destinoTipo: 'CONVERSACION',
+      destinoId: 99,
+      sucursalId: null,
+    }], 0)));
+    TestBed.configureTestingModule({
+      imports: [NotificacionesCentro],
+      providers: [
+        provideRouter([{ path: '', component: DestinoPrueba }]),
+        { provide: notificacionService, useValue: servicio },
+        {
+          provide: authService,
+          useValue: {
+            autenticado: () => true,
+            visitante: () => false,
+            restaurando: () => false,
+            tieneAlgunRol: () => false,
+          },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(NotificacionesCentro);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    abrirPanel(fixture);
+    (fixture.nativeElement.querySelector('.notificacion') as HTMLButtonElement).click();
+    const widget = TestBed.inject(chatWidgetService);
+    expect(widget.abierto()).toBe(true);
+    expect(widget.conversacionId()).toBe(99);
+  });
+
   it('usa el destino de turnos según el rol', async () => {
     roles = ['ADMINISTRADOR'];
     listar.mockReturnValue(of(pagina([{
