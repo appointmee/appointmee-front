@@ -50,10 +50,9 @@ describe('Página de notificaciones (US-NOT-03)', () => {
   let router: Router;
 
   const servicio = {
-    listar: (pagina: number, tamano: number, tipo?: string, lectura?: string) =>
-      listar(pagina, tamano, tipo, lectura),
+    listar: (...args: Parameters<typeof listar>) => listar(...args),
     marcarLeida: (id: number) => marcarUna(id),
-    marcarTodasLeidas: (tipo?: string) => marcarTodas(tipo),
+    marcarTodasLeidas: (...args: Parameters<typeof marcarTodas>) => marcarTodas(...args),
   };
 
   beforeEach(async () => {

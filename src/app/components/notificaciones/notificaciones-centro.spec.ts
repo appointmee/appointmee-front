@@ -51,11 +51,10 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
   let chatWidget: chatWidgetService;
 
   const servicio = {
-    listar: (pagina: number, tamano: number, tipo?: string, lectura?: string) =>
-      listar(pagina, tamano, tipo, lectura),
+    listar: (...args: Parameters<typeof listar>) => listar(...args),
     contarNoLeidas: () => contar(),
     marcarLeida: (id: number) => marcarUna(id),
-    marcarTodasLeidas: (tipo?: string) => marcarTodas(tipo),
+    marcarTodasLeidas: (...args: Parameters<typeof marcarTodas>) => marcarTodas(...args),
   };
 
   beforeEach(() => {
@@ -124,7 +123,7 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     const { fixture } = await renderizar();
     abrirPanel(fixture);
 
-    expect(listar).toHaveBeenCalledWith(0, 20, 'TODOS', 'TODAS');
+    expect(listar).toHaveBeenCalledWith(0, 20);
     const enlace = fixture.nativeElement.querySelector('.panel__ver-todas') as HTMLAnchorElement;
     expect(enlace).not.toBeNull();
     expect(enlace.getAttribute('href')).toBe('/notificaciones');
@@ -491,31 +490,18 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(marcarTodas).toHaveBeenCalledWith('TODOS');
+    expect(marcarTodas).toHaveBeenCalledWith();
     expect(boton.getAttribute('aria-label')).toContain('no hay notificaciones sin leer');
     expect(fixture.nativeElement.querySelector('.panel__marcar')).toBeNull();
   });
 
-  it('demo 3: combina el filtro de tipo con el de estado y permite limpiarlos', async () => {
+  it('no muestra los filtros en el panel: viven sólo en /notificaciones', async () => {
     const { fixture } = await renderizar();
     abrirPanel(fixture);
 
-    const selects = fixture.nativeElement.querySelectorAll('.panel__filtros select');
-    (selects[0] as HTMLSelectElement).value = 'PAGO';
-    selects[0].dispatchEvent(new Event('change'));
-    fixture.detectChanges();
-    (selects[1] as HTMLSelectElement).value = 'NO_LEIDAS';
-    selects[1].dispatchEvent(new Event('change'));
-    fixture.detectChanges();
-
-    expect(listar).toHaveBeenCalledWith(0, 20, 'PAGO', 'NO_LEIDAS');
-
-    const limpiar = fixture.nativeElement.querySelector('.panel__limpiar') as HTMLButtonElement;
-    limpiar.click();
-    fixture.detectChanges();
-
-    expect(listar).toHaveBeenCalledWith(0, 20, 'TODOS', 'TODAS');
-    expect(fixture.nativeElement.querySelector('.panel__limpiar')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.panel__filtros')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Tipo de notificación');
+    expect(fixture.nativeElement.textContent).not.toContain('Estado de lectura');
   });
 
   it('muestra el error inline al marcar como leída y permite reintentar', async () => {

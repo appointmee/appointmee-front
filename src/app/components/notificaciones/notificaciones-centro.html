@@ -56,35 +56,6 @@
         </button>
       </header>
 
-      <div class="panel__filtros" role="group" aria-label="Filtrar notificaciones">
-        <label class="sr-only" for="panel-filtro-tipo">Tipo de notificación</label>
-        <select
-          id="panel-filtro-tipo"
-          [value]="filtroTipo()"
-          (change)="cambiarFiltroTipo($event)"
-        >
-          <option value="TODOS">Todos los tipos</option>
-          @for (tipo of tipos; track tipo) {
-            <option [value]="tipo">{{ etiquetaTipo(tipo) }}</option>
-          }
-        </select>
-        <label class="sr-only" for="panel-filtro-lectura">Estado de lectura</label>
-        <select
-          id="panel-filtro-lectura"
-          [value]="filtroLectura()"
-          (change)="cambiarFiltroLectura($event)"
-        >
-          <option value="TODAS">Todas</option>
-          <option value="NO_LEIDAS">Sin leer</option>
-          <option value="LEIDAS">Leídas</option>
-        </select>
-        @if (hayFiltros()) {
-          <button class="panel__limpiar" type="button" (click)="limpiarFiltros()">
-            Limpiar filtros
-          </button>
-        }
-      </div>
-
       <div class="panel__acciones">
         <button
           dsButton

@@ -16,8 +16,6 @@ import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { Subject, catchError, filter, map, of, switchMap } from 'rxjs';
 
 import type {
-  FiltroLecturaNotificacion,
-  FiltroTipoNotificacion,
   NotificacionDTO,
   PaginaNotificacionesDTO,
   TipoNotificacion,
@@ -31,7 +29,6 @@ import {
   etiquetaTipoNotificacion,
   formatearFechaNotificacion,
   iconoTipoNotificacion,
-  TIPOS_NOTIFICACION,
   type DestinoNotificacion,
 } from '../../shared/notificaciones/destino-notificacion';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
@@ -53,8 +50,6 @@ const ICONOS = {
   cerrar: 'M18 6 6 18M6 6l12 12',
   alerta: 'M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
 };
-
-const LECTURAS: readonly FiltroLecturaNotificacion[] = ['TODAS', 'NO_LEIDAS', 'LEIDAS'];
 
 @Component({
   selector: 'app-notificaciones-centro',
@@ -80,8 +75,6 @@ export class NotificacionesCentro {
   private readonly cerrarBoton = viewChild('cerrar', { read: ElementRef<HTMLButtonElement> });
 
   protected readonly iconos = ICONOS;
-  protected readonly tipos = TIPOS_NOTIFICACION;
-  protected readonly lecturas = LECTURAS;
   protected readonly abierto = signal(false);
   protected readonly notificaciones = signal<readonly NotificacionVista[]>([]);
   protected readonly noLeidas = signal(0);
@@ -89,8 +82,6 @@ export class NotificacionesCentro {
   protected readonly error = signal<string | null>(null);
   protected readonly reintentando = signal(false);
   protected readonly sinConexion = signal(typeof navigator !== 'undefined' && !navigator.onLine);
-  protected readonly filtroTipo = signal<FiltroTipoNotificacion>('TODOS');
-  protected readonly filtroLectura = signal<FiltroLecturaNotificacion>('TODAS');
   protected readonly accionError = signal<string | null>(null);
   protected readonly idEnProceso = signal<number | null>(null);
   protected readonly marcandoTodas = signal(false);
@@ -123,10 +114,6 @@ export class NotificacionesCentro {
     return `Hay ${total} ${total === 1 ? 'notificación' : 'notificaciones'}; ${this.noLeidas()} sin leer.`;
   });
 
-  protected readonly hayFiltros = computed(
-    () => this.filtroTipo() !== 'TODOS' || this.filtroLectura() !== 'TODAS',
-  );
-
   protected readonly puedeMarcarTodas = computed(
     () =>
       this.noLeidas() > 0 &&
@@ -155,7 +142,7 @@ export class NotificacionesCentro {
           this.cargando.set(!esReintento);
           this.reintentando.set(esReintento);
           return this.notificacionesService
-            .listar(0, LIMITE_NOTIFICACIONES, this.filtroTipo(), this.filtroLectura())
+            .listar(0, LIMITE_NOTIFICACIONES)
             .pipe(
               map((pagina: PaginaNotificacionesDTO) => ({ ok: true as const, pagina })),
               catchError((error: HttpErrorResponse) =>
@@ -260,28 +247,6 @@ export class NotificacionesCentro {
     this.sinConexion.set(true);
   }
 
-  protected cambiarFiltroTipo(event: Event): void {
-    const valor = (event.target as HTMLSelectElement).value as FiltroTipoNotificacion;
-    if (valor === this.filtroTipo()) return;
-    if (valor !== 'TODOS' && !TIPOS_NOTIFICACION.includes(valor)) return;
-    this.filtroTipo.set(valor);
-    this.recargar(true);
-  }
-
-  protected cambiarFiltroLectura(event: Event): void {
-    const valor = (event.target as HTMLSelectElement).value as FiltroLecturaNotificacion;
-    if (!LECTURAS.includes(valor) || valor === this.filtroLectura()) return;
-    this.filtroLectura.set(valor);
-    this.recargar(true);
-  }
-
-  protected limpiarFiltros(): void {
-    if (!this.hayFiltros()) return;
-    this.filtroTipo.set('TODOS');
-    this.filtroLectura.set('TODAS');
-    this.recargar(true);
-  }
-
   /** Acción explícita de la demo 1: marcar una notificación como leída. */
   protected marcarLeida(notificacion: NotificacionVista): void {
     if (
@@ -330,7 +295,7 @@ export class NotificacionesCentro {
     this.ultimoId.set(null);
 
     this.notificacionesService
-      .marcarTodasLeidas(this.filtroTipo())
+      .marcarTodasLeidas()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (contador) => {
