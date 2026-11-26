@@ -173,6 +173,48 @@ describe('SolicitudEmpleadorDetalle', () => {
     );
   });
 
+  it('elimina códigos postales B7600 sin alterar localidades válidas', () => {
+    fixture.componentRef.setInput('detalle', {
+      ...DETALLE,
+      ubicaciones: [
+        {
+          id: 13,
+          direccion: 'Av. Pedro Luro 2335, B7600 Mar del Plata',
+          latitud: -38.0056,
+          longitud: -57.5426,
+          googlePlaceId: 'ChIJ_b7600',
+        },
+        {
+          id: 14,
+          direccion: '25 de Mayo 2423, Mar del Plata',
+          latitud: -38.0056,
+          longitud: -57.5426,
+          googlePlaceId: '',
+        },
+        {
+          id: 15,
+          direccion: 'Av. Pedro Luro 2335, 9 de Julio',
+          latitud: -38.0056,
+          longitud: -57.5426,
+          googlePlaceId: '',
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const direcciones = Array.from(
+      host.querySelectorAll('.detalle__ubicacion-direccion'),
+    ).map((nodo) => nodo.textContent?.trim());
+
+    expect(direcciones).toEqual([
+      'Av. Pedro Luro 2335, Mar del Plata',
+      '25 de Mayo 2423, Mar del Plata',
+      'Av. Pedro Luro 2335, 9 de Julio',
+    ]);
+    expect(new URL(host.querySelector<HTMLAnchorElement>('.detalle__ubicacion-mapa')!.href).searchParams.get('query_place_id')).toBe('ChIJ_b7600');
+  });
+
   it('quita el nombre del establecimiento cuando no hay ciudad en la dirección guardada', () => {
     fixture.componentRef.setInput('detalle', {
       ...DETALLE,

@@ -242,6 +242,78 @@ describe('googlePlacesService', () => {
     expect(LugarFalso.solicitudes).toHaveLength(1);
   });
 
+  it('quita B7600GWE, B7600 y 7600 de la localidad devuelta por Places', async () => {
+    const token = await servicio.iniciarSesion();
+    await servicio.buscar('Av. Pedro Luro', token);
+
+    for (const ciudad of [
+      'B7600GWE Mar del Plata',
+      'B7600 Mar del Plata',
+      '7600 Mar del Plata',
+      'CP B7600GWE Mar del Plata',
+    ]) {
+      LugarFalso.lugar = {
+        ...LugarFalso.lugar,
+        formattedAddress: `Av. Pedro Luro 2335, ${ciudad}, Provincia de Buenos Aires, Argentina`,
+        addressComponents: [
+          { types: ['route'], text: 'Av. Pedro Luro' },
+          { types: ['street_number'], text: '2335' },
+          { types: ['locality'], text: ciudad },
+        ],
+      };
+
+      const ubicacion = await servicio.obtenerDetalles(
+        { id: 'ChIJ_uno', descripcion: 'Av. Pedro Luro 2335' },
+        token,
+      );
+
+      expect(ubicacion.direccionCorta).toBe('Av. Pedro Luro 2335, Mar del Plata');
+    }
+    expect(LugarFalso.solicitudes).toHaveLength(4);
+  });
+
+  it('prioriza locality y no modifica localidades legítimas con números', async () => {
+    LugarFalso.lugar = {
+      ...LugarFalso.lugar,
+      addressComponents: [
+        { types: ['postal_town'], text: 'B7600 Mar del Plata' },
+        { types: ['route'], text: 'Av. Pedro Luro' },
+        { types: ['street_number'], text: '2335' },
+        { types: ['locality'], text: '9 de Julio' },
+      ],
+    };
+    const token = await servicio.iniciarSesion();
+    await servicio.buscar('Av. Pedro Luro', token);
+
+    const ubicacion = await servicio.obtenerDetalles(
+      { id: 'ChIJ_uno', descripcion: 'Av. Pedro Luro 2335' },
+      token,
+    );
+
+    expect(ubicacion.direccionCorta).toBe('Av. Pedro Luro 2335, 9 de Julio');
+  });
+
+  it('usa postal_town como alternativa si locality solo trae el código postal', async () => {
+    LugarFalso.lugar = {
+      ...LugarFalso.lugar,
+      addressComponents: [
+        { types: ['route'], text: 'Av. Pedro Luro' },
+        { types: ['street_number'], text: '2335' },
+        { types: ['locality'], text: 'B7600' },
+        { types: ['postal_town'], text: 'Mar del Plata' },
+      ],
+    };
+    const token = await servicio.iniciarSesion();
+    await servicio.buscar('Av. Pedro Luro', token);
+
+    const ubicacion = await servicio.obtenerDetalles(
+      { id: 'ChIJ_uno', descripcion: 'Av. Pedro Luro 2335' },
+      token,
+    );
+
+    expect(ubicacion.direccionCorta).toBe('Av. Pedro Luro 2335, Mar del Plata');
+  });
+
   it('admite la estructura legacy y postal_town como localidad equivalente', async () => {
     LugarFalso.lugar = {
       ...LugarFalso.lugar,

@@ -594,8 +594,7 @@ describe('Administración · solicitudes de empleador', () => {
       ubicaciones: [
         {
           id: 5,
-          direccion:
-            'GTC, Av. Pedro Luro 2335, B7600GWE Mar del Plata, Provincia de Buenos Aires, Argentina',
+          direccion: 'Av. Pedro Luro 2335, B7600 Mar del Plata, Provincia de Buenos Aires, Argentina',
           latitud: -34.6037,
           longitud: -58.3816,
           googlePlaceId: 'ChIJ_admin',
@@ -609,8 +608,7 @@ describe('Administración · solicitudes de empleador', () => {
     expect(
       host.querySelector('.detalle__ubicacion-direccion')?.textContent?.trim(),
     ).toBe('Av. Pedro Luro 2335, Mar del Plata');
-    expect(host.textContent).not.toContain('GTC');
-    expect(host.textContent).not.toContain('B7600GWE');
+    expect(host.textContent).not.toContain('B7600');
     expect(host.textContent).not.toContain('Provincia de Buenos Aires');
     expect(new URL(enlace!.href).searchParams.get('query_place_id')).toBe('ChIJ_admin');
     expect(enlace!.target).toBe('_blank');

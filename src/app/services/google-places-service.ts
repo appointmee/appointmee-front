@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 
+import { sinCodigoPostal } from '../models/solicitud-empleador';
 import { GoogleMapsNamespace, googleMapsService } from './google-maps-service';
 
 /** Sugerencia mínima que necesita el selector para pedir los detalles. */
@@ -108,10 +109,14 @@ export function direccionCortaDeComponentes(
       componente.types?.some((tipo: string) => tipos.includes(tipo)),
     );
 
-  const calle = textoComponente(buscar(['route']));
+  const calle = sinCodigoPostal(textoComponente(buscar(['route'])), true);
   const altura = textoComponente(buscar(['street_number']));
-  // `postal_town` es el equivalente de `locality` en algunas regiones.
-  const ciudad = textoComponente(buscar(['locality', 'postal_town']));
+  // `locality` manda; `postal_town` solo se usa si no hay localidad útil.
+  // Ambos pueden traer el código postal pegado, así que se limpian igual que
+  // en la dirección persistida, sin tocar el nombre de la localidad.
+  const ciudad =
+    sinCodigoPostal(textoComponente(buscar(['locality']))) ||
+    sinCodigoPostal(textoComponente(buscar(['postal_town'])));
 
   if (!calle || !ciudad) return null;
   return `${altura ? `${calle} ${altura}` : calle}, ${ciudad}`;

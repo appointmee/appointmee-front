@@ -124,8 +124,9 @@ export function urlGoogleMapsUbicacion(
   return null;
 }
 
-const CODIGO_POSTAL_CON_LETRA = /^[A-Z]\d{4}[A-Z]{2,3}\s+/i;
-const CODIGO_POSTAL_NUMERICO = /^\d{4,5}(?:-\d{4})?\s+/;
+/** Códigos postales argentinos al inicio: B7600GWE, B7600, 7600 o CP 7600. */
+const CODIGO_POSTAL_ALFANUMERICO = /^(?:CP\.?\s*)?[A-Za-z]\d{4}(?:[A-Za-z]{2,3})?(?:\s+|$)/i;
+const CODIGO_POSTAL_NUMERICO = /^(?:CP\.?\s*)?\d{4}(?:-\d{4})?(?:\s+|$)/;
 const SEGMENTO_ADMINISTRATIVO =
   /^(?:provincia(?:\s+de)?|departamento|estado(?:\s+de)?|state(?:\s+of)?|regi[oó]n|region|comunidad(?:\s+de)?|distrito|municipio|condado|county)\b/i;
 const SEGMENTO_ESTADO_POSTAL = /^[A-Z]{2}\s+\d{4,5}(?:-\d{4})?$/i;
@@ -138,11 +139,17 @@ function normalizarSegmento(valor: string): string {
   return valor.replace(/\s+/g, ' ').trim();
 }
 
-function quitarCodigoPostal(segmento: string, soloAlfanumerico: boolean): string {
-  const sinAlfanumerico = segmento.replace(CODIGO_POSTAL_CON_LETRA, '').trim();
-  return soloAlfanumerico
-    ? sinAlfanumerico
-    : sinAlfanumerico.replace(CODIGO_POSTAL_NUMERICO, '').trim();
+/**
+ * Quita solo un código postal al inicio del texto. En la calle se omite el
+ * numérico porque puede ser la altura; en la localidad se quitan ambos.
+ * El resto del nombre se conserva tal cual.
+ */
+export function sinCodigoPostal(valor: string, soloAlfanumerico = false): string {
+  const texto = normalizarSegmento(valor);
+  const sinAlfanumerico = texto.replace(CODIGO_POSTAL_ALFANUMERICO, '');
+  return normalizarSegmento(
+    soloAlfanumerico ? sinAlfanumerico : sinAlfanumerico.replace(CODIGO_POSTAL_NUMERICO, ''),
+  );
 }
 
 function esSegmentoAdministrativo(segmento: string): boolean {
@@ -182,14 +189,14 @@ export function resumirDireccionSolicitudEmpleador(
 
   // En la calle solo se quita un código postal alfanumérico (por ejemplo
   // `B7600GWE`): un número de 4 dígitos puede ser la altura de la calle.
-  const calle = quitarCodigoPostal(segmentos[indiceCalle] ?? '', true);
+  const calle = sinCodigoPostal(segmentos[indiceCalle] ?? '', true);
   const calleConfiable = calle && pareceCalle(calle) && !esSegmentoAdministrativo(calle) ? calle : '';
   if (!calleConfiable) return valor;
 
   const localidad =
     segmentos
       .slice(indiceCalle + 1)
-      .map((segmento) => quitarCodigoPostal(segmento, false))
+      .map((segmento) => sinCodigoPostal(segmento))
       .find((segmento) => segmento && !esSegmentoAdministrativo(segmento)) ?? '';
 
   return localidad ? `${calleConfiable}, ${localidad}` : calleConfiable;
