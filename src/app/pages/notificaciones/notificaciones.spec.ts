@@ -26,20 +26,41 @@ const pagina = (
   noLeidas,
 });
 
+const sinLeer = {
+  id: 1,
+  tipo: 'RESERVA' as const,
+  titulo: 'Nuevo turno',
+  mensaje: 'Tenés un turno nuevo.',
+  fecha: '2026-11-26T09:00:00',
+  leida: false,
+};
+
 describe('Página de notificaciones (US-NOT-03)', () => {
   let listar: ReturnType<
-    typeof vi.fn<(pagina: number, tamano: number) => Observable<PaginaNotificacionesDTO>>
+    typeof vi.fn<(
+      pagina: number,
+      tamano: number,
+      tipo?: string,
+      lectura?: string,
+    ) => Observable<PaginaNotificacionesDTO>>
   >;
+  let marcarUna: ReturnType<typeof vi.fn<(id: number) => Observable<{ noLeidas: number }>>>;
+  let marcarTodas: ReturnType<typeof vi.fn<(tipo?: string) => Observable<{ noLeidas: number }>>>;
   let fixture: ComponentFixture<Notificaciones>;
   let router: Router;
 
   const servicio = {
-    listar: (pagina: number, tamano: number) => listar(pagina, tamano),
+    listar: (pagina: number, tamano: number, tipo?: string, lectura?: string) =>
+      listar(pagina, tamano, tipo, lectura),
+    marcarLeida: (id: number) => marcarUna(id),
+    marcarTodasLeidas: (tipo?: string) => marcarTodas(tipo),
   };
 
   beforeEach(async () => {
     TestBed.resetTestingModule();
     listar = vi.fn(() => of(pagina([])));
+    marcarUna = vi.fn(() => of({ noLeidas: 0 }));
+    marcarTodas = vi.fn(() => of({ noLeidas: 0 }));
 
     await TestBed.configureTestingModule({
       imports: [Notificaciones],
@@ -75,7 +96,7 @@ describe('Página de notificaciones (US-NOT-03)', () => {
   }
 
   it('carga la primera página de 20 y muestra la paginación aunque haya una sola página', () => {
-    expect(listar).toHaveBeenCalledWith(0, 20);
+    expect(listar).toHaveBeenCalledWith(0, 20, 'TODOS', 'TODAS');
     expect(html().textContent).toContain('No tenés notificaciones');
     expect(html().querySelector('ds-pagination')?.textContent).toContain('Página 1 de 1');
   });
@@ -107,7 +128,7 @@ describe('Página de notificaciones (US-NOT-03)', () => {
     siguiente.click();
     fixture.detectChanges();
 
-    expect(listar).toHaveBeenCalledWith(1, 20);
+    expect(listar).toHaveBeenCalledWith(1, 20, 'TODOS', 'TODAS');
   });
 
   it('marca como leída y navega al destino concreto', async () => {
@@ -130,6 +151,91 @@ describe('Página de notificaciones (US-NOT-03)', () => {
 
     expect(router.url).toContain('/pago/resultado?turnoId=55&sucursalId=7');
     expect(TestBed.inject(chatWidgetService).abierto()).toBe(false);
+  });
+
+  it('demo 1: marca una notificación como leída y actualiza el contador', async () => {
+    listar
+      .mockReturnValueOnce(of(pagina([sinLeer], 1, 1)))
+      .mockReturnValue(of(pagina([{ ...sinLeer, leida: true }], 1, 0)));
+    marcarUna.mockReturnValue(of({ noLeidas: 0 }));
+
+    fixture = TestBed.createComponent(Notificaciones);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    (html().querySelector('.notificaciones__marcar') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(marcarUna).toHaveBeenCalledWith(1);
+    expect(html().textContent).toContain('0 sin leer');
+    expect(html().querySelector('.notificaciones__marcar')).toBeNull();
+  });
+
+  it('demo 2: marca todas como leídas con una sola acción', async () => {
+    listar
+      .mockReturnValueOnce(of(pagina([sinLeer, { ...sinLeer, id: 2 }], 1, 2)))
+      .mockReturnValue(of(pagina([
+        { ...sinLeer, leida: true },
+        { ...sinLeer, id: 2, leida: true },
+      ], 1, 0)));
+    marcarTodas.mockReturnValue(of({ noLeidas: 0 }));
+
+    fixture = TestBed.createComponent(Notificaciones);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    (html().querySelector('.notificaciones__acciones button') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(marcarTodas).toHaveBeenCalledWith('TODOS');
+    expect(html().textContent).toContain('0 sin leer');
+    expect(html().querySelector('.notificaciones__marcar')).toBeNull();
+  });
+
+  it('demo 3: combina el filtro de tipo con el de estado', () => {
+    fixture = TestBed.createComponent(Notificaciones);
+    fixture.detectChanges();
+
+    const selects = html().querySelectorAll('.notificaciones__filtros select');
+    (selects[0] as HTMLSelectElement).value = 'PAGO';
+    selects[0].dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    (selects[1] as HTMLSelectElement).value = 'LEIDAS';
+    selects[1].dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(listar).toHaveBeenCalledWith(0, 20, 'PAGO', 'LEIDAS');
+    expect(html().querySelector('.notificaciones__limpiar')).not.toBeNull();
+  });
+
+  it('muestra el error inline al marcar todas y permite reintentar', async () => {
+    listar.mockReturnValue(of(pagina([sinLeer], 1, 1)));
+    marcarTodas
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 500 })))
+      .mockReturnValue(of({ noLeidas: 0 }));
+
+    fixture = TestBed.createComponent(Notificaciones);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    (html().querySelector('.notificaciones__acciones button') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const alerta = html().querySelector('.notificaciones__accion-error') as HTMLElement;
+    expect(alerta).not.toBeNull();
+    expect(alerta.textContent).toContain('No pudimos marcar todas las notificaciones');
+    (alerta.querySelector('button') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(marcarTodas).toHaveBeenCalledTimes(2);
+    expect(html().querySelector('.notificaciones__accion-error')).toBeNull();
   });
 
   it('muestra error inline con reintento y bloquea el doble clic', () => {
