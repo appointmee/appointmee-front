@@ -194,11 +194,11 @@
               <span class="solicitud-modal__ubicacion-numero" aria-hidden="true">
                 {{ indice + 1 }}
               </span>
-              <span class="solicitud-modal__ubicacion-direccion">{{ ubicacion.direccion }}</span>
+              <span class="solicitud-modal__ubicacion-direccion">{{ direccionVisible(ubicacion) }}</span>
               <button
                 class="solicitud-modal__quitar"
                 type="button"
-                [attr.aria-label]="'Quitar la ubicación ' + ubicacion.direccion"
+                [attr.aria-label]="'Quitar la ubicación ' + direccionVisible(ubicacion)"
                 [disabled]="enviando()"
                 (click)="eliminarUbicacion(indice)"
               >

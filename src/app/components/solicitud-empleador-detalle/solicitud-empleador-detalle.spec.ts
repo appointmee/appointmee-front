@@ -30,6 +30,14 @@ const DETALLE: SolicitudEmpleadorDetalleDTO = {
       longitud: -58.3951,
       googlePlaceId: '',
     },
+    {
+      id: 9,
+      direccion:
+        'GTC, Av. Pedro Luro 2335, B7600GWE Mar del Plata, Provincia de Buenos Aires, Argentina',
+      latitud: -38.0056,
+      longitud: -57.5426,
+      googlePlaceId: 'ChIJ_luro',
+    },
   ],
 };
 
@@ -73,7 +81,7 @@ describe('SolicitudEmpleadorDetalle', () => {
     const filas = host.querySelectorAll<HTMLElement>('.detalle__ubicacion');
     const enlaces = host.querySelectorAll<HTMLAnchorElement>('.detalle__ubicacion-mapa');
 
-    expect(filas).toHaveLength(2);
+    expect(filas).toHaveLength(3);
     expect(
       filas[0].querySelector('.detalle__ubicacion-direccion')?.textContent?.trim(),
     ).toBe('25 de Mayo 2423, Mar del Plata');
@@ -83,7 +91,13 @@ describe('SolicitudEmpleadorDetalle', () => {
     expect(
       filas[1].querySelector('.detalle__ubicacion-direccion')?.textContent?.trim(),
     ).toBe('Av. Santa Fe 3253, CABA');
-    expect(enlaces).toHaveLength(2);
+    expect(
+      filas[2].querySelector('.detalle__ubicacion-direccion')?.textContent?.trim(),
+    ).toBe('Av. Pedro Luro 2335, Mar del Plata');
+    expect(filas[2].textContent).not.toContain('GTC');
+    expect(filas[2].textContent).not.toContain('B7600GWE');
+    expect(filas[2].textContent).not.toContain('Provincia de Buenos Aires');
+    expect(enlaces).toHaveLength(3);
 
     const primera = new URL(enlaces[0].href);
     expect(primera.origin).toBe('https://www.google.com');
@@ -108,9 +122,9 @@ describe('SolicitudEmpleadorDetalle', () => {
     expect(host.querySelector('.detalle__ubicacion')).toBeNull();
   });
 
-  it('usa un fallback neutro cuando la dirección no permite identificar los datos', () => {
+  it('muestra la dirección original cuando no puede identificar la calle con seguridad', () => {
     const ubicacion = {
-      id: 9,
+      id: 10,
       direccion: 'Argentina',
       latitud: -34.6037,
       longitud: -58.3816,
@@ -122,7 +136,7 @@ describe('SolicitudEmpleadorDetalle', () => {
     const host = fixture.nativeElement as HTMLElement;
     expect(
       host.querySelector('.detalle__ubicacion-direccion')?.textContent?.trim(),
-    ).toBe('Dirección no disponible');
+    ).toBe('Argentina');
 
     fixture.componentRef.setInput('detalle', {
       ...DETALLE,
@@ -131,6 +145,52 @@ describe('SolicitudEmpleadorDetalle', () => {
     fixture.detectChanges();
     expect(
       host.querySelector('.detalle__ubicacion-direccion')?.textContent?.trim(),
-    ).toBe('Mar del Plata');
+    ).toBe('B7600GWE Mar del Plata');
+  });
+
+  it('conserva calles compuestas y no inventa altura cuando no está disponible', () => {
+    fixture.componentRef.setInput('detalle', {
+      ...DETALLE,
+      ubicaciones: [
+        {
+          id: 11,
+          direccion:
+            'Av. Brigadier General Juan B. Justo, B7600GWE Mar del Plata, Provincia de Buenos Aires, Argentina',
+          latitud: -38.0056,
+          longitud: -57.5426,
+          googlePlaceId: 'ChIJ_compuesta',
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(
+      host.querySelector('.detalle__ubicacion-direccion')?.textContent?.trim(),
+    ).toBe('Av. Brigadier General Juan B. Justo, Mar del Plata');
+    expect(new URL(host.querySelector<HTMLAnchorElement>('.detalle__ubicacion-mapa')!.href).searchParams.get('query_place_id')).toBe(
+      'ChIJ_compuesta',
+    );
+  });
+
+  it('quita el nombre del establecimiento cuando no hay ciudad en la dirección guardada', () => {
+    fixture.componentRef.setInput('detalle', {
+      ...DETALLE,
+      ubicaciones: [
+        {
+          id: 12,
+          direccion: 'GTC, Av. Pedro Luro 2335',
+          latitud: -38.0056,
+          longitud: -57.5426,
+          googlePlaceId: 'ChIJ_sin_ciudad',
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(
+      host.querySelector('.detalle__ubicacion-direccion')?.textContent?.trim(),
+    ).toBe('Av. Pedro Luro 2335');
   });
 });

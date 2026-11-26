@@ -16,10 +16,11 @@ import {
 import {
   SolicitudEmpleadorCrearDTO,
   UbicacionSolicitudEmpleadorDTO,
+  direccionVisibleUbicacion,
 } from '../../models/solicitud-empleador';
 import {
+  DetalleUbicacionDireccion,
   SugerenciaDireccion,
-  UbicacionDireccion,
   googlePlacesService,
 } from '../../services/google-places-service';
 
@@ -33,6 +34,11 @@ interface ErrorFormulario {
   readonly id: string;
   readonly mensaje: string;
 }
+
+/** Ubicación en edición: la presentación corta nunca viaja al backend. */
+type UbicacionFormulario = UbicacionSolicitudEmpleadorDTO & {
+  readonly direccionCorta?: string;
+};
 
 /**
  * Formulario de solicitud de empleador. Reutiliza `googlePlacesService`
@@ -60,7 +66,7 @@ export class SolicitudEmpleadorModal {
   protected readonly motivo = signal('');
   protected readonly tocado = signal(false);
 
-  protected readonly ubicaciones = signal<readonly UbicacionSolicitudEmpleadorDTO[]>([]);
+  protected readonly ubicaciones = signal<readonly UbicacionFormulario[]>([]);
   protected readonly sugerencias = signal<readonly SugerenciaDireccion[]>([]);
   protected readonly preparandoPlaces = signal(false);
   protected readonly buscandoDirecciones = signal(false);
@@ -310,7 +316,10 @@ export class SolicitudEmpleadorModal {
 
     void (async () => {
       try {
-        const ubicacion: UbicacionDireccion = await this.lugares.obtenerDetalles(sugerencia, token);
+        const ubicacion: DetalleUbicacionDireccion = await this.lugares.obtenerDetalles(
+          sugerencia,
+          token,
+        );
         if (secuencia !== this.secuenciaBusqueda || this.textoDireccion().trim() !== consulta) {
           return;
         }
@@ -363,6 +372,11 @@ export class SolicitudEmpleadorModal {
     this.infoUbicacion.set(null);
   }
 
+  /** Solo presentación: mantiene intacta la dirección que se persiste. */
+  protected direccionVisible(ubicacion: UbicacionFormulario): string {
+    return direccionVisibleUbicacion(ubicacion);
+  }
+
   protected enviar(event: Event): void {
     event.preventDefault();
     this.tocado.set(true);
@@ -378,7 +392,14 @@ export class SolicitudEmpleadorModal {
 
     this.confirmar.emit({
       motivo: this.motivo().trim(),
-      ubicaciones: this.ubicaciones().map((ubicacion) => ({ ...ubicacion })),
+      ubicaciones: this.ubicaciones().map(
+        ({ direccion, latitud, longitud, googlePlaceId }) => ({
+          direccion,
+          latitud,
+          longitud,
+          googlePlaceId,
+        }),
+      ),
     });
   }
 

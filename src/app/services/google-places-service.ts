@@ -16,6 +16,23 @@ export interface UbicacionDireccion {
   readonly googlePlaceId: string;
 }
 
+/**
+ * Resultado de Places con la presentación corta ya calculada. `direccion`
+ * sigue siendo el `formattedAddress` original: es lo que se persiste y lo que
+ * usan los enlaces de Maps. `direccionCorta` es solo visual y no se envía.
+ */
+export interface DetalleUbicacionDireccion extends UbicacionDireccion {
+  readonly direccionCorta?: string;
+}
+
+/** Componente estructurado de Places (New y formato legacy). */
+export interface ComponenteDireccionGoogle {
+  readonly types?: readonly string[];
+  readonly text?: string;
+  readonly long_name?: string;
+  readonly short_name?: string;
+}
+
 interface FormatoTextoGoogle {
   readonly text?: string;
 }
@@ -47,6 +64,8 @@ interface LugarGoogle {
   readonly id?: string;
   readonly formattedAddress?: string;
   readonly location?: UbicacionGoogle;
+  readonly addressComponents?: readonly ComponenteDireccionGoogle[];
+  readonly address_components?: readonly ComponenteDireccionGoogle[];
   fetchFields(opciones: { fields: readonly string[] }): Promise<{ place: LugarGoogle }>;
 }
 
@@ -66,9 +85,37 @@ interface NamespacePlaces extends GoogleMapsNamespace {
   };
 }
 
-/** Solo se piden los campos que se guardan: dirección formateada y coordenadas. */
-const CAMPOS_DETALLE = ['formattedAddress', 'location'] as const;
+/** Solo se piden los campos necesarios: persistencia, coordenadas y presentación. */
+const CAMPOS_DETALLE = ['formattedAddress', 'location', 'addressComponents'] as const;
 const TIPOS_DIRECCION = ['street_address'] as const;
+
+function textoComponente(componente: ComponenteDireccionGoogle | undefined): string {
+  return (componente?.text ?? componente?.long_name ?? componente?.short_name ?? '').trim();
+}
+
+/**
+ * Arma `calle altura, ciudad` desde los componentes de Places, sin geocodificar
+ * ni consultar de nuevo. Si falta la calle o la ciudad no inventa datos: se
+ * usa la dirección guardada como presentación de respaldo.
+ */
+export function direccionCortaDeComponentes(
+  componentes: readonly ComponenteDireccionGoogle[] | null | undefined,
+): string | null {
+  if (!Array.isArray(componentes)) return null;
+
+  const buscar = (tipos: readonly string[]) =>
+    componentes.find((componente: ComponenteDireccionGoogle) =>
+      componente.types?.some((tipo: string) => tipos.includes(tipo)),
+    );
+
+  const calle = textoComponente(buscar(['route']));
+  const altura = textoComponente(buscar(['street_number']));
+  // `postal_town` es el equivalente de `locality` en algunas regiones.
+  const ciudad = textoComponente(buscar(['locality', 'postal_town']));
+
+  if (!calle || !ciudad) return null;
+  return `${altura ? `${calle} ${altura}` : calle}, ${ciudad}`;
+}
 const MENSAJE_NO_DISPONIBLE = 'Google Places no está disponible en este navegador.';
 const MENSAJE_BUSQUEDA = 'No pudimos buscar direcciones en este momento. Intentá de nuevo.';
 const MENSAJE_DETALLE = 'No pudimos obtener los datos completos de la dirección. Intentá de nuevo.';
@@ -81,8 +128,9 @@ const MENSAJE_DETALLE = 'No pudimos obtener los datos completos de la dirección
  * Se abre una sesión por búsqueda y se entrega el token al componente para que
  * lo reutilice al pedir los detalles de la sugerencia elegida. Con Places (New),
  * el token viaja automáticamente en el primer `fetchFields` del `Place` creado
- * por `PlacePrediction.toPlace()`. Solo se consultan `formattedAddress` y
- * `location`, que son los campos que necesita el formulario de sucursal.
+ * por `PlacePrediction.toPlace()`. Solo se consultan `formattedAddress`,
+ * `location` y `addressComponents`, necesarios para persistir y para mostrar
+ * la dirección sin hacer consultas adicionales.
  *
  * No se crea un mapa, un marcador ni se pide geolocalización.
  */
@@ -166,7 +214,7 @@ export class googlePlacesService {
   async obtenerDetalles(
     sugerencia: SugerenciaDireccion,
     sessionToken: unknown,
-  ): Promise<UbicacionDireccion> {
+  ): Promise<DetalleUbicacionDireccion> {
     await this.preparar();
     if (!sessionToken) throw new Error(MENSAJE_NO_DISPONIBLE);
 
@@ -198,7 +246,17 @@ export class googlePlacesService {
         throw new Error(MENSAJE_DETALLE);
       }
 
-      return { direccion, latitud, longitud, googlePlaceId };
+      const direccionCorta = direccionCortaDeComponentes(
+        place.addressComponents ?? place.address_components ?? null,
+      );
+
+      return {
+        direccion,
+        latitud,
+        longitud,
+        googlePlaceId,
+        ...(direccionCorta ? { direccionCorta } : {}),
+      };
     } catch (error) {
       throw error instanceof Error ? error : new Error(MENSAJE_DETALLE);
     }

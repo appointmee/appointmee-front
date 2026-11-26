@@ -4,9 +4,9 @@ import {
   SolicitudEmpleadorDetalleDTO,
   UbicacionGuardadaSolicitudEmpleadorDTO,
   claseEstadoSolicitud,
+  direccionVisibleUbicacion,
   etiquetaEstadoSolicitud,
   formatearFechaSolicitud,
-  resumirDireccionSolicitudEmpleador,
   urlGoogleMapsUbicacion,
 } from '../../models/solicitud-empleador';
 
@@ -54,11 +54,11 @@ export class SolicitudEmpleadorDetalle {
     () => this.detalle().ubicaciones ?? [],
   );
 
-  /** Solo cambia la presentación: calle, altura y localidad. */
+  /** Solo cambia la presentación: calle, altura y ciudad. */
   protected direccionCorta(
     ubicacion: UbicacionGuardadaSolicitudEmpleadorDTO,
   ): string {
-    return resumirDireccionSolicitudEmpleador(ubicacion.direccion);
+    return direccionVisibleUbicacion(ubicacion);
   }
 
   /**

@@ -131,6 +131,8 @@ const SEGMENTO_ADMINISTRATIVO =
 const SEGMENTO_ESTADO_POSTAL = /^[A-Z]{2}\s+\d{4,5}(?:-\d{4})?$/i;
 const PAISES_COMUNES =
   /^(?:argentina|usa|estados unidos|united states|canad[aá]|chile|m[eé]xico|mexico|brasil|brazil|uruguay|paraguay|bolivia|per[uú]|peru|colombia|venezuela|ecuador|espa[nñ]a|spain|portugal|francia|france|alemania|germany|italia|italy|reino unido|united kingdom|uk|pa[ií]ses bajos|netherlands|suiza|switzerland)\b/i;
+const PREFIJO_CALLE =
+  /^(?:av|avenida|calle|ruta|rp|rn|autopista|boulevard|blvd|paseo|pasaje|camino|plaza|parque|circunvalaci[oó]n)\b\.?/i;
 
 function normalizarSegmento(valor: string): string {
   return valor.replace(/\s+/g, ' ').trim();
@@ -151,34 +153,67 @@ function esSegmentoAdministrativo(segmento: string): boolean {
   );
 }
 
+/** Acepta nombres de calle con o sin tipo explícito y alturas compuestas. */
+function pareceCalle(segmento: string): boolean {
+  return PREFIJO_CALLE.test(segmento) || /\d/.test(segmento);
+}
+
 /**
  * Presentación resumida de una dirección ya guardada: calle, altura y localidad.
  * Solo formatea el texto persistido; no consulta Places y no altera el DTO.
- * Ante un formato no confiable devuelve un texto neutro en lugar de inventar
- * datos o mostrar códigos postales, provincias y países como si fueran locales.
+ * Descarta nombres de establecimiento, códigos postales, provincias y países.
+ * Si no puede identificar la calle con seguridad, devuelve la dirección
+ * original antes que quitar información válida.
  */
 export function resumirDireccionSolicitudEmpleador(
   direccion: string | null | undefined,
 ): string {
   const valor = typeof direccion === 'string' ? normalizarSegmento(direccion) : '';
-  if (!valor) return 'Dirección no disponible';
+  if (!valor) return '';
 
   const segmentos = valor.split(',').map(normalizarSegmento).filter(Boolean);
+  const primero = segmentos[0] ?? '';
+  const segundo = segmentos[1] ?? '';
+
+  // `GTC, Av. Pedro Luro 2335, ...`: el primer segmento no es una calle y el
+  // siguiente sí, así que se trata del nombre del establecimiento.
+  const indiceCalle =
+    !pareceCalle(primero) && pareceCalle(segundo) && !esSegmentoAdministrativo(primero) ? 1 : 0;
+
   // En la calle solo se quita un código postal alfanumérico (por ejemplo
   // `B7600GWE`): un número de 4 dígitos puede ser la altura de la calle.
-  const calle = quitarCodigoPostal(segmentos[0] ?? '', true);
-  const calleConfiable = calle && !esSegmentoAdministrativo(calle) ? calle : '';
+  const calle = quitarCodigoPostal(segmentos[indiceCalle] ?? '', true);
+  const calleConfiable = calle && pareceCalle(calle) && !esSegmentoAdministrativo(calle) ? calle : '';
+  if (!calleConfiable) return valor;
 
   const localidad =
     segmentos
-      .slice(1)
+      .slice(indiceCalle + 1)
       .map((segmento) => quitarCodigoPostal(segmento, false))
       .find((segmento) => segmento && !esSegmentoAdministrativo(segmento)) ?? '';
 
-  if (calleConfiable && localidad) return `${calleConfiable}, ${localidad}`;
-  if (calleConfiable) return calleConfiable;
-  if (localidad) return localidad;
-  return 'Dirección no disponible';
+  return localidad ? `${calleConfiable}, ${localidad}` : calleConfiable;
+}
+
+/** Ubicación con la presentación opcional calculada al elegir en Places. */
+export interface UbicacionConPresentacion {
+  readonly direccion: string;
+  readonly direccionCorta?: string | null;
+}
+
+/**
+ * Texto visible de una ubicación. Prefiere los componentes estructurados de
+ * Places; para lo ya persistido usa el resumen conservador de la dirección.
+ * Nunca modifica los datos que se envían ni los enlaces de Maps.
+ */
+export function direccionVisibleUbicacion(
+  ubicacion: UbicacionConPresentacion,
+): string {
+  return (
+    ubicacion.direccionCorta?.trim() ||
+    resumirDireccionSolicitudEmpleador(ubicacion.direccion) ||
+    'Dirección no disponible'
+  );
 }
 
 /** Las fechas del backend son LocalDate (`YYYY-MM-DD`), sin hora ni zona. */

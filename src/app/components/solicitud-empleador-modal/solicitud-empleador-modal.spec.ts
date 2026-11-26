@@ -8,6 +8,11 @@ const DIRECCIONES = [
   'Av. Santa Fe 3253, CABA, Argentina',
 ];
 
+const DIRECCIONES_CORTAS = [
+  'Av. Corrientes 1234, CABA',
+  'Av. Santa Fe 3253, CABA',
+];
+
 describe('SolicitudEmpleadorModal · ubicaciones con Google Places', () => {
   let fixture: ComponentFixture<SolicitudEmpleadorModal>;
   let descriptorShowModal: PropertyDescriptor | undefined;
@@ -198,7 +203,8 @@ describe('SolicitudEmpleadorModal · ubicaciones con Google Places', () => {
     await elegirSugerencia();
     expect(lugares.obtenerDetalles).toHaveBeenCalledTimes(1);
     expect(contador()).toBe('1/10');
-    expect(raiz().textContent).toContain(DIRECCIONES[0]);
+    expect(raiz().textContent).toContain(DIRECCIONES_CORTAS[0]);
+    expect(raiz().textContent).not.toContain('Argentina');
   });
 
   it('envía motivo limpio y las cuatro claves de cada ubicación elegida', async () => {
@@ -225,6 +231,44 @@ describe('SolicitudEmpleadorModal · ubicaciones con Google Places', () => {
     });
   });
 
+  it('muestra la dirección calculada con componentes sin enviarla al backend', async () => {
+    const confirmar = vi.fn();
+    fixture.componentInstance.confirmar.subscribe(confirmar);
+    const original =
+      'GTC, Av. Pedro Luro 2335, B7600GWE Mar del Plata, Provincia de Buenos Aires, Argentina';
+    lugares.obtenerDetalles.mockResolvedValueOnce({
+      direccion: original,
+      direccionCorta: 'Av. Pedro Luro 2335, Mar del Plata',
+      latitud: -38.0056,
+      longitud: -57.5426,
+      googlePlaceId: 'ChIJ_luro',
+    });
+
+    escribirComentario('Un comentario suficientemente largo para la prueba.');
+    await buscar('Av. Pedro Luro');
+    await elegirSugerencia();
+
+    const fila = raiz().querySelector('.solicitud-modal__ubicacion-direccion');
+    expect(fila?.textContent?.trim()).toBe('Av. Pedro Luro 2335, Mar del Plata');
+    expect(fila?.textContent).not.toContain('GTC');
+    expect(raiz().querySelector('.solicitud-modal__quitar')?.getAttribute('aria-label')).toBe(
+      'Quitar la ubicación Av. Pedro Luro 2335, Mar del Plata',
+    );
+
+    enviar();
+    expect(confirmar).toHaveBeenCalledWith({
+      motivo: 'Un comentario suficientemente largo para la prueba.',
+      ubicaciones: [
+        {
+          direccion: original,
+          latitud: -38.0056,
+          longitud: -57.5426,
+          googlePlaceId: 'ChIJ_luro',
+        },
+      ],
+    });
+  });
+
   it('permite eliminar ubicaciones y actualiza el contador', async () => {
     await buscar(DIRECCIONES[0]);
     await elegirSugerencia();
@@ -235,14 +279,14 @@ describe('SolicitudEmpleadorModal · ubicaciones con Google Places', () => {
     expect(contador()).toBe('2/10');
     const quitar = raiz().querySelectorAll<HTMLButtonElement>('.solicitud-modal__quitar');
     expect(quitar).toHaveLength(2);
-    expect(quitar[0].getAttribute('aria-label')).toContain(DIRECCIONES[0]);
+    expect(quitar[0].getAttribute('aria-label')).toContain(DIRECCIONES_CORTAS[0]);
 
     quitar[0].click();
     fixture.detectChanges();
 
     expect(contador()).toBe('1/10');
-    expect(raiz().textContent).not.toContain(DIRECCIONES[0]);
-    expect(raiz().textContent).toContain(DIRECCIONES[1]);
+    expect(raiz().textContent).not.toContain(DIRECCIONES_CORTAS[0]);
+    expect(raiz().textContent).toContain(DIRECCIONES_CORTAS[1]);
   });
 
   it('bloquea la ubicación 11 con mensaje visible y sin consultar Places', async () => {
