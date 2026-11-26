@@ -46,6 +46,24 @@ describe('Creditos · RF47', () => {
     expect(html.querySelector('h3')?.textContent).toContain('Créditos del sistema');
   });
 
+  it('en modo integrado muestra solo el equipo, sin tarjeta ni duplicar la información de la plataforma', async () => {
+    await TestBed.configureTestingModule({ imports: [Creditos] }).compileComponents();
+    const fixture = TestBed.createComponent(Creditos);
+    fixture.componentRef.setInput('nivel', 3);
+    fixture.componentRef.setInput('integrado', true);
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+
+    expect(html.querySelector('.creditos--integrado')).toBeTruthy();
+    expect(html.querySelector('.creditos__eyebrow')).toBeNull();
+    expect(html.querySelector('.creditos__descripcion')).toBeNull();
+    expect(html.querySelector('.creditos__subtitulo')).toBeNull();
+    expect(html.textContent).not.toContain('Sobre la plataforma');
+    expect(html.textContent).toContain('Gonzalo Leonel López');
+    expect(html.textContent).toContain('Giovanni Morro Bai');
+    expect(html.querySelectorAll('ul.creditos__lista > li')).toHaveLength(2);
+  });
+
   it('permite personalizar el título visible', async () => {
     await TestBed.configureTestingModule({ imports: [Creditos] }).compileComponents();
     const fixture = TestBed.createComponent(Creditos);

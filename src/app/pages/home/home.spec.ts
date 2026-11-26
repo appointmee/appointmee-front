@@ -85,7 +85,8 @@ describe('Home branch autocomplete', () => {
     expect(about.querySelector('app-creditos')).toBeTruthy();
     expect(about.textContent).toContain('Gonzalo Leonel López');
     expect(about.textContent).toContain('Giovanni Morro Bai');
-    expect(about.querySelector('app-creditos h3')).toBeTruthy();
+    expect(about.querySelector('app-creditos .creditos--integrado')).toBeTruthy();
+    expect(about.querySelector('app-creditos h3')?.textContent).toContain('Desarrollado por');
   });
 
   it('muestra la abeja proporcionada en el hero como imagen decorativa', () => {

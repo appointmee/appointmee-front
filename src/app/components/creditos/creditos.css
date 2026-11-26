@@ -169,6 +169,72 @@ h3.creditos__titulo {
   padding: var(--space-3);
 }
 
+/* Modo integrado: sin tarjeta, como parte de una sección existente (home). */
+.creditos--integrado {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.creditos--integrado::before {
+  content: none;
+}
+
+.creditos--integrado .creditos__contenido {
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.creditos--integrado .creditos__cabecera {
+  gap: var(--space-1);
+}
+
+.creditos--integrado .creditos__titulo,
+.creditos--integrado h3.creditos__titulo {
+  color: var(--accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.creditos--integrado .creditos__bloques {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.creditos--integrado .creditos__bloque {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  gap: var(--space-2);
+}
+
+.creditos--integrado .creditos__lista {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+
+.creditos--integrado .creditos__integrante {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.creditos--integrado .creditos__avatar {
+  width: 2rem;
+  height: 2rem;
+}
+
+.creditos--integrado .creditos__nombre {
+  font-weight: 500;
+}
+
 @media (max-width: 600px) {
   .creditos {
     padding: var(--space-3);
