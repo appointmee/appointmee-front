@@ -27,13 +27,15 @@ const pagina = (
 
 describe('Centro de notificaciones (US-NOT-03)', () => {
   let roles: readonly string[];
-  let listar: ReturnType<typeof vi.fn<() => Observable<PaginaNotificacionesDTO>>>;
+  let listar: ReturnType<
+    typeof vi.fn<(pagina: number, tamano: number) => Observable<PaginaNotificacionesDTO>>
+  >;
   let contar: ReturnType<typeof vi.fn<() => Observable<{ noLeidas: number }>>>;
   let router: Router;
   let chatWidget: chatWidgetService;
 
   const servicio = {
-    listar: () => listar(),
+    listar: (pagina: number, tamano: number) => listar(pagina, tamano),
     contarNoLeidas: () => contar(),
   };
 
@@ -95,6 +97,17 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     expect(boton.getAttribute('aria-label')).toBe('Notificaciones, 2 sin leer');
     expect(boton.querySelector('.notificaciones__contador')?.textContent).toContain('2');
     expect(contar).toHaveBeenCalledOnce();
+  });
+
+  it('pide sólo las últimas 20 notificaciones y ofrece ver todas', async () => {
+    const { fixture } = await renderizar();
+    abrirPanel(fixture);
+
+    expect(listar).toHaveBeenCalledWith(0, 20);
+    const enlace = fixture.nativeElement.querySelector('.panel__ver-todas') as HTMLAnchorElement;
+    expect(enlace).not.toBeNull();
+    expect(enlace.getAttribute('href')).toBe('/notificaciones');
+    expect(enlace.textContent).toContain('Ver todas');
   });
 
   it('abre el panel con estados de carga y muestra fecha y estado de cada notificación', async () => {
