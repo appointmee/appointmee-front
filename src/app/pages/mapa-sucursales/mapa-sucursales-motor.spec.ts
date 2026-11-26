@@ -182,10 +182,13 @@ describe('US-MAP-06 · motor de indicadores', () => {
     expect(marcadores).toHaveLength(2);
     expect(motor.cantidadMarcadores).toBe(2);
     expect(marcadores[0].opciones['map']).toBe(mapa);
+    expect(decodeURIComponent(marcadores[0].iconos[0])).toContain('width="62"');
     expect(decodeURIComponent(marcadores[0].iconos[0])).toContain('>4.5</tspan>');
     expect(decodeURIComponent(marcadores[0].iconos[0])).toContain('🐝');
+    expect(decodeURIComponent(marcadores[1].iconos[0])).toContain('width="44"');
+    expect(decodeURIComponent(marcadores[1].iconos[0])).toContain('>-<');
+    expect(decodeURIComponent(marcadores[1].iconos[0])).toContain('🐝');
     expect(decodeURIComponent(marcadores[1].iconos[0])).not.toMatch(/>[\d.]+</);
-    expect(decodeURIComponent(marcadores[1].iconos[0])).not.toContain('🐝');
     expect(decodeURIComponent(marcadores[0].iconos[0])).not.toContain('Sucursal 1');
     expect(mapa.limites).toHaveLength(1);
     expect(limites[0].puntos).toHaveLength(2);
@@ -270,6 +273,23 @@ describe('US-MAP-06 · motor de indicadores', () => {
 
     expect(ventana.abierta).toBe(false);
     expect(mapa.centros).toHaveLength(1);
+  });
+
+  it('notifica la apertura para que la vista ajuste el wrapper de Google', () => {
+    const { api, mapa, marcadores } = crearApi();
+    const alAbrir = vi.fn();
+    const motor = new MotorMapaSucursales(
+      api,
+      mapa,
+      () => undefined,
+      alAbrir,
+    );
+
+    motor.actualizar([sucursal(1, -34.6)], contenido, icono);
+    marcadores[0].listener?.();
+
+    expect(alAbrir).toHaveBeenCalledTimes(1);
+    expect(alAbrir).toHaveBeenCalledWith('Sucursal 1');
   });
 
   it('cierra y deselecciona al hacer clic fuera de un indicador', () => {

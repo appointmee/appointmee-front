@@ -114,6 +114,7 @@ class MarcadorFalso {
 class VentanaFalsa {
   contenido: Node | string | null = null;
   abierta = false;
+  marco: HTMLElement | null = null;
 
   setContent(contenido: Node | string): void {
     this.contenido = contenido;
@@ -121,10 +122,32 @@ class VentanaFalsa {
 
   open(): void {
     this.abierta = true;
+    if (!(this.contenido instanceof Node)) {
+      return;
+    }
+    const documento = this.contenido.ownerDocument;
+    if (!documento) {
+      return;
+    }
+    const marco = documento.createElement('div');
+    marco.className = 'gm-style-iw';
+    const puntero = documento.createElement('div');
+    puntero.className = 'gm-style-iw-t';
+    const tarjeta = documento.createElement('div');
+    tarjeta.className = 'gm-style-iw-c';
+    const cuerpo = documento.createElement('div');
+    cuerpo.className = 'gm-style-iw-d';
+    cuerpo.append(this.contenido);
+    tarjeta.append(cuerpo);
+    marco.append(puntero, tarjeta);
+    documento.body.append(marco);
+    this.marco = marco;
   }
 
   close(): void {
     this.abierta = false;
+    this.marco?.remove();
+    this.marco = null;
   }
 }
 
@@ -285,10 +308,13 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
 
     expect(marcadores).toHaveLength(2);
     expect(marcadores.every((marcador) => decodeURIComponent(marcador.iconos[0]).includes('fill="#f7c65a"'))).toBe(true);
+    expect(decodeURIComponent(marcadores[0].iconos[0])).toContain('width="62"');
     expect(decodeURIComponent(marcadores[0].iconos[0])).toContain('>4.5</tspan>');
     expect(decodeURIComponent(marcadores[0].iconos[0])).toContain('🐝');
+    expect(decodeURIComponent(marcadores[1].iconos[0])).toContain('width="44"');
+    expect(decodeURIComponent(marcadores[1].iconos[0])).toContain('>-<');
+    expect(decodeURIComponent(marcadores[1].iconos[0])).toContain('🐝');
     expect(decodeURIComponent(marcadores[1].iconos[0])).not.toMatch(/>[\d.]+</);
-    expect(decodeURIComponent(marcadores[1].iconos[0])).not.toContain('🐝');
     expect(mapa.limites).toHaveLength(1);
 
     const select = host.querySelector<HTMLSelectElement>('ds-select select')!;
@@ -379,6 +405,26 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
     expect(dias[0].getAttribute('style')).toContain('var(--accent)');
     expect(dias[1].getAttribute('style')).toContain('line-through');
     expect(contenido.querySelector('[aria-label*="abiertos LU"]')).not.toBeNull();
+  });
+
+  it('quita el marco blanco de Google y deja solo el panel negro', async () => {
+    await crear();
+    await revelar();
+
+    marcadores[0].listener?.();
+    const marco = ventana.marco!;
+    const tarjeta = marco.querySelector<HTMLElement>('.gm-style-iw-c')!;
+    const cuerpo = marco.querySelector<HTMLElement>('.gm-style-iw-d')!;
+    const puntero = marco.querySelector<HTMLElement>('.gm-style-iw-t')!;
+    const panel = ventana.contenido as HTMLElement;
+
+    expect(panel.textContent).toContain('Sucursal Flores');
+    expect(tarjeta.getAttribute('style')).not.toMatch(/background(-color)?:\s*(white|#fff)/i);
+    expect(tarjeta.getAttribute('style')).toContain('background: transparent');
+    expect(tarjeta.getAttribute('style')).toContain('box-shadow: none');
+    expect(tarjeta.getAttribute('style')).toContain('padding: 0');
+    expect(cuerpo.getAttribute('style')).toContain('overflow: visible');
+    expect(puntero.style.display).toBe('none');
   });
 
   it('respeta el estado sin puntuaciones al seleccionar una sucursal sin reseñas', async () => {

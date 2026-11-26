@@ -107,39 +107,53 @@ describe('US-MAP-06 · datos del mapa global', () => {
   });
 
   describe('indicadores de valoración', () => {
-    it('muestra únicamente la puntuación, nunca un valor inventado', () => {
+    it('muestra la puntuación real o un guion, nunca un valor inventado', () => {
       expect(puntuacionMapa(CENTRO)).toBe(4.5);
       expect(textoIndicadorMapa(CENTRO)).toBe('4.5');
       expect(textoIndicadorMapa({ ...CENTRO, puntuacion: 5 })).toBe('5');
-      expect(textoIndicadorMapa({ ...CENTRO, puntuacion: null })).toBeNull();
-      expect(textoIndicadorMapa({ ...CENTRO, puntuacion: 0 })).toBeNull();
-      expect(textoIndicadorMapa({ ...CENTRO, puntuacion: 0.5 })).toBeNull();
-      expect(textoIndicadorMapa({ ...CENTRO, puntuacion: 6 })).toBeNull();
+      expect(textoIndicadorMapa({ ...CENTRO, puntuacion: null })).toBe('-');
+      expect(textoIndicadorMapa({ ...CENTRO, puntuacion: 0 })).toBe('-');
+      expect(textoIndicadorMapa({ ...CENTRO, puntuacion: 0.5 })).toBe('-');
+      expect(textoIndicadorMapa({ ...CENTRO, puntuacion: 6 })).toBe('-');
     });
 
-    it('dibuja la puntuación y una abeja centradas en la burbuja amarilla', () => {
+    it('adapta el ancho para que el decimal y la abeja no se corten', () => {
       const svg = decodeURIComponent(
-        iconoIndicadorMapa('4.5', '#f7c65a'),
+        iconoIndicadorMapa('3.8', '#f7c65a'),
       );
 
-      expect(svg).toContain('fill="#f7c65a"');
-      expect(svg).toContain('fill="#07090d"');
+      expect(svg).toContain('width="62"');
+      expect(svg).toContain('viewBox="0 0 62 56"');
+      expect(svg).toContain('x="31"');
       expect(svg).toContain('text-anchor="middle"');
       expect(svg).toContain('dominant-baseline="middle"');
-      expect(svg).toContain('>4.5</tspan>');
+      expect(svg).toContain('>3.8</tspan>');
       expect(svg).toContain(ABEJA_MAPA);
+      expect(svg).toContain('fill="#f7c65a"');
+      expect(svg).toContain('fill="#07090d"');
       expect(svg).not.toContain('Flores');
       expect(svg).not.toContain('SPA');
     });
 
-    it('mantiene la burbuja visible pero sin número ni abeja cuando no hay reseñas', () => {
+    it('mantiene compacto el indicador con puntuación entera', () => {
+      const svg = decodeURIComponent(iconoIndicadorMapa('5', '#f7c65a'));
+
+      expect(svg).toContain('width="44"');
+      expect(svg).toContain('viewBox="0 0 44 56"');
+      expect(svg).toContain('x="22"');
+      expect(svg).toContain('>5</tspan>');
+      expect(svg).toContain(ABEJA_MAPA);
+    });
+
+    it('muestra un guion y la abeja cuando no hay reseñas', () => {
       const svg = decodeURIComponent(
-        iconoIndicadorMapa(null, '#f7c65a'),
+        iconoIndicadorMapa(textoIndicadorMapa({ ...CENTRO, puntuacion: null }), '#f7c65a'),
       );
 
-      expect(svg).toContain('fill="#f7c65a"');
+      expect(svg).toContain('width="44"');
+      expect(svg).toContain('>-<');
+      expect(svg).toContain(ABEJA_MAPA);
       expect(svg).not.toMatch(/>[\d.]+</);
-      expect(svg).not.toContain(ABEJA_MAPA);
     });
 
     it('usa el token de acento y descarta colores inválidos', () => {
