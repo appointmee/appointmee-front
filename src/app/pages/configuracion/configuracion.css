@@ -47,7 +47,40 @@
 
 .ajustes__pestana--activa { border-color: var(--accent-strong); color: var(--accent-strong); }
 
-.ajustes app-creditos { margin-top: 24px; }
+.ajustes__subpestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.ajustes__subpestana {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+.ajustes__subpestana:hover { border-color: var(--muted); color: var(--text); }
+
+.ajustes__subpestana--activa {
+  border-color: var(--accent-strong);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.ajustes__panel {
+  margin-top: 24px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
 
 .verificacion {
   margin-top: 24px;
@@ -118,6 +151,7 @@
 
 @media (max-width: 600px) {
   .ajustes { padding: 36px 18px 56px; }
+  .ajustes__panel { padding: 20px; }
   .verificacion { padding: 20px; }
   .verificacion__cabecera { flex-direction: column; }
   .verificacion__principal { width: 100%; box-sizing: border-box; }

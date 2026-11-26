@@ -38,7 +38,10 @@ describe('Ajustes · Verificar cuenta', () => {
     expect(host.querySelector('h1')?.textContent).toBe('Ajustes');
     expect(host.querySelector('.ajustes__descripcion')?.textContent).toContain('Personalizá tus preferencias');
     expect(host.querySelector('.ajustes__descripcion')?.nextElementSibling?.tagName).toBe('NAV');
-    expect(host.querySelector('nav .ajustes__pestana')?.textContent).toContain('Verificar cuenta');
+    expect(host.querySelector('nav .ajustes__pestana')?.textContent).toContain('Cuenta');
+    expect(host.querySelector('.ajustes__subpestanas .ajustes__subpestana')?.textContent).toContain(
+      'Verificar cuenta',
+    );
     expect(page.verificacionModel().email).toBe('ana@example.com');
     expect(host.textContent).not.toContain('Sección en preparación');
   });
@@ -56,6 +59,7 @@ describe('Ajustes · Verificar cuenta', () => {
     fixture.detectChanges();
 
     expect(pestana!.getAttribute('aria-pressed')).toBe('true');
+    expect(host.querySelector('.ajustes__panel app-creditos')).toBeTruthy();
     expect(host.querySelector('app-creditos')).toBeTruthy();
     expect(host.textContent).toContain('Gonzalo Leonel López');
     expect(host.textContent).toContain('Giovanni Morro Bai');
@@ -345,9 +349,19 @@ describe('Ajustes · Verificar cuenta', () => {
   });
 
   describe('SCRUM-274 · Sección "Eliminar cuenta"', () => {
-    function pestanas(): HTMLButtonElement[] {
+    function pestanasPrincipales(): HTMLButtonElement[] {
       return Array.from(
-        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('nav .ajustes__pestana'),
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+          'nav .ajustes__pestana',
+        ),
+      );
+    }
+
+    function subpestanas(): HTMLButtonElement[] {
+      return Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+          'nav.ajustes__subpestanas .ajustes__subpestana',
+        ),
       );
     }
 
@@ -360,24 +374,35 @@ describe('Ajustes · Verificar cuenta', () => {
       fixture.detectChanges();
     }
 
-    it('agrega la pestaña "Eliminar cuenta" junto a las secciones existentes', () => {
+    it('agrupa las secciones de la cuenta y deja Créditos al lado', () => {
       abrirSesion();
 
-      const etiquetas = pestanas().map((pestana) => pestana.textContent?.trim());
-      expect(etiquetas).toEqual(['Verificar cuenta', 'Créditos', 'Datos personales', 'Cambiar contraseña', 'Eliminar cuenta']);
-    });
-
-    it('no muestra la sección a un visitante sin sesión', () => {
-      expect(pestanas().map((pestana) => pestana.textContent?.trim())).toEqual([
-        'Verificar cuenta',
+      expect(pestanasPrincipales().map((pestana) => pestana.textContent?.trim())).toEqual([
+        'Cuenta',
         'Créditos',
+      ]);
+      expect(subpestanas().map((pestana) => pestana.textContent?.trim())).toEqual([
+        'Verificar cuenta',
+        'Datos personales',
+        'Cambiar contraseña',
+        'Eliminar cuenta',
       ]);
     });
 
-    it('muestra la sección con el aviso y el botón cuando se elige la pestaña', () => {
+    it('no muestra las secciones privadas a un visitante sin sesión', () => {
+      expect(pestanasPrincipales().map((pestana) => pestana.textContent?.trim())).toEqual([
+        'Cuenta',
+        'Créditos',
+      ]);
+      expect(subpestanas().map((pestana) => pestana.textContent?.trim())).toEqual([
+        'Verificar cuenta',
+      ]);
+    });
+
+    it('muestra la sección con el aviso y el botón cuando se elige la subpestaña', () => {
       abrirSesion();
 
-      const pestana = pestanas().find((item) => item.textContent?.trim() === 'Eliminar cuenta');
+      const pestana = subpestanas().find((item) => item.textContent?.trim() === 'Eliminar cuenta');
       pestana?.click();
       fixture.detectChanges();
 
@@ -397,15 +422,18 @@ describe('Ajustes · Verificar cuenta', () => {
       expect((fixture.nativeElement as HTMLElement).querySelector('app-cambiar-password')).toBeNull();
     });
 
-    it('la pestaña activa se marca para "Eliminar cuenta"', () => {
+    it('marca la subpestaña activa para "Eliminar cuenta"', () => {
       abrirSesion();
 
-      const pestana = pestanas().find((item) => item.textContent?.trim() === 'Eliminar cuenta');
+      const pestana = subpestanas().find((item) => item.textContent?.trim() === 'Eliminar cuenta');
       pestana?.click();
       fixture.detectChanges();
 
       expect(pestana?.getAttribute('aria-pressed')).toBe('true');
-      expect(pestana?.classList.contains('ajustes__pestana--activa')).toBe(true);
+      expect(pestana?.classList.contains('ajustes__subpestana--activa')).toBe(true);
+
+      const cuenta = pestanasPrincipales().find((item) => item.textContent?.trim() === 'Cuenta');
+      expect(cuenta?.getAttribute('aria-pressed')).toBe('true');
     });
   });
 });

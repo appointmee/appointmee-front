@@ -2,6 +2,7 @@
   class="creditos"
   [class.creditos--compacto]="nivel() === 3"
   [class.creditos--integrado]="integrado()"
+  [class.creditos--sin-tarjeta]="!tarjeta()"
   [attr.aria-label]="titulo()"
 >
   <div class="creditos__contenido">

@@ -19,6 +19,8 @@ export class Creditos {
   readonly nivel = input<2 | 3>(2);
   /** Presentación sin tarjeta, para insertarse dentro de una sección existente. */
   readonly integrado = input(false);
+  /** Si es false, el contenido se muestra sin el contenedor visual propio. */
+  readonly tarjeta = input(true);
   readonly integrantes = INTEGRANTES;
 
   /** Iniciales para el avatar decorativo (nunca reemplazan el nombre accesible). */

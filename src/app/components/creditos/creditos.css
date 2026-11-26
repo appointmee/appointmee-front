@@ -204,7 +204,8 @@ h3.creditos__titulo {
 }
 
 /* Modo integrado: sin tarjeta, como parte de una sección existente (home). */
-.creditos--integrado {
+.creditos--integrado,
+.creditos--sin-tarjeta {
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -213,7 +214,8 @@ h3.creditos__titulo {
   overflow: visible;
 }
 
-.creditos--integrado::before {
+.creditos--integrado::before,
+.creditos--sin-tarjeta::before {
   content: none;
 }
 
