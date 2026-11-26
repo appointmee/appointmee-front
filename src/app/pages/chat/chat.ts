@@ -5,9 +5,12 @@ import {
   DestroyRef,
   ElementRef,
   OnDestroy,
+  afterRenderEffect,
   computed,
   inject,
   signal,
+  viewChild,
+  viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
@@ -54,7 +57,11 @@ export class Chat implements OnDestroy {
   private readonly realtime = inject(chatRealtimeService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly hilo = viewChild<ElementRef<HTMLElement>>('hilo');
+  private readonly botonesConversacion =
+    viewChildren<ElementRef<HTMLButtonElement>>('botonConversacion');
   private readonly cambioHilo = new Subject<void>();
+  private readonly focoPendiente = signal<'hilo' | number | null>(null);
 
   private readonly fechaCorta = new Intl.DateTimeFormat('es-AR', {
     day: '2-digit',
@@ -115,6 +122,21 @@ export class Chat implements OnDestroy {
   });
 
   constructor() {
+    // El foco se aplica después del render: el panel/lista cambia de `display` en ese ciclo.
+    afterRenderEffect(() => {
+      const destino = this.focoPendiente();
+      if (destino === null) return;
+      this.focoPendiente.set(null);
+
+      if (destino === 'hilo') {
+        this.hilo()?.nativeElement.focus();
+        return;
+      }
+
+      const indice = this.conversaciones().findIndex((item) => item.id === destino);
+      this.botonesConversacion()[indice]?.nativeElement.focus();
+    });
+
     toObservable(this.realtime.mensajes)
       .pipe(skip(1), takeUntilDestroyed(this.destroyRef))
       .subscribe((entrantes) => this.incorporarMensajes(entrantes));
@@ -170,11 +192,18 @@ export class Chat implements OnDestroy {
     this.mensajes.set([]);
     this.detalle.set(null);
     this.seleccionada.set(conversacion);
-    this.errorDetalle.set(null);
-    this.errorHistorial.set(null);
     this.texto.set('');
     this.intentado.set(false);
+
+    this.cargarHilo(conversacion);
+    this.focoPendiente.set('hilo');
+  }
+
+  /** Carga detalle e historial juntos para que un reintento no deje errores huérfanos. */
+  private cargarHilo(conversacion: ConversacionResumenChat): void {
     this.detalleCargando.set(true);
+    this.errorDetalle.set(null);
+    this.errorHistorial.set(null);
 
     forkJoin({
       detalle: this.chatApi
@@ -210,32 +239,15 @@ export class Chat implements OnDestroy {
       });
   }
 
-  reintentarHistorial(): void {
+  reintentarConversacion(): void {
     const conversacion = this.seleccionada();
     if (!conversacion || this.detalleCargando()) return;
-
-    this.errorHistorial.set(null);
-    this.detalleCargando.set(true);
-    this.chatApi
-      .listarMensajes(conversacion.id)
-      .pipe(
-        takeUntil(this.cambioHilo),
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.detalleCargando.set(false)),
-      )
-      .subscribe({
-        next: (mensajes) => {
-          this.mensajes.set(mensajes);
-          this.realtime.conectar(conversacion.id, mensajes.at(-1)?.id ?? 0);
-        },
-        error: (error: unknown) =>
-          this.errorHistorial.set(
-            this.mensajeError(error, 'No pudimos cargar el historial de mensajes.'),
-          ),
-      });
+    this.cargarHilo(conversacion);
   }
 
   cerrarConversacion(): void {
+    const id = this.seleccionada()?.id;
+
     this.cambioHilo.next();
     this.pendiente.set(null);
     this.enviando.set(false);
@@ -244,6 +256,8 @@ export class Chat implements OnDestroy {
     this.detalle.set(null);
     this.seleccionada.set(null);
     this.errorEnvio.set(null);
+
+    if (id !== undefined) this.focoPendiente.set(id);
   }
 
   enviarMensaje(event?: Event): void {
@@ -323,13 +337,32 @@ export class Chat implements OnDestroy {
     return `Cliente: ${conversacion.clienteNombre ?? '—'} · Profesional: ${conversacion.profesionalNombre ?? '—'}`;
   }
 
+  /** El backend usa "Sin interlocutor" como fallback cuando no hay otra parte. */
+  etiquetaInterlocutor(conversacion: ConversacionResumenChat): string {
+    return conversacion.interlocutor === 'Sin interlocutor'
+      ? 'Sin interlocutor'
+      : `Con ${conversacion.interlocutor}`;
+  }
+
   ariaLabelConversacion(conversacion: ConversacionResumenChat): string {
     const noLeidos =
       conversacion.noLeidos > 0
-        ? `${conversacion.noLeidos} mensajes no leídos.`
-        : 'Sin mensajes no leídos.';
-    const participantes = this.participantesConversacion(conversacion) ?? '';
-    return `${this.tituloConversacion(conversacion)}. ${participantes} ${noLeidos} ${conversacion.ultimoMensaje ?? 'Sin mensajes'}`;
+        ? `${conversacion.noLeidos} mensajes no leídos`
+        : 'Sin mensajes no leídos';
+    const participantes = this.participantesConversacion(conversacion);
+    const interlocutor =
+      conversacion.interlocutor === 'Sin interlocutor'
+        ? 'Sin interlocutor'
+        : `Conversación con ${conversacion.interlocutor}`;
+    return [
+      interlocutor,
+      this.tituloConversacion(conversacion),
+      ...(participantes ? [participantes] : []),
+      noLeidos,
+      conversacion.ultimoMensaje ?? 'Sin mensajes',
+    ]
+      .join('. ')
+      .concat('.');
   }
 
   private marcarLeido(conversacion: ConversacionResumenChat): void {
