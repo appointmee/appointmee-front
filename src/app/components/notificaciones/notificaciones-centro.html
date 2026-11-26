@@ -1,0 +1,156 @@
+<div class="notificaciones">
+  <button
+    #campana
+    dsButton
+    class="notificaciones__campana"
+    type="button"
+    (click)="toggleNotificaciones($event)"
+    aria-haspopup="dialog"
+    [attr.aria-expanded]="abierto()"
+    aria-controls="notificaciones-panel"
+    [attr.aria-label]="ariaCampana()"
+  >
+    <svg class="notificaciones__icono" viewBox="0 0 24 24" aria-hidden="true">
+      <path [attr.d]="iconos.campana" />
+    </svg>
+    @if (noLeidas() > 0) {
+      <span class="notificaciones__contador" aria-hidden="true">
+        {{ noLeidas() > 99 ? '99+' : noLeidas() }}
+      </span>
+    }
+  </button>
+
+  @if (abierto()) {
+    <section
+      class="panel"
+      id="notificaciones-panel"
+      role="dialog"
+      aria-label="Centro de notificaciones"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="panel__cabecera">
+        <div class="panel__encabezado-texto">
+          <h2 class="panel__titulo">Notificaciones</h2>
+          <p class="panel__resumen" role="status" aria-live="polite" aria-atomic="true">
+            {{ resumen() }}
+          </p>
+          <a
+            class="panel__ver-todas"
+            routerLink="/notificaciones"
+            (click)="cerrarNotificaciones()"
+          >
+            Ver todas las notificaciones
+          </a>
+        </div>
+        <button
+          #cerrar
+          dsButton
+          class="panel__cerrar"
+          type="button"
+          aria-label="Cerrar notificaciones"
+          (click)="cerrarNotificaciones(true)"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconos.cerrar" />
+          </svg>
+        </button>
+      </header>
+
+      @if (sinConexion()) {
+        <div class="panel__aviso" role="status" aria-live="polite">
+          Sin conexión a internet. Podés reintentar cuando vuelva la conexión.
+        </div>
+      }
+
+      @if (cargando()) {
+        <div class="panel__lista" aria-busy="true">
+          <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            Cargando notificaciones…
+          </span>
+          @for (item of [1, 2, 3]; track item) {
+            <div class="panel__skeleton" aria-hidden="true">
+              <ds-skeleton width="36px" height="36px" />
+              <div class="panel__skeleton-lineas">
+                <ds-skeleton width="70%" height="0.8rem" />
+                <ds-skeleton width="90%" height="0.7rem" />
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (error()) {
+        <div class="panel__estado" role="alert" aria-live="assertive" aria-atomic="true">
+          <span class="panel__estado-icono" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path [attr.d]="iconos.alerta" />
+            </svg>
+          </span>
+          <strong>No pudimos cargar tus notificaciones</strong>
+          <p>{{ error() }}</p>
+          <button
+            dsButton
+            class="panel__accion"
+            type="button"
+            [disabled]="reintentando()"
+            [loading]="reintentando()"
+            (click)="reintentar()"
+          >
+            {{ reintentando() ? 'Reintentando…' : 'Reintentar' }}
+          </button>
+          <span class="sr-only" role="status" aria-live="polite">
+            @if (reintentando()) {
+              Reintentando la carga de notificaciones…
+            }
+          </span>
+        </div>
+      } @else if (notificaciones().length === 0) {
+        <ds-empty-state message="No tenés notificaciones por ahora.">
+          <button
+            dsButton
+            class="panel__accion"
+            type="button"
+            [disabled]="reintentando()"
+            [loading]="reintentando()"
+            (click)="reintentar()"
+          >
+            Actualizar
+          </button>
+        </ds-empty-state>
+      } @else {
+        <ol class="panel__lista" aria-label="Listado de notificaciones">
+          @for (notificacion of notificaciones(); track notificacion.id) {
+            <li class="panel__item">
+              <button
+                class="notificacion"
+                type="button"
+                [class.notificacion--no-leida]="!notificacion.leida"
+                [attr.aria-label]="ariaNotificacion(notificacion)"
+                (click)="abrir(notificacion)"
+              >
+                <span class="notificacion__icono" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path [attr.d]="iconoTipo(notificacion.tipo)" />
+                  </svg>
+                </span>
+                <span class="notificacion__cuerpo">
+                  <span class="notificacion__titulo">{{ notificacion.titulo }}</span>
+                  <span class="notificacion__mensaje">{{ notificacion.mensaje }}</span>
+                  <span class="notificacion__meta">
+                    <time [attr.datetime]="notificacion.fecha">
+                      {{ fechaDe(notificacion.fecha) }}
+                    </time>
+                    <span>{{ etiquetaTipo(notificacion.tipo) }}</span>
+                  </span>
+                </span>
+                <span class="notificacion__estado">
+                  <ds-badge [variant]="notificacion.leida ? 'success' : 'danger'">
+                    {{ notificacion.leida ? 'Leída' : 'Sin leer' }}
+                  </ds-badge>
+                </span>
+              </button>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+  }
+</div>

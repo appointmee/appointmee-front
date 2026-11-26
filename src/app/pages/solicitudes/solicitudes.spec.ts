@@ -1,7 +1,7 @@
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { SolicitudEmpleadoDetalleDTO } from '../../models/solicitud-empleado';
 import { SolicitudEmpleadorDetalleDTO } from '../../models/solicitud-empleador';
@@ -455,5 +455,45 @@ describe('Solicitudes · empleador y empleo', () => {
     expect(host.textContent).toContain('permisos de administrador o empleador');
     expect(host.querySelector('.boton--principal')).toBeNull();
     expect(host.textContent).toContain('cuentas de cliente');
+  });
+});
+
+describe('Solicitudes · destino de notificación', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('expande la solicitud indicada por ?solicitudId=', () => {
+    TestBed.configureTestingModule({
+      imports: [Solicitudes],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: authService, useValue: { tieneAlgunRol: () => false } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({ solicitudId: '10' }) } },
+        },
+      ],
+    });
+    const backend = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(Solicitudes);
+    fixture.detectChanges();
+
+    backend
+      .expectOne((request) => request.url.endsWith('/solicitudes-empleador/propias'))
+      .flush(SOLICITUDES);
+    fixture.detectChanges();
+
+    for (const peticion of backend.match((request) =>
+      /\/solicitudes-empleador\/\d+\/detalles/.test(request.url),
+    )) {
+      const id = idDeDetalle(peticion.request.url, 'empleador');
+      peticion.flush(detalle(id, 'PENDIENTE'));
+    }
+    fixture.detectChanges();
+
+    const expandida = (fixture.nativeElement as HTMLElement).querySelector('.solicitud--expandida');
+    expect(expandida?.textContent).toContain('Motivo de la solicitud 10');
+    backend.verify();
   });
 });

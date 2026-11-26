@@ -56,6 +56,8 @@
           Crear cuenta
         </a>
       } @else {
+        <app-notificaciones-centro />
+
         <div class="profile">
           <button dsButton
             class="profile__trigger"
@@ -72,17 +74,6 @@
             } @else {
               <span class="profile__avatar" aria-hidden="true">{{ auth.iniciales() }}</span>
             }
-            <span class="profile__copy">
-              <span class="profile__name">{{ nombreUsuario() || 'Mi cuenta' }}</span>
-            </span>
-            <svg
-              class="profile__chevron"
-              [class.is-open]="profileOpen()"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path [attr.d]="icons.chevron" />
-            </svg>
           </button>
 
           @if (profileOpen()) {

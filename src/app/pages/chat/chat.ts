@@ -30,6 +30,7 @@ import type {
   MensajeChat,
 } from '../../models/chat';
 import { chatService } from '../../services/chat-service';
+import { chatWidgetService } from '../../services/chat-widget-service';
 import {
   fusionarMensajes,
   chatRealtimeService,
@@ -54,6 +55,7 @@ const ETIQUETAS_ESTADO: Readonly<Record<EstadoEntregaChat, string>> = {
 })
 export class Chat implements OnDestroy {
   private readonly chatApi = inject(chatService);
+  private readonly widget = inject(chatWidgetService);
   private readonly realtime = inject(chatRealtimeService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -172,12 +174,27 @@ export class Chat implements OnDestroy {
         finalize(() => this.cargandoLista.set(false)),
       )
       .subscribe({
-        next: (lista) => this.conversaciones.set(lista),
+        next: (lista) => {
+          this.conversaciones.set(lista);
+          this.abrirConversacionPedida(lista);
+        },
         error: (error: unknown) =>
           this.errorLista.set(
             this.mensajeError(error, 'No pudimos cargar tus conversaciones.'),
           ),
       });
+  }
+
+  /** Una notificación puede pedir una conversación concreta al abrir el widget. */
+  private abrirConversacionPedida(lista: readonly ConversacionResumenChat[]): void {
+    const pedida = this.widget.conversacionId();
+    if (pedida === null) return;
+
+    const conversacion = lista.find((item) => item.id === pedida);
+    if (conversacion) {
+      this.widget.consumirConversacion();
+      this.abrirConversacion(conversacion);
+    }
   }
 
   abrirConversacion(conversacion: ConversacionResumenChat): void {

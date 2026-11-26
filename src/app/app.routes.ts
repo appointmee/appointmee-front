@@ -159,6 +159,17 @@ export const routes: Routes = [
       import('./pages/mis-turnos/mis-turnos').then((module) => module.MisTurnos),
   },
   {
+    path: 'notificaciones',
+    canActivate: [authGuard],
+    title: 'AppointMee | Notificaciones',
+    data: {
+      title: 'Notificaciones',
+      description: 'Consultá todas las notificaciones de tu cuenta.',
+    },
+    loadComponent: () =>
+      import('./pages/notificaciones/notificaciones').then((module) => module.Notificaciones),
+  },
+  {
     // El chat dejó de ser una página: se abre desde el widget flotante del navbar.
     path: 'chat',
     redirectTo: '',

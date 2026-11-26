@@ -4,7 +4,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { MisTurnos } from './mis-turnos';
 
@@ -685,5 +685,51 @@ describe('Mis Turnos', () => {
       openSpy.mockRestore();
       vi.useRealTimers();
     }
+  });
+});
+
+describe('Mis Turnos · destino de notificación', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('abre el detalle del turno indicado por ?turnoId=', () => {
+    TestBed.configureTestingModule({
+      imports: [MisTurnos],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({ turnoId: '2' }) } },
+        },
+      ],
+    });
+    const backend = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(MisTurnos);
+    fixture.detectChanges();
+
+    backend.expectOne((request) => request.url.endsWith('/turnos/propios')).flush(TURNOS);
+    fixture.detectChanges();
+
+    backend
+      .expectOne((request) => request.url.endsWith('/turnos/propios/detalles/2'))
+      .flush(DETALLE);
+    fixture.detectChanges();
+
+    backend.expectOne((request) => request.url.endsWith('/servicios/5')).flush(SERVICIO);
+    fixture.detectChanges();
+    backend
+      .expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'))
+      .flush([SUCURSAL]);
+    fixture.detectChanges();
+    backend
+      .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
+      .flush(SERVICIOS_SUCURSAL);
+    fixture.detectChanges();
+
+    const dialogo = fixture.nativeElement.querySelector('[role="dialog"]');
+    expect(dialogo).not.toBeNull();
+    expect(dialogo?.textContent).toContain('Corte de pelo');
+    backend.verify();
   });
 });

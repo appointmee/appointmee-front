@@ -31,4 +31,21 @@ describe('chatWidgetService', () => {
     expect(servicio.abierto()).toBe(false);
     expect(servicio.debeEnfocar()).toBe(false);
   });
+
+  it('guarda la conversación pedida por una notificación y la limpia al cerrar', () => {
+    const servicio = TestBed.inject(chatWidgetService);
+
+    expect(servicio.conversacionId()).toBeNull();
+
+    servicio.abrirConversacion(99);
+    expect(servicio.abierto()).toBe(true);
+    expect(servicio.conversacionId()).toBe(99);
+
+    servicio.consumirConversacion();
+    expect(servicio.conversacionId()).toBeNull();
+
+    servicio.abrirConversacion(12);
+    servicio.cerrar();
+    expect(servicio.conversacionId()).toBeNull();
+  });
 });

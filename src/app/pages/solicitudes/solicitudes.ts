@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subject, catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 
 import { SolicitudEmpleadorCard } from '../../components/solicitud-empleador-card/solicitud-empleador-card';
@@ -59,6 +59,11 @@ export class Solicitudes {
   private readonly apiEmpleo = inject(solicitudEmpleadoService);
   private readonly auth = inject(authService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly solicitudIdDelEnlace = this.parseId(
+    this.route.snapshot.queryParamMap.get('solicitudId'),
+  );
+  private enlaceAbierto = false;
   private readonly recargar = new Subject<void>();
   private readonly recargarEmpleo = new Subject<void>();
 
@@ -276,6 +281,25 @@ export class Solicitudes {
     this.cargando.set(false);
     this.reintentando.set(false);
     this.precargarDetalles(this.visibles());
+
+    // Deep-link desde el centro de notificaciones: ?solicitudId= abre el detalle.
+    const objetivo = this.solicitudIdDelEnlace;
+    if (!this.enlaceAbierto && objetivo !== null &&
+        resultado.solicitudes.some((solicitud) => solicitud.id === objetivo)) {
+      this.enlaceAbierto = true;
+      const expandidas = new Set(this.expandidas());
+      expandidas.add(objetivo);
+      this.expandidas.set(expandidas);
+      if (!this.detalles().has(objetivo) && !this.cargandoDetalle().has(objetivo)) {
+        this.cargarDetalle(objetivo);
+      }
+    }
+  }
+
+  private parseId(valor: string | null): number | null {
+    if (!valor) return null;
+    const id = Number(valor);
+    return Number.isInteger(id) && id > 0 ? id : null;
   }
 
   private aplicarListaEmpleo(resultado: ResultadoListaEmpleo): void {
