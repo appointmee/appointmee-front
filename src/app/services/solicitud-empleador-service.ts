@@ -1,11 +1,15 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import {
+  EstadoSolicitudEmpleador,
+  PaginaSolicitudesEmpleadorDTO,
+  SolicitudEmpleadorCrearDTO,
   SolicitudEmpleadorDetalleDTO,
   SolicitudEmpleadorMiniDTO,
+  TAMANO_PAGINA_SOLICITUDES,
 } from '../models/solicitud-empleador';
 import { backendService } from './backend-service';
 
@@ -18,10 +22,11 @@ export class solicitudEmpleadorService {
   private readonly api = inject(backendService);
   private readonly http = inject(HttpClient);
 
-  solicitar(motivo: string): Observable<string> {
+  /** Envía el motivo y las ubicaciones elegidas en Google Places. */
+  solicitar(datos: SolicitudEmpleadorCrearDTO): Observable<string> {
     return this.http.post(
       `${this.api.baseUrl}/solicitudes-empleador/solicitar`,
-      { motivo },
+      datos,
       { context: this.contextoSinAvisoGlobal(), responseType: 'text' },
     );
   }
@@ -33,11 +38,22 @@ export class solicitudEmpleadorService {
     );
   }
 
-  /** El backend devuelve únicamente las solicitudes pendientes. */
-  listarPendientes(): Observable<SolicitudEmpleadorMiniDTO[]> {
-    return this.http.get<SolicitudEmpleadorMiniDTO[]>(
+  /**
+   * Listado administrativo real del backend: el filtro y el desplazamiento se
+   * resuelven allí. `page` comienza en 0 y el tamaño es siempre 10.
+   */
+  listarAdministrativas(
+    estado: EstadoSolicitudEmpleador,
+    page: number,
+  ): Observable<PaginaSolicitudesEmpleadorDTO> {
+    const params = new HttpParams()
+      .set('estado', estado)
+      .set('page', String(page))
+      .set('size', String(TAMANO_PAGINA_SOLICITUDES));
+
+    return this.http.get<PaginaSolicitudesEmpleadorDTO>(
       `${this.api.baseUrl}/solicitudes-empleador/listar`,
-      { context: this.contextoSinAvisoGlobal() },
+      { params, context: this.contextoSinAvisoGlobal() },
     );
   }
 

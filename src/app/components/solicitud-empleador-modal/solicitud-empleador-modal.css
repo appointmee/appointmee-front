@@ -156,6 +156,217 @@
   display: none;
 }
 
+.solicitud-modal__resumen {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 122, 122, 0.24);
+  border-radius: 12px;
+  background: rgba(255, 122, 122, 0.08);
+}
+
+.solicitud-modal__resumen h3 {
+  margin: 0;
+  color: #ff9d9d;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.solicitud-modal__resumen ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  color: #ff9d9d;
+  font-size: 12.5px;
+}
+
+.solicitud-modal__resumen a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.solicitud-modal__input {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  caret-color: var(--accent);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
+}
+
+.solicitud-modal__input::placeholder {
+  color: #687383;
+}
+
+.solicitud-modal__input:focus-visible {
+  border-color: rgba(247, 198, 90, 0.65);
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: 0 0 0 3px rgba(247, 198, 90, 0.16);
+}
+
+.solicitud-modal__input[aria-invalid='true'] {
+  border-color: rgba(255, 122, 122, 0.55);
+}
+
+.solicitud-modal__combobox {
+  position: relative;
+}
+
+.solicitud-modal__sugerencias {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  max-height: 220px;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.solicitud-modal__sugerencia {
+  padding: 10px 12px;
+  border-radius: 9px;
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.solicitud-modal__sugerencia--activa,
+.solicitud-modal__sugerencia:hover {
+  background: rgba(247, 198, 90, 0.12);
+  color: #f6f8fb;
+}
+
+.solicitud-modal__estado,
+.solicitud-modal__aviso {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.solicitud-modal__aviso {
+  padding: 9px 12px;
+  border: 1px solid rgba(247, 198, 90, 0.2);
+  border-radius: 10px;
+  background: rgba(247, 198, 90, 0.06);
+  color: #d9c690;
+}
+
+.solicitud-modal__reintentar {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.solicitud-modal__reintentar p {
+  margin: 0;
+  color: #ff9d9d;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.solicitud-modal__ubicaciones {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.solicitud-modal__ubicacion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.solicitud-modal__ubicacion-numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(247, 198, 90, 0.14);
+  color: #d9c690;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.solicitud-modal__ubicacion-direccion {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.solicitud-modal__quitar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.solicitud-modal__quitar svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.solicitud-modal__quitar:hover:not(:disabled) {
+  border-color: rgba(255, 122, 122, 0.5);
+  color: #ff9d9d;
+}
+
+.solicitud-modal__quitar:focus-visible {
+  outline: 2px solid rgba(247, 198, 90, 0.72);
+  outline-offset: 2px;
+}
+
+.solicitud-modal__quitar:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .solicitud-modal__acciones {
   display: flex;
   justify-content: flex-end;

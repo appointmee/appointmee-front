@@ -24,6 +24,7 @@ import {
 } from '../../models/solicitud-empleado';
 import {
   EstadoSolicitudEmpleador,
+  SolicitudEmpleadorCrearDTO,
   SolicitudEmpleadorDetalleDTO,
   SolicitudEmpleadorMiniDTO,
 } from '../../models/solicitud-empleador';
@@ -227,14 +228,14 @@ export class Solicitudes {
     this.errorEnvio.set(null);
   }
 
-  protected enviarSolicitud(motivo: string): void {
+  protected enviarSolicitud(datos: SolicitudEmpleadorCrearDTO): void {
     if (this.enviando() || !this.puedeSolicitar()) return;
 
     this.enviando.set(true);
     this.errorEnvio.set(null);
 
     this.api
-      .solicitar(motivo)
+      .solicitar(datos)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {

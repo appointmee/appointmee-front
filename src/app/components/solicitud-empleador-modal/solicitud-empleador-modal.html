@@ -6,16 +6,30 @@
   (cancel)="cancelar($event)"
   (click)="clickEnFondo($event)"
 >
-  <form class="solicitud-modal__form" (submit)="enviar($event)" novalidate
-        [attr.aria-busy]="enviando()">
+  <form class="solicitud-modal__form" (submit)="enviar($event)" novalidate [attr.aria-busy]="enviando()">
     <header class="solicitud-modal__cabecera">
       <span class="solicitud-modal__marca">AppointMee · Empleadores</span>
       <h2 id="solicitud-modal-titulo">Solicitud para convertirse en empleador</h2>
       <p id="solicitud-modal-descripcion">
-        Contanos qué querés ofrecer y por qué te gustaría sumarte como empleador.
-        Un administrador va a revisar tu solicitud.
+        Contanos qué querés ofrecer, por qué te gustaría sumarte como empleador y dónde vas a
+        atender. Un administrador va a revisar tu solicitud.
       </p>
     </header>
+
+    @if (errores().length > 0) {
+      <div
+        class="solicitud-modal__resumen"
+        role="alert"
+        aria-labelledby="solicitud-modal-resumen-titulo"
+      >
+        <h3 id="solicitud-modal-resumen-titulo">Revisá los campos marcados</h3>
+        <ul>
+          @for (error of errores(); track error.id) {
+            <li><a [href]="'#' + error.id">{{ error.mensaje }}</a></li>
+          }
+        </ul>
+      </div>
+    }
 
     <div class="solicitud-modal__campo">
       <div class="solicitud-modal__etiqueta">
@@ -50,6 +64,147 @@
           <p>El comentario debe tener al menos {{ minimo }} caracteres.</p>
         }
       </div>
+    </div>
+
+    <div class="solicitud-modal__campo">
+      <div class="solicitud-modal__etiqueta">
+        <label for="solicitud-direccion">Ubicaciones donde vas a atender</label>
+        <span
+          [class.solicitud-modal__contador--invalido]="ubicacionesCompletas()"
+          [attr.aria-label]="ubicaciones().length + ' de ' + maximoUbicaciones + ' ubicaciones'"
+        >
+          {{ ubicaciones().length }}/{{ maximoUbicaciones }}
+        </span>
+      </div>
+
+      <div class="solicitud-modal__combobox">
+        <input
+          #direccion
+          id="solicitud-direccion"
+          class="solicitud-modal__input"
+          type="text"
+          role="combobox"
+          aria-autocomplete="list"
+          autocomplete="off"
+          [attr.maxlength]="200"
+          [value]="textoDireccion()"
+          [readOnly]="enviando() || !puedeAgregar()"
+          [attr.aria-expanded]="listaAbierta()"
+          [attr.aria-controls]="listaAbierta() ? 'solicitud-direccion-sugerencias' : null"
+          [attr.aria-activedescendant]="indiceActivo() >= 0 ? idSugerencia(indiceActivo()) : null"
+          [attr.aria-busy]="preparandoPlaces() || buscandoDirecciones() || obteniendoDetalles()"
+          [attr.aria-invalid]="mostrarErrorUbicaciones() || !!errorUbicacion()"
+          [attr.aria-describedby]="
+            'solicitud-direccion-ayuda solicitud-direccion-error solicitud-modal-error'
+          "
+          (input)="onDireccionInput($event)"
+          (keydown)="onDireccionKeydown($event)"
+          placeholder="Escribí una dirección y elegí una sugerencia"
+        />
+
+        @if (listaAbierta()) {
+          <ul
+            id="solicitud-direccion-sugerencias"
+            class="solicitud-modal__sugerencias"
+            role="listbox"
+            aria-label="Sugerencias de direcciones"
+          >
+            @for (sugerencia of sugerencias(); track sugerencia.id; let indice = $index) {
+              <li
+                class="solicitud-modal__sugerencia"
+                role="option"
+                [id]="idSugerencia(indice)"
+                [class.solicitud-modal__sugerencia--activa]="indice === indiceActivo()"
+                [attr.aria-selected]="indice === indiceActivo()"
+                (click)="seleccionarSugerencia(indice)"
+                (mousedown)="$event.preventDefault()"
+              >
+                {{ sugerencia.descripcion }}
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      @if (preparandoPlaces()) {
+        <p class="solicitud-modal__estado" role="status" aria-live="polite">
+          Preparando la búsqueda de direcciones…
+        </p>
+      } @else if (buscandoDirecciones()) {
+        <p class="solicitud-modal__estado" role="status" aria-live="polite">
+          Buscando direcciones…
+        </p>
+      } @else if (obteniendoDetalles()) {
+        <p class="solicitud-modal__estado" role="status" aria-live="polite">
+          Obteniendo los datos de la dirección…
+        </p>
+      }
+
+      @if (sinResultados()) {
+        <p class="solicitud-modal__ayuda" role="status">
+          No encontramos direcciones para esa búsqueda. Probá con otro texto.
+        </p>
+      }
+
+      @if (errorUbicacion()) {
+        <div class="solicitud-modal__reintentar">
+          <p role="alert">{{ errorUbicacion() }}</p>
+          <button
+            dsButton
+            type="button"
+            [disabled]="preparandoPlaces() || buscandoDirecciones() || obteniendoDetalles()"
+            [attr.aria-busy]="preparandoPlaces() || buscandoDirecciones() || obteniendoDetalles()"
+            (clicked)="reintentarUbicacion()"
+          >
+            Reintentar búsqueda
+          </button>
+        </div>
+      } @else {
+        <p id="solicitud-direccion-ayuda" class="solicitud-modal__ayuda">
+          Escribí al menos 3 caracteres y elegí una sugerencia. No se guarda texto libre: las
+          direcciones se obtienen de Google Places.
+        </p>
+      }
+
+      @if (infoUbicacion()) {
+        <p class="solicitud-modal__aviso" role="status">{{ infoUbicacion() }}</p>
+      }
+
+      @if (ubicacionesCompletas()) {
+        <p class="solicitud-modal__aviso" role="status">
+          Alcanzaste el máximo de {{ maximoUbicaciones }} ubicaciones. Eliminá una para agregar otra.
+        </p>
+      }
+
+      <div id="solicitud-direccion-error" class="solicitud-modal__validacion" aria-live="polite">
+        @if (mostrarErrorUbicaciones()) {
+          <p>Agregá al menos una ubicación desde las sugerencias.</p>
+        }
+      </div>
+
+      @if (ubicaciones().length > 0) {
+        <ol class="solicitud-modal__ubicaciones" aria-label="Ubicaciones agregadas">
+          @for (ubicacion of ubicaciones(); track ubicacion.googlePlaceId; let indice = $index) {
+            <li class="solicitud-modal__ubicacion">
+              <span class="solicitud-modal__ubicacion-numero" aria-hidden="true">
+                {{ indice + 1 }}
+              </span>
+              <span class="solicitud-modal__ubicacion-direccion">{{ ubicacion.direccion }}</span>
+              <button
+                class="solicitud-modal__quitar"
+                type="button"
+                [attr.aria-label]="'Quitar la ubicación ' + ubicacion.direccion"
+                [disabled]="enviando()"
+                (click)="eliminarUbicacion(indice)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+              </button>
+            </li>
+          }
+        </ol>
+      }
     </div>
 
     <div id="solicitud-modal-error" class="solicitud-modal__feedback" aria-live="assertive">

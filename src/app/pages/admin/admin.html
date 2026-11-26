@@ -92,18 +92,19 @@
     <section id="admin-solicitudes-panel" class="panel" aria-labelledby="admin-lista-titulo" [hidden]="seccionActiva() !== 'solicitudes'">
       <header class="panel__cabecera">
         <div>
-          <span class="panel__eyebrow">Pendientes de revisión</span>
+          <span class="panel__eyebrow">Solicitudes {{ etiquetaFiltro() }}</span>
           <h2 id="admin-lista-titulo">Solicitudes recibidas</h2>
         </div>
 
         <div class="panel__acciones">
-          <span class="panel__contador" [attr.aria-label]="pendientes() + ' solicitudes pendientes'">
-            {{ pendientes() }} {{ pendientes() === 1 ? 'pendiente' : 'pendientes' }}
+          <span class="panel__contador" [attr.aria-label]="etiquetaTotal() + ' en total'">
+            {{ etiquetaTotal() }}
           </span>
           <button dsButton
             class="actualizar"
             type="button"
-            [disabled]="reintentando()"
+            [disabled]="reintentando() || cargandoPaginaSolicitudes()"
+            [attr.aria-busy]="reintentando() || cargandoPaginaSolicitudes()"
             (click)="reintentar()"
           >
             {{ reintentando() ? 'Actualizando…' : 'Actualizar' }}
@@ -111,9 +112,25 @@
         </div>
       </header>
 
+      <div class="solicitudes-filtros">
+        <label for="admin-solicitudes-estado">Estado</label>
+        <select
+          id="admin-solicitudes-estado"
+          [value]="filtroEstadoSolicitud()"
+          [disabled]="reintentando() || cargandoPaginaSolicitudes()"
+          aria-controls="admin-solicitudes-lista"
+          (change)="cambiarFiltroEstado($any($event.target).value)"
+        >
+          <option value="PENDIENTE">Pendientes</option>
+          <option value="APROBADA">Aprobadas</option>
+          <option value="RECHAZADA">Rechazadas</option>
+        </select>
+      </div>
+
       <p class="panel__ayuda">
-        El listado incluye únicamente solicitudes pendientes. Abrí una solicitud para consultar
-        su detalle antes de resolverla.
+        El listado se consulta al servidor según el estado elegido. Abrí una solicitud para
+        consultar su detalle antes de resolverla; las aprobaciones y los rechazos se muestran en
+        su correspondiente filtro.
       </p>
 
       @if (cargando()) {
@@ -150,6 +167,10 @@
           </div>
         }
 
+        @if (cargandoPaginaSolicitudes()) {
+          <p class="panel__nota" role="status" aria-live="polite">Actualizando el listado…</p>
+        }
+
         @if (solicitudes().length === 0) {
           <div class="estado estado--vacio" role="status">
             <span class="estado__icono" aria-hidden="true">
@@ -157,21 +178,17 @@
                 <path d="M4 5h16v14H4zM8 9h8M8 13h5" />
               </svg>
             </span>
-            <h3>No hay solicitudes pendientes</h3>
+            <h3>
+              {{ filtroEstadoSolicitud() === 'PENDIENTE'
+                ? 'No hay solicitudes pendientes'
+                : 'No hay solicitudes ' + etiquetaFiltro() }}
+            </h3>
             <p>
-              Cuando alguien solicite convertirse en empleador, la solicitud va a aparecer en
-              este panel para su revisión.
+              Cuando haya solicitudes con este estado, van a aparecer en este panel.
             </p>
           </div>
         } @else {
-          @if (hayResueltas()) {
-            <p class="panel__nota" role="status">
-              Las solicitudes resueltas en esta sesión quedan visibles sin acciones hasta que
-              actualices el panel.
-            </p>
-          }
-
-          <ul class="lista" aria-live="polite">
+          <ul id="admin-solicitudes-lista" class="lista" aria-live="polite">
             @for (solicitud of solicitudes(); track solicitud.id) {
               <li>
                 <app-solicitud-empleador-card
@@ -193,6 +210,21 @@
               </li>
             }
           </ul>
+
+          <div class="solicitudes-paginacion">
+            <p class="panel__nota" role="status" aria-live="polite">
+              Página {{ paginaSolicitudes() + 1 }} de {{ totalPaginasSolicitudes() || 1 }} ·
+              {{ etiquetaTotal() }} en total · {{ tamanioPaginaSolicitudes }} por página
+            </p>
+            @if (totalPaginasSolicitudes() > 1) {
+              <ds-pagination
+                [page]="paginaSolicitudes() + 1"
+                [totalPages]="totalPaginasSolicitudes()"
+                ariaLabel="Paginación de solicitudes de empleador"
+                (pageChange)="cambiarPaginaSolicitudes($event)"
+              />
+            }
+          </div>
         }
       }
     </section>

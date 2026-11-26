@@ -20,8 +20,10 @@ import { SolicitanteSolicitudEmpleador } from '../../components/solicitud-emplea
 import { mensajeErrorSolicitud } from '../../http/solicitud-empleador-errors';
 import {
   EstadoSolicitudEmpleador,
+  PaginaSolicitudesEmpleadorDTO,
   SolicitudEmpleadorDetalleDTO,
   SolicitudEmpleadorMiniDTO,
+  TAMANO_PAGINA_SOLICITUDES,
 } from '../../models/solicitud-empleador';
 import { solicitudEmpleadorService } from '../../services/solicitud-empleador-service';
 import { sucursalService } from '../../services/sucursal-service';
@@ -34,8 +36,24 @@ import { DsModalComponent, DsPaginationComponent } from '../../shared/ui/misc/mi
 import { fotoPerfilDe } from '../../shared/foto-perfil';
 
 type ResultadoLista =
-  | { readonly ok: true; readonly solicitudes: readonly SolicitudEmpleadorMiniDTO[] }
+  | { readonly ok: true; readonly pagina: PaginaSolicitudesEmpleadorDTO }
   | { readonly ok: false; readonly error: HttpErrorResponse };
+
+const ESTADOS_SOLICITUD: readonly EstadoSolicitudEmpleador[] = [
+  'PENDIENTE',
+  'APROBADA',
+  'RECHAZADA',
+];
+
+const SINGULAR_ESTADO: Readonly<Record<EstadoSolicitudEmpleador, string>> = {
+  PENDIENTE: 'pendiente',
+  APROBADA: 'aprobada',
+  RECHAZADA: 'rechazada',
+};
+
+function esEstadoSolicitud(valor: string): valor is EstadoSolicitudEmpleador {
+  return ESTADOS_SOLICITUD.some((estado) => estado === valor);
+}
 
 type ResultadoUsuarios =
   | { readonly ok: true; readonly usuarios: readonly UsuarioMiniAdminDTO[] }
@@ -61,6 +79,15 @@ export class Administracion {
 
   private revision = 0;
   private readonly elementosPorPagina = 10;
+
+  /** Filtro y paginación del listado administrativo: los resuelve el backend. */
+  protected readonly filtroEstadoSolicitud = signal<EstadoSolicitudEmpleador>('PENDIENTE');
+  /** Página solicitada a la API, comenzando en 0. */
+  protected readonly paginaSolicitudes = signal(0);
+  protected readonly totalSolicitudes = signal(0);
+  protected readonly totalPaginasSolicitudes = signal(0);
+  protected readonly cargandoPaginaSolicitudes = signal(false);
+  protected readonly tamanioPaginaSolicitudes = TAMANO_PAGINA_SOLICITUDES;
 
   protected readonly solicitudes = signal<readonly SolicitudEmpleadorMiniDTO[]>([]);
   protected readonly detalles = signal<ReadonlyMap<number, SolicitudEmpleadorDetalleDTO>>(new Map());
@@ -126,15 +153,15 @@ export class Administracion {
     return this.usuarios().slice(inicio, inicio + this.elementosPorPagina);
   });
 
-  protected readonly total = computed(() => this.solicitudes().length);
-  protected readonly pendientes = computed(
-    () =>
-      this.solicitudes().filter((solicitud) => {
-        const detalle = this.detalles().get(solicitud.id);
-        return !detalle || detalle.estado === 'PENDIENTE';
-      }).length,
+  protected readonly total = computed(() => this.totalSolicitudes());
+  protected readonly etiquetaTotal = computed(() => {
+    const total = this.totalSolicitudes();
+    const singular = SINGULAR_ESTADO[this.filtroEstadoSolicitud()];
+    return `${total} ${total === 1 ? singular : `${singular}s`}`;
+  });
+  protected readonly etiquetaFiltro = computed(
+    () => `${SINGULAR_ESTADO[this.filtroEstadoSolicitud()]}s`,
   );
-  protected readonly hayResueltas = computed(() => this.pendientes() < this.total());
 
   constructor() {
     this.recargarSucursales
@@ -163,9 +190,18 @@ export class Administracion {
       .pipe(
         startWith(undefined as void),
         switchMap(() => {
-          this.cargando.set(this.solicitudes().length === 0);
-          return this.api.listarPendientes().pipe(
-            map((solicitudes): ResultadoLista => ({ ok: true, solicitudes })),
+          const sinLista = this.solicitudes().length === 0;
+          this.cargando.set(sinLista);
+          this.cargandoPaginaSolicitudes.set(!sinLista);
+
+          const estado = this.filtroEstadoSolicitud();
+          // Nunca se pide una página que el backend ya informó que no existe.
+          const ultimaPagina = Math.max(0, this.totalPaginasSolicitudes() - 1);
+          const page = Math.min(this.paginaSolicitudes(), ultimaPagina);
+          if (page !== this.paginaSolicitudes()) this.paginaSolicitudes.set(page);
+
+          return this.api.listarAdministrativas(estado, page).pipe(
+            map((pagina): ResultadoLista => ({ ok: true, pagina })),
             catchError((error: HttpErrorResponse) => of<ResultadoLista>({ ok: false, error })),
           );
         }),
@@ -214,6 +250,26 @@ export class Administracion {
 
   protected cambiarPaginaUsuarios(pagina: number): void {
     this.paginaUsuarios.set(pagina);
+  }
+
+  /** Cambia el estado consultado y vuelve siempre a la primera página (0). */
+  protected cambiarFiltroEstado(valor: string): void {
+    const estado = esEstadoSolicitud(valor) ? valor : 'PENDIENTE';
+    if (estado === this.filtroEstadoSolicitud() && this.paginaSolicitudes() === 0) return;
+
+    this.filtroEstadoSolicitud.set(estado);
+    this.paginaSolicitudes.set(0);
+    this.recargar.next();
+  }
+
+  /** `ds-pagination` es 1-based; la API usa páginas 0-based. */
+  protected cambiarPaginaSolicitudes(paginaVisible: number): void {
+    const ultimaPagina = Math.max(0, this.totalPaginasSolicitudes() - 1);
+    const destino = Math.min(Math.max(0, paginaVisible - 1), ultimaPagina);
+    if (destino === this.paginaSolicitudes()) return;
+
+    this.paginaSolicitudes.set(destino);
+    this.recargar.next();
   }
 
   protected seleccionarSeccion(seccion: 'sucursales' | 'solicitudes' | 'estadisticas' | 'usuarios'): void {
@@ -377,7 +433,13 @@ export class Administracion {
   }
 
   protected estadoDe(id: number): EstadoSolicitudEmpleador | null {
-    return this.detalles().get(id)?.estado ?? 'PENDIENTE';
+    const detalle = this.detalles().get(id);
+    if (detalle) return detalle.estado;
+
+    return (
+      this.solicitudes().find((solicitud) => solicitud.id === id)?.estado ??
+      this.filtroEstadoSolicitud()
+    );
   }
 
   protected estaExpandida(id: number): boolean {
@@ -473,6 +535,9 @@ export class Administracion {
             ? 'La solicitud fue aprobada. La persona ya cuenta con el rol de empleador.'
             : 'La solicitud fue rechazada. La persona va a poder consultar el estado en su historial.',
         );
+        // El filtro viene del backend: al resolver, la lista se sincroniza y la
+        // solicitud deja de mostrarse en PENDIENTE sin filtrarla localmente.
+        this.recargar.next();
       },
       error: (error: HttpErrorResponse) => {
         this.quitarResolviendo(id);
@@ -493,11 +558,12 @@ export class Administracion {
 
   private aplicarLista(resultado: ResultadoLista): void {
     this.revision++;
+    this.cargando.set(false);
+    this.cargandoPaginaSolicitudes.set(false);
+    this.reintentando.set(false);
 
     if (!resultado.ok) {
       this.error.set(mensajeErrorSolicitud(resultado.error, 'carga'));
-      this.cargando.set(false);
-      this.reintentando.set(false);
 
       if (this.solicitudes().length === 0) {
         this.detalles.set(new Map());
@@ -506,16 +572,20 @@ export class Administracion {
       return;
     }
 
+    const { content, totalElements, totalPages, number } = resultado.pagina;
+    const paginaSegura = Math.min(Math.max(0, number), Math.max(0, totalPages - 1));
+
     this.error.set(null);
-    this.solicitudes.set(resultado.solicitudes);
+    this.solicitudes.set(content);
+    this.totalSolicitudes.set(totalElements);
+    this.totalPaginasSolicitudes.set(totalPages);
+    this.paginaSolicitudes.set(paginaSegura);
     this.detalles.set(new Map());
     this.erroresDetalle.set(new Map());
     this.erroresAccion.set(new Map());
     this.resolviendo.set(new Map());
     this.cargandoDetalle.set(new Set());
     this.expandidas.set(new Set());
-    this.cargando.set(false);
-    this.reintentando.set(false);
   }
 
   private cargarDetalle(id: number): void {
