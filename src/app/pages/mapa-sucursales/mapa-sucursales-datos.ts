@@ -186,9 +186,13 @@ function colorToken(valor: string, respaldo: string): string {
   return /^#[0-9a-f]{3,8}$/i.test(valor) ? valor : respaldo;
 }
 
+/** Mismo recurso visual que usa AppointMee para las valoraciones. */
+export const ABEJA_MAPA = '🐝';
+
 /**
  * Icono SVG embebido (data URI): no descarga imágenes ni consulta ninguna API.
  * Los colores vienen de los tokens `--accent` y `--on-accent` de la app.
+ * Número y abeja comparten un único texto centrado; sin puntuación no hay contenido.
  */
 export function iconoIndicadorMapa(
   texto: string | null,
@@ -198,10 +202,13 @@ export function iconoIndicadorMapa(
   const fondo = colorToken(colorAcento, '#f7c65a');
   const tinta = colorToken(colorTexto, '#07090d');
   const etiqueta = texto ? escaparXml(texto) : '';
+  const contenido = texto
+    ? `<tspan font-weight="700">${etiqueta}</tspan><tspan dx="3" font-size="14" font-weight="400">${ABEJA_MAPA}</tspan>`
+    : '';
   const svg = [
     '<svg xmlns="http://www.w3.org/2000/svg" width="44" height="56" viewBox="0 0 44 56">',
     `<path d="M22 2C10.4 2 2 10.4 2 21.5 2 36 22 54 22 54s20-18 20-32.5C42 10.4 33.6 2 22 2Z" fill="${fondo}" stroke="${tinta}" stroke-width="2"/>`,
-    `<text x="22" y="24" text-anchor="middle" dominant-baseline="middle" fill="${tinta}" font-family="Arial, sans-serif" font-size="17" font-weight="700">${etiqueta}</text>`,
+    `<text x="22" y="24" text-anchor="middle" dominant-baseline="middle" fill="${tinta}" font-family="Arial, sans-serif" font-size="16">${contenido}</text>`,
     '</svg>',
   ].join('');
 

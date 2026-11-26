@@ -326,7 +326,11 @@ export class MapaSucursales implements AfterViewInit {
         gestureHandling: 'greedy',
       });
 
-      this.motor.set(new MotorMapaSucursales(api, mapa));
+      this.motor.set(
+        new MotorMapaSucursales(api, mapa, () =>
+          this.limpiarContenidoVentana(),
+        ),
+      );
       this.mapaListo.set(true);
       this.cargandoMapa.set(false);
     } catch {
@@ -366,6 +370,8 @@ export class MapaSucursales implements AfterViewInit {
       'border-radius:var(--radius-md)',
       'border:1px solid var(--line)',
     ].join(';');
+    // Interactuar con la ficha no debe interpretarse como clic fuera del mapa.
+    this.registrarEnVentana(raiz, 'click', (event) => event.stopPropagation());
 
     const urlFoto = sucursal.fotoPerfil?.trim() || '';
     const foto = this.document.createElement('img');
@@ -540,7 +546,7 @@ export class MapaSucursales implements AfterViewInit {
   private registrarEnVentana(
     elemento: HTMLElement,
     evento: string,
-    manejador: () => void,
+    manejador: (event: Event) => void,
   ): void {
     elemento.addEventListener(evento, manejador);
     this.removeresVentana.push(() =>

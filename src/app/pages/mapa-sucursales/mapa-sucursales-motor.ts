@@ -9,6 +9,7 @@ export type PuntoGoogle = unknown;
 export interface MapaGoogle {
   setCenter(centro: PuntoGoogle): void;
   fitBounds(bounds: LimitesGoogle, padding?: number): void;
+  addListener(evento: string, manejador: () => void): ListenerGoogle;
 }
 export interface LimitesGoogle {
   extend(punto: PuntoGoogle): LimitesGoogle;
@@ -83,17 +84,29 @@ function posicionVisible(
 export class MotorMapaSucursales {
   private readonly marcadores = new Map<number, EntradaMarcador>();
   private readonly ventana: VentanaGoogle;
+  private readonly listenerMapa: ListenerGoogle;
   private seleccion: number | null = null;
+  private abierta = false;
 
   constructor(
     private readonly api: GoogleMapsApi,
     private readonly mapa: MapaGoogle,
+    private readonly alCerrar: () => void = () => undefined,
   ) {
     this.ventana = new api.maps.InfoWindow();
+    this.listenerMapa = mapa.addListener('click', () => this.cerrarVentana());
   }
 
   get cantidadMarcadores(): number {
     return this.marcadores.size;
+  }
+
+  get seleccionActual(): number | null {
+    return this.seleccion;
+  }
+
+  get ventanaAbierta(): boolean {
+    return this.abierta;
   }
 
   actualizar(
@@ -101,6 +114,9 @@ export class MotorMapaSucursales {
     contenido: ContenidoVentana,
     icono: IconoMarcador,
   ): void {
+    // Toda actualización de marcadores (filtros o recarga) deselecciona.
+    this.cerrarVentana();
+
     const visibles = sucursales
       .map((sucursal) => ({ sucursal, coordenadas: coordenadasValidas(sucursal) }))
       .filter((entrada) => entrada.coordenadas !== null) as {
@@ -147,6 +163,7 @@ export class MotorMapaSucursales {
         icon: iconoNuevo,
       });
       const listener = marcador.addListener('click', () => {
+        this.cerrarVentana();
         this.abrir(sucursal.id, contenido(sucursal), marcador);
       });
       this.marcadores.set(sucursal.id, {
@@ -155,10 +172,6 @@ export class MotorMapaSucursales {
         listener,
         icono: iconoNuevo,
       });
-    }
-
-    if (this.seleccion !== null && !idsDeseados.has(this.seleccion)) {
-      this.cerrarVentana();
     }
 
     if (posiciones.length === 1) {
@@ -185,12 +198,17 @@ export class MotorMapaSucursales {
   }
 
   cerrarVentana(): void {
+    if (this.abierta) {
+      this.abierta = false;
+      this.alCerrar();
+    }
     this.seleccion = null;
     this.ventana.close();
   }
 
   destruir(): void {
     this.cerrarVentana();
+    this.listenerMapa.remove();
     for (const [id, entrada] of this.marcadores) {
       this.removerMarcador(id, entrada);
     }
@@ -201,7 +219,11 @@ export class MotorMapaSucursales {
     contenido: Node | string,
     marcador: MarcadorGoogle,
   ): void {
+    if (this.abierta) {
+      this.cerrarVentana();
+    }
     this.seleccion = id;
+    this.abierta = true;
     this.ventana.setContent(contenido);
     this.ventana.open(this.mapa, marcador);
   }
