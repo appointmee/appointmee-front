@@ -332,6 +332,8 @@ export class NotificacionesCentro {
   }
 
   protected abrir(notificacion: NotificacionVista): void {
+    // Entrar a la notificación también la marca como leída, sin bloquear la navegación.
+    if (!notificacion.leida) this.marcarLeida(notificacion);
     this.cerrarNotificaciones();
     const destino = notificacion.destino;
     if (destino.tipo === 'chat') {
