@@ -324,7 +324,10 @@
 }
 
 .panel__acciones {
-  padding: var(--space-2) var(--space-2) 0;
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: var(--space-2);
+  border-top: 1px solid var(--line);
 }
 
 .panel__marcar-todas {

@@ -56,19 +56,6 @@
         </button>
       </header>
 
-      <div class="panel__acciones">
-        <button
-          dsButton
-          class="panel__marcar-todas"
-          type="button"
-          [disabled]="!puedeMarcarTodas()"
-          [loading]="marcandoTodas()"
-          (click)="marcarTodas()"
-        >
-          {{ marcandoTodas() ? 'Marcando…' : 'Marcar todas como leídas' }}
-        </button>
-      </div>
-
       @if (accionError()) {
         <div class="panel__accion-error" role="alert" aria-live="assertive" aria-atomic="true">
           <span>{{ accionError() }}</span>
@@ -190,6 +177,19 @@
           }
         </ol>
       }
+
+      <div class="panel__acciones">
+        <button
+          dsButton
+          class="panel__marcar-todas"
+          type="button"
+          [disabled]="!puedeMarcarTodas()"
+          [loading]="marcandoTodas()"
+          (click)="marcarTodas()"
+        >
+          {{ marcandoTodas() ? 'Marcando…' : 'Marcar todas como leídas' }}
+        </button>
+      </div>
     </section>
   }
 </div>

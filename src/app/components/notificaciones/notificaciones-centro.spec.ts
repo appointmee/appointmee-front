@@ -488,6 +488,9 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     const { fixture, boton } = await renderizar();
     abrirPanel(fixture);
 
+    const acciones = fixture.nativeElement.querySelector('.panel__acciones') as HTMLElement;
+    expect(acciones.parentElement?.lastElementChild).toBe(acciones);
+
     const botonTodas = fixture.nativeElement.querySelector('.panel__marcar-todas') as HTMLButtonElement;
     botonTodas.click();
     await fixture.whenStable();
