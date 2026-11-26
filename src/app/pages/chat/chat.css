@@ -83,6 +83,7 @@
 
 .conversacion:focus-visible,
 .boton:focus-visible,
+.hilo:focus-visible,
 .hilo__volver:focus-visible,
 .hilo__mensajes:focus-visible,
 textarea:focus-visible {

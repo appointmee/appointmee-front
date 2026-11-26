@@ -51,6 +51,7 @@
           @for (conversacion of conversaciones(); track conversacion.id) {
             <li>
               <button
+                #botonConversacion
                 type="button"
                 class="conversacion"
                 [class.conversacion--activa]="seleccionada()?.id === conversacion.id"
@@ -91,9 +92,11 @@
     </section>
 
     <section
+      #hilo
       class="hilo"
       [class.hilo--visible]="!!seleccionada()"
       aria-labelledby="hilo-titulo"
+      tabindex="-1"
     >
       @if (!seleccionada()) {
         <div class="estado estado--vacio" role="status">
@@ -127,7 +130,19 @@
         </header>
 
         @if (errorDetalle()) {
-          <div class="aviso aviso--error" role="alert">{{ errorDetalle() }}</div>
+          <div class="aviso aviso--error" role="alert">
+            <span>{{ errorDetalle() }}</span>
+            <button
+              dsButton
+              type="button"
+              class="boton boton--chico"
+              [disabled]="detalleCargando()"
+              [attr.aria-busy]="detalleCargando()"
+              (click)="reintentarConversacion()"
+            >
+              Reintentar
+            </button>
+          </div>
         }
 
         @if (detalleCargando() && mensajes().length === 0) {
@@ -148,7 +163,7 @@
               class="boton"
               [disabled]="detalleCargando()"
               [attr.aria-busy]="detalleCargando()"
-              (click)="reintentarHistorial()"
+              (click)="reintentarConversacion()"
             >
               Reintentar
             </button>
@@ -163,7 +178,7 @@
                 class="boton boton--chico"
                 [disabled]="detalleCargando()"
                 [attr.aria-busy]="detalleCargando()"
-                (click)="reintentarHistorial()"
+                (click)="reintentarConversacion()"
               >
                 Reintentar
               </button>
