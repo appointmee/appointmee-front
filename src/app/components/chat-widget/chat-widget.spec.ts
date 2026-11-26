@@ -145,8 +145,7 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
 
   it('expande un contenedor «Mensajes» hacia la izquierda al pasar el mouse', () => {
     const peek = html.querySelector<HTMLElement>('.chat-widget__peek-wrap')!;
-    const abeja = html.querySelector<HTMLElement>('.chat-widget__peek-abeja')!;
-    const animar = vi.spyOn(gsap, 'fromTo');
+    const linea = vi.spyOn(gsap, 'timeline');
 
     expect(peek.getAttribute('aria-hidden')).toBe('true');
 
@@ -155,32 +154,39 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
 
     expect(peek.getAttribute('aria-hidden')).toBe('false');
     expect(html.querySelector('.chat-widget__peek')?.textContent).toContain('Mensajes');
-    expect(animar).toHaveBeenCalledWith(
-      peek,
-      expect.anything(),
-      expect.objectContaining({ opacity: 1 }),
-    );
-    expect(animar).toHaveBeenCalledWith(
-      abeja,
-      expect.anything(),
-      expect.objectContaining({ opacity: 1 }),
-    );
+    expect(linea).toHaveBeenCalled();
 
     html.dispatchEvent(new MouseEvent('mouseleave'));
     fixture.detectChanges();
     expect(peek.getAttribute('aria-hidden')).toBe('true');
   });
 
-  it('abre los mensajes al tocar el contenedor expandido', () => {
+  it('mantiene el contenedor al abrir el chat y lo pliega al cerrarlo', () => {
     html.dispatchEvent(new MouseEvent('mouseenter'));
     fixture.detectChanges();
 
     html.querySelector<HTMLButtonElement>('.chat-widget__peek')!.click();
     fixture.detectChanges();
+    html.dispatchEvent(new MouseEvent('mouseleave'));
+    fixture.detectChanges();
 
+    const peek = html.querySelector<HTMLElement>('.chat-widget__peek-wrap')!;
     expect(widget.abierto()).toBe(true);
     expect(html.querySelector('[role="dialog"]')).toBeTruthy();
-    expect(html.querySelector('.chat-widget__peek-wrap')?.getAttribute('aria-hidden')).toBe('true');
+    expect(peek.getAttribute('aria-hidden')).toBe('false');
+
+    html.querySelector<HTMLButtonElement>('.chat-widget__cerrar')!.click();
+    fixture.detectChanges();
+
+    expect(widget.abierto()).toBe(false);
+    expect(peek.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('usa la abeja del home en el contenedor y en la bienvenida', () => {
+    expect(html.querySelector('.chat-widget__peek-abeja img')?.getAttribute('src')).toBe(
+      'abeja-icono.svg',
+    );
+    expect(html.querySelector('.abeja__cuerpo')?.getAttribute('src')).toBe('abeja-icono.svg');
   });
 
   it('anima la burbuja con GSAP al pasar el mouse y al presionarla', () => {
