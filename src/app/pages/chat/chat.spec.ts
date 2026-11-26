@@ -186,6 +186,26 @@ describe('Chat (US-CHAT-04)', () => {
     expect(botones[1]!.textContent).toContain('Sin mensajes');
   });
 
+  it('muestra el interlocutor en el listado y en el nombre accesible del botón', () => {
+    flushLista();
+
+    const botones = Array.from(html.querySelectorAll<HTMLButtonElement>('button.conversacion'));
+    expect(botones[0]!.textContent).toContain('Con Ana Pérez');
+    expect(botones[0]!.getAttribute('aria-label')).toContain('Conversación con Ana Pérez');
+    expect(botones[0]!.getAttribute('aria-label')).toContain('2 mensajes no leídos');
+    expect(botones[1]!.textContent).toContain('Con Luis Gómez');
+    expect(botones[1]!.getAttribute('aria-label')).toContain('Conversación con Luis Gómez');
+  });
+
+  it('no repite el texto cuando el backend no informa interlocutor', () => {
+    flushLista([{ ...CONVERSACIONES[0]!, interlocutor: 'Sin interlocutor' }]);
+
+    const boton = html.querySelector<HTMLButtonElement>('button.conversacion')!;
+    expect(boton.textContent).toContain('Sin interlocutor');
+    expect(boton.textContent).not.toContain('Con Sin interlocutor');
+    expect(boton.getAttribute('aria-label')).not.toContain('Conversación con Sin interlocutor');
+  });
+
   it('muestra "Consulta general" cuando la conversación no tiene turno', () => {
     flushLista([
       {
@@ -201,6 +221,7 @@ describe('Chat (US-CHAT-04)', () => {
 
     const boton = html.querySelector<HTMLButtonElement>('button.conversacion')!;
     expect(boton.textContent).toContain('Sucursal Oeste · Consulta general');
+    expect(boton.textContent).toContain('Con Ana Pérez');
     expect(boton.textContent).not.toContain('Cliente:');
   });
 
