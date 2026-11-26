@@ -21,6 +21,7 @@ import type {
 import { authService } from '../../services/auth-service';
 import { chatWidgetService } from '../../services/chat-widget-service';
 import { notificacionService } from '../../services/notificacion-service';
+import { notificacionRealtimeService } from '../../services/notificacion-realtime-service';
 import { notificacionesCambiosService } from '../../services/notificaciones-cambios-service';
 import {
   ariaNotificacion,
@@ -69,6 +70,7 @@ export class Notificaciones {
   private readonly auth = inject(authService);
   private readonly servicio = inject(notificacionService);
   private readonly cambios = inject(notificacionesCambiosService);
+  private readonly realtime = inject(notificacionRealtimeService);
   private readonly chatWidget = inject(chatWidgetService);
 
   private readonly recargas = new Subject<number>();
@@ -120,6 +122,8 @@ export class Notificaciones {
   });
 
   constructor() {
+    this.realtime.conectar();
+
     // Un marcado desde el panel del navbar debe reflejarse en esta vista abierta.
     effect(() => {
       const revision = this.cambios.version();
