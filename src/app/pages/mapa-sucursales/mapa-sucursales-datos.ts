@@ -229,3 +229,27 @@ export function iconoIndicadorMapa(
 
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
+
+/**
+ * Indicador del cliente: abeja sobre un círculo azul con una etiqueta "VOS".
+ * Su forma, color y tamaño lo diferencian de las burbujas amarillas que
+ * muestran la puntuación de cada sucursal.
+ */
+export function iconoUbicacionClienteMapa(
+  colorAcento: string,
+  colorTexto: string,
+): string {
+  const fondo = colorToken(colorAcento, '#5aa0f7');
+  const claro = colorToken(colorTexto, '#eef2f7');
+  const svg = [
+    '<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 88 88">',
+    `<circle cx="44" cy="39" r="34" fill="none" stroke="${claro}" stroke-width="4"/>`,
+    `<circle cx="44" cy="39" r="29" fill="${fondo}"/>`,
+    `<text x="44" y="47" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="30">${ABEJA_MAPA}</text>`,
+    `<rect x="17" y="65" width="54" height="20" rx="10" fill="${claro}"/>`,
+    `<text x="44" y="76" text-anchor="middle" dominant-baseline="middle" fill="${fondo}" font-family="Arial, sans-serif" font-size="12" font-weight="700">VOS</text>`,
+    '</svg>',
+  ].join('');
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
