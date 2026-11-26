@@ -16,6 +16,7 @@ import { catchError, filter, of, switchMap } from 'rxjs';
 import { authService } from '../../services/auth-service';
 import { usuarioService } from '../../services/usuario-service';
 import { fotoPerfilDe } from '../../shared/foto-perfil';
+import { NotificacionesCentro } from '../notificaciones/notificaciones-centro';
 
 interface NavItem {
   readonly label: string;
@@ -47,7 +48,7 @@ const ICONS = {
 
 @Component({
   selector: 'app-navbar',
-  imports: [DsButtonComponent, RouterLink, RouterLinkActive],
+  imports: [DsButtonComponent, RouterLink, RouterLinkActive, NotificacionesCentro],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
