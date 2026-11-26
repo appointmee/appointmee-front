@@ -7,6 +7,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import { notificacionService } from './notificacion-service';
+import { notificacionesCambiosService } from './notificaciones-cambios-service';
 
 describe('notificacionService', () => {
   let api: notificacionService;
@@ -89,6 +90,16 @@ describe('notificacionService', () => {
     expect(peticion.request.method).toBe('PATCH');
     expect(peticion.request.context.get(SIN_MANEJO_GLOBAL_DE_ERRORES)).toBe(true);
     peticion.flush({ noLeidas: 0 });
+  });
+
+  it('avisa a las vistas cuando se marca una notificación como leída', () => {
+    const cambios = TestBed.inject(notificacionesCambiosService);
+    const versionInicial = cambios.version();
+
+    api.marcarLeida(7).subscribe();
+    backend.expectOne('http://localhost:8080/notificaciones/7/leido').flush({ noLeidas: 0 });
+
+    expect(cambios.version()).toBe(versionInicial + 1);
   });
 
   it('consulta el contador de no leídas sin aviso global', () => {

@@ -8,6 +8,7 @@ import type { PaginaNotificacionesDTO } from '../../models/notificacion';
 import { authService } from '../../services/auth-service';
 import { chatWidgetService } from '../../services/chat-widget-service';
 import { notificacionService } from '../../services/notificacion-service';
+import { notificacionesCambiosService } from '../../services/notificaciones-cambios-service';
 import { NotificacionesCentro } from './notificaciones-centro';
 
 @Component({ selector: 'app-destino-prueba', template: '' })
@@ -508,6 +509,23 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     expect(fixture.nativeElement.querySelector('.panel__filtros')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Tipo de notificación');
     expect(fixture.nativeElement.textContent).not.toContain('Estado de lectura');
+  });
+
+  it('recarga el panel cuando otra vista marca una notificación como leída', async () => {
+    listar.mockReturnValue(of(pagina([{ ...sinLeer, leida: true }], 0)));
+    const { fixture } = await renderizar();
+    abrirPanel(fixture);
+    expect(listar).toHaveBeenCalledTimes(1);
+
+    TestBed.inject(notificacionesCambiosService).notificarCambio();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(listar).toHaveBeenCalledTimes(2);
+    expect(
+      fixture.nativeElement.querySelector('.notificacion')?.classList.contains('notificacion--no-leida'),
+    ).toBe(false);
   });
 
   it('muestra el error inline al marcar como leída y permite reintentar', async () => {

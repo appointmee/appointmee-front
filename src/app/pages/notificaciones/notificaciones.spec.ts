@@ -8,6 +8,7 @@ import type { PaginaNotificacionesDTO } from '../../models/notificacion';
 import { authService } from '../../services/auth-service';
 import { chatWidgetService } from '../../services/chat-widget-service';
 import { notificacionService } from '../../services/notificacion-service';
+import { notificacionesCambiosService } from '../../services/notificaciones-cambios-service';
 import { Notificaciones } from './notificaciones';
 
 @Component({ selector: 'app-destino-prueba', template: '' })
@@ -215,6 +216,27 @@ describe('Página de notificaciones (US-NOT-03)', () => {
 
     expect(listar).toHaveBeenCalledWith(0, 20, 'PAGO', 'LEIDAS');
     expect(html().querySelector('.notificaciones__limpiar')).not.toBeNull();
+  });
+
+  it('recarga la vista cuando se marca una notificación desde el panel', async () => {
+    listar.mockReturnValue(of(pagina([{ ...sinLeer, leida: true }], 1, 0)));
+    fixture.destroy();
+
+    fixture = TestBed.createComponent(Notificaciones);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const llamadas = listar.mock.calls.length;
+
+    TestBed.inject(notificacionesCambiosService).notificarCambio();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(listar).toHaveBeenCalledTimes(llamadas + 1);
+    expect(
+      html().querySelector('.notificacion')?.classList.contains('notificacion--no-leida'),
+    ).toBe(false);
   });
 
   it('muestra el error inline al marcar todas y permite reintentar', async () => {
