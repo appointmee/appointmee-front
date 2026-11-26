@@ -54,7 +54,10 @@ describe('Buscador del navbar', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.profile__name').textContent).toContain('Ana Pérez');
+    const disparador = fixture.nativeElement.querySelector('.profile__trigger') as HTMLElement;
+    expect(disparador.querySelector('.profile__copy')).toBeNull();
+    expect(disparador.querySelector('.profile__chevron')).toBeNull();
+    expect(disparador.querySelector('.profile__avatar')).not.toBeNull();
     const photo = fixture.nativeElement.querySelector('.profile__avatar img') as HTMLImageElement;
     expect(photo.src).toContain('avatar.jpg');
     expect(getComputedStyle(photo).objectFit).toBe('cover');
