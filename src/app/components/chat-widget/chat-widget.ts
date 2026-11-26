@@ -129,7 +129,7 @@ export class ChatWidget implements OnDestroy {
   }
 
   protected onFinAbeja(event: AnimationEvent): void {
-    if (event.animationName === 'abeja-bzz') {
+    if (event.animationName === 'abeja-vuelo') {
       this.abejaVisible.set(false);
       this.marcarAbejaVista();
     }

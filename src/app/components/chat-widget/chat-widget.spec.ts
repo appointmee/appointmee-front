@@ -262,13 +262,14 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
     reducirMovimiento = false;
   });
 
-  it('la abeja vuela al arrancar y dice bzz bzz una vez por sesión', () => {
+  it('la abeja vuela al arrancar, sin cartel de bzz bzz, una vez por sesión', () => {
     const abeja = html.querySelector('.abeja');
     expect(abeja).toBeTruthy();
-    expect(abeja?.textContent).toContain('bzz bzz');
+    expect(html.querySelector('.abeja__bzz')).toBeNull();
+    expect(abeja?.textContent).not.toContain('bzz bzz');
     expect(sessionStorage.getItem('appointmee.chat-abeja-vista')).toBeNull();
 
-    terminarAbeja(html, 'abeja-bzz');
+    terminarAbeja(html, 'abeja-vuelo');
     fixture.detectChanges();
     expect(sessionStorage.getItem('appointmee.chat-abeja-vista')).toBe('1');
 
@@ -279,12 +280,10 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
     otra.destroy();
   });
 
-  it('oculta la abeja cuando termina el bzz bzz', () => {
-    terminarAbeja(html, 'abeja-vuelo');
-    fixture.detectChanges();
+  it('oculta la abeja cuando termina el vuelo', () => {
     expect(html.querySelector('.abeja')).toBeTruthy();
 
-    terminarAbeja(html, 'abeja-bzz');
+    terminarAbeja(html, 'abeja-vuelo');
     fixture.detectChanges();
     expect(html.querySelector('.abeja')).toBeNull();
   });
