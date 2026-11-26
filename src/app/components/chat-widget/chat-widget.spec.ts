@@ -1,5 +1,6 @@
 import { signal, type WritableSignal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import { gsap } from 'gsap';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -140,6 +141,41 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
     fixture.detectChanges();
     expect(widget.abierto()).toBe(false);
     expect(burbuja().getAttribute('aria-label')).toBe('Abrir mensajes');
+  });
+
+  it('anima la burbuja con GSAP al pasar el mouse y al presionarla', () => {
+    const animar = vi.spyOn(gsap, 'to');
+
+    burbuja().dispatchEvent(new MouseEvent('mouseenter'));
+    expect(animar).toHaveBeenCalledWith(burbuja(), expect.objectContaining({ scale: 1.12 }));
+
+    burbuja().dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    expect(animar).toHaveBeenCalledWith(burbuja(), expect.objectContaining({ scale: 0.88 }));
+
+    burbuja().dispatchEvent(new Event('pointerup', { bubbles: true }));
+    expect(animar).toHaveBeenCalledWith(burbuja(), expect.objectContaining({ scale: 1.12 }));
+
+    burbuja().dispatchEvent(new MouseEvent('mouseleave'));
+    expect(animar).toHaveBeenCalledWith(burbuja(), expect.objectContaining({ scale: 1 }));
+  });
+
+  it('no anima la burbuja con prefers-reduced-motion', () => {
+    fixture.destroy();
+    sessionStorage.clear();
+    reducirMovimiento = true;
+
+    const otra = TestBed.createComponent(ChatWidget);
+    otra.detectChanges();
+    const animar = vi.spyOn(gsap, 'to');
+
+    const otraHtml = otra.nativeElement as HTMLElement;
+    const otraBurbuja = otraHtml.querySelector<HTMLButtonElement>('.chat-widget__burbuja')!;
+    otraBurbuja.dispatchEvent(new MouseEvent('mouseenter'));
+    otraBurbuja.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+
+    expect(animar).not.toHaveBeenCalled();
+    otra.destroy();
+    reducirMovimiento = false;
   });
 
   it('la abeja vuela al arrancar y dice bzz bzz una vez por sesión', () => {
