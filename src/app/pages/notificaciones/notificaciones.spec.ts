@@ -118,7 +118,9 @@ describe('Página de notificaciones (US-NOT-03)', () => {
     const lista = html().querySelector('.notificacion') as HTMLButtonElement;
     expect(lista).not.toBeNull();
     expect(lista.textContent).toContain('Turno confirmado');
-    expect(lista.textContent).toContain('Sin leer');
+    expect(lista.classList.contains('notificacion--no-leida')).toBe(true);
+    expect(lista.querySelector('ds-badge')).toBeNull();
+    expect(lista.querySelector('.notificacion__meta span')).toBeNull();
     expect(html().querySelector('ds-pagination')).not.toBeNull();
 
     const siguiente = Array.from(html().querySelectorAll('button')).find(
@@ -163,7 +165,10 @@ describe('Página de notificaciones (US-NOT-03)', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    (html().querySelector('.notificaciones__marcar') as HTMLButtonElement).click();
+    const marcar = html().querySelector('.notificaciones__marcar') as HTMLButtonElement;
+    expect(marcar.querySelector('svg path')?.getAttribute('d')).toBe('M20 6 9 17l-5-5');
+    expect(marcar.textContent?.trim()).toBe('');
+    marcar.click();
     await fixture.whenStable();
     fixture.detectChanges();
 

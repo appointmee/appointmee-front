@@ -159,7 +159,9 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     expect(item.textContent).toContain('Turno confirmado');
     expect(item.textContent).toContain('Tu turno quedó confirmado.');
     expect(item.querySelector('time')?.textContent).toContain('2026');
-    expect(item.textContent).toContain('Sin leer');
+    expect(item.classList.contains('notificacion--no-leida')).toBe(true);
+    expect(item.querySelector('ds-badge')).toBeNull();
+    expect(item.querySelector('.notificacion__meta span')).toBeNull();
     expect(item.getAttribute('aria-label')).toContain('sin leer');
     expect(boton.querySelector('.notificaciones__contador')?.textContent).toContain('3');
   });
@@ -204,7 +206,7 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
 
     abrirPanel(fixture);
     const reabierta = fixture.nativeElement.querySelector('.notificacion') as HTMLButtonElement;
-    expect(reabierta.textContent).toContain('Sin leer');
+    expect(reabierta.classList.contains('notificacion--no-leida')).toBe(true);
   });
 
   it('lleva a pagos, solicitudes y al widget de chat según el tipo', async () => {
@@ -464,13 +466,17 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
 
     const botonMarcar = fixture.nativeElement.querySelector('.panel__marcar') as HTMLButtonElement;
     expect(botonMarcar).not.toBeNull();
+    expect(botonMarcar.querySelector('svg path')?.getAttribute('d')).toBe('M20 6 9 17l-5-5');
+    expect(botonMarcar.textContent?.trim()).toBe('');
     botonMarcar.click();
     await fixture.whenStable();
     fixture.detectChanges();
 
     expect(marcarUna).toHaveBeenCalledWith(1);
     expect(boton.getAttribute('aria-label')).toContain('no hay notificaciones sin leer');
-    expect(fixture.nativeElement.querySelector('.notificacion')?.textContent).toContain('Leída');
+    expect(
+      fixture.nativeElement.querySelector('.notificacion')?.classList.contains('notificacion--no-leida'),
+    ).toBe(false);
     expect(fixture.nativeElement.querySelector('.panel__marcar')).toBeNull();
   });
 
