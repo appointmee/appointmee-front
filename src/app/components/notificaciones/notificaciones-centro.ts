@@ -12,7 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { Subject, catchError, filter, map, of, switchMap } from 'rxjs';
 
 import type {
@@ -23,6 +23,14 @@ import type {
 import { authService } from '../../services/auth-service';
 import { chatWidgetService } from '../../services/chat-widget-service';
 import { notificacionService } from '../../services/notificacion-service';
+import {
+  ariaNotificacion,
+  destinoDeNotificacion,
+  etiquetaTipoNotificacion,
+  formatearFechaNotificacion,
+  iconoTipoNotificacion,
+  type DestinoNotificacion,
+} from '../../shared/notificaciones/destino-notificacion';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   DsBadgeComponent,
@@ -30,14 +38,8 @@ import {
   DsSkeletonComponent,
 } from '../../shared/ui/misc/misc.component';
 
-/** A dónde lleva cada notificación al abrirla. */
-type DestinoNotificacion =
-  | {
-      readonly tipo: 'ruta';
-      readonly ruta: string;
-      readonly queryParams?: Readonly<Record<string, number>>;
-    }
-  | { readonly tipo: 'chat'; readonly conversacionId: number | null };
+/** El panel muestra sólo la primera página; la vista completa se abre con "Ver todas". */
+const LIMITE_NOTIFICACIONES = 20;
 
 interface NotificacionVista extends NotificacionDTO {
   readonly destino: DestinoNotificacion;
@@ -46,37 +48,18 @@ interface NotificacionVista extends NotificacionDTO {
 const ICONOS = {
   campana: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21a2 2 0 0 0 4 0',
   cerrar: 'M18 6 6 18M6 6l12 12',
-  turno: 'M7 2v4M17 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z',
-  pago: 'M3 7h18v12H3zM3 11h18M7 15h4',
-  solicitud: 'M4 4h16v16H4zM8 9h8M8 13h8M8 17h4',
-  mensaje: 'M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 0 1 16 0Z',
-  sistema: 'M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
   alerta: 'M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
-};
-
-const ETIQUETAS_TIPO: Record<TipoNotificacion, string> = {
-  RESERVA: 'Turno',
-  CANCELACION: 'Turno cancelado',
-  RECORDATORIO: 'Recordatorio de turno',
-  PAGO: 'Pago',
-  SISTEMA: 'Novedad de la cuenta',
-  SOLICITUD: 'Solicitud',
-  MENSAJE: 'Mensaje',
-};
-
-const ICONOS_TIPO: Record<TipoNotificacion, string> = {
-  RESERVA: ICONOS.turno,
-  CANCELACION: ICONOS.turno,
-  RECORDATORIO: ICONOS.turno,
-  PAGO: ICONOS.pago,
-  SISTEMA: ICONOS.sistema,
-  SOLICITUD: ICONOS.solicitud,
-  MENSAJE: ICONOS.mensaje,
 };
 
 @Component({
   selector: 'app-notificaciones-centro',
-  imports: [DsButtonComponent, DsBadgeComponent, DsEmptyStateComponent, DsSkeletonComponent],
+  imports: [
+    DsButtonComponent,
+    DsBadgeComponent,
+    DsEmptyStateComponent,
+    DsSkeletonComponent,
+    RouterLink,
+  ],
   templateUrl: './notificaciones-centro.html',
   styleUrl: './notificaciones-centro.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -106,11 +89,6 @@ export class NotificacionesCentro {
   private panelEnfocado = false;
   /** Persistencia en backend: SCRUM-329. Hasta entonces el estado se mantiene en la vista. */
   private readonly leidasEnSesion = signal<ReadonlySet<number>>(new Set<number>());
-
-  private readonly formateadorFecha = new Intl.DateTimeFormat('es-AR', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
 
   /** Los turnos se consultan en el lugar que corresponde al rol del usuario. */
   private readonly rutaTurnos = computed(() => {
@@ -151,7 +129,7 @@ export class NotificacionesCentro {
           this.error.set(null);
           this.cargando.set(!esReintento);
           this.reintentando.set(esReintento);
-          return this.notificacionesService.listar().pipe(
+          return this.notificacionesService.listar(0, LIMITE_NOTIFICACIONES).pipe(
             map((pagina: PaginaNotificacionesDTO) => ({ ok: true as const, pagina })),
             catchError((error: HttpErrorResponse) =>
               of({ ok: false as const, error }),
@@ -284,77 +262,26 @@ export class NotificacionesCentro {
   }
 
   protected etiquetaTipo(tipo: TipoNotificacion): string {
-    return ETIQUETAS_TIPO[tipo] ?? 'Notificación';
+    return etiquetaTipoNotificacion(tipo);
   }
 
   protected iconoTipo(tipo: TipoNotificacion): string {
-    return ICONOS_TIPO[tipo] ?? ICONOS.sistema;
+    return iconoTipoNotificacion(tipo);
   }
 
   protected fechaDe(fecha: string | null): string {
-    if (!fecha) return 'Fecha no disponible';
-    const fechaParseada = new Date(fecha);
-    if (Number.isNaN(fechaParseada.getTime())) return 'Fecha no disponible';
-    return this.formateadorFecha.format(fechaParseada);
+    return formatearFechaNotificacion(fecha);
   }
 
   protected ariaNotificacion(notificacion: NotificacionVista): string {
-    const estado = notificacion.leida ? 'leída' : 'sin leer';
-    return `${notificacion.titulo}. ${notificacion.mensaje}. ${estado}. ${this.fechaDe(notificacion.fecha)}. Abrir notificación.`;
+    return ariaNotificacion(notificacion);
   }
 
   private aVista(notificacion: NotificacionDTO): NotificacionVista {
     return {
       ...notificacion,
       leida: notificacion.leida || this.leidasEnSesion().has(notificacion.id),
-      destino: this.destinoDe(notificacion),
+      destino: destinoDeNotificacion(notificacion, this.rutaTurnos()),
     };
-  }
-
-  /** Usa el ID del backend cuando viene; si falta, mantiene la ruta genérica por tipo. */
-  private destinoDe(notificacion: NotificacionDTO): DestinoNotificacion {
-    const id = notificacion.destinoId ?? null;
-    const sucursalId = notificacion.sucursalId ?? null;
-    const parametros = (clave: string): Record<string, number> => {
-      const valores: Record<string, number> = { [clave]: id as number };
-      if (sucursalId !== null) valores['sucursalId'] = sucursalId;
-      return valores;
-    };
-
-    if (id !== null && notificacion.destinoTipo) {
-      switch (notificacion.destinoTipo) {
-        case 'TURNO':
-          return {
-            tipo: 'ruta',
-            ruta: this.rutaTurnos(),
-            queryParams: parametros('turnoId'),
-          };
-        case 'PAGO':
-          return {
-            tipo: 'ruta',
-            ruta: '/pago/resultado',
-            queryParams: parametros('turnoId'),
-          };
-        case 'SOLICITUD':
-          return { tipo: 'ruta', ruta: '/solicitudes', queryParams: { solicitudId: id } };
-        case 'CONVERSACION':
-          return { tipo: 'chat', conversacionId: id };
-      }
-    }
-
-    switch (notificacion.tipo) {
-      case 'PAGO':
-        return { tipo: 'ruta', ruta: '/pago/resultado' };
-      case 'SOLICITUD':
-        return { tipo: 'ruta', ruta: '/solicitudes' };
-      case 'MENSAJE':
-        return { tipo: 'chat', conversacionId: null };
-      case 'RESERVA':
-      case 'CANCELACION':
-      case 'RECORDATORIO':
-        return { tipo: 'ruta', ruta: this.rutaTurnos() };
-      default:
-        return { tipo: 'ruta', ruta: '/configuracion' };
-    }
   }
 }

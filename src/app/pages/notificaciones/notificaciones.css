@@ -1,0 +1,214 @@
+.notificaciones {
+  width: min(760px, calc(100% - var(--space-8)));
+  margin: 0 auto;
+  padding: var(--space-8) 0;
+}
+
+.notificaciones__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.notificaciones__cabecera h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+.notificaciones__resumen {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+}
+
+.notificaciones__volver {
+  color: var(--accent);
+  font-size: var(--font-size-sm);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.notificaciones__volver:hover {
+  color: var(--accent-strong);
+}
+
+.notificaciones__aviso {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  background: var(--danger-soft);
+  color: var(--text);
+  font-size: var(--font-size-sm);
+}
+
+.notificaciones__lista {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notificaciones__skeleton {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.notificaciones__skeleton-lineas {
+  display: grid;
+  flex: 1;
+  gap: var(--space-2);
+  align-content: center;
+}
+
+.notificaciones__estado {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.notificaciones__estado h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--font-size-lg);
+}
+
+.notificaciones__estado p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+}
+
+.notificacion {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.notificacion:hover,
+.notificacion:focus-visible {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* El estado también se indica con texto, negrita y punto, no sólo con color. */
+.notificacion--no-leida {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+}
+
+.notificacion--no-leida .notificacion__titulo {
+  font-weight: 700;
+}
+
+.notificacion--no-leida .notificacion__estado::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--accent);
+}
+
+.notificacion__icono {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+.notificacion__icono svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.notificacion__cuerpo {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.notificacion__titulo {
+  color: var(--text);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.notificacion__mensaje {
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+
+.notificacion__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  color: var(--muted);
+  font-size: var(--font-size-xs);
+}
+
+.notificacion__estado {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.notificaciones__paginacion {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-6);
+}
+
+@media (max-width: 640px) {
+  .notificaciones {
+    width: calc(100% - var(--space-4));
+    padding: var(--space-6) 0;
+  }
+
+  .notificaciones__cabecera {
+    flex-direction: column;
+  }
+
+  .notificacion {
+    grid-template-columns: auto 1fr;
+  }
+
+  .notificacion__estado {
+    grid-column: 2;
+  }
+}

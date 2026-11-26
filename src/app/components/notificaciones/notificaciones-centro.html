@@ -29,11 +29,18 @@
       (click)="$event.stopPropagation()"
     >
       <header class="panel__cabecera">
-        <div>
+        <div class="panel__encabezado-texto">
           <h2 class="panel__titulo">Notificaciones</h2>
           <p class="panel__resumen" role="status" aria-live="polite" aria-atomic="true">
             {{ resumen() }}
           </p>
+          <a
+            class="panel__ver-todas"
+            routerLink="/notificaciones"
+            (click)="cerrarNotificaciones()"
+          >
+            Ver todas las notificaciones
+          </a>
         </div>
         <button
           #cerrar

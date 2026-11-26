@@ -108,6 +108,20 @@
   font-size: var(--font-size-xs);
 }
 
+.panel__ver-todas {
+  display: inline-block;
+  margin-top: var(--space-1);
+  color: var(--accent);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.panel__ver-todas:hover {
+  color: var(--accent-strong);
+}
+
 .panel__cerrar {
   display: inline-flex;
   align-items: center;
