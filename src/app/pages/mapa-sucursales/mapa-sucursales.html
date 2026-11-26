@@ -1,0 +1,147 @@
+<section class="mapa" aria-labelledby="mapa-titulo">
+  <div class="mapa__inner">
+    <header class="mapa__intro">
+      <span class="eyebrow">Sucursales en el mapa</span>
+      <h1 id="mapa-titulo">Explorá todas las sucursales</h1>
+      <p class="mapa__lead">
+        Buscá por nombre, filtrá por categoría y descubrí dónde están. Tocá un
+        marcador para ver sus datos, abrir su ficha o ir con Google Maps.
+      </p>
+    </header>
+
+    <div class="mapa__controles" role="search" aria-label="Buscar y filtrar sucursales en el mapa">
+      <form class="busqueda" (submit)="onSearchSubmit($event)">
+        <ds-input
+          label="Buscar sucursal"
+          [error]="terminoMuyCorto() ? 'Escribí al menos 2 caracteres para buscar.' : ''"
+        >
+          <input
+            #searchInput
+            class="busqueda__input"
+            type="search"
+            [value]="busqueda()"
+            (input)="onSearchInput($event)"
+            placeholder="Buscar por nombre o ID"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Buscar sucursales por nombre"
+          />
+        </ds-input>
+        <button
+          dsButton
+          type="button"
+          size="sm"
+          class="busqueda__limpiar"
+          [disabled]="!busqueda()"
+          (click)="limpiarBusqueda()"
+          aria-label="Limpiar búsqueda"
+        >
+          Limpiar búsqueda
+        </button>
+      </form>
+
+      <ds-select
+        class="mapa__categoria"
+        label="Categoría"
+        [value]="categoria() ?? ''"
+        (change)="onCategoriaChange($event)"
+      >
+        <option value="">Todas las categorías</option>
+        @for (categoria of categorias(); track categoria) {
+          <option [value]="categoria">{{ humanizarCategoria(categoria) }}</option>
+        }
+      </ds-select>
+
+      <button
+        dsButton
+        type="button"
+        class="mapa__limpiar-filtros"
+        [disabled]="!busqueda() && !categoria()"
+        (click)="limpiarFiltros()"
+      >
+        Limpiar filtros
+      </button>
+    </div>
+
+    @if (avisoCategorias()) {
+      <p class="mapa__aviso" role="status">{{ avisoCategorias() }}</p>
+    }
+
+    @if (errorDatos()) {
+      <ds-alert>
+        <p>{{ errorDatos() }}</p>
+        <button
+          dsButton
+          type="button"
+          size="sm"
+          [disabled]="reintentandoDatos()"
+          [attr.aria-busy]="reintentandoDatos()"
+          (click)="recargarDatos()"
+        >
+          {{ reintentandoDatos() ? 'Reintentando…' : 'Reintentar' }}
+        </button>
+      </ds-alert>
+    }
+
+    <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+      @if (cargandoDatos()) {
+        Cargando sucursales.
+      } @else if (!errorDatos()) {
+        {{ visibles().length }} sucursales con ubicación registrada.
+        Categoría: {{ categoria() ? humanizarCategoria(categoria()!) : 'Todas' }}.
+      }
+    </p>
+
+    <div class="mapa__contenedor">
+      <div
+        #lienzo
+        class="mapa__lienzo"
+        [class.mapa__lienzo--atenuado]="cargandoDatos() || sinResultados()"
+        role="region"
+        aria-label="Mapa interactivo de sucursales de AppointMee"
+      ></div>
+
+      @if (cargandoDatos()) {
+        <div class="mapa__capa mapa__capa--carga" aria-busy="true" aria-live="polite">
+          <ds-skeleton width="100%" height="100%"></ds-skeleton>
+          <p class="mapa__estado">Cargando sucursales…</p>
+        </div>
+      } @else if (sinResultados()) {
+        <div class="mapa__capa mapa__capa--vacio">
+          <ds-empty-state [message]="cadenaVacia">
+            <button dsButton type="button" size="sm" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </ds-empty-state>
+        </div>
+      }
+
+      @if (cargandoMapa()) {
+        <p class="mapa__estado mapa__estado--flotante" role="status">
+          Cargando mapa…
+        </p>
+      }
+
+      @if (errorMapa()) {
+        <div class="mapa__capa mapa__capa--error">
+          <ds-alert>
+            <p>{{ errorMapa() }}</p>
+            <button
+              dsButton
+              type="button"
+              size="sm"
+              (click)="reintentarMapa()"
+            >
+              Reintentar
+            </button>
+          </ds-alert>
+        </div>
+      }
+    </div>
+
+    <p class="mapa__nota">
+      Ubicación aproximada · Los datos de cada marcador vienen del listado de
+      sucursales de AppointMee.
+    </p>
+  </div>
+</section>

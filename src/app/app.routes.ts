@@ -28,6 +28,18 @@ export const routes: Routes = [
       import('./pages/sucursales/sucursales').then((module) => module.Sucursales),
   },
   {
+    path: 'mapa-sucursales',
+    title: 'AppointMee | Mapa de sucursales',
+    data: {
+      title: 'Mapa de sucursales',
+      description: 'Explorá todas las sucursales en un mapa interactivo.',
+    },
+    loadComponent: () =>
+      import('./pages/mapa-sucursales/mapa-sucursales').then(
+        (module) => module.MapaSucursales,
+      ),
+  },
+  {
     path: 'listado-sucursales',
     redirectTo: 'sucursales',
   },
