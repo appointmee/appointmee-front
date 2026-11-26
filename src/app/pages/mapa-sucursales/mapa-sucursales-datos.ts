@@ -1,7 +1,11 @@
 import { SucursalMiniDTO } from '../../models/sucursal';
 import {
+  ABREVIATURAS_DIAS,
+  DIAS_SUCURSAL,
+} from '../../components/sucursal-form/sucursal-form.model';
+import {
+  MIN_CARACTERES_BUSQUEDA,
   claveComparacionBusqueda,
-  esTerminoNumerico,
   normalizarTerminoBusqueda,
 } from '../../shared/busqueda-sucursales';
 
@@ -40,7 +44,10 @@ export function coordenadasValidas(
   return { lat: latitud, lng: longitud };
 }
 
-/** Reproduce los criterios del listado: ID exacto para términos numéricos. */
+/**
+ * El buscador del mapa es propio: compara solo el nombre, nunca el ID.
+ * El término se normaliza como en el resto de la app (sin acentos ni mayúsculas).
+ */
 export function coincideNombre(
   sucursal: SucursalMapaDTO,
   termino: string | null | undefined,
@@ -49,11 +56,20 @@ export function coincideNombre(
   if (!busqueda) {
     return true;
   }
-  if (esTerminoNumerico(busqueda)) {
-    return String(sucursal.id) === busqueda;
-  }
-  const nombre = claveComparacionBusqueda(sucursal.nombre);
-  return nombre.includes(claveComparacionBusqueda(busqueda));
+  return claveComparacionBusqueda(sucursal.nombre).includes(
+    claveComparacionBusqueda(busqueda),
+  );
+}
+
+/**
+ * A diferencia del buscador compartido, los términos numéricos también
+ * respetan el mínimo de caracteres: el ID nunca habilita una búsqueda corta.
+ */
+export function terminoDeBusquedaMapa(
+  valor: string | null | undefined,
+): string {
+  const termino = normalizarTerminoBusqueda(valor);
+  return termino.length >= MIN_CARACTERES_BUSQUEDA ? termino : '';
 }
 
 /** Los filtros del mapa son propios: no leen ni escriben el estado del listado. */
@@ -92,4 +108,102 @@ export function humanizarCategoria(categoria: string | null | undefined): string
     .replace(/_/g, ' ')
     .toLocaleLowerCase('es')
     .replace(/\b\w/g, (caracter) => caracter.toLocaleUpperCase('es'));
+}
+
+/** Valoración válida del DTO, redondeada como en el resto de la aplicación. */
+export function puntuacionMapa(
+  sucursal: SucursalMapaDTO,
+): number | null {
+  const valor = sucursal.puntuacion;
+  if (
+    typeof valor !== 'number' ||
+    !Number.isFinite(valor) ||
+    valor < 1 ||
+    valor > 5
+  ) {
+    return null;
+  }
+  return Math.round(valor * 10) / 10;
+}
+
+/** Texto que se dibuja dentro de la burbuja. Sin valoraciones, burbuja vacía. */
+export function textoIndicadorMapa(sucursal: SucursalMapaDTO): string | null {
+  const valor = puntuacionMapa(sucursal);
+  return valor === null ? null : String(valor);
+}
+
+/** Una abeja por punto de la escala, con el mismo criterio del detalle. */
+export function abejasMapa(valor: number | null): readonly boolean[] {
+  const redondeado = Math.round(valor ?? 0);
+  return [1, 2, 3, 4, 5].map((posicion) => posicion <= redondeado);
+}
+
+/** Alias en castellano admitidos por la API, como en el detalle de sucursal. */
+const ALIAS_DIAS: Readonly<Record<string, string>> = {
+  LUNES: 'MONDAY',
+  MARTES: 'TUESDAY',
+  MIERCOLES: 'WEDNESDAY',
+  'MIÉRCOLES': 'WEDNESDAY',
+  JUEVES: 'THURSDAY',
+  VIERNES: 'FRIDAY',
+  SABADO: 'SATURDAY',
+  SÁBADO: 'SATURDAY',
+  DOMINGO: 'SUNDAY',
+};
+
+export interface DiaMapa {
+  readonly dia: string;
+  readonly abreviatura: string;
+  readonly abierto: boolean;
+}
+
+/** Los siete días en orden, marcados solo con los datos reales del DTO. */
+export function diasMapa(sucursal: SucursalMapaDTO): readonly DiaMapa[] {
+  const abiertos = new Set(
+    (sucursal.diasApertura ?? []).map((nombre) => {
+      const normalizado = (nombre ?? '').trim().toUpperCase();
+      return ALIAS_DIAS[normalizado] ?? normalizado;
+    }),
+  );
+
+  return DIAS_SUCURSAL.map((dia) => ({
+    dia,
+    abreviatura: ABREVIATURAS_DIAS[dia] ?? dia,
+    abierto: abiertos.has(dia),
+  }));
+}
+
+function escaparXml(valor: string): string {
+  return valor
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function colorToken(valor: string, respaldo: string): string {
+  return /^#[0-9a-f]{3,8}$/i.test(valor) ? valor : respaldo;
+}
+
+/**
+ * Icono SVG embebido (data URI): no descarga imágenes ni consulta ninguna API.
+ * Los colores vienen de los tokens `--accent` y `--on-accent` de la app.
+ */
+export function iconoIndicadorMapa(
+  texto: string | null,
+  colorAcento: string,
+  colorTexto = '#07090d',
+): string {
+  const fondo = colorToken(colorAcento, '#f7c65a');
+  const tinta = colorToken(colorTexto, '#07090d');
+  const etiqueta = texto ? escaparXml(texto) : '';
+  const svg = [
+    '<svg xmlns="http://www.w3.org/2000/svg" width="44" height="56" viewBox="0 0 44 56">',
+    `<path d="M22 2C10.4 2 2 10.4 2 21.5 2 36 22 54 22 54s20-18 20-32.5C42 10.4 33.6 2 22 2Z" fill="${fondo}" stroke="${tinta}" stroke-width="2"/>`,
+    `<text x="22" y="24" text-anchor="middle" dominant-baseline="middle" fill="${tinta}" font-family="Arial, sans-serif" font-size="17" font-weight="700">${etiqueta}</text>`,
+    '</svg>',
+  ].join('');
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }

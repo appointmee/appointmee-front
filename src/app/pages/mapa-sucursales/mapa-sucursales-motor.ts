@@ -19,8 +19,8 @@ export interface ListenerGoogle {
 }
 export interface MarcadorGoogle {
   setPosition(posicion: PuntoGoogle): void;
+  setIcon(url: string): void;
   setMap(mapa: MapaGoogle | null): void;
-  setTitle(titulo: string): void;
   addListener(evento: string, manejador: () => void): ListenerGoogle;
 }
 export interface VentanaGoogle {
@@ -42,11 +42,36 @@ export interface GoogleMapsApi {
 }
 
 type ContenidoVentana = (sucursal: SucursalMapaDTO) => Node | string;
+type IconoMarcador = (sucursal: SucursalMapaDTO) => string;
 
 interface EntradaMarcador {
   readonly marcador: MarcadorGoogle;
   readonly sucursal: SucursalMapaDTO;
   readonly listener: ListenerGoogle;
+  icono: string;
+}
+
+/** Separación mínima para sucursales que comparten exactamente la misma posición. */
+const PASO_SUPERPOSICION = 0.00012;
+
+/**
+ * Reparte en torno al punto real los indicadores que, de otro modo, quedarían
+ * apilados. El desplazamiento es determinista y se recalcula al filtrar.
+ */
+function posicionVisible(
+  coordenadas: CoordenadasMapa,
+  indice: number,
+): CoordenadasMapa {
+  if (indice === 0) {
+    return coordenadas;
+  }
+  const angulo = ((indice - 1) % 8) * (Math.PI / 4);
+  const anillo = Math.floor((indice - 1) / 8) + 1;
+  const radio = PASO_SUPERPOSICION * anillo;
+  return {
+    lat: coordenadas.lat + Math.sin(angulo) * radio,
+    lng: coordenadas.lng + Math.cos(angulo) * radio,
+  };
 }
 
 /**
@@ -74,6 +99,7 @@ export class MotorMapaSucursales {
   actualizar(
     sucursales: readonly SucursalMapaDTO[],
     contenido: ContenidoVentana,
+    icono: IconoMarcador,
   ): void {
     const visibles = sucursales
       .map((sucursal) => ({ sucursal, coordenadas: coordenadasValidas(sucursal) }))
@@ -83,6 +109,17 @@ export class MotorMapaSucursales {
     }[];
     const idsDeseados = new Set(visibles.map(({ sucursal }) => sucursal.id));
 
+    const repetidos = new Map<string, number>();
+    const posiciones = visibles.map(({ sucursal, coordenadas }) => {
+      const clave = `${coordenadas.lat},${coordenadas.lng}`;
+      const indice = repetidos.get(clave) ?? 0;
+      repetidos.set(clave, indice + 1);
+      return {
+        sucursal,
+        coordenadas: posicionVisible(coordenadas, indice),
+      };
+    });
+
     for (const [id, entrada] of this.marcadores) {
       if (idsDeseados.has(id)) {
         continue;
@@ -90,20 +127,24 @@ export class MotorMapaSucursales {
       this.removerMarcador(id, entrada);
     }
 
-    for (const { sucursal, coordenadas } of visibles) {
+    for (const { sucursal, coordenadas } of posiciones) {
       const posicion = new this.api.maps.LatLng(coordenadas.lat, coordenadas.lng);
+      const iconoNuevo = icono(sucursal);
       const entrada = this.marcadores.get(sucursal.id);
 
       if (entrada) {
         entrada.marcador.setPosition(posicion);
-        entrada.marcador.setTitle(sucursal.nombre);
+        if (entrada.icono !== iconoNuevo) {
+          entrada.marcador.setIcon(iconoNuevo);
+          entrada.icono = iconoNuevo;
+        }
         continue;
       }
 
       const marcador = new this.api.maps.Marker({
         position: posicion,
         map: this.mapa,
-        title: sucursal.nombre,
+        icon: iconoNuevo,
       });
       const listener = marcador.addListener('click', () => {
         this.abrir(sucursal.id, contenido(sucursal), marcador);
@@ -112,6 +153,7 @@ export class MotorMapaSucursales {
         marcador,
         sucursal,
         listener,
+        icono: iconoNuevo,
       });
     }
 
@@ -119,19 +161,19 @@ export class MotorMapaSucursales {
       this.cerrarVentana();
     }
 
-    if (visibles.length === 1) {
+    if (posiciones.length === 1) {
       this.mapa.setCenter(
         new this.api.maps.LatLng(
-          visibles[0].coordenadas.lat,
-          visibles[0].coordenadas.lng,
+          posiciones[0].coordenadas.lat,
+          posiciones[0].coordenadas.lng,
         ),
       );
       return;
     }
 
-    if (visibles.length > 1) {
+    if (posiciones.length > 1) {
       const limites = new this.api.maps.LatLngBounds();
-      for (const { coordenadas } of visibles) {
+      for (const { coordenadas } of posiciones) {
         limites.extend(
           new this.api.maps.LatLng(coordenadas.lat, coordenadas.lng),
         );

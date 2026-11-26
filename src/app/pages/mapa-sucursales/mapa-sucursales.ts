@@ -27,15 +27,19 @@ import { DsInputComponent } from '../../shared/ui/input/input.component';
 import {
   DEBOUNCE_BUSQUEDA_MS,
   MIN_CARACTERES_BUSQUEDA,
-  esTerminoNumerico,
   normalizarTerminoBusqueda,
-  terminoDeBusqueda,
 } from '../../shared/busqueda-sucursales';
 import {
   SucursalMapaDTO,
+  abejasMapa,
   coordenadasValidas,
+  diasMapa,
   filtrarSucursalesMapa,
   humanizarCategoria,
+  iconoIndicadorMapa,
+  puntuacionMapa,
+  terminoDeBusquedaMapa,
+  textoIndicadorMapa,
   urlCómoLlegar,
 } from './mapa-sucursales-datos';
 import {
@@ -47,13 +51,19 @@ import {
 const CENTRO_INICIAL = { lat: -34.6037, lng: -58.3816 };
 const ZOOM_INICIAL = 5;
 
+/** Mismo reemplazo que usa el detalle de sucursal cuando no hay foto. */
+const IMAGEN_SIN_FOTO = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400"><rect width="640" height="400" fill="#0d1117"/><g fill="none" stroke="#98a2b3" stroke-width="3"><rect x="220" y="110" width="200" height="150" rx="16"/><circle cx="280" cy="160" r="20"/><path d="220 230l55-50 40 34 35-28 70 60"/></g><text x="320" y="310" text-anchor="middle" fill="#98a2b3" font-size="18" font-family="sans-serif">Sin imagen</text></svg>',
+)}`;
+
 /**
  * US-MAP-06 · Mapa global y público de sucursales.
  *
  * Una sola lectura de `/sucursales/listar` alimenta la página; los filtros son
- * locales y nunca vuelven a consultar el backend. La Maps JavaScript API se
- * carga con el loader centralizado únicamente cuando el lienzo se acerca al
- * viewport, y los marcadores se reconcilian sin reconstruir el mapa.
+ * locales, por nombre y categoría, y nunca vuelven a consultar el backend. La
+ * Maps JavaScript API se carga con el loader centralizado únicamente cuando el
+ * lienzo se acerca al viewport, y los indicadores se reconcilian sin
+ * reconstruir el mapa.
  */
 @Component({
   selector: 'app-mapa-sucursales',
@@ -108,11 +118,7 @@ export class MapaSucursales implements AfterViewInit {
 
   protected readonly terminoMuyCorto = computed(() => {
     const termino = normalizarTerminoBusqueda(this.busqueda());
-    return (
-      termino.length > 0 &&
-      termino.length < MIN_CARACTERES_BUSQUEDA &&
-      !esTerminoNumerico(termino)
-    );
+    return termino.length > 0 && termino.length < MIN_CARACTERES_BUSQUEDA;
   });
 
   private readonly filtradas = computed(() =>
@@ -163,8 +169,10 @@ export class MapaSucursales implements AfterViewInit {
       if (!motor) {
         return;
       }
-      motor.actualizar(this.visibles(), (sucursal) =>
-        this.crearContenidoVentana(sucursal),
+      motor.actualizar(
+        this.visibles(),
+        (sucursal) => this.crearContenidoVentana(sucursal),
+        (sucursal) => this.iconoIndicador(sucursal),
       );
     });
 
@@ -215,14 +223,14 @@ export class MapaSucursales implements AfterViewInit {
 
     this.debounceTimer = setTimeout(() => {
       this.debounceTimer = null;
-      this.terminoAplicado.set(terminoDeBusqueda(valor));
+      this.terminoAplicado.set(terminoDeBusquedaMapa(valor));
     }, DEBOUNCE_BUSQUEDA_MS);
   }
 
   protected onSearchSubmit(event: Event): void {
     event.preventDefault();
     this.cancelarDebounce();
-    this.terminoAplicado.set(terminoDeBusqueda(this.busqueda()));
+    this.terminoAplicado.set(terminoDeBusquedaMapa(this.busqueda()));
   }
 
   protected limpiarBusqueda(): void {
@@ -236,7 +244,7 @@ export class MapaSucursales implements AfterViewInit {
     const valor = (event.target as HTMLSelectElement).value;
     this.cancelarDebounce();
     this.categoria.set(valor || null);
-    this.terminoAplicado.set(terminoDeBusqueda(this.busqueda()));
+    this.terminoAplicado.set(terminoDeBusquedaMapa(this.busqueda()));
   }
 
   protected limpiarFiltros(): void {
@@ -332,6 +340,16 @@ export class MapaSucursales implements AfterViewInit {
     }
   }
 
+  /** Burbuja amarilla: solo la valoración, sin nombre ni categoría. */
+  private iconoIndicador(sucursal: SucursalMapaDTO): string {
+    const estilos = this.document.defaultView?.getComputedStyle(
+      this.document.documentElement,
+    );
+    const color = estilos?.getPropertyValue('--accent').trim() || '';
+    const tinta = estilos?.getPropertyValue('--on-accent').trim() || '';
+    return iconoIndicadorMapa(textoIndicadorMapa(sucursal), color, tinta);
+  }
+
   private crearContenidoVentana(sucursal: SucursalMapaDTO): Node {
     this.limpiarContenidoVentana();
     const raiz = this.document.createElement('div');
@@ -349,6 +367,28 @@ export class MapaSucursales implements AfterViewInit {
       'border:1px solid var(--line)',
     ].join(';');
 
+    const urlFoto = sucursal.fotoPerfil?.trim() || '';
+    const foto = this.document.createElement('img');
+    foto.setAttribute('src', urlFoto || IMAGEN_SIN_FOTO);
+    foto.alt = urlFoto ? `Foto de ${sucursal.nombre}` : 'Sin imagen';
+    foto.loading = 'lazy';
+    foto.decoding = 'async';
+    foto.style.cssText = [
+      'display:block',
+      'width:100%',
+      'max-height:9rem',
+      'object-fit:cover',
+      'border-radius:var(--radius-sm)',
+    ].join(';');
+    if (urlFoto) {
+      this.registrarEnVentana(foto, 'error', () => {
+        if (foto.getAttribute('src') !== IMAGEN_SIN_FOTO) {
+          foto.setAttribute('src', IMAGEN_SIN_FOTO);
+        }
+      });
+    }
+    raiz.append(foto);
+
     const titulo = this.document.createElement('strong');
     titulo.textContent = sucursal.nombre;
     titulo.style.cssText = 'font-size:var(--font-size-md);color:var(--accent)';
@@ -361,22 +401,10 @@ export class MapaSucursales implements AfterViewInit {
       raiz.append(categoria);
     }
 
-    const reseñas =
-      sucursal.puntuacion !== null &&
-      (sucursal.cantidadPuntuaciones ?? 0) > 0
-        ? `Puntuación: ${sucursal.puntuacion.toFixed(1)} de 5 (${sucursal.cantidadPuntuaciones} reseñas)`
-        : 'Sin reseñas';
-    const puntuacion = this.document.createElement('span');
-    puntuacion.textContent = reseñas;
-    puntuacion.style.color = 'var(--muted)';
-    raiz.append(puntuacion);
-
-    if (sucursal.diasApertura?.length) {
-      const dias = this.document.createElement('span');
-      dias.textContent = `Días de apertura: ${sucursal.diasApertura.join(', ')}`;
-      dias.style.color = 'var(--muted)';
-      raiz.append(dias);
-    }
+    raiz.append(
+      this.crearValoracionVentana(sucursal),
+      this.crearDiasVentana(sucursal),
+    );
 
     const acciones = this.document.createElement('div');
     acciones.style.cssText = [
@@ -415,6 +443,82 @@ export class MapaSucursales implements AfterViewInit {
 
     raiz.append(acciones);
     return raiz;
+  }
+
+  /** Abejas + valor numérico + cantidad, o el estado "Sin puntuaciones". */
+  private crearValoracionVentana(sucursal: SucursalMapaDTO): HTMLElement {
+    const contenedor = this.document.createElement('div');
+    contenedor.style.cssText = 'display:grid;gap:var(--space-1)';
+
+    const valor = puntuacionMapa(sucursal);
+    const cantidad = sucursal.cantidadPuntuaciones ?? 0;
+    if (valor === null || cantidad <= 0) {
+      contenedor.textContent = 'Sin puntuaciones';
+      contenedor.style.color = 'var(--muted)';
+      return contenedor;
+    }
+
+    contenedor.setAttribute('role', 'group');
+    contenedor.setAttribute(
+      'aria-label',
+      `Puntuación promedio ${valor.toFixed(1)} de 5 sobre ${cantidad} puntuaciones`,
+    );
+
+    const abejas = this.document.createElement('span');
+    abejas.setAttribute('aria-hidden', 'true');
+    abejas.style.cssText = 'display:flex;gap:2px;line-height:1';
+    for (const llena of abejasMapa(valor)) {
+      const abeja = this.document.createElement('span');
+      abeja.textContent = '🐝';
+      if (!llena) {
+        abeja.style.cssText = 'filter:grayscale(1);opacity:0.22';
+      }
+      abejas.append(abeja);
+    }
+
+    const texto = this.document.createElement('span');
+    texto.textContent = `${valor.toFixed(1)} / 5 · ${cantidad} puntuaciones`;
+    texto.style.color = 'var(--accent)';
+    texto.style.fontSize = 'var(--font-size-sm)';
+
+    contenedor.append(abejas, texto);
+    return contenedor;
+  }
+
+  /** Los siete días en orden: abiertos en acento, cerrados tachados. */
+  private crearDiasVentana(sucursal: SucursalMapaDTO): HTMLElement {
+    const dias = diasMapa(sucursal);
+    const abiertos = dias.filter((dia) => dia.abierto).map((dia) => dia.abreviatura);
+    const cerrados = dias
+      .filter((dia) => !dia.abierto)
+      .map((dia) => dia.abreviatura);
+    const contenedor = this.document.createElement('div');
+    contenedor.setAttribute('role', 'group');
+    contenedor.setAttribute(
+      'aria-label',
+      `Días de apertura: abiertos ${abiertos.join(', ') || 'ninguno'}; cerrados ${cerrados.join(', ') || 'ninguno'}`,
+    );
+    contenedor.style.cssText = [
+      'display:flex',
+      'flex-wrap:wrap',
+      'align-items:center',
+      'gap:var(--space-1)',
+      'font-size:var(--font-size-sm)',
+    ].join(';');
+
+    dias.forEach((dia, indice) => {
+      if (indice > 0) {
+        contenedor.append(this.document.createTextNode(' · '));
+      }
+      const etiqueta = this.document.createElement('span');
+      etiqueta.textContent = dia.abreviatura;
+      etiqueta.style.cssText = dia.abierto
+        ? 'color:var(--accent);font-weight:700'
+        : 'color:var(--muted);text-decoration:line-through;opacity:0.6';
+      contenedor.append(etiqueta);
+    });
+
+    return contenedor;
   }
 
   private estilizarBotonVentana(
