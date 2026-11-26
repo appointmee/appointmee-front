@@ -417,6 +417,7 @@ describe('US-MAP-07 · indicador del cliente', () => {
     expect(cliente.opciones['title']).toBe('Tu ubicación');
     expect(cliente.opciones['zIndex']).toBe(1000);
     expect(cliente.opciones['icon']).toBe(iconoCliente);
+    expect(motor.origenCliente).toEqual({ lat: -34.55, lng: -58.4 });
     expect(mapa.centros.at(-1)).toEqual({ lat: -34.55, lng: -58.4 });
 
     motor.actualizar([sucursal(1, -34.6)], contenido, icono);
@@ -438,9 +439,11 @@ describe('US-MAP-07 · indicador del cliente', () => {
       lat: -34.56,
       lng: -58.41,
     });
+    expect(motor.origenCliente).toEqual({ lat: -34.56, lng: -58.41 });
 
     motor.destruir();
     expect(marcadores[1].removido).toBe(true);
     expect(motor.ubicacionClienteVisible).toBe(false);
+    expect(motor.origenCliente).toBeNull();
   });
 });

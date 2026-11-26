@@ -495,6 +495,9 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
       'destination',
     );
     expect(destino).toBe('-34.6,-58.3');
+    expect(
+      new URL(abrir.mock.calls[0][0] as string).searchParams.has('origin'),
+    ).toBe(false);
 
     botones[0].click();
     fixture.detectChanges();
@@ -787,5 +790,24 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
     }
 
     expect(obtenerPosicion).toHaveBeenCalledTimes(3);
+  });
+
+  it('usa la ubicación compartida como origen al navegar hasta una sucursal', async () => {
+    await crear();
+    await revelar();
+    await confirmarUbicacion();
+    const abrir = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    marcadores[0].listener?.();
+    fixture.detectChanges();
+    const botones = (ventana.contenido as HTMLElement).querySelectorAll(
+      'button',
+    );
+    botones[1].click();
+
+    const url = new URL(abrir.mock.calls[0][0] as string);
+    expect(url.searchParams.get('origin')).toBe('-34.55,-58.4');
+    expect(url.searchParams.get('destination')).toBe('-34.6,-58.3');
+    expect(url.searchParams.get('api')).toBe('1');
   });
 });
