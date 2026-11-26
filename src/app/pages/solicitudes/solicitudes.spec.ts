@@ -6,7 +6,21 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { SolicitudEmpleadoDetalleDTO } from '../../models/solicitud-empleado';
 import { SolicitudEmpleadorDetalleDTO } from '../../models/solicitud-empleador';
 import { authService } from '../../services/auth-service';
+import { googlePlacesService } from '../../services/google-places-service';
 import { Solicitudes } from './solicitudes';
+
+const DIRECCION =
+  '25 de Mayo 2423, B7600GWE Mar del Plata, Provincia de Buenos Aires, Argentina';
+
+const UBICACIONES = [
+  {
+    id: 7,
+    direccion: DIRECCION,
+    latitud: -34.6037,
+    longitud: -58.3816,
+    googlePlaceId: 'ChIJ_solicitudes',
+  },
+];
 
 const SOLICITUDES = [
   { id: 10, nombreUsuario: 'Ana', apellidoUsuario: 'Pérez', fechaSolicitud: '2026-11-01' },
@@ -40,6 +54,7 @@ function detalle(
       email: 'ana@example.com',
       urlFotoPerfil: null,
     },
+    ubicaciones: UBICACIONES,
   };
 }
 
@@ -85,6 +100,13 @@ describe('Solicitudes · empleador y empleo', () => {
   let backend: HttpTestingController;
   let descriptorShowModal: PropertyDescriptor | undefined;
   const auth = { tieneAlgunRol: vi.fn<(...roles: string[]) => boolean>() };
+  const lugares = {
+    iniciarSesion: vi.fn(),
+    buscar: vi.fn(),
+    obtenerDetalles: vi.fn(),
+    estado: () => 'listo',
+    fallo: () => null,
+  };
 
   const sinRoles = (): boolean => false;
   const soloCliente = (...roles: string[]): boolean => roles.includes('CLIENTE');
@@ -94,6 +116,17 @@ describe('Solicitudes · empleador y empleo', () => {
   beforeEach(async () => {
     vi.resetAllMocks();
     auth.tieneAlgunRol.mockImplementation(sinRoles);
+    lugares.iniciarSesion.mockResolvedValue({ token: 1 });
+    lugares.buscar.mockResolvedValue([
+      { id: 'ChIJ_solicitudes', descripcion: DIRECCION },
+    ]);
+    lugares.obtenerDetalles.mockResolvedValue({
+      direccion: DIRECCION,
+      latitud: -34.6037,
+      longitud: -58.3816,
+      googlePlaceId: 'ChIJ_solicitudes',
+    });
+
     descriptorShowModal = Object.getOwnPropertyDescriptor(
       HTMLDialogElement.prototype,
       'showModal',
@@ -113,6 +146,7 @@ describe('Solicitudes · empleador y empleo', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: authService, useValue: auth },
+        { provide: googlePlacesService, useValue: lugares },
       ],
     }).compileComponents();
 
@@ -123,6 +157,7 @@ describe('Solicitudes · empleador y empleo', () => {
   afterEach(() => {
     fixture.destroy();
     backend.verify();
+    vi.useRealTimers();
     document.body.classList.remove('modal-abierto');
 
     if (descriptorShowModal) {
@@ -219,6 +254,31 @@ describe('Solicitudes · empleador y empleo', () => {
     );
   }
 
+  /** Selecciona una sugerencia real de Places en el modal ya abierto. */
+  async function agregarUbicacion(): Promise<void> {
+    const host = fixture.nativeElement as HTMLElement;
+    vi.useFakeTimers();
+
+    const campo = host.querySelector<HTMLInputElement>('#solicitud-direccion')!;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(
+      campo,
+      DIRECCION,
+    );
+    campo.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+
+    await vi.advanceTimersByTimeAsync(400);
+    fixture.detectChanges();
+
+    const opcion = host.querySelector<HTMLElement>('[role="option"]');
+    expect(opcion).not.toBeNull();
+    opcion!.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+    vi.useRealTimers();
+  }
+
   it('muestra las últimas 3 solicitudes, el acceso al historial y explica el panel de empleo', () => {
     responderLista(
       SOLICITUDES,
@@ -249,6 +309,18 @@ describe('Solicitudes · empleador y empleo', () => {
     expect(contenido).not.toContain('Próximamente');
     expect(host.querySelector('app-solicitud-empleado-lista')).toBeNull();
     expect(backend.match((request) => request.url.endsWith('/recibidas'))).toHaveLength(0);
+
+    host.querySelector<HTMLButtonElement>('.solicitud__alternar')?.click();
+    fixture.detectChanges();
+    const direccionMostrada = host.querySelector('.detalle__ubicacion-direccion')?.textContent?.trim();
+    expect(direccionMostrada).toBe('25 de Mayo 2423, Mar del Plata');
+    expect(host.textContent).not.toContain('B7600GWE');
+    expect(host.textContent).not.toContain('Provincia de Buenos Aires');
+
+    const enlace = host.querySelector<HTMLAnchorElement>('.detalle__ubicacion-mapa');
+    expect(enlace?.textContent).toContain('Ver en Google Maps');
+    expect(new URL(enlace!.href).searchParams.get('query_place_id')).toBe('ChIJ_solicitudes');
+    expect(enlace!.target).toBe('_blank');
   });
 
   it('para un cliente muestra las últimas 3 invitaciones, su estado y el acceso al historial', () => {
@@ -334,7 +406,7 @@ describe('Solicitudes · empleador y empleo', () => {
     expect(host.querySelector('.estado--error')).toBeNull();
   });
 
-  it('abre el modal, valida el mínimo y no duplica el envío', () => {
+  it('abre el modal, valida el mínimo, exige ubicación y envía el payload completo', async () => {
     responderLista([]);
 
     const host = fixture.nativeElement as HTMLElement;
@@ -364,13 +436,26 @@ describe('Solicitudes · empleador y empleo', () => {
     textarea!.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
 
+    await agregarUbicacion();
+    expect(host.textContent).toContain('1/10');
+
     form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     fixture.detectChanges();
 
     const envio = backend.expectOne((request) => request.url.endsWith('/solicitar'));
     expect(envio.request.method).toBe('POST');
-    expect(envio.request.body).toEqual({ motivo: 'a'.repeat(30) });
+    expect(envio.request.body).toEqual({
+      motivo: 'a'.repeat(30),
+      ubicaciones: [
+        {
+          direccion: DIRECCION,
+          latitud: -34.6037,
+          longitud: -58.3816,
+          googlePlaceId: 'ChIJ_solicitudes',
+        },
+      ],
+    });
     envio.flush('Se registró tu solicitud');
 
     fixture.detectChanges();
@@ -380,7 +465,7 @@ describe('Solicitudes · empleador y empleo', () => {
     expect(host.textContent).toContain('Tu solicitud se envió correctamente');
   });
 
-  it('si el backend rechaza el envío conserva el modal y muestra el mensaje inline', () => {
+  it('si el backend rechaza el envío conserva el modal y muestra el mensaje inline', async () => {
     responderLista([]);
 
     const host = fixture.nativeElement as HTMLElement;
@@ -391,6 +476,9 @@ describe('Solicitudes · empleador y empleo', () => {
     const textarea = host.querySelector<HTMLTextAreaElement>('#solicitud-motivo')!;
     textarea.value = 'Quiero gestionar los turnos de mi negocio.';
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+
+    await agregarUbicacion();
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     fixture.detectChanges();
 

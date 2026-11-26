@@ -1,12 +1,47 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { googlePlacesService } from '../../services/google-places-service';
 import { SolicitudEmpleadorModal } from './solicitud-empleador-modal';
 
-describe('SolicitudEmpleadorModal', () => {
+const DIRECCIONES = [
+  'Av. Corrientes 1234, CABA, Argentina',
+  'Av. Santa Fe 3253, CABA, Argentina',
+];
+
+const DIRECCIONES_CORTAS = [
+  'Av. Corrientes 1234, CABA',
+  'Av. Santa Fe 3253, CABA',
+];
+
+describe('SolicitudEmpleadorModal · ubicaciones con Google Places', () => {
   let fixture: ComponentFixture<SolicitudEmpleadorModal>;
   let descriptorShowModal: PropertyDescriptor | undefined;
+  let fallo: string | null;
+
+  const lugares = {
+    iniciarSesion: vi.fn(),
+    buscar: vi.fn(),
+    obtenerDetalles: vi.fn(),
+    estado: () => 'listo',
+    fallo: () => fallo,
+  };
+
+  function sugerencia(texto: string) {
+    return { id: `ChIJ_${texto.replace(/\W/g, '').slice(0, 40)}`, descripcion: texto };
+  }
 
   beforeEach(async () => {
+    fallo = null;
+    vi.resetAllMocks();
+    lugares.iniciarSesion.mockResolvedValue({ token: 1 });
+    lugares.buscar.mockImplementation(async (texto: string) => [sugerencia(texto)]);
+    lugares.obtenerDetalles.mockImplementation(async (sugerenciaElegida) => ({
+      direccion: sugerenciaElegida.descripcion,
+      latitud: -34.6037,
+      longitud: -58.3816,
+      googlePlaceId: sugerenciaElegida.id,
+    }));
+
     descriptorShowModal = Object.getOwnPropertyDescriptor(
       HTMLDialogElement.prototype,
       'showModal',
@@ -18,13 +53,17 @@ describe('SolicitudEmpleadorModal', () => {
       },
     });
 
-    await TestBed.configureTestingModule({ imports: [SolicitudEmpleadorModal] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [SolicitudEmpleadorModal],
+      providers: [{ provide: googlePlacesService, useValue: lugares }],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(SolicitudEmpleadorModal);
     fixture.detectChanges();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     fixture.destroy();
     document.body.classList.remove('modal-abierto');
 
@@ -35,38 +74,298 @@ describe('SolicitudEmpleadorModal', () => {
     }
   });
 
-  function escribir(valor: string): void {
-    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
-    textarea.value = valor;
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  function raiz(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function escribir(selector: string, valor: string): void {
+    const campo = raiz().querySelector<HTMLTextAreaElement | HTMLInputElement>(selector);
+    if (!campo) throw new Error(`No se encontró el campo ${selector}`);
+
+    const proto = campo instanceof HTMLTextAreaElement
+      ? HTMLTextAreaElement.prototype
+      : HTMLInputElement.prototype;
+    Object.getOwnPropertyDescriptor(proto, 'value')!.set!.call(campo, valor);
+    campo.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
+  }
+
+  function escribirComentario(valor: string): void {
+    escribir('#solicitud-motivo', valor);
+  }
+
+  function escribirDireccion(valor: string): void {
+    escribir('#solicitud-direccion', valor);
+  }
+
+  async function buscar(texto: string): Promise<void> {
+    vi.useFakeTimers();
+    escribirDireccion(texto);
+    await vi.advanceTimersByTimeAsync(400);
+    fixture.detectChanges();
+  }
+
+  async function elegirSugerencia(indice = 0): Promise<void> {
+    const opciones = raiz().querySelectorAll<HTMLElement>('[role="option"]');
+    expect(opciones.length).toBeGreaterThan(indice);
+    opciones[indice].click();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+    vi.useRealTimers();
   }
 
   function enviar(): void {
-    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
-    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    raiz()
+      .querySelector<HTMLFormElement>('form')!
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     fixture.detectChanges();
   }
 
-  it('muestra el título, exige 20 caracteres sin espacios y envía el comentario limpio', () => {
+  function contador(): string {
+    return raiz()
+      .querySelector('.solicitud-modal__etiqueta span[aria-label*="ubicaciones"]')
+      ?.textContent?.trim() ?? '';
+  }
+
+  it('no inicializa Places al abrir el modal y exige comentario y una ubicación', () => {
+    expect(lugares.iniciarSesion).not.toHaveBeenCalled();
+    expect(lugares.buscar).not.toHaveBeenCalled();
+
     const confirmar = vi.fn();
     fixture.componentInstance.confirmar.subscribe(confirmar);
-
-    const host = fixture.nativeElement as HTMLElement;
-    expect(host.textContent).toContain('Solicitud para convertirse en empleador');
-    expect(host.querySelector('#solicitud-motivo')?.hasAttribute('required')).toBe(false);
-
-    escribir(`   ${'a'.repeat(19)}   `);
+    escribirComentario('a'.repeat(20));
     enviar();
 
     expect(confirmar).not.toHaveBeenCalled();
-    expect(host.textContent).toContain('al menos 20 caracteres');
+    expect(contador()).toBe('0/10');
+    expect(raiz().textContent).toContain('Agregá al menos una ubicación');
+    expect(raiz().querySelector('[role="alert"]')?.textContent).toContain('Revisá los campos marcados');
+    expect(raiz().querySelector('#solicitud-direccion')?.getAttribute('aria-invalid')).toBe('true');
+  });
 
-    escribir(`   ${'a'.repeat(20)}   `);
+  it('permite escribir hasta 3000 caracteres y refleja el nuevo límite', async () => {
+    const confirmar = vi.fn();
+    fixture.componentInstance.confirmar.subscribe(confirmar);
+
+    const textarea = raiz().querySelector<HTMLTextAreaElement>('#solicitud-motivo')!;
+    expect(textarea.getAttribute('maxlength')).toBe('3000');
+    expect(raiz().querySelector('.solicitud-modal__etiqueta span')?.textContent).toContain('/3000');
+    expect(raiz().textContent).toContain('Entre 20 y 3000 caracteres');
+
+    escribirComentario('a'.repeat(3000));
+    await buscar(DIRECCIONES[0]);
+    await elegirSugerencia();
+    enviar();
+
+    expect(confirmar).toHaveBeenCalledWith({
+      motivo: 'a'.repeat(3000),
+      ubicaciones: [
+        {
+          direccion: DIRECCIONES[0],
+          latitud: -34.6037,
+          longitud: -58.3816,
+          googlePlaceId: sugerencia(DIRECCIONES[0]).id,
+        },
+      ],
+    });
+  });
+
+  it('rechaza el envío con más de 3000 caracteres y muestra el error inline', async () => {
+    const confirmar = vi.fn();
+    fixture.componentInstance.confirmar.subscribe(confirmar);
+
+    escribirComentario('a'.repeat(3001));
+    await buscar(DIRECCIONES[0]);
+    await elegirSugerencia();
+    enviar();
+
+    expect(confirmar).not.toHaveBeenCalled();
+    expect(raiz().textContent).toContain('El comentario no puede superar los 3000 caracteres.');
+    expect(raiz().querySelector('#solicitud-motivo')?.getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('no guarda texto libre: solo acepta una sugerencia de Places', async () => {
+    const confirmar = vi.fn();
+    fixture.componentInstance.confirmar.subscribe(confirmar);
+
+    escribirComentario('Un comentario suficientemente largo para la prueba.');
+    escribirDireccion(DIRECCIONES[0]);
+    expect(lugares.buscar).not.toHaveBeenCalled();
+
+    enviar();
+    expect(confirmar).not.toHaveBeenCalled();
+
+    await buscar(DIRECCIONES[0]);
+    expect(lugares.iniciarSesion).toHaveBeenCalledTimes(1);
+    expect(lugares.buscar).toHaveBeenCalledWith(DIRECCIONES[0], { token: 1 });
+
+    await elegirSugerencia();
+    expect(lugares.obtenerDetalles).toHaveBeenCalledTimes(1);
+    expect(contador()).toBe('1/10');
+    expect(raiz().textContent).toContain(DIRECCIONES_CORTAS[0]);
+    expect(raiz().textContent).not.toContain('Argentina');
+  });
+
+  it('envía motivo limpio y las cuatro claves de cada ubicación elegida', async () => {
+    const confirmar = vi.fn();
+    fixture.componentInstance.confirmar.subscribe(confirmar);
+
+    escribirComentario(`   ${'a'.repeat(20)}   `);
+    await buscar(DIRECCIONES[0]);
+    await elegirSugerencia();
+
     enviar();
 
     expect(confirmar).toHaveBeenCalledTimes(1);
-    expect(confirmar).toHaveBeenCalledWith('a'.repeat(20));
+    expect(confirmar).toHaveBeenCalledWith({
+      motivo: 'a'.repeat(20),
+      ubicaciones: [
+        {
+          direccion: DIRECCIONES[0],
+          latitud: -34.6037,
+          longitud: -58.3816,
+          googlePlaceId: sugerencia(DIRECCIONES[0]).id,
+        },
+      ],
+    });
+  });
+
+  it('muestra la dirección calculada con componentes sin enviarla al backend', async () => {
+    const confirmar = vi.fn();
+    fixture.componentInstance.confirmar.subscribe(confirmar);
+    const original =
+      'GTC, Av. Pedro Luro 2335, B7600GWE Mar del Plata, Provincia de Buenos Aires, Argentina';
+    lugares.obtenerDetalles.mockResolvedValueOnce({
+      direccion: original,
+      direccionCorta: 'Av. Pedro Luro 2335, Mar del Plata',
+      latitud: -38.0056,
+      longitud: -57.5426,
+      googlePlaceId: 'ChIJ_luro',
+    });
+
+    escribirComentario('Un comentario suficientemente largo para la prueba.');
+    await buscar('Av. Pedro Luro');
+    await elegirSugerencia();
+
+    const fila = raiz().querySelector('.solicitud-modal__ubicacion-direccion');
+    expect(fila?.textContent?.trim()).toBe('Av. Pedro Luro 2335, Mar del Plata');
+    expect(fila?.textContent).not.toContain('GTC');
+    expect(raiz().querySelector('.solicitud-modal__quitar')?.getAttribute('aria-label')).toBe(
+      'Quitar la ubicación Av. Pedro Luro 2335, Mar del Plata',
+    );
+
+    enviar();
+    expect(confirmar).toHaveBeenCalledWith({
+      motivo: 'Un comentario suficientemente largo para la prueba.',
+      ubicaciones: [
+        {
+          direccion: original,
+          latitud: -38.0056,
+          longitud: -57.5426,
+          googlePlaceId: 'ChIJ_luro',
+        },
+      ],
+    });
+  });
+
+  it('permite eliminar ubicaciones y actualiza el contador', async () => {
+    await buscar(DIRECCIONES[0]);
+    await elegirSugerencia();
+
+    await buscar(DIRECCIONES[1]);
+    await elegirSugerencia();
+
+    expect(contador()).toBe('2/10');
+    const quitar = raiz().querySelectorAll<HTMLButtonElement>('.solicitud-modal__quitar');
+    expect(quitar).toHaveLength(2);
+    expect(quitar[0].getAttribute('aria-label')).toContain(DIRECCIONES_CORTAS[0]);
+
+    quitar[0].click();
+    fixture.detectChanges();
+
+    expect(contador()).toBe('1/10');
+    expect(raiz().textContent).not.toContain(DIRECCIONES_CORTAS[0]);
+    expect(raiz().textContent).toContain(DIRECCIONES_CORTAS[1]);
+  });
+
+  it('bloquea la ubicación 11 con mensaje visible y sin consultar Places', async () => {
+    for (let indice = 1; indice <= 10; indice++) {
+      await buscar(`Dirección número ${indice}, CABA`);
+      await elegirSugerencia();
+    }
+
+    expect(contador()).toBe('10/10');
+    expect(raiz().textContent).toContain('Alcanzaste el máximo de 10 ubicaciones');
+    expect(raiz().querySelector<HTMLInputElement>('#solicitud-direccion')?.readOnly).toBe(true);
+
+    const consultas = lugares.buscar.mock.calls.length;
+    vi.useFakeTimers();
+    escribirDireccion('Dirección número 11, CABA');
+    await vi.advanceTimersByTimeAsync(400);
+    fixture.detectChanges();
+
+    expect(lugares.buscar).toHaveBeenCalledTimes(consultas);
+    expect(contador()).toBe('10/10');
+  });
+
+  it('no repite la consulta de Place Details para una dirección ya agregada', async () => {
+    await buscar(DIRECCIONES[0]);
+    await elegirSugerencia();
+
+    await buscar(DIRECCIONES[0]);
+    await elegirSugerencia();
+
+    expect(lugares.obtenerDetalles).toHaveBeenCalledTimes(1);
+    expect(contador()).toBe('1/10');
+    expect(raiz().textContent).toContain('Esa ubicación ya está en la lista.');
+  });
+
+  it('navega con el teclado y confirma la sugerencia activa con Enter', async () => {
+    await buscar(DIRECCIONES[0]);
+    const input = raiz().querySelector<HTMLInputElement>('#solicitud-direccion')!;
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(input.getAttribute('aria-activedescendant')).toBe('solicitud-direccion-opcion-0');
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(contador()).toBe('1/10');
+  });
+
+  it('muestra error inline de Places y permite reintentar', async () => {
+    lugares.iniciarSesion.mockRejectedValueOnce(new Error('sin configuración'));
+    await buscar(DIRECCIONES[0]);
+
+    expect(raiz().textContent).toContain('Google Places no está disponible');
+    expect(raiz().querySelector('#solicitud-direccion')?.getAttribute('aria-invalid')).toBe('true');
+
+    raiz().querySelector<HTMLButtonElement>('.solicitud-modal__reintentar button')?.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(lugares.iniciarSesion).toHaveBeenCalledTimes(2);
+    expect(raiz().querySelectorAll('[role="option"]')).toHaveLength(1);
+  });
+
+  it('limpia el error del backend al corregir el comentario', () => {
+    const limpiarError = vi.fn();
+    fixture.componentInstance.limpiarError.subscribe(limpiarError);
+    fixture.componentRef.setInput('error', 'Ya tenés una solicitud pendiente.');
+    fixture.detectChanges();
+
+    expect(raiz().querySelector('[role="alert"]')?.textContent).toContain(
+      'Ya tenés una solicitud pendiente.',
+    );
+
+    escribirComentario('Un comentario suficientemente largo para corregir el error.');
+    expect(limpiarError).toHaveBeenCalledTimes(1);
   });
 
   it('bloquea el cierre y muestra el estado de envío mientras se procesa', () => {
@@ -75,36 +374,16 @@ describe('SolicitudEmpleadorModal', () => {
     fixture.componentRef.setInput('enviando', true);
     fixture.detectChanges();
 
-    const host = fixture.nativeElement as HTMLElement;
-    const submit = host.querySelector('button[type="submit"]') as HTMLButtonElement;
-    const cancelar = host.querySelector('.solicitud-modal__cancelar') as HTMLButtonElement;
-    const textarea = host.querySelector('textarea') as HTMLTextAreaElement;
+    const submit = raiz().querySelector<HTMLButtonElement>('button[type="submit"]');
+    const cancelar = raiz().querySelector<HTMLButtonElement>('.solicitud-modal__cancelar');
 
-    expect(submit.disabled).toBe(true);
-    expect(submit.textContent).toContain('Enviando');
-    expect(cancelar.disabled).toBe(true);
-    expect(textarea.readOnly).toBe(true);
+    expect(submit?.disabled).toBe(true);
+    expect(submit?.textContent).toContain('Enviando');
+    expect(cancelar?.disabled).toBe(true);
+    expect(raiz().querySelector<HTMLTextAreaElement>('#solicitud-motivo')?.readOnly).toBe(true);
 
-    cancelar.click();
+    cancelar?.click();
     fixture.detectChanges();
-
     expect(cerrar).not.toHaveBeenCalled();
-  });
-
-  it('muestra el error inline y lo limpia al corregir el comentario', () => {
-    const limpiarError = vi.fn();
-    fixture.componentInstance.limpiarError.subscribe(limpiarError);
-
-    fixture.componentRef.setInput('error', 'Ya tenés una solicitud pendiente.');
-    fixture.detectChanges();
-
-    const host = fixture.nativeElement as HTMLElement;
-    expect(host.querySelector('[role="alert"]')?.textContent).toContain(
-      'Ya tenés una solicitud pendiente.',
-    );
-
-    escribir('Un comentario suficientemente largo para corregir el error.');
-
-    expect(limpiarError).toHaveBeenCalledTimes(1);
   });
 });

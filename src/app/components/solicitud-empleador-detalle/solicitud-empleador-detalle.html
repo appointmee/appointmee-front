@@ -46,4 +46,39 @@
       </dd>
     </div>
   </dl>
+
+  <section class="detalle__ubicaciones" aria-label="Ubicaciones solicitadas">
+    <div class="detalle__ubicaciones-cabecera">
+      <h4>Ubicaciones solicitadas</h4>
+      <span>{{ ubicaciones().length }}</span>
+    </div>
+
+    @if (ubicaciones().length > 0) {
+      <ol class="detalle__ubicaciones-lista">
+        @for (ubicacion of ubicaciones(); track $index) {
+          <li class="detalle__ubicacion">
+            <span class="detalle__ubicacion-direccion">{{ direccionCorta(ubicacion) }}</span>
+            @if (urlMapa(ubicacion); as url) {
+              <a
+                class="detalle__ubicacion-mapa"
+                [href]="url"
+                target="_blank"
+                rel="noopener noreferrer"
+                [attr.aria-label]="'Abrir ' + direccionCorta(ubicacion) + ' en Google Maps en una pestaña nueva'"
+              >
+                <span>Ver en Google Maps</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M14 4h6v6M20 4l-9 9M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6" />
+                </svg>
+              </a>
+            }
+          </li>
+        }
+      </ol>
+    } @else {
+      <p class="detalle__ubicaciones-vacio">
+        Esta solicitud no tiene ubicaciones registradas.
+      </p>
+    }
+  </section>
 </div>

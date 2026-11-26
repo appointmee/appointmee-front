@@ -27,6 +27,15 @@ function detalle(id: number, estado: SolicitudEmpleadorDetalleDTO['estado']): So
       email: 'ana@example.com',
       urlFotoPerfil: null,
     },
+    ubicaciones: [
+      {
+        id: 9,
+        direccion: '25 de Mayo 2423, B7600GWE Mar del Plata, Provincia de Buenos Aires, Argentina',
+        latitud: -34.5889,
+        longitud: -58.3951,
+        googlePlaceId: 'ChIJ_historial',
+      },
+    ],
   };
 }
 
@@ -89,7 +98,16 @@ describe('Historial completo de solicitudes', () => {
 
     expect(host.textContent).toContain('Motivo de la solicitud 21');
     expect(host.textContent).toContain('Rechazada');
+    const direccionMostrada = host.querySelector('.detalle__ubicacion-direccion')?.textContent?.trim();
+    expect(direccionMostrada).toBe('25 de Mayo 2423, Mar del Plata');
+    expect(host.textContent).not.toContain('B7600GWE');
+    expect(host.textContent).not.toContain('Provincia de Buenos Aires');
     expect(host.querySelector('.solicitud__cargando')).toBeNull();
+
+    const enlace = host.querySelector<HTMLAnchorElement>('.detalle__ubicacion-mapa');
+    expect(enlace?.textContent).toContain('Ver en Google Maps');
+    expect(new URL(enlace!.href).searchParams.get('query_place_id')).toBe('ChIJ_historial');
+    expect(enlace!.target).toBe('_blank');
 
     alternar();
     alternar();

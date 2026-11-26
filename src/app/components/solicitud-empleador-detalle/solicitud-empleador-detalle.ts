@@ -2,9 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 import {
   SolicitudEmpleadorDetalleDTO,
+  UbicacionGuardadaSolicitudEmpleadorDTO,
   claseEstadoSolicitud,
+  direccionVisibleUbicacion,
   etiquetaEstadoSolicitud,
   formatearFechaSolicitud,
+  urlGoogleMapsUbicacion,
 } from '../../models/solicitud-empleador';
 
 export interface SolicitanteSolicitudEmpleador {
@@ -45,4 +48,26 @@ export class SolicitudEmpleadorDetalle {
     const solicitante = this.solicitante();
     return solicitante ? solicitante.email?.trim() || null : this.detalle().usuario.email;
   });
+
+  /** Ubicaciones ya guardadas: el DTO original se usa para los enlaces. */
+  protected readonly ubicaciones = computed(
+    () => this.detalle().ubicaciones ?? [],
+  );
+
+  /** Solo cambia la presentación: calle, altura y ciudad. */
+  protected direccionCorta(
+    ubicacion: UbicacionGuardadaSolicitudEmpleadorDTO,
+  ): string {
+    return direccionVisibleUbicacion(ubicacion);
+  }
+
+  /**
+   * Enlace público construido solo con los datos persistidos. No consulta
+   * Places ni Geocoding al abrir el detalle.
+   */
+  protected urlMapa(
+    ubicacion: UbicacionGuardadaSolicitudEmpleadorDTO,
+  ): string | null {
+    return urlGoogleMapsUbicacion(ubicacion);
+  }
 }
