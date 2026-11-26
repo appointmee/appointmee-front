@@ -96,6 +96,10 @@ export class TurnosAsignadosSucursal {
   );
   private readonly sucursalValida =
     Number.isInteger(this.sucursalId) && this.sucursalId > 0;
+  private readonly turnoIdDelEnlace = this.parseId(
+    this.route.snapshot.queryParamMap.get('turnoId'),
+  );
+  private enlaceAbierto = false;
 
   private sucursalSub?: Subscription;
 
@@ -217,6 +221,20 @@ export class TurnosAsignadosSucursal {
     this.error.set(null);
     this.cargando.set(false);
     this.reintentando.set(false);
+
+    if (!this.enlaceAbierto && this.turnoIdDelEnlace !== null) {
+      const turno = ordenados.find((item) => item.id === this.turnoIdDelEnlace);
+      if (turno) {
+        this.enlaceAbierto = true;
+        this.abrirDetalle(turno);
+      }
+    }
+  }
+
+  private parseId(valor: string | null): number | null {
+    if (!valor) return null;
+    const id = Number(valor);
+    return Number.isInteger(id) && id > 0 ? id : null;
   }
 
   private cargarSucursal(): void {

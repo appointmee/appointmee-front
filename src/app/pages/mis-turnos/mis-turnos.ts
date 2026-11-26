@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   Observable,
   Subject,
@@ -103,6 +103,11 @@ export class MisTurnos {
   private readonly reseniasApi = inject(reseniaService);
   private readonly pagosApi = inject(pagoService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly turnoIdDelEnlace = this.parseId(
+    this.route.snapshot.queryParamMap.get('turnoId'),
+  );
+  private enlaceAbierto = false;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly recargar = new Subject<void>();
   private readonly formatoMoneda = new Intl.NumberFormat('es-AR', {
@@ -502,6 +507,22 @@ export class MisTurnos {
     this.error.set(null);
     this.cargando.set(false);
     this.reintentando.set(false);
+
+    // Deep-link desde el centro de notificaciones: ?turnoId= abre el detalle del turno.
+    const objetivo = this.turnoIdDelEnlace;
+    if (!this.enlaceAbierto && objetivo !== null) {
+      const turno = ordenados.find((item) => item.id === objetivo);
+      if (turno) {
+        this.enlaceAbierto = true;
+        this.abrirDetalle(turno);
+      }
+    }
+  }
+
+  private parseId(valor: string | null): number | null {
+    if (!valor) return null;
+    const id = Number(valor);
+    return Number.isInteger(id) && id > 0 ? id : null;
   }
 
   private cargarDetalle(id: number, reintento = false): void {

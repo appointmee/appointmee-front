@@ -32,8 +32,12 @@ import {
 
 /** A dónde lleva cada notificación al abrirla. */
 type DestinoNotificacion =
-  | { readonly tipo: 'ruta'; readonly ruta: string }
-  | { readonly tipo: 'chat' };
+  | {
+      readonly tipo: 'ruta';
+      readonly ruta: string;
+      readonly queryParams?: Readonly<Record<string, number>>;
+    }
+  | { readonly tipo: 'chat'; readonly conversacionId: number | null };
 
 interface NotificacionVista extends NotificacionDTO {
   readonly destino: DestinoNotificacion;
@@ -265,10 +269,17 @@ export class NotificacionesCentro {
     }
 
     this.cerrarNotificaciones();
-    if (notificacion.destino.tipo === 'chat') {
-      this.chatWidget.abrirConEnfoque();
+    const destino = notificacion.destino;
+    if (destino.tipo === 'chat') {
+      if (destino.conversacionId !== null) {
+        this.chatWidget.abrirConversacion(destino.conversacionId);
+      } else {
+        this.chatWidget.abrirConEnfoque();
+      }
     } else {
-      void this.router.navigate([notificacion.destino.ruta]);
+      void this.router.navigate([destino.ruta], {
+        queryParams: destino.queryParams ?? {},
+      });
     }
   }
 
@@ -296,18 +307,48 @@ export class NotificacionesCentro {
     return {
       ...notificacion,
       leida: notificacion.leida || this.leidasEnSesion().has(notificacion.id),
-      destino: this.destinoDe(notificacion.tipo),
+      destino: this.destinoDe(notificacion),
     };
   }
 
-  private destinoDe(tipo: TipoNotificacion): DestinoNotificacion {
-    switch (tipo) {
+  /** Usa el ID del backend cuando viene; si falta, mantiene la ruta genérica por tipo. */
+  private destinoDe(notificacion: NotificacionDTO): DestinoNotificacion {
+    const id = notificacion.destinoId ?? null;
+    const sucursalId = notificacion.sucursalId ?? null;
+    const parametros = (clave: string): Record<string, number> => {
+      const valores: Record<string, number> = { [clave]: id as number };
+      if (sucursalId !== null) valores['sucursalId'] = sucursalId;
+      return valores;
+    };
+
+    if (id !== null && notificacion.destinoTipo) {
+      switch (notificacion.destinoTipo) {
+        case 'TURNO':
+          return {
+            tipo: 'ruta',
+            ruta: this.rutaTurnos(),
+            queryParams: parametros('turnoId'),
+          };
+        case 'PAGO':
+          return {
+            tipo: 'ruta',
+            ruta: '/pago/resultado',
+            queryParams: parametros('turnoId'),
+          };
+        case 'SOLICITUD':
+          return { tipo: 'ruta', ruta: '/solicitudes', queryParams: { solicitudId: id } };
+        case 'CONVERSACION':
+          return { tipo: 'chat', conversacionId: id };
+      }
+    }
+
+    switch (notificacion.tipo) {
       case 'PAGO':
         return { tipo: 'ruta', ruta: '/pago/resultado' };
       case 'SOLICITUD':
         return { tipo: 'ruta', ruta: '/solicitudes' };
       case 'MENSAJE':
-        return { tipo: 'chat' };
+        return { tipo: 'chat', conversacionId: null };
       case 'RESERVA':
       case 'CANCELACION':
       case 'RECORDATORIO':

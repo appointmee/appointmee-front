@@ -40,7 +40,7 @@ export class ChatWidget implements OnDestroy {
   protected readonly puedeChatear = computed(
     () =>
       this.auth.autenticado() &&
-      this.auth.tieneAlgunRol('CLIENTE', 'EMPLEADO', 'EMPLEADOR'),
+      this.auth.tieneAlgunRol('CLIENTE', 'EMPLEADO', 'EMPLEADOR', 'ADMINISTRADOR'),
   );
 
   protected readonly etiquetaBurbuja = computed(() =>
