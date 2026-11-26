@@ -31,7 +31,6 @@ import {
 } from '../../shared/notificaciones/destino-notificacion';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
-  DsBadgeComponent,
   DsEmptyStateComponent,
   DsPaginationComponent,
   DsSkeletonComponent,
@@ -53,7 +52,6 @@ type ResultadoLista =
   selector: 'app-notificaciones',
   imports: [
     DsButtonComponent,
-    DsBadgeComponent,
     DsSkeletonComponent,
     DsEmptyStateComponent,
     DsPaginationComponent,

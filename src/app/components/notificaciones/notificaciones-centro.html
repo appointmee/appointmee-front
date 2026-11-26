@@ -168,13 +168,7 @@
                     <time [attr.datetime]="notificacion.fecha">
                       {{ fechaDe(notificacion.fecha) }}
                     </time>
-                    <span>{{ etiquetaTipo(notificacion.tipo) }}</span>
                   </span>
-                </span>
-                <span class="notificacion__estado">
-                  <ds-badge [variant]="notificacion.leida ? 'success' : 'danger'">
-                    {{ notificacion.leida ? 'Leída' : 'Sin leer' }}
-                  </ds-badge>
                 </span>
               </button>
                 @if (!notificacion.leida) {
@@ -186,7 +180,9 @@
                     [attr.aria-label]="'Marcar como leída: ' + notificacion.titulo"
                     (click)="marcarLeida(notificacion)"
                   >
-                    {{ idEnProceso() === notificacion.id ? 'Marcando…' : 'Marcar como leída' }}
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconos.check" />
+                    </svg>
                   </button>
                 }
               </div>

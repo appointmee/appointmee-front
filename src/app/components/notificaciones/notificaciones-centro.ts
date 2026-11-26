@@ -26,14 +26,12 @@ import { notificacionService } from '../../services/notificacion-service';
 import {
   ariaNotificacion,
   destinoDeNotificacion,
-  etiquetaTipoNotificacion,
   formatearFechaNotificacion,
   iconoTipoNotificacion,
   type DestinoNotificacion,
 } from '../../shared/notificaciones/destino-notificacion';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
-  DsBadgeComponent,
   DsEmptyStateComponent,
   DsSkeletonComponent,
 } from '../../shared/ui/misc/misc.component';
@@ -49,13 +47,13 @@ const ICONOS = {
   campana: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21a2 2 0 0 0 4 0',
   cerrar: 'M18 6 6 18M6 6l12 12',
   alerta: 'M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+  check: 'M20 6 9 17l-5-5',
 };
 
 @Component({
   selector: 'app-notificaciones-centro',
   imports: [
     DsButtonComponent,
-    DsBadgeComponent,
     DsEmptyStateComponent,
     DsSkeletonComponent,
     RouterLink,
@@ -347,10 +345,6 @@ export class NotificacionesCentro {
         queryParams: destino.queryParams ?? {},
       });
     }
-  }
-
-  protected etiquetaTipo(tipo: TipoNotificacion): string {
-    return etiquetaTipoNotificacion(tipo);
   }
 
   protected iconoTipo(tipo: TipoNotificacion): string {
