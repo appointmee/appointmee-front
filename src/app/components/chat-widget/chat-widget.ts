@@ -47,6 +47,9 @@ export class ChatWidget implements OnDestroy {
     this.widget.abierto() ? 'Cerrar mensajes' : 'Abrir mensajes',
   );
 
+  /** Contenedor detrás de la burbuja que se expande hacia la izquierda al pasar el mouse. */
+  protected readonly expandido = signal(false);
+
   /** Animación de bienvenida: una abeja vuela hasta la burbuja del chat. */
   protected readonly abejaVisible = signal(false);
   private animacionIniciada = false;
@@ -71,8 +74,20 @@ export class ChatWidget implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    const boton = this.burbuja();
-    if (boton) gsap.killTweensOf(boton);
+    const elementos = [this.burbuja(), this.peek(), this.abejaDelPeek()].filter(
+      (elemento): elemento is HTMLElement => !!elemento,
+    );
+    gsap.killTweensOf(elementos);
+  }
+
+  @HostListener('mouseenter')
+  protected onWidgetEnter(): void {
+    if (this.puedeChatear() && !this.widget.abierto()) this.desplegar();
+  }
+
+  @HostListener('mouseleave')
+  protected onWidgetLeave(): void {
+    this.plegar();
   }
 
   protected onBurbujaEnter(): void {
@@ -101,6 +116,7 @@ export class ChatWidget implements OnDestroy {
 
     if (this.abejaVisible()) this.marcarAbejaVista();
     this.abejaVisible.set(false);
+    this.plegar(true);
     this.widget.abrirConEnfoque();
   }
 
@@ -109,6 +125,64 @@ export class ChatWidget implements OnDestroy {
       this.abejaVisible.set(false);
       this.marcarAbejaVista();
     }
+  }
+
+  private peek(): HTMLElement | null {
+    return this.host.nativeElement.querySelector<HTMLElement>('.chat-widget__peek-wrap');
+  }
+
+  private abejaDelPeek(): HTMLElement | null {
+    return this.host.nativeElement.querySelector<HTMLElement>('.chat-widget__peek-abeja');
+  }
+
+  private desplegar(): void {
+    if (this.expandido()) return;
+
+    const peek = this.peek();
+    const abeja = this.abejaDelPeek();
+    if (!peek) return;
+
+    this.expandido.set(true);
+    const ancho = Math.min(220, window.innerWidth - 80);
+    gsap.killTweensOf([peek, abeja]);
+
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      gsap.set(peek, { width: ancho, opacity: 1 });
+      gsap.set(abeja, { opacity: 1, x: 0, rotation: 0 });
+      return;
+    }
+
+    gsap.fromTo(
+      peek,
+      { width: 0, opacity: 0 },
+      { width: ancho, opacity: 1, duration: 0.45, ease: 'power3.out' },
+    );
+    if (abeja) {
+      gsap.fromTo(
+        abeja,
+        { x: -18, rotation: -35, opacity: 0 },
+        { x: 0, rotation: 0, opacity: 1, duration: 0.5, ease: 'back.out(2)' },
+      );
+    }
+  }
+
+  private plegar(inmediato: boolean = false): void {
+    if (!this.expandido()) return;
+
+    const peek = this.peek();
+    const abeja = this.abejaDelPeek();
+    this.expandido.set(false);
+    if (!peek) return;
+
+    gsap.killTweensOf([peek, abeja]);
+    if (inmediato || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      gsap.set(peek, { width: 0, opacity: 0 });
+      gsap.set(abeja, { opacity: 0, x: 0, rotation: 0 });
+      return;
+    }
+
+    gsap.to(peek, { width: 0, opacity: 0, duration: 0.3, ease: 'power2.in' });
+    if (abeja) gsap.to(abeja, { x: -10, opacity: 0, duration: 0.2 });
   }
 
   private animarBurbuja(vars: gsap.TweenVars): void {
