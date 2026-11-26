@@ -60,6 +60,13 @@
       [attr.aria-label]="etiquetaBurbuja()"
       [attr.aria-expanded]="widget.abierto()"
       [attr.aria-controls]="widget.abierto() ? 'chat-widget-panel' : null"
+      (mouseenter)="onBurbujaEnter()"
+      (mouseleave)="onBurbujaLeave()"
+      (focus)="onBurbujaEnter()"
+      (blur)="onBurbujaLeave()"
+      (pointerdown)="onBurbujaDown()"
+      (pointerup)="onBurbujaUp()"
+      (pointercancel)="onBurbujaLeave()"
       (click)="toggle()"
     >
       <svg viewBox="0 0 24 24" aria-hidden="true">

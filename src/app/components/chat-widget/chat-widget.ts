@@ -3,12 +3,14 @@ import {
   Component,
   ElementRef,
   HostListener,
+  OnDestroy,
   afterRenderEffect,
   computed,
   effect,
   inject,
   signal,
 } from '@angular/core';
+import { gsap } from 'gsap';
 
 import { Chat } from '../../pages/chat/chat';
 import { authService } from '../../services/auth-service';
@@ -27,7 +29,7 @@ const CLAVE_ABEJA_VISTA = 'appointmee.chat-abeja-vista';
   styleUrl: './chat-widget.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChatWidget {
+export class ChatWidget implements OnDestroy {
   private readonly auth = inject(authService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -68,6 +70,27 @@ export class ChatWidget {
     });
   }
 
+  ngOnDestroy(): void {
+    const boton = this.burbuja();
+    if (boton) gsap.killTweensOf(boton);
+  }
+
+  protected onBurbujaEnter(): void {
+    this.animarBurbuja({ scale: 1.12, rotation: -8, duration: 0.35, ease: 'back.out(2)' });
+  }
+
+  protected onBurbujaLeave(): void {
+    this.animarBurbuja({ scale: 1, rotation: 0, duration: 0.35, ease: 'power2.out' });
+  }
+
+  protected onBurbujaDown(): void {
+    this.animarBurbuja({ scale: 0.88, duration: 0.12, ease: 'power2.in', overwrite: true });
+  }
+
+  protected onBurbujaUp(): void {
+    this.animarBurbuja({ scale: 1.12, rotation: -8, duration: 0.3, ease: 'back.out(2)' });
+  }
+
   protected toggle(): void {
     if (!this.puedeChatear()) return;
 
@@ -86,6 +109,12 @@ export class ChatWidget {
       this.abejaVisible.set(false);
       this.marcarAbejaVista();
     }
+  }
+
+  private animarBurbuja(vars: gsap.TweenVars): void {
+    const boton = this.burbuja();
+    if (!boton || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    gsap.to(boton, vars);
   }
 
   private mostrarAbejaSiCorresponde(): void {
