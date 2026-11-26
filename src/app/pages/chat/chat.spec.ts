@@ -211,14 +211,6 @@ describe('Chat (US-CHAT-04)', () => {
     expect(html.querySelector('[role="status"]')).toBeTruthy();
   });
 
-  it('explica la ventana de chat en el listado', () => {
-    flushLista();
-
-    expect(html.querySelector('.conversaciones__ayuda')?.textContent).toContain(
-      'durante el turno y hasta 3 días después',
-    );
-  });
-
   it('explica que la conversación venció cuando el backend responde 403', () => {
     backend.expectOne((request) => request.url.endsWith('/conversaciones')).flush(
       { message: 'boom' },
@@ -229,6 +221,7 @@ describe('Chat (US-CHAT-04)', () => {
     expect(html.querySelector('[role="alert"]')?.textContent).toContain(
       'ya no está disponible',
     );
+    expect(html.textContent).not.toContain('3 días');
     expect(html.textContent).not.toContain('boom');
   });
 
