@@ -35,7 +35,12 @@ function comparisonKey(value: string): string {
 
 @Component({
   selector: 'app-home',
-  imports: [DsInputComponent, DsButtonComponent, ReactiveFormsModule, RouterLink],
+  imports: [
+    DsInputComponent,
+    DsButtonComponent,
+    ReactiveFormsModule,
+    RouterLink,
+  ],
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

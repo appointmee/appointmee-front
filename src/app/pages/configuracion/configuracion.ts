@@ -13,19 +13,28 @@ import { verificacionPendienteService } from '../../services/verificacion-pendie
 import { authService } from '../../services/auth-service';
 import { verificacionService } from '../../services/verificacion-service';
 import { CambiarPassword } from '../../components/cambiar-password/cambiar-password';
+import { Creditos } from '../../components/creditos/creditos';
 import { EliminarCuenta } from '../../components/eliminar-cuenta/eliminar-cuenta';
 
 import { EditarPerfil } from '../../components/editar-perfil/editar-perfil';
 
 @Component({
-  imports: [DsInputComponent, DsButtonComponent, CambiarPassword, EliminarCuenta, EditarPerfil],
+  imports: [
+    Creditos,
+    DsInputComponent,
+    DsButtonComponent,
+    CambiarPassword,
+    EliminarCuenta,
+    EditarPerfil,
+  ],
   selector: 'app-configuracion',
   templateUrl: './configuracion.html',
   styleUrl: './configuracion.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Configuracion implements OnInit {
-  seccion = signal<'perfil' | 'verificacion' | 'password' | 'eliminar'>('verificacion');
+  seccion = signal<'cuenta' | 'creditos'>('cuenta');
+  seccionCuenta = signal<'verificacion' | 'perfil' | 'password' | 'eliminar'>('verificacion');
 
   auth = inject(authService);
   private verificacion = inject(verificacionService);
@@ -94,6 +103,12 @@ export class Configuracion implements OnInit {
 
 
   constructor() {
+    effect(() => {
+      if (!this.auth.autenticado() && this.seccionCuenta() !== 'verificacion') {
+        this.seccionCuenta.set('verificacion');
+      }
+    });
+
     effect(onCleanup => {
       const codigo = this.verificacionModel().codigo;
 
@@ -122,7 +137,8 @@ export class Configuracion implements OnInit {
 
   ngOnInit(): void {
     if (this.auth.autenticado() && this.route.snapshot.queryParamMap.get('seccion') === 'perfil') {
-      this.seccion.set('perfil');
+      this.seccion.set('cuenta');
+      this.seccionCuenta.set('perfil');
     }
     this.actualizarVigencia(true);
     if (!this.verificada() && this.contextoValido() && !this.codigoEnviado() && !this.bloqueada() && this.segundosReenvio() === 0) {
