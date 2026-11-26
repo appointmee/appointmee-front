@@ -64,6 +64,9 @@
                 </span>
                 <span class="conversacion__contenido">
                   <span class="conversacion__nombre">{{ tituloConversacion(conversacion) }}</span>
+                  <span class="conversacion__interlocutor">
+                    {{ etiquetaInterlocutor(conversacion) }}
+                  </span>
                   @if (participantesConversacion(conversacion); as participantes) {
                     <span class="conversacion__participantes">{{ participantes }}</span>
                   }

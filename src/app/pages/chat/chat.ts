@@ -337,13 +337,32 @@ export class Chat implements OnDestroy {
     return `Cliente: ${conversacion.clienteNombre ?? '—'} · Profesional: ${conversacion.profesionalNombre ?? '—'}`;
   }
 
+  /** El backend usa "Sin interlocutor" como fallback cuando no hay otra parte. */
+  etiquetaInterlocutor(conversacion: ConversacionResumenChat): string {
+    return conversacion.interlocutor === 'Sin interlocutor'
+      ? 'Sin interlocutor'
+      : `Con ${conversacion.interlocutor}`;
+  }
+
   ariaLabelConversacion(conversacion: ConversacionResumenChat): string {
     const noLeidos =
       conversacion.noLeidos > 0
-        ? `${conversacion.noLeidos} mensajes no leídos.`
-        : 'Sin mensajes no leídos.';
-    const participantes = this.participantesConversacion(conversacion) ?? '';
-    return `${this.tituloConversacion(conversacion)}. ${participantes} ${noLeidos} ${conversacion.ultimoMensaje ?? 'Sin mensajes'}`;
+        ? `${conversacion.noLeidos} mensajes no leídos`
+        : 'Sin mensajes no leídos';
+    const participantes = this.participantesConversacion(conversacion);
+    const interlocutor =
+      conversacion.interlocutor === 'Sin interlocutor'
+        ? 'Sin interlocutor'
+        : `Conversación con ${conversacion.interlocutor}`;
+    return [
+      interlocutor,
+      this.tituloConversacion(conversacion),
+      ...(participantes ? [participantes] : []),
+      noLeidos,
+      conversacion.ultimoMensaje ?? 'Sin mensajes',
+    ]
+      .join('. ')
+      .concat('.');
   }
 
   private marcarLeido(conversacion: ConversacionResumenChat): void {

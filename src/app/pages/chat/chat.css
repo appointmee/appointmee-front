@@ -115,6 +115,7 @@ textarea:focus-visible {
 }
 
 .conversacion__nombre,
+.conversacion__interlocutor,
 .conversacion__participantes,
 .conversacion__ultimo {
   overflow: hidden;
@@ -124,6 +125,12 @@ textarea:focus-visible {
 
 .conversacion__nombre {
   font-weight: 650;
+}
+
+.conversacion__interlocutor {
+  color: var(--text);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
 }
 
 .conversacion__participantes {
