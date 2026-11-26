@@ -53,17 +53,25 @@ export class ChatWidget implements OnDestroy {
   /** Animación de bienvenida: una abeja vuela hasta la burbuja del chat. */
   protected readonly abejaVisible = signal(false);
   private animacionIniciada = false;
+  private panelAnimado = false;
   /** `?abeja=1` permite volver a ver la animación durante el desarrollo. */
   private readonly forzarAbeja =
     new URLSearchParams(window.location.search).get('abeja') === '1';
 
   constructor() {
-    // El botón de cierre se crea junto con el panel: se enfoca después del render.
+    // El botón de cierre se crea junto con el panel: se enfoca al animar su entrada.
     afterRenderEffect(() => {
-      if (this.widget.abierto() && this.widget.debeEnfocar()) {
-        this.widget.consumirEnfoque();
-        this.botonCerrar()?.focus();
+      if (this.widget.abierto() && this.widget.debeEnfocar()) this.widget.consumirEnfoque();
+    });
+
+    afterRenderEffect(() => {
+      if (!this.widget.abierto()) {
+        this.panelAnimado = false;
+        return;
       }
+      if (this.panelAnimado) return;
+      this.panelAnimado = true;
+      this.animarEntradaPanel();
     });
 
     effect(() => {
@@ -220,6 +228,31 @@ export class ChatWidget implements OnDestroy {
       );
   }
 
+  private animarEntradaPanel(): void {
+    const panel = this.host.nativeElement.querySelector<HTMLElement>('.chat-widget__panel');
+    const header = this.host.nativeElement.querySelector<HTMLElement>('.chat-widget__header');
+    const body = this.host.nativeElement.querySelector<HTMLElement>('.chat-widget__body');
+    if (!panel || !header || !body) return;
+
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      gsap.set([panel, header, body], { y: 0, scale: 1, rotation: 0 });
+      this.botonCerrar()?.focus();
+      return;
+    }
+
+    gsap
+      .timeline()
+      .fromTo(
+        panel,
+        { y: 28, scale: 0.92, rotation: 1.5, transformOrigin: 'bottom right' },
+        { y: 0, scale: 1, rotation: 0, duration: 0.55, ease: 'back.out(1.5)' },
+      )
+      .fromTo(header, { y: -14 }, { y: 0, duration: 0.35, ease: 'power2.out' }, 0.15)
+      .fromTo(body, { y: 18 }, { y: 0, duration: 0.4, ease: 'power2.out' }, 0.2);
+
+    this.botonCerrar()?.focus();
+  }
+
   private animarBurbuja(vars: gsap.TweenVars): void {
     const boton = this.burbuja();
     if (!boton || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
@@ -264,6 +297,13 @@ export class ChatWidget implements OnDestroy {
 
   private botonCerrar(): HTMLButtonElement | null {
     return this.host.nativeElement.querySelector<HTMLButtonElement>('.chat-widget__cerrar');
+  }
+
+  @HostListener('document:click', ['$event'])
+  protected onDocumentClick(event: MouseEvent): void {
+    if (!this.widget.abierto()) return;
+    if (this.host.nativeElement.contains(event.target as Node)) return;
+    this.cerrar(false);
   }
 
   @HostListener('document:keydown', ['$event'])
