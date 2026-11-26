@@ -74,9 +74,10 @@ describe('Página de notificaciones (US-NOT-03)', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  it('carga la primera página de 20 y muestra fecha y estado', () => {
+  it('carga la primera página de 20 y muestra la paginación aunque haya una sola página', () => {
     expect(listar).toHaveBeenCalledWith(0, 20);
     expect(html().textContent).toContain('No tenés notificaciones');
+    expect(html().querySelector('ds-pagination')?.textContent).toContain('Página 1 de 1');
   });
 
   it('lista notificaciones y permite paginar', () => {

@@ -91,15 +91,13 @@
         </li>
       }
     </ol>
-
-    @if (totalPaginas() > 1) {
-      <ds-pagination
-        class="notificaciones__paginacion"
-        ariaLabel="Paginación de notificaciones"
-        [page]="pagina()"
-        [totalPages]="totalPaginas()"
-        (pageChange)="cambiarPagina($event)"
-      />
-    }
   }
+
+  <ds-pagination
+    class="notificaciones__paginacion"
+    ariaLabel="Paginación de notificaciones"
+    [page]="pagina()"
+    [totalPages]="totalPaginas()"
+    (pageChange)="cambiarPagina($event)"
+  />
 </main>
