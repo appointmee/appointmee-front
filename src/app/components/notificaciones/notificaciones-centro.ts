@@ -7,6 +7,7 @@ import {
   HostListener,
   afterRenderEffect,
   computed,
+  effect,
   inject,
   signal,
   viewChild,
@@ -23,6 +24,7 @@ import type {
 import { authService } from '../../services/auth-service';
 import { chatWidgetService } from '../../services/chat-widget-service';
 import { notificacionService } from '../../services/notificacion-service';
+import { notificacionesCambiosService } from '../../services/notificaciones-cambios-service';
 import {
   ariaNotificacion,
   destinoDeNotificacion,
@@ -67,6 +69,7 @@ export class NotificacionesCentro {
   private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(authService);
   private readonly notificacionesService = inject(notificacionService);
+  private readonly cambios = inject(notificacionesCambiosService);
   private readonly chatWidget = inject(chatWidgetService);
 
   private readonly campana = viewChild('campana', { read: ElementRef<HTMLButtonElement> });
@@ -90,6 +93,7 @@ export class NotificacionesCentro {
   private panelEnfocado = false;
   private readonly ultimaAccion = signal<'una' | 'todas' | null>(null);
   private readonly ultimoId = signal<number | null>(null);
+  private ultimaRevision = this.cambios.version();
 
   /** Los turnos se consultan en el lugar que corresponde al rol del usuario. */
   private readonly rutaTurnos = computed(() => {
@@ -122,6 +126,15 @@ export class NotificacionesCentro {
   );
 
   constructor() {
+    // Un marcado en /notificaciones debe reflejarse también en el panel.
+    effect(() => {
+      const revision = this.cambios.version();
+      if (revision === this.ultimaRevision) return;
+      this.ultimaRevision = revision;
+      if (this.abierto()) this.recargar(true);
+      else this.cargado = false;
+    });
+
     afterRenderEffect(() => {
       if (!this.abierto()) {
         this.panelEnfocado = false;
@@ -274,6 +287,7 @@ export class NotificacionesCentro {
             ),
           );
           this.idEnProceso.set(null);
+          this.ultimaRevision = this.cambios.version();
           this.recargar(true);
         },
         error: (error: HttpErrorResponse) => {
@@ -299,6 +313,7 @@ export class NotificacionesCentro {
         next: (contador) => {
           this.noLeidas.set(contador.noLeidas);
           this.marcandoTodas.set(false);
+          this.ultimaRevision = this.cambios.version();
           this.recargar(true);
         },
         error: (error: HttpErrorResponse) => {

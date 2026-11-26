@@ -1,6 +1,6 @@
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import type {
@@ -10,12 +10,14 @@ import type {
   PaginaNotificacionesDTO,
 } from '../models/notificacion';
 import { backendService } from './backend-service';
+import { notificacionesCambiosService } from './notificaciones-cambios-service';
 
 /** Endpoints del centro de notificaciones. Los errores se resuelven inline en la vista. */
 @Injectable({ providedIn: 'root' })
 export class notificacionService {
   private readonly api = inject(backendService);
   private readonly http = inject(HttpClient);
+  private readonly cambios = inject(notificacionesCambiosService);
 
   /**
    * Lista paginada. Los filtros se combinan en el backend: el tipo y el estado
@@ -60,7 +62,7 @@ export class notificacionService {
       `${this.api.baseUrl}/notificaciones/${id}/leido`,
       {},
       { context: this.contextoSinAvisoGlobal() },
-    );
+    ).pipe(tap(() => this.cambios.notificarCambio()));
   }
 
   /** Marca todas como leídas, respetando el filtro de tipo activo. */
@@ -70,7 +72,7 @@ export class notificacionService {
       `${this.api.baseUrl}/notificaciones/leer-todas`,
       {},
       { params, context: this.contextoSinAvisoGlobal() },
-    );
+    ).pipe(tap(() => this.cambios.notificarCambio()));
   }
 
   private contextoSinAvisoGlobal(): HttpContext {

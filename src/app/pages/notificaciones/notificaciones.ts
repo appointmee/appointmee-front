@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -20,6 +21,7 @@ import type {
 import { authService } from '../../services/auth-service';
 import { chatWidgetService } from '../../services/chat-widget-service';
 import { notificacionService } from '../../services/notificacion-service';
+import { notificacionesCambiosService } from '../../services/notificaciones-cambios-service';
 import {
   ariaNotificacion,
   destinoDeNotificacion,
@@ -66,11 +68,13 @@ export class Notificaciones {
   private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(authService);
   private readonly servicio = inject(notificacionService);
+  private readonly cambios = inject(notificacionesCambiosService);
   private readonly chatWidget = inject(chatWidgetService);
 
   private readonly recargas = new Subject<number>();
   private readonly ultimaAccion = signal<'una' | 'todas' | null>(null);
   private readonly ultimoId = signal<number | null>(null);
+  private ultimaRevision = this.cambios.version();
 
   protected readonly tipos = TIPOS_NOTIFICACION;
   protected readonly lecturas = LECTURAS;
@@ -116,6 +120,14 @@ export class Notificaciones {
   });
 
   constructor() {
+    // Un marcado desde el panel del navbar debe reflejarse en esta vista abierta.
+    effect(() => {
+      const revision = this.cambios.version();
+      if (revision === this.ultimaRevision) return;
+      this.ultimaRevision = revision;
+      if (!this.cargando() && !this.reintentando()) this.recargas.next(this.pagina());
+    });
+
     this.recargas
       .pipe(
         switchMap((pagina) => {
@@ -218,6 +230,7 @@ export class Notificaciones {
             ),
           );
           this.idEnProceso.set(null);
+          this.ultimaRevision = this.cambios.version();
           this.recargas.next(this.pagina());
         },
         error: (error: HttpErrorResponse) => {
@@ -243,6 +256,7 @@ export class Notificaciones {
         next: (contador) => {
           this.noLeidas.set(contador.noLeidas);
           this.marcandoTodas.set(false);
+          this.ultimaRevision = this.cambios.version();
           this.recargas.next(this.pagina());
         },
         error: (error: HttpErrorResponse) => {
