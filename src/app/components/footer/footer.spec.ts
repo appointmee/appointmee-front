@@ -41,7 +41,13 @@ describe('Footer', () => {
     expect(element.textContent).toContain('Conectamos clientes con establecimientos');
     expect(element.textContent).toContain(new Date().getFullYear().toString());
     expect(links()).toEqual(
-      expect.arrayContaining(['/', '/sucursales', '/#quienes-somos', '/#como-funciona']),
+      expect.arrayContaining([
+        '/',
+        '/sucursales',
+        '/#quienes-somos',
+        '/#como-funciona',
+        '/creditos',
+      ]),
     );
     expect(element.textContent).toContain('Información');
   });

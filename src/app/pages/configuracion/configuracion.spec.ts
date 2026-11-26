@@ -43,6 +43,24 @@ describe('Ajustes · Verificar cuenta', () => {
     expect(host.textContent).not.toContain('Sección en preparación');
   });
 
+  it('ofrece la pestaña de créditos y los muestra sin depender del rol', () => {
+    const host = fixture.nativeElement as HTMLElement;
+    const pestana = [...host.querySelectorAll<HTMLButtonElement>('.ajustes__pestana')].find(
+      (boton) => boton.textContent?.includes('Créditos'),
+    );
+
+    expect(pestana).toBeTruthy();
+    expect(pestana!.getAttribute('aria-pressed')).toBe('false');
+
+    pestana!.click();
+    fixture.detectChanges();
+
+    expect(pestana!.getAttribute('aria-pressed')).toBe('true');
+    expect(host.querySelector('app-creditos')).toBeTruthy();
+    expect(host.textContent).toContain('Gonzalo Leonel López');
+    expect(host.textContent).toContain('Giovanni Morro Bai');
+  });
+
   it('solicitar código valida solo email, no exige código todavía', () => {
     page.verificacionModel.set({ email: 'invalido', codigo: '' }); fixture.detectChanges();
     page.enviarCodigo(); expect(verificacion.solicitarVerificacion).not.toHaveBeenCalled();
@@ -346,11 +364,14 @@ describe('Ajustes · Verificar cuenta', () => {
       abrirSesion();
 
       const etiquetas = pestanas().map((pestana) => pestana.textContent?.trim());
-      expect(etiquetas).toEqual(['Verificar cuenta', 'Datos personales', 'Cambiar contraseña', 'Eliminar cuenta']);
+      expect(etiquetas).toEqual(['Verificar cuenta', 'Créditos', 'Datos personales', 'Cambiar contraseña', 'Eliminar cuenta']);
     });
 
     it('no muestra la sección a un visitante sin sesión', () => {
-      expect(pestanas().map((pestana) => pestana.textContent?.trim())).toEqual(['Verificar cuenta']);
+      expect(pestanas().map((pestana) => pestana.textContent?.trim())).toEqual([
+        'Verificar cuenta',
+        'Créditos',
+      ]);
     });
 
     it('muestra la sección con el aviso y el botón cuando se elige la pestaña', () => {
