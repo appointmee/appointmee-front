@@ -105,6 +105,15 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
     expect(document.activeElement).toBe(panel.querySelector('.chat-widget__cerrar'));
   });
 
+  it('anima la entrada del panel con una línea de GSAP', () => {
+    const linea = vi.spyOn(gsap, 'timeline');
+
+    burbuja().click();
+    fixture.detectChanges();
+
+    expect(linea).toHaveBeenCalled();
+  });
+
   it('cierra con el botón y devuelve el foco a la burbuja', () => {
     burbuja().click();
     fixture.detectChanges();
@@ -187,6 +196,30 @@ describe('ChatWidget flotante (US-CHAT-04)', () => {
       'abeja-icono.svg',
     );
     expect(html.querySelector('.abeja__cuerpo')?.getAttribute('src')).toBe('abeja-icono.svg');
+  });
+
+  it('cierra el panel al hacer click afuera', () => {
+    burbuja().click();
+    fixture.detectChanges();
+    expect(widget.abierto()).toBe(true);
+
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(widget.abierto()).toBe(false);
+    expect(html.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('no cierra el panel al hacer click dentro', () => {
+    burbuja().click();
+    fixture.detectChanges();
+
+    html.querySelector('.chat-widget__header')!.dispatchEvent(
+      new MouseEvent('click', { bubbles: true }),
+    );
+    fixture.detectChanges();
+
+    expect(widget.abierto()).toBe(true);
   });
 
   it('anima la burbuja con GSAP al pasar el mouse y al presionarla', () => {
