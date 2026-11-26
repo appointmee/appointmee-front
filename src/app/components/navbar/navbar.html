@@ -50,6 +50,7 @@
           </span>
         </button>
       } @else if (auth.visitante()) {
+        <a class="navbar__cta" routerLink="/mapa-sucursales" (click)="closeAll()">Mapa de sucursales</a>
         <a class="navbar__cta" routerLink="/login" (click)="closeAll()">Iniciar sesión</a>
         <a class="navbar__cta navbar__cta--solid" routerLink="/registrarme" (click)="closeAll()">
           Crear cuenta
@@ -155,6 +156,20 @@
       @if (auth.restaurando()) {
         <p class="sheet__loading" role="status">Restaurando tu sesión…</p>
       } @else if (auth.visitante()) {
+        <p class="sheet__label">Explorar</p>
+        <ul class="sheet__list">
+          <li>
+            <a class="sheet__link" [routerLink]="['/mapa-sucursales']" routerLinkActive="sheet__link--active" (click)="closeMobile()">
+              <span class="sheet__icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icons.map" /></svg>
+              </span>
+              <span>Mapa de sucursales</span>
+              <svg class="sheet__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="icons.chevron" />
+              </svg>
+            </a>
+          </li>
+        </ul>
         <p class="sheet__label">Cuenta</p>
         <ul class="sheet__list">
           <li>

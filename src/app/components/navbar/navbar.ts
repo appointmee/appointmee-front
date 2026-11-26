@@ -33,6 +33,7 @@ const ICONS = {
   calendar:
     'M7 2v4M17 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z',
   store: 'M3 9h18M4 9l1.5-5h13L20 9M5 9v11h14V9M9 20v-6h6v6',
+  map: 'M9 3 3 5v16l6-2 6 2 6-2V3l-6 2-6-2Zm0 0v16m6-14v16',
   user: 'M20 21a8 8 0 0 0-16 0M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
   inbox: 'M4 4h16v16H4zM4 13h4l2 3h4l2-3h4',
   settings:
@@ -100,6 +101,7 @@ export class Navbar {
   protected readonly linksBase: readonly NavItem[] = [
     { label: 'Home', path: '/', icon: ICONS.home, exact: true },
     { label: 'Sucursales', path: '/sucursales', icon: ICONS.store, exact: false },
+    { label: 'Mapa de sucursales', path: '/mapa-sucursales', icon: ICONS.map, exact: false },
     {
       label: 'Mis Turnos',
       path: '/mis-turnos',
