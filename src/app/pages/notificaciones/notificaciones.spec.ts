@@ -150,6 +150,7 @@ describe('Página de notificaciones (US-NOT-03)', () => {
     (html().querySelector('.notificacion') as HTMLButtonElement).click();
     await fixture.whenStable();
 
+    expect(marcarUna).toHaveBeenCalledWith(2);
     expect(router.url).toContain('/pago/resultado?turnoId=55&sucursalId=7');
     expect(TestBed.inject(chatWidgetService).abierto()).toBe(false);
   });

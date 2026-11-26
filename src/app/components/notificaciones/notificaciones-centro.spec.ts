@@ -183,15 +183,11 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     expect(document.activeElement).toBe(boton);
   });
 
-  it('navega al destino de turnos al abrir una notificación sin cambiar su estado', async () => {
-    listar.mockReturnValue(of(pagina([{
-      id: 1,
-      tipo: 'RESERVA',
-      titulo: 'Nuevo turno',
-      mensaje: 'Tenés un turno nuevo.',
-      fecha: '2026-11-26T09:00:00',
-      leida: false,
-    }], 1)));
+  it('marca como leída al abrir y navega al destino de turnos', async () => {
+    listar
+      .mockReturnValueOnce(of(pagina([sinLeer], 1)))
+      .mockReturnValue(of(pagina([{ ...sinLeer, leida: true }], 0)));
+    marcarUna.mockReturnValue(of({ noLeidas: 0 }));
     const { fixture, boton } = await renderizar();
     abrirPanel(fixture);
     await router.navigateByUrl('/');
@@ -200,13 +196,14 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
+    expect(marcarUna).toHaveBeenCalledWith(1);
     expect(router.url).toBe('/mis-turnos');
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
-    expect(marcarUna).not.toHaveBeenCalled();
+    expect(boton.getAttribute('aria-label')).toContain('no hay notificaciones sin leer');
 
     abrirPanel(fixture);
     const reabierta = fixture.nativeElement.querySelector('.notificacion') as HTMLButtonElement;
-    expect(reabierta.classList.contains('notificacion--no-leida')).toBe(true);
+    expect(reabierta.classList.contains('notificacion--no-leida')).toBe(false);
   });
 
   it('lleva a pagos, solicitudes y al widget de chat según el tipo', async () => {
