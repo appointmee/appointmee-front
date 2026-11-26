@@ -15,4 +15,14 @@ export class Creditos {
   /** Nivel del encabezado para encajar en la jerarquía de cada pantalla. */
   readonly nivel = input<2 | 3>(2);
   readonly integrantes = INTEGRANTES;
+
+  /** Iniciales para el avatar decorativo (nunca reemplazan el nombre accesible). */
+  protected iniciales(nombre: string): string {
+    return nombre
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((parte) => parte.charAt(0).toLocaleUpperCase('es'))
+      .join('');
+  }
 }

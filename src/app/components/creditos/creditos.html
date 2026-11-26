@@ -1,25 +1,35 @@
-<section class="creditos" [attr.aria-label]="titulo()">
+<section
+  class="creditos"
+  [class.creditos--compacto]="nivel() === 3"
+  [attr.aria-label]="titulo()"
+>
   <div class="creditos__contenido">
-    @switch (nivel()) {
-      @case (2) {
-        <h2 class="creditos__titulo">{{ titulo() }}</h2>
+    <header class="creditos__cabecera">
+      <span class="creditos__eyebrow">AppointMee</span>
+      @switch (nivel()) {
+        @case (2) {
+          <h2 class="creditos__titulo">{{ titulo() }}</h2>
+        }
+        @default {
+          <h3 class="creditos__titulo">{{ titulo() }}</h3>
+        }
       }
-      @default {
-        <h3 class="creditos__titulo">{{ titulo() }}</h3>
-      }
-    }
 
-    <p class="creditos__descripcion">
-      AppointMee es una plataforma para encontrar servicios y gestionar turnos de forma simple,
-      rápida y organizada.
-    </p>
+      <p class="creditos__descripcion">
+        AppointMee es una plataforma para encontrar servicios y gestionar turnos de forma simple,
+        rápida y organizada.
+      </p>
+    </header>
 
     <div class="creditos__bloques">
       <div class="creditos__bloque">
         <p class="creditos__subtitulo"><strong>Equipo de desarrollo</strong></p>
         <ul class="creditos__lista">
           @for (integrante of integrantes; track integrante) {
-            <li class="creditos__integrante">{{ integrante }}</li>
+            <li class="creditos__integrante">
+              <span class="creditos__avatar" aria-hidden="true">{{ iniciales(integrante) }}</span>
+              <span class="creditos__nombre">{{ integrante }}</span>
+            </li>
           }
         </ul>
       </div>

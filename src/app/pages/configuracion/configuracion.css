@@ -47,6 +47,8 @@
 
 .ajustes__pestana--activa { border-color: var(--accent-strong); color: var(--accent-strong); }
 
+.ajustes app-creditos { margin-top: 24px; }
+
 .verificacion {
   margin-top: 24px;
   padding: 28px;
