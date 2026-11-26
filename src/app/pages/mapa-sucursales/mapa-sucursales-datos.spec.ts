@@ -1,8 +1,15 @@
 import {
   SucursalMapaDTO,
+  abejasMapa,
+  coincideNombre,
   coordenadasValidas,
+  diasMapa,
   filtrarSucursalesMapa,
   humanizarCategoria,
+  iconoIndicadorMapa,
+  puntuacionMapa,
+  terminoDeBusquedaMapa,
+  textoIndicadorMapa,
   urlCómoLlegar,
 } from './mapa-sucursales-datos';
 
@@ -34,7 +41,7 @@ describe('US-MAP-06 · datos del mapa global', () => {
     });
   });
 
-  describe('filtrarSucursalesMapa', () => {
+  describe('búsqueda por nombre (sin ID)', () => {
     const norte: SucursalMapaDTO = {
       ...CENTRO,
       id: 2,
@@ -43,28 +50,42 @@ describe('US-MAP-06 · datos del mapa global', () => {
     };
 
     it('busca por nombre sin distinguir mayúsculas ni acentos', () => {
-      const resultado = filtrarSucursalesMapa(
-        [CENTRO, norte],
-        '  FLORES  ',
-        null,
-      );
-
-      expect(resultado.map((sucursal) => sucursal.id)).toEqual([1]);
+      expect(coincideNombre(CENTRO, '  FLORES  ')).toBe(true);
+      expect(coincideNombre(norte, 'flores')).toBe(false);
+      expect(
+        filtrarSucursalesMapa([CENTRO, norte], '  FLORES  ', null).map(
+          (sucursal) => sucursal.id,
+        ),
+      ).toEqual([1]);
     });
 
-    it('trata los términos numéricos como ID exacto, igual que el listado', () => {
-      expect(
-        filtrarSucursalesMapa([CENTRO, norte], '2', null).map((s) => s.id),
-      ).toEqual([2]);
-      expect(
-        filtrarSucursalesMapa([CENTRO, norte], '20', null),
-      ).toEqual([]);
+    it('no busca por ID exacto ni por coincidencia parcial del ID', () => {
+      expect(coincideNombre(norte, '2')).toBe(false);
+      expect(coincideNombre(norte, '20')).toBe(false);
+      expect(filtrarSucursalesMapa([CENTRO, norte], '2', null)).toEqual([]);
+      expect(filtrarSucursalesMapa([CENTRO, norte], '20', null)).toEqual([]);
+    });
+
+    it('respeta el mínimo de caracteres también para términos numéricos', () => {
+      expect(terminoDeBusquedaMapa('1')).toBe('');
+      expect(terminoDeBusquedaMapa('12')).toBe('12');
+      expect(terminoDeBusquedaMapa(' FLORES ')).toBe('FLORES');
+    });
+
+    it('admite búsquedas numéricas si aparecen en el nombre, nunca por ID', () => {
+      const sucursal: SucursalMapaDTO = { ...CENTRO, id: 99, nombre: 'Sucursal 12' };
+
+      expect(coincideNombre(sucursal, '12')).toBe(true);
+      expect(coincideNombre(sucursal, '99')).toBe(false);
     });
 
     it('combina nombre y categoría y deja pasar todo con filtros vacíos', () => {
       expect(
         filtrarSucursalesMapa([CENTRO, norte], 'Sucursal', 'SPA').map((s) => s.id),
       ).toEqual([1]);
+      expect(
+        filtrarSucursalesMapa([CENTRO, norte], 'Norte', 'SPA'),
+      ).toEqual([]);
       expect(filtrarSucursalesMapa([CENTRO, norte], '', null)).toHaveLength(2);
     });
   });
@@ -82,5 +103,79 @@ describe('US-MAP-06 · datos del mapa global', () => {
   it('humaniza categorías con el mismo formato del listado tradicional', () => {
     expect(humanizarCategoria('CENTRO_DE_BELLEZA')).toBe('Centro De Belleza');
     expect(humanizarCategoria(null)).toBe('');
+  });
+
+  describe('indicadores de valoración', () => {
+    it('muestra únicamente la puntuación, nunca un valor inventado', () => {
+      expect(puntuacionMapa(CENTRO)).toBe(4.5);
+      expect(textoIndicadorMapa(CENTRO)).toBe('4.5');
+      expect(textoIndicadorMapa({ ...CENTRO, puntuacion: 5 })).toBe('5');
+      expect(textoIndicadorMapa({ ...CENTRO, puntuacion: null })).toBeNull();
+      expect(textoIndicadorMapa({ ...CENTRO, puntuacion: 0 })).toBeNull();
+      expect(textoIndicadorMapa({ ...CENTRO, puntuacion: 0.5 })).toBeNull();
+      expect(textoIndicadorMapa({ ...CENTRO, puntuacion: 6 })).toBeNull();
+    });
+
+    it('dibuja una burbuja amarilla con texto negro y sin otros datos', () => {
+      const svg = decodeURIComponent(
+        iconoIndicadorMapa('4.5', '#f7c65a'),
+      );
+
+      expect(svg).toContain('fill="#f7c65a"');
+      expect(svg).toContain('fill="#07090d"');
+      expect(svg).toContain('>4.5<');
+      expect(svg).not.toContain('Flores');
+      expect(svg).not.toContain('SPA');
+    });
+
+    it('mantiene la burbuja visible pero sin texto cuando no hay reseñas', () => {
+      const svg = decodeURIComponent(
+        iconoIndicadorMapa(null, '#f7c65a'),
+      );
+
+      expect(svg).toContain('fill="#f7c65a"');
+      expect(svg).not.toMatch(/>[\d.]+</);
+    });
+
+    it('usa el token de acento y descarta colores inválidos', () => {
+      expect(decodeURIComponent(iconoIndicadorMapa('3', '#abc'))).toContain(
+        'fill="#abc"',
+      );
+      expect(
+        decodeURIComponent(iconoIndicadorMapa('3', '#abc', '#111')),
+      ).toContain('fill="#111"');
+      expect(decodeURIComponent(iconoIndicadorMapa('3', 'url(x)'))).toContain(
+        'fill="#f7c65a"',
+      );
+    });
+
+    it('llena las abejas hasta el valor redondeado', () => {
+      expect(abejasMapa(4.5)).toEqual([true, true, true, true, true]);
+      expect(abejasMapa(3.2)).toEqual([true, true, true, false, false]);
+      expect(abejasMapa(null)).toEqual([false, false, false, false, false]);
+    });
+  });
+
+  describe('días de apertura', () => {
+    it('representa los siete días con abreviaturas y estado real del DTO', () => {
+      const dias = diasMapa({
+        ...CENTRO,
+        diasApertura: ['MONDAY', 'MIÉRCOLES', 'SUNDAY'],
+      });
+
+      expect(dias.map((dia) => dia.abreviatura)).toEqual([
+        'LU', 'MA', 'MI', 'JU', 'VI', 'SA', 'DO',
+      ]);
+      expect(dias.filter((dia) => dia.abierto).map((dia) => dia.abreviatura)).toEqual([
+        'LU', 'MI', 'DO',
+      ]);
+      expect(dias.filter((dia) => !dia.abierto).map((dia) => dia.abreviatura)).toEqual([
+        'MA', 'JU', 'VI', 'SA',
+      ]);
+    });
+
+    it('no asume que abre todos los días cuando el DTO no trae días', () => {
+      expect(diasMapa({ ...CENTRO, diasApertura: undefined }).every((dia) => !dia.abierto)).toBe(true);
+    });
   });
 });

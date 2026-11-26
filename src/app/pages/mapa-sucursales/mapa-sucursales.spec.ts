@@ -1,10 +1,13 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { Component } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 
 import { SucursalMiniDTO } from '../../models/sucursal';
-import { googleMapsService, GoogleMapsNamespace } from '../../services/google-maps-service';
+import {
+  googleMapsService,
+  GoogleMapsNamespace,
+} from '../../services/google-maps-service';
 import { sucursalService } from '../../services/sucursal-service';
 import { SucursalMapaDTO } from './mapa-sucursales-datos';
 import { MapaSucursales } from './mapa-sucursales';
@@ -17,9 +20,10 @@ const SUCURSALES: readonly SucursalMapaDTO[] = [
     id: 1,
     nombre: 'Sucursal Flores',
     categoria: 'SPA',
-    fotoPerfil: null,
+    fotoPerfil: 'https://ejemplo.test/flores.jpg',
     puntuacion: 4.5,
     cantidadPuntuaciones: 10,
+    diasApertura: ['MONDAY', 'WEDNESDAY', 'SUNDAY'],
     latitud: -34.6,
     longitud: -58.3,
   },
@@ -30,6 +34,7 @@ const SUCURSALES: readonly SucursalMapaDTO[] = [
     fotoPerfil: null,
     puntuacion: null,
     cantidadPuntuaciones: 0,
+    diasApertura: ['SATURDAY'],
     latitud: -34.62,
     longitud: -58.32,
   },
@@ -75,12 +80,12 @@ class ObservadorFalso implements IntersectionObserver {
 }
 
 class MarcadorFalso {
-  readonly titulos: string[] = [];
+  readonly iconos: string[] = [];
   mapa: unknown = null;
   listener: (() => void) | null = null;
 
   constructor(readonly opciones: Record<string, unknown>) {
-    this.titulos.push(String(opciones['title'] ?? ''));
+    this.iconos.push(String(opciones['icon'] ?? ''));
     this.mapa = opciones['map'] ?? null;
   }
 
@@ -88,12 +93,12 @@ class MarcadorFalso {
     this.opciones['position'] = posicion;
   }
 
-  setMap(mapa: unknown): void {
-    this.mapa = mapa;
+  setIcon(url: string): void {
+    this.iconos.push(url);
   }
 
-  setTitle(titulo: string): void {
-    this.titulos.push(titulo);
+  setMap(mapa: unknown): void {
+    this.mapa = mapa;
   }
 
   addListener(_evento: string, manejador: () => void): { remove: () => void } {
@@ -230,13 +235,21 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
     fixture.detectChanges();
   }
 
+  async function buscar(valor: string): Promise<void> {
+    vi.useFakeTimers();
+    const input = host.querySelector<HTMLInputElement>('.busqueda__input')!;
+    input.value = valor;
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(350);
+    fixture.detectChanges();
+  }
+
   it('lee una sola vez el listado público y nunca usa el endpoint filtrado', async () => {
     await crear();
     await revelar();
 
-    const input = host.querySelector<HTMLInputElement>('.busqueda__input')!;
-    input.value = 'Flores';
-    input.dispatchEvent(new Event('input'));
+    await buscar('Flores');
     const select = host.querySelector<HTMLSelectElement>('ds-select select')!;
     select.value = 'BARBERIA';
     select.dispatchEvent(new Event('change'));
@@ -256,15 +269,14 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
     expect(mapa).toBeTruthy();
   });
 
-  it('muestra solo marcadores con coordenadas válidas y los reconcilia al filtrar', async () => {
+  it('muestra solo indicadores con coordenadas válidas y los reconcilia al filtrar', async () => {
     await crear();
     await revelar();
 
     expect(marcadores).toHaveLength(2);
-    expect(marcadores.map((marcador) => marcador.opciones['title'])).toEqual([
-      'Sucursal Flores',
-      'Sucursal Norte',
-    ]);
+    expect(marcadores.every((marcador) => decodeURIComponent(marcador.iconos[0]).includes('fill="#f7c65a"'))).toBe(true);
+    expect(decodeURIComponent(marcadores[0].iconos[0])).toContain('>4.5<');
+    expect(decodeURIComponent(marcadores[1].iconos[0])).not.toMatch(/>[\d.]+</);
     expect(mapa.limites).toHaveLength(1);
 
     const select = host.querySelector<HTMLSelectElement>('ds-select select')!;
@@ -283,39 +295,104 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
   it('aplica la búsqueda por nombre con debounce sin reconstruir el mapa', async () => {
     await crear();
     await revelar();
-    vi.useFakeTimers();
 
-    const input = host.querySelector<HTMLInputElement>('.busqueda__input')!;
-    input.value = 'Norte';
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    expect(ventana.abierta).toBe(false);
-
-    await vi.advanceTimersByTimeAsync(350);
-    fixture.detectChanges();
+    await buscar('Norte');
 
     expect(marcadores).toHaveLength(2);
     expect(marcadores[1].mapa).toBe(mapa);
     expect(marcadores[0].mapa).toBeNull();
   });
 
-  it('ofrece Ver detalles y Cómo llegar en el InfoWindow usando las coordenadas guardadas', async () => {
+  it('busca solo por nombre: un ID no encuentra la sucursal', async () => {
     await crear();
     await revelar();
-    const abrir = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    await buscar('20');
+
+    expect(marcadores.every((marcador) => marcador.mapa === null)).toBe(true);
+    expect(host.querySelector('.mapa__capa--vacio')).not.toBeNull();
+  });
+
+  it('combina búsqueda por nombre y categoría', async () => {
+    await crear();
+    await revelar();
+
+    await buscar('Flores');
+    expect(marcadores[0].mapa).toBe(mapa);
+
+    const select = host.querySelector<HTMLSelectElement>('ds-select select')!;
+    select.value = 'BARBERIA';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(marcadores.every((marcador) => marcador.mapa === null)).toBe(true);
+
+    select.value = 'SPA';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(marcadores.at(-1)?.mapa).toBe(mapa);
+    expect(marcadores.at(-2)?.mapa).toBeNull();
+  });
+
+  it('muestra todos los datos, abejas, cantidad y días en el InfoWindow', async () => {
+    await crear();
+    await revelar();
 
     marcadores[0].listener?.();
     fixture.detectChanges();
 
     const contenido = ventana.contenido as HTMLElement;
     const botones = Array.from(contenido.querySelectorAll('button'));
+    const foto = contenido.querySelector('img')!;
+    const abejas = Array.from(contenido.querySelectorAll('span')).filter(
+      (span) => span.textContent === '🐝',
+    );
+    const dias = Array.from(contenido.querySelectorAll('div'))
+      .flatMap((div) => Array.from(div.children))
+      .filter((hijo) => /^(LU|MA|MI|JU|VI|SA|DO)$/.test(hijo.textContent ?? ''));
+
     expect(botones.map((boton) => boton.textContent?.trim())).toEqual([
       'Ver detalles',
       'Cómo llegar',
     ]);
+    expect(foto.getAttribute('src')).toBe('https://ejemplo.test/flores.jpg');
+    expect(foto.alt).toBe('Foto de Sucursal Flores');
     expect(contenido.textContent).toContain('Sucursal Flores');
     expect(contenido.textContent).toContain('Spa');
-    expect(contenido.textContent).toContain('4.5 de 5 (10 reseñas)');
+    expect(abejas).toHaveLength(5);
+    expect(contenido.textContent).toContain('4.5 / 5 · 10 puntuaciones');
+    expect(contenido.textContent).toContain('LU · MA · MI · JU · VI · SA · DO');
+    expect(dias.map((dia) => dia.textContent)).toEqual([
+      'LU', 'MA', 'MI', 'JU', 'VI', 'SA', 'DO',
+    ]);
+    expect(dias[0].getAttribute('style')).toContain('var(--accent)');
+    expect(dias[1].getAttribute('style')).toContain('line-through');
+    expect(contenido.querySelector('[aria-label*="abiertos LU"]')).not.toBeNull();
+  });
+
+  it('respeta el estado sin puntuaciones al seleccionar una sucursal sin reseñas', async () => {
+    await crear();
+    await revelar();
+
+    marcadores[1].listener?.();
+    fixture.detectChanges();
+
+    const contenido = ventana.contenido as HTMLElement;
+    expect(contenido.textContent).toContain('Sin puntuaciones');
+    expect(contenido.textContent).not.toContain('🐝');
+    expect(contenido.querySelector('img')?.alt).toBe('Sin imagen');
+    expect(contenido.textContent).toContain('SA');
+  });
+
+  it('abre Ver detalles y Cómo llegar con las coordenadas guardadas', async () => {
+    await crear();
+    await revelar();
+    const abrir = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    marcadores[0].listener?.();
+    fixture.detectChanges();
+    const botones = Array.from(
+      (ventana.contenido as HTMLElement).querySelectorAll('button'),
+    );
 
     botones[1].click();
     const destino = new URL(abrir.mock.calls[0][0] as string).searchParams.get(
