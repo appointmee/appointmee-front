@@ -86,6 +86,7 @@ export class MotorMapaSucursales {
   private readonly ventana: VentanaGoogle;
   private readonly listenerMapa: ListenerGoogle;
   private ubicacionCliente: MarcadorGoogle | null = null;
+  private coordenadasCliente: CoordenadasMapa | null = null;
   private seleccion: number | null = null;
   private abierta = false;
 
@@ -107,6 +108,11 @@ export class MotorMapaSucursales {
     return this.ubicacionCliente !== null;
   }
 
+  /** Origen ya obtenido por US-MAP-07, reutilizado para calcular la ruta. */
+  get origenCliente(): CoordenadasMapa | null {
+    return this.coordenadasCliente;
+  }
+
   /**
    * US-MAP-07 · Dibuja un único indicador propio para el cliente y centra el
    * mapa en él. No toca los marcadores de sucursales ni sus filtros.
@@ -119,6 +125,7 @@ export class MotorMapaSucursales {
     if (this.ubicacionCliente) {
       this.ubicacionCliente.setMap(null);
     }
+    this.coordenadasCliente = coordenadas;
     const posicion = new this.api.maps.LatLng(coordenadas.lat, coordenadas.lng);
     this.ubicacionCliente = new this.api.maps.Marker({
       position: posicion,
@@ -242,6 +249,7 @@ export class MotorMapaSucursales {
       this.ubicacionCliente.setMap(null);
       this.ubicacionCliente = null;
     }
+    this.coordenadasCliente = null;
     for (const [id, entrada] of this.marcadores) {
       this.removerMarcador(id, entrada);
     }

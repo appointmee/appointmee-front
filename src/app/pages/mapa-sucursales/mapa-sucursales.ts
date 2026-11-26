@@ -544,7 +544,7 @@ export class MapaSucursales implements AfterViewInit {
       this.estilizarBotonVentana(llegar, false);
       this.registrarEnVentana(llegar, 'click', () => {
         this.document.defaultView?.open(
-          urlCómoLlegar(coordenadas),
+          urlCómoLlegar(coordenadas, this.motor()?.origenCliente),
           '_blank',
           'noopener,noreferrer',
         );

@@ -87,15 +87,19 @@ export function filtrarSucursalesMapa(
 
 /**
  * Enlace público de Google Maps: no usa API key, Places, Geocoding ni
- * Directions API. El destino son únicamente las coordenadas persistidas.
+ * Directions API. El destino son las coordenadas persistidas; el origen solo se
+ * agrega cuando el cliente compartió su ubicación en US-MAP-07.
  */
-export function urlCómoLlegar(coordenadas: CoordenadasMapa): string {
+export function urlCómoLlegar(
+  destino: CoordenadasMapa,
+  origen?: CoordenadasMapa | null,
+): string {
   const url = new URL('https://www.google.com/maps/dir/');
   url.searchParams.set('api', '1');
-  url.searchParams.set(
-    'destination',
-    `${coordenadas.lat},${coordenadas.lng}`,
-  );
+  if (origen) {
+    url.searchParams.set('origin', `${origen.lat},${origen.lng}`);
+  }
+  url.searchParams.set('destination', `${destino.lat},${destino.lng}`);
   return url.toString();
 }
 
