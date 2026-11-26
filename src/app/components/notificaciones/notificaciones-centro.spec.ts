@@ -8,6 +8,7 @@ import type { PaginaNotificacionesDTO } from '../../models/notificacion';
 import { authService } from '../../services/auth-service';
 import { chatWidgetService } from '../../services/chat-widget-service';
 import { notificacionService } from '../../services/notificacion-service';
+import { notificacionesCambiosService } from '../../services/notificaciones-cambios-service';
 import { NotificacionesCentro } from './notificaciones-centro';
 
 @Component({ selector: 'app-destino-prueba', template: '' })
@@ -25,24 +26,44 @@ const pagina = (
   noLeidas,
 });
 
+const sinLeer = {
+  id: 1,
+  tipo: 'RESERVA' as const,
+  titulo: 'Nuevo turno',
+  mensaje: 'Tenés un turno nuevo.',
+  fecha: '2026-11-26T09:00:00',
+  leida: false,
+};
+
 describe('Centro de notificaciones (US-NOT-03)', () => {
   let roles: readonly string[];
   let listar: ReturnType<
-    typeof vi.fn<(pagina: number, tamano: number) => Observable<PaginaNotificacionesDTO>>
+    typeof vi.fn<(
+      pagina: number,
+      tamano: number,
+      tipo?: string,
+      lectura?: string,
+    ) => Observable<PaginaNotificacionesDTO>>
   >;
   let contar: ReturnType<typeof vi.fn<() => Observable<{ noLeidas: number }>>>;
+  let marcarUna: ReturnType<typeof vi.fn<(id: number) => Observable<{ noLeidas: number }>>>;
+  let marcarTodas: ReturnType<typeof vi.fn<(tipo?: string) => Observable<{ noLeidas: number }>>>;
   let router: Router;
   let chatWidget: chatWidgetService;
 
   const servicio = {
-    listar: (pagina: number, tamano: number) => listar(pagina, tamano),
+    listar: (...args: Parameters<typeof listar>) => listar(...args),
     contarNoLeidas: () => contar(),
+    marcarLeida: (id: number) => marcarUna(id),
+    marcarTodasLeidas: (...args: Parameters<typeof marcarTodas>) => marcarTodas(...args),
   };
 
   beforeEach(() => {
     roles = ['CLIENTE'];
     listar = vi.fn(() => of(pagina([])));
     contar = vi.fn(() => of({ noLeidas: 2 }));
+    marcarUna = vi.fn(() => of({ noLeidas: 0 }));
+    marcarTodas = vi.fn(() => of({ noLeidas: 0 }));
 
     TestBed.configureTestingModule({
       imports: [NotificacionesCentro],
@@ -120,7 +141,9 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     expect(boton.getAttribute('aria-expanded')).toBe('true');
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[aria-busy="true"]')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('.sr-only')?.textContent).toContain('Cargando');
+    expect(
+      fixture.nativeElement.querySelector('[aria-busy="true"] .sr-only')?.textContent,
+    ).toContain('Cargando');
 
     respuesta.next(pagina([{
       id: 7,
@@ -137,7 +160,9 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     expect(item.textContent).toContain('Turno confirmado');
     expect(item.textContent).toContain('Tu turno quedó confirmado.');
     expect(item.querySelector('time')?.textContent).toContain('2026');
-    expect(item.textContent).toContain('Sin leer');
+    expect(item.classList.contains('notificacion--no-leida')).toBe(true);
+    expect(item.querySelector('ds-badge')).toBeNull();
+    expect(item.querySelector('.notificacion__meta span')).toBeNull();
     expect(item.getAttribute('aria-label')).toContain('sin leer');
     expect(boton.querySelector('.notificaciones__contador')?.textContent).toContain('3');
   });
@@ -159,15 +184,11 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     expect(document.activeElement).toBe(boton);
   });
 
-  it('marca como leída y navega al destino de turnos al abrir una notificación', async () => {
-    listar.mockReturnValue(of(pagina([{
-      id: 1,
-      tipo: 'RESERVA',
-      titulo: 'Nuevo turno',
-      mensaje: 'Tenés un turno nuevo.',
-      fecha: '2026-11-26T09:00:00',
-      leida: false,
-    }], 1)));
+  it('marca como leída al abrir y navega al destino de turnos', async () => {
+    listar
+      .mockReturnValueOnce(of(pagina([sinLeer], 1)))
+      .mockReturnValue(of(pagina([{ ...sinLeer, leida: true }], 0)));
+    marcarUna.mockReturnValue(of({ noLeidas: 0 }));
     const { fixture, boton } = await renderizar();
     abrirPanel(fixture);
     await router.navigateByUrl('/');
@@ -176,14 +197,14 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
+    expect(marcarUna).toHaveBeenCalledWith(1);
     expect(router.url).toBe('/mis-turnos');
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
     expect(boton.getAttribute('aria-label')).toContain('no hay notificaciones sin leer');
 
     abrirPanel(fixture);
     const reabierta = fixture.nativeElement.querySelector('.notificacion') as HTMLButtonElement;
-    expect(reabierta.textContent).toContain('Leída');
-    expect(reabierta.getAttribute('aria-label')).toContain('leída');
+    expect(reabierta.classList.contains('notificacion--no-leida')).toBe(false);
   });
 
   it('lleva a pagos, solicitudes y al widget de chat según el tipo', async () => {
@@ -431,6 +452,103 @@ describe('Centro de notificaciones (US-NOT-03)', () => {
     expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent).toContain(
       'No tenés notificaciones',
     );
+  });
+
+  it('demo 1: marca una notificación como leída con una acción y actualiza el contador', async () => {
+    listar
+      .mockReturnValueOnce(of(pagina([sinLeer], 1)))
+      .mockReturnValue(of(pagina([{ ...sinLeer, leida: true }], 0)));
+    marcarUna.mockReturnValue(of({ noLeidas: 0 }));
+    const { fixture, boton } = await renderizar();
+    abrirPanel(fixture);
+
+    const botonMarcar = fixture.nativeElement.querySelector('.panel__marcar') as HTMLButtonElement;
+    expect(botonMarcar).not.toBeNull();
+    expect(botonMarcar.querySelector('svg path')?.getAttribute('d')).toBe('M20 6 9 17l-5-5');
+    expect(botonMarcar.textContent?.trim()).toBe('');
+    botonMarcar.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(marcarUna).toHaveBeenCalledWith(1);
+    expect(boton.getAttribute('aria-label')).toContain('no hay notificaciones sin leer');
+    expect(
+      fixture.nativeElement.querySelector('.notificacion')?.classList.contains('notificacion--no-leida'),
+    ).toBe(false);
+    expect(fixture.nativeElement.querySelector('.panel__marcar')).toBeNull();
+  });
+
+  it('demo 2: marca todas como leídas con una sola acción', async () => {
+    listar
+      .mockReturnValueOnce(of(pagina([sinLeer, { ...sinLeer, id: 2 }], 2)))
+      .mockReturnValue(of(pagina([
+        { ...sinLeer, leida: true },
+        { ...sinLeer, id: 2, leida: true },
+      ], 0)));
+    marcarTodas.mockReturnValue(of({ noLeidas: 0 }));
+    const { fixture, boton } = await renderizar();
+    abrirPanel(fixture);
+
+    const acciones = fixture.nativeElement.querySelector('.panel__acciones') as HTMLElement;
+    expect(acciones.parentElement?.lastElementChild).toBe(acciones);
+
+    const botonTodas = fixture.nativeElement.querySelector('.panel__marcar-todas') as HTMLButtonElement;
+    botonTodas.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(marcarTodas).toHaveBeenCalledWith();
+    expect(boton.getAttribute('aria-label')).toContain('no hay notificaciones sin leer');
+    expect(fixture.nativeElement.querySelector('.panel__marcar')).toBeNull();
+  });
+
+  it('no muestra los filtros en el panel: viven sólo en /notificaciones', async () => {
+    const { fixture } = await renderizar();
+    abrirPanel(fixture);
+
+    expect(fixture.nativeElement.querySelector('.panel__filtros')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Tipo de notificación');
+    expect(fixture.nativeElement.textContent).not.toContain('Estado de lectura');
+  });
+
+  it('recarga el panel cuando otra vista marca una notificación como leída', async () => {
+    listar.mockReturnValue(of(pagina([{ ...sinLeer, leida: true }], 0)));
+    const { fixture } = await renderizar();
+    abrirPanel(fixture);
+    expect(listar).toHaveBeenCalledTimes(1);
+
+    TestBed.inject(notificacionesCambiosService).notificarCambio();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(listar).toHaveBeenCalledTimes(2);
+    expect(
+      fixture.nativeElement.querySelector('.notificacion')?.classList.contains('notificacion--no-leida'),
+    ).toBe(false);
+  });
+
+  it('muestra el error inline al marcar como leída y permite reintentar', async () => {
+    listar.mockReturnValue(of(pagina([sinLeer], 1)));
+    marcarUna
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 500 })))
+      .mockReturnValue(of({ noLeidas: 0 }));
+    const { fixture } = await renderizar();
+    abrirPanel(fixture);
+
+    (fixture.nativeElement.querySelector('.panel__marcar') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const alerta = fixture.nativeElement.querySelector('.panel__accion-error') as HTMLElement;
+    expect(alerta).not.toBeNull();
+    expect(alerta.textContent).toContain('No pudimos marcar la notificación como leída');
+    (alerta.querySelector('.panel__accion') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(marcarUna).toHaveBeenCalledTimes(2);
+    expect(fixture.nativeElement.querySelector('.panel__accion-error')).toBeNull();
   });
 
   it('avisa cuando el navegador está sin conexión', async () => {

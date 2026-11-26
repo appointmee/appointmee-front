@@ -7,6 +7,7 @@ import {
   HostListener,
   afterRenderEffect,
   computed,
+  effect,
   inject,
   signal,
   viewChild,
@@ -23,17 +24,16 @@ import type {
 import { authService } from '../../services/auth-service';
 import { chatWidgetService } from '../../services/chat-widget-service';
 import { notificacionService } from '../../services/notificacion-service';
+import { notificacionesCambiosService } from '../../services/notificaciones-cambios-service';
 import {
   ariaNotificacion,
   destinoDeNotificacion,
-  etiquetaTipoNotificacion,
   formatearFechaNotificacion,
   iconoTipoNotificacion,
   type DestinoNotificacion,
 } from '../../shared/notificaciones/destino-notificacion';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
-  DsBadgeComponent,
   DsEmptyStateComponent,
   DsSkeletonComponent,
 } from '../../shared/ui/misc/misc.component';
@@ -49,13 +49,13 @@ const ICONOS = {
   campana: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21a2 2 0 0 0 4 0',
   cerrar: 'M18 6 6 18M6 6l12 12',
   alerta: 'M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+  check: 'M20 6 9 17l-5-5',
 };
 
 @Component({
   selector: 'app-notificaciones-centro',
   imports: [
     DsButtonComponent,
-    DsBadgeComponent,
     DsEmptyStateComponent,
     DsSkeletonComponent,
     RouterLink,
@@ -69,6 +69,7 @@ export class NotificacionesCentro {
   private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(authService);
   private readonly notificacionesService = inject(notificacionService);
+  private readonly cambios = inject(notificacionesCambiosService);
   private readonly chatWidget = inject(chatWidgetService);
 
   private readonly campana = viewChild('campana', { read: ElementRef<HTMLButtonElement> });
@@ -82,13 +83,17 @@ export class NotificacionesCentro {
   protected readonly error = signal<string | null>(null);
   protected readonly reintentando = signal(false);
   protected readonly sinConexion = signal(typeof navigator !== 'undefined' && !navigator.onLine);
+  protected readonly accionError = signal<string | null>(null);
+  protected readonly idEnProceso = signal<number | null>(null);
+  protected readonly marcandoTodas = signal(false);
 
   /** El contador inicial llega del endpoint de no leídas; el listado trae su propio contador. */
   private readonly recargas = new Subject<boolean>();
   private cargado = false;
   private panelEnfocado = false;
-  /** Persistencia en backend: SCRUM-329. Hasta entonces el estado se mantiene en la vista. */
-  private readonly leidasEnSesion = signal<ReadonlySet<number>>(new Set<number>());
+  private readonly ultimaAccion = signal<'una' | 'todas' | null>(null);
+  private readonly ultimoId = signal<number | null>(null);
+  private ultimaRevision = this.cambios.version();
 
   /** Los turnos se consultan en el lugar que corresponde al rol del usuario. */
   private readonly rutaTurnos = computed(() => {
@@ -111,7 +116,25 @@ export class NotificacionesCentro {
     return `Hay ${total} ${total === 1 ? 'notificación' : 'notificaciones'}; ${this.noLeidas()} sin leer.`;
   });
 
+  protected readonly puedeMarcarTodas = computed(
+    () =>
+      this.noLeidas() > 0 &&
+      !this.cargando() &&
+      !this.reintentando() &&
+      !this.marcandoTodas() &&
+      this.idEnProceso() === null,
+  );
+
   constructor() {
+    // Un marcado en /notificaciones debe reflejarse también en el panel.
+    effect(() => {
+      const revision = this.cambios.version();
+      if (revision === this.ultimaRevision) return;
+      this.ultimaRevision = revision;
+      if (this.abierto()) this.recargar(true);
+      else this.cargado = false;
+    });
+
     afterRenderEffect(() => {
       if (!this.abierto()) {
         this.panelEnfocado = false;
@@ -129,12 +152,14 @@ export class NotificacionesCentro {
           this.error.set(null);
           this.cargando.set(!esReintento);
           this.reintentando.set(esReintento);
-          return this.notificacionesService.listar(0, LIMITE_NOTIFICACIONES).pipe(
-            map((pagina: PaginaNotificacionesDTO) => ({ ok: true as const, pagina })),
-            catchError((error: HttpErrorResponse) =>
-              of({ ok: false as const, error }),
-            ),
-          );
+          return this.notificacionesService
+            .listar(0, LIMITE_NOTIFICACIONES)
+            .pipe(
+              map((pagina: PaginaNotificacionesDTO) => ({ ok: true as const, pagina })),
+              catchError((error: HttpErrorResponse) =>
+                of({ ok: false as const, error }),
+              ),
+            );
         }),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -233,19 +258,97 @@ export class NotificacionesCentro {
     this.sinConexion.set(true);
   }
 
-  protected abrir(notificacion: NotificacionVista): void {
-    if (!notificacion.leida) {
-      const leidas = new Set(this.leidasEnSesion());
-      leidas.add(notificacion.id);
-      this.leidasEnSesion.set(leidas);
-      this.notificaciones.update((lista) =>
-        lista.map((item) =>
-          item.id === notificacion.id ? { ...item, leida: true } : item,
-        ),
-      );
-      this.noLeidas.update((cantidad) => Math.max(0, cantidad - 1));
+  /** Acción explícita de la demo 1: marcar una notificación como leída. */
+  protected marcarLeida(notificacion: NotificacionVista): void {
+    if (
+      notificacion.leida ||
+      this.idEnProceso() !== null ||
+      this.marcandoTodas() ||
+      this.cargando() ||
+      this.reintentando()
+    ) {
+      return;
     }
 
+    this.idEnProceso.set(notificacion.id);
+    this.accionError.set(null);
+    this.ultimaAccion.set('una');
+    this.ultimoId.set(notificacion.id);
+
+    this.notificacionesService
+      .marcarLeida(notificacion.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (contador) => {
+          this.noLeidas.set(contador.noLeidas);
+          this.notificaciones.update((lista) =>
+            lista.map((item) =>
+              item.id === notificacion.id ? { ...item, leida: true } : item,
+            ),
+          );
+          this.idEnProceso.set(null);
+          this.ultimaRevision = this.cambios.version();
+          this.recargar(true);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.idEnProceso.set(null);
+          this.accionError.set(this.mensajeErrorAccion(error));
+        },
+      });
+  }
+
+  /** Acción explícita de la demo 2: marcar todas como leídas de una sola vez. */
+  protected marcarTodas(): void {
+    if (!this.puedeMarcarTodas()) return;
+
+    this.marcandoTodas.set(true);
+    this.accionError.set(null);
+    this.ultimaAccion.set('todas');
+    this.ultimoId.set(null);
+
+    this.notificacionesService
+      .marcarTodasLeidas()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (contador) => {
+          this.noLeidas.set(contador.noLeidas);
+          this.marcandoTodas.set(false);
+          this.ultimaRevision = this.cambios.version();
+          this.recargar(true);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.marcandoTodas.set(false);
+          this.accionError.set(this.mensajeErrorAccion(error));
+        },
+      });
+  }
+
+  /** Reintento del error inline: vuelve a ejecutar la última acción con el mismo contexto. */
+  protected reintentarAccion(): void {
+    if (this.ultimaAccion() === 'todas') {
+      this.marcarTodas();
+      return;
+    }
+    const id = this.ultimoId();
+    if (id === null) return;
+    const notificacion = this.notificaciones().find((item) => item.id === id);
+    if (notificacion) this.marcarLeida(notificacion);
+  }
+
+  private mensajeErrorAccion(error: HttpErrorResponse): string {
+    const sufijo =
+      this.ultimaAccion() === 'todas'
+        ? 'No pudimos marcar todas las notificaciones como leídas.'
+        : 'No pudimos marcar la notificación como leída.';
+    if (this.sinConexion() || error.status === 0) {
+      return `Sin conexión a internet. ${sufijo} Probá de nuevo cuando vuelva la conexión.`;
+    }
+    return `${sufijo} Probá de nuevo.`;
+  }
+
+  protected abrir(notificacion: NotificacionVista): void {
+    // Entrar a la notificación también la marca como leída, sin bloquear la navegación.
+    if (!notificacion.leida) this.marcarLeida(notificacion);
     this.cerrarNotificaciones();
     const destino = notificacion.destino;
     if (destino.tipo === 'chat') {
@@ -259,10 +362,6 @@ export class NotificacionesCentro {
         queryParams: destino.queryParams ?? {},
       });
     }
-  }
-
-  protected etiquetaTipo(tipo: TipoNotificacion): string {
-    return etiquetaTipoNotificacion(tipo);
   }
 
   protected iconoTipo(tipo: TipoNotificacion): string {
@@ -280,7 +379,6 @@ export class NotificacionesCentro {
   private aVista(notificacion: NotificacionDTO): NotificacionVista {
     return {
       ...notificacion,
-      leida: notificacion.leida || this.leidasEnSesion().has(notificacion.id),
       destino: destinoDeNotificacion(notificacion, this.rutaTurnos()),
     };
   }

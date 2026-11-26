@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -12,29 +13,34 @@ import { Router, RouterLink } from '@angular/router';
 import { Subject, catchError, map, of, switchMap } from 'rxjs';
 
 import type {
+  FiltroLecturaNotificacion,
+  FiltroTipoNotificacion,
   NotificacionDTO,
   PaginaNotificacionesDTO,
 } from '../../models/notificacion';
 import { authService } from '../../services/auth-service';
 import { chatWidgetService } from '../../services/chat-widget-service';
 import { notificacionService } from '../../services/notificacion-service';
+import { notificacionesCambiosService } from '../../services/notificaciones-cambios-service';
 import {
   ariaNotificacion,
   destinoDeNotificacion,
   etiquetaTipoNotificacion,
   formatearFechaNotificacion,
   iconoTipoNotificacion,
+  TIPOS_NOTIFICACION,
   type DestinoNotificacion,
 } from '../../shared/notificaciones/destino-notificacion';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
-  DsBadgeComponent,
   DsEmptyStateComponent,
   DsPaginationComponent,
   DsSkeletonComponent,
 } from '../../shared/ui/misc/misc.component';
 
 const TAMANO_PAGINA = 20;
+
+const LECTURAS: readonly FiltroLecturaNotificacion[] = ['TODAS', 'NO_LEIDAS', 'LEIDAS'];
 
 interface NotificacionVista extends NotificacionDTO {
   readonly destino: DestinoNotificacion;
@@ -48,7 +54,6 @@ type ResultadoLista =
   selector: 'app-notificaciones',
   imports: [
     DsButtonComponent,
-    DsBadgeComponent,
     DsSkeletonComponent,
     DsEmptyStateComponent,
     DsPaginationComponent,
@@ -63,12 +68,16 @@ export class Notificaciones {
   private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(authService);
   private readonly servicio = inject(notificacionService);
+  private readonly cambios = inject(notificacionesCambiosService);
   private readonly chatWidget = inject(chatWidgetService);
 
   private readonly recargas = new Subject<number>();
-  /** Persistencia en backend: SCRUM-329. Hasta entonces el estado se mantiene en la vista. */
-  private readonly leidasEnSesion = signal<ReadonlySet<number>>(new Set<number>());
+  private readonly ultimaAccion = signal<'una' | 'todas' | null>(null);
+  private readonly ultimoId = signal<number | null>(null);
+  private ultimaRevision = this.cambios.version();
 
+  protected readonly tipos = TIPOS_NOTIFICACION;
+  protected readonly lecturas = LECTURAS;
   protected readonly notificaciones = signal<readonly NotificacionVista[]>([]);
   protected readonly pagina = signal(1);
   protected readonly totalPaginas = signal(1);
@@ -77,6 +86,11 @@ export class Notificaciones {
   protected readonly error = signal<string | null>(null);
   protected readonly reintentando = signal(false);
   protected readonly sinConexion = signal(typeof navigator !== 'undefined' && !navigator.onLine);
+  protected readonly filtroTipo = signal<FiltroTipoNotificacion>('TODOS');
+  protected readonly filtroLectura = signal<FiltroLecturaNotificacion>('TODAS');
+  protected readonly accionError = signal<string | null>(null);
+  protected readonly idEnProceso = signal<number | null>(null);
+  protected readonly marcandoTodas = signal(false);
 
   protected readonly resumen = computed(() => {
     if (this.cargando()) return '';
@@ -86,6 +100,19 @@ export class Notificaciones {
     return `Página ${this.pagina()} de ${this.totalPaginas()}; ${this.noLeidas()} sin leer.`;
   });
 
+  protected readonly hayFiltros = computed(
+    () => this.filtroTipo() !== 'TODOS' || this.filtroLectura() !== 'TODAS',
+  );
+
+  protected readonly puedeMarcarTodas = computed(
+    () =>
+      this.noLeidas() > 0 &&
+      !this.cargando() &&
+      !this.reintentando() &&
+      !this.marcandoTodas() &&
+      this.idEnProceso() === null,
+  );
+
   private readonly rutaTurnos = computed(() => {
     if (this.auth.tieneAlgunRol('ADMINISTRADOR')) return '/admin';
     if (this.auth.tieneAlgunRol('EMPLEADO')) return '/turnos-asignados';
@@ -93,16 +120,26 @@ export class Notificaciones {
   });
 
   constructor() {
+    // Un marcado desde el panel del navbar debe reflejarse en esta vista abierta.
+    effect(() => {
+      const revision = this.cambios.version();
+      if (revision === this.ultimaRevision) return;
+      this.ultimaRevision = revision;
+      if (!this.cargando() && !this.reintentando()) this.recargas.next(this.pagina());
+    });
+
     this.recargas
       .pipe(
         switchMap((pagina) => {
           this.error.set(null);
           this.cargando.set(this.notificaciones().length === 0);
           this.reintentando.set(this.notificaciones().length > 0);
-          return this.servicio.listar(pagina - 1, TAMANO_PAGINA).pipe(
-            map((respuesta): ResultadoLista => ({ ok: true, pagina: respuesta })),
-            catchError((error: HttpErrorResponse) => of<ResultadoLista>({ ok: false, error })),
-          );
+          return this.servicio
+            .listar(pagina - 1, TAMANO_PAGINA, this.filtroTipo(), this.filtroLectura())
+            .pipe(
+              map((respuesta): ResultadoLista => ({ ok: true, pagina: respuesta })),
+              catchError((error: HttpErrorResponse) => of<ResultadoLista>({ ok: false, error })),
+            );
         }),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -139,19 +176,122 @@ export class Notificaciones {
     this.recargas.next(this.pagina());
   }
 
-  protected abrir(notificacion: NotificacionVista): void {
-    if (!notificacion.leida) {
-      const leidas = new Set(this.leidasEnSesion());
-      leidas.add(notificacion.id);
-      this.leidasEnSesion.set(leidas);
-      this.notificaciones.update((lista) =>
-        lista.map((item) =>
-          item.id === notificacion.id ? { ...item, leida: true } : item,
-        ),
-      );
-      this.noLeidas.update((cantidad) => Math.max(0, cantidad - 1));
+  protected cambiarFiltroTipo(event: Event): void {
+    const valor = (event.target as HTMLSelectElement).value as FiltroTipoNotificacion;
+    if (valor === this.filtroTipo()) return;
+    if (valor !== 'TODOS' && !TIPOS_NOTIFICACION.includes(valor)) return;
+    this.filtroTipo.set(valor);
+    this.pagina.set(1);
+    this.recargas.next(1);
+  }
+
+  protected cambiarFiltroLectura(event: Event): void {
+    const valor = (event.target as HTMLSelectElement).value as FiltroLecturaNotificacion;
+    if (!LECTURAS.includes(valor) || valor === this.filtroLectura()) return;
+    this.filtroLectura.set(valor);
+    this.pagina.set(1);
+    this.recargas.next(1);
+  }
+
+  protected limpiarFiltros(): void {
+    if (!this.hayFiltros()) return;
+    this.filtroTipo.set('TODOS');
+    this.filtroLectura.set('TODAS');
+    this.pagina.set(1);
+    this.recargas.next(1);
+  }
+
+  /** Acción explícita de la demo 1: marcar una notificación como leída. */
+  protected marcarLeida(notificacion: NotificacionVista): void {
+    if (
+      notificacion.leida ||
+      this.idEnProceso() !== null ||
+      this.marcandoTodas() ||
+      this.cargando() ||
+      this.reintentando()
+    ) {
+      return;
     }
 
+    this.idEnProceso.set(notificacion.id);
+    this.accionError.set(null);
+    this.ultimaAccion.set('una');
+    this.ultimoId.set(notificacion.id);
+
+    this.servicio
+      .marcarLeida(notificacion.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (contador) => {
+          this.noLeidas.set(contador.noLeidas);
+          this.notificaciones.update((lista) =>
+            lista.map((item) =>
+              item.id === notificacion.id ? { ...item, leida: true } : item,
+            ),
+          );
+          this.idEnProceso.set(null);
+          this.ultimaRevision = this.cambios.version();
+          this.recargas.next(this.pagina());
+        },
+        error: (error: HttpErrorResponse) => {
+          this.idEnProceso.set(null);
+          this.accionError.set(this.mensajeErrorAccion(error));
+        },
+      });
+  }
+
+  /** Acción explícita de la demo 2: marcar todas como leídas de una sola vez. */
+  protected marcarTodas(): void {
+    if (!this.puedeMarcarTodas()) return;
+
+    this.marcandoTodas.set(true);
+    this.accionError.set(null);
+    this.ultimaAccion.set('todas');
+    this.ultimoId.set(null);
+
+    this.servicio
+      .marcarTodasLeidas(this.filtroTipo())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (contador) => {
+          this.noLeidas.set(contador.noLeidas);
+          this.marcandoTodas.set(false);
+          this.ultimaRevision = this.cambios.version();
+          this.recargas.next(this.pagina());
+        },
+        error: (error: HttpErrorResponse) => {
+          this.marcandoTodas.set(false);
+          this.accionError.set(this.mensajeErrorAccion(error));
+        },
+      });
+  }
+
+  /** Reintento del error inline con el mismo filtro y la misma acción. */
+  protected reintentarAccion(): void {
+    if (this.ultimaAccion() === 'todas') {
+      this.marcarTodas();
+      return;
+    }
+    const id = this.ultimoId();
+    if (id === null) return;
+    const notificacion = this.notificaciones().find((item) => item.id === id);
+    if (notificacion) this.marcarLeida(notificacion);
+  }
+
+  private mensajeErrorAccion(error: HttpErrorResponse): string {
+    const sufijo =
+      this.ultimaAccion() === 'todas'
+        ? 'No pudimos marcar todas las notificaciones como leídas.'
+        : 'No pudimos marcar la notificación como leída.';
+    if (this.sinConexion() || error.status === 0) {
+      return `Sin conexión a internet. ${sufijo} Probá de nuevo cuando vuelva la conexión.`;
+    }
+    return `${sufijo} Probá de nuevo.`;
+  }
+
+  protected abrir(notificacion: NotificacionVista): void {
+    // Entrar a la notificación también la marca como leída, sin bloquear la navegación.
+    if (!notificacion.leida) this.marcarLeida(notificacion);
     const destino = notificacion.destino;
     if (destino.tipo === 'chat') {
       if (destino.conversacionId !== null) {
@@ -174,7 +314,6 @@ export class Notificaciones {
   private aVista(notificacion: NotificacionDTO): NotificacionVista {
     return {
       ...notificacion,
-      leida: notificacion.leida || this.leidasEnSesion().has(notificacion.id),
       destino: destinoDeNotificacion(notificacion, this.rutaTurnos()),
     };
   }

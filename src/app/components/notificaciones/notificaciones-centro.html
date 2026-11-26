@@ -56,6 +56,22 @@
         </button>
       </header>
 
+      @if (accionError()) {
+        <div class="panel__accion-error" role="alert" aria-live="assertive" aria-atomic="true">
+          <span>{{ accionError() }}</span>
+          <button
+            dsButton
+            class="panel__accion"
+            type="button"
+            [disabled]="idEnProceso() !== null || marcandoTodas()"
+            [loading]="idEnProceso() !== null || marcandoTodas()"
+            (click)="reintentarAccion()"
+          >
+            Reintentar
+          </button>
+        </div>
+      }
+
       @if (sinConexion()) {
         <div class="panel__aviso" role="status" aria-live="polite">
           Sin conexión a internet. Podés reintentar cuando vuelva la conexión.
@@ -119,6 +135,7 @@
         <ol class="panel__lista" aria-label="Listado de notificaciones">
           @for (notificacion of notificaciones(); track notificacion.id) {
             <li class="panel__item">
+              <div class="panel__item-contenido">
               <button
                 class="notificacion"
                 type="button"
@@ -138,19 +155,41 @@
                     <time [attr.datetime]="notificacion.fecha">
                       {{ fechaDe(notificacion.fecha) }}
                     </time>
-                    <span>{{ etiquetaTipo(notificacion.tipo) }}</span>
                   </span>
                 </span>
-                <span class="notificacion__estado">
-                  <ds-badge [variant]="notificacion.leida ? 'success' : 'danger'">
-                    {{ notificacion.leida ? 'Leída' : 'Sin leer' }}
-                  </ds-badge>
-                </span>
               </button>
+                @if (!notificacion.leida) {
+                  <button
+                    class="panel__marcar"
+                    type="button"
+                    [disabled]="idEnProceso() !== null || marcandoTodas() || cargando() || reintentando()"
+                    [attr.aria-busy]="idEnProceso() === notificacion.id"
+                    [attr.aria-label]="'Marcar como leída: ' + notificacion.titulo"
+                    (click)="marcarLeida(notificacion)"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconos.check" />
+                    </svg>
+                  </button>
+                }
+              </div>
             </li>
           }
         </ol>
       }
+
+      <div class="panel__acciones">
+        <button
+          dsButton
+          class="panel__marcar-todas"
+          type="button"
+          [disabled]="!puedeMarcarTodas()"
+          [loading]="marcandoTodas()"
+          (click)="marcarTodas()"
+        >
+          {{ marcandoTodas() ? 'Marcando…' : 'Marcar todas como leídas' }}
+        </button>
+      </div>
     </section>
   }
 </div>

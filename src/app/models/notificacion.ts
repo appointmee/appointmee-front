@@ -37,3 +37,9 @@ export interface PaginaNotificacionesDTO {
 export interface ContadorNoLeidasDTO {
   readonly noLeidas: number;
 }
+
+/** 'TODOS' indica que no se envía el parámetro de tipo al backend. */
+export type FiltroTipoNotificacion = TipoNotificacion | 'TODOS';
+
+/** 'TODAS' indica que no se envía el parámetro de estado de lectura. */
+export type FiltroLecturaNotificacion = 'TODAS' | 'NO_LEIDAS' | 'LEIDAS';

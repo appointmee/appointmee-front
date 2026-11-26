@@ -34,6 +34,17 @@ const ICONOS_TIPO: Record<TipoNotificacion, string> = {
 
 const ICONO_SISTEMA = ICONOS_TIPO['SISTEMA'];
 
+/** Opciones del filtro de tipo, en el orden esperado en la interfaz. */
+export const TIPOS_NOTIFICACION: readonly TipoNotificacion[] = [
+  'RESERVA',
+  'CANCELACION',
+  'RECORDATORIO',
+  'PAGO',
+  'SISTEMA',
+  'SOLICITUD',
+  'MENSAJE',
+];
+
 export function etiquetaTipoNotificacion(tipo: TipoNotificacion): string {
   return ETIQUETAS_TIPO[tipo] ?? 'Notificación';
 }
