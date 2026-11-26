@@ -87,7 +87,8 @@ export class ChatWidget implements OnDestroy {
 
   @HostListener('mouseleave')
   protected onWidgetLeave(): void {
-    this.plegar();
+    // Con el chat abierto el contenedor se mantiene hasta que se cierre.
+    if (!this.widget.abierto()) this.plegar();
   }
 
   protected onBurbujaEnter(): void {
@@ -116,7 +117,6 @@ export class ChatWidget implements OnDestroy {
 
     if (this.abejaVisible()) this.marcarAbejaVista();
     this.abejaVisible.set(false);
-    this.plegar(true);
     this.widget.abrirConEnfoque();
   }
 
@@ -135,34 +135,59 @@ export class ChatWidget implements OnDestroy {
     return this.host.nativeElement.querySelector<HTMLElement>('.chat-widget__peek-abeja');
   }
 
+  private textoDelPeek(): HTMLElement | null {
+    return this.host.nativeElement.querySelector<HTMLElement>('.chat-widget__peek');
+  }
+
   private desplegar(): void {
     if (this.expandido()) return;
 
     const peek = this.peek();
     const abeja = this.abejaDelPeek();
+    const texto = this.textoDelPeek();
     if (!peek) return;
 
     this.expandido.set(true);
     const ancho = Math.min(220, window.innerWidth - 80);
-    gsap.killTweensOf([peek, abeja]);
+    const elementos = [peek, abeja, texto];
+    gsap.killTweensOf(elementos);
 
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      gsap.set(peek, { width: ancho, opacity: 1 });
-      gsap.set(abeja, { opacity: 1, x: 0, rotation: 0 });
+      gsap.set(peek, { width: ancho, opacity: 1, scale: 1 });
+      gsap.set(abeja, { opacity: 1, x: 0, y: 0, rotation: 0, scale: 1 });
+      gsap.set(texto, { opacity: 1, x: 0 });
       return;
     }
 
-    gsap.fromTo(
-      peek,
-      { width: 0, opacity: 0 },
-      { width: ancho, opacity: 1, duration: 0.45, ease: 'power3.out' },
-    );
-    if (abeja) {
-      gsap.fromTo(
-        abeja,
-        { x: -18, rotation: -35, opacity: 0 },
-        { x: 0, rotation: 0, opacity: 1, duration: 0.5, ease: 'back.out(2)' },
+    const linea = gsap.timeline();
+    linea
+      .fromTo(
+        peek,
+        { width: 0, opacity: 0, scale: 0.9, transformOrigin: 'right center' },
+        { width: ancho, opacity: 1, scale: 1, duration: 0.65, ease: 'elastic.out(1, 0.75)' },
+      )
+      .fromTo(
+        texto,
+        { x: 14, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.35, ease: 'power2.out' },
+        0.25,
       );
+
+    if (abeja) {
+      linea
+        .fromTo(
+          abeja,
+          { x: -42, y: 10, rotation: -65, opacity: 0, scale: 0.6 },
+          { x: 0, y: 0, rotation: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(3)' },
+          0.05,
+        )
+        .to(abeja, {
+          rotation: 10,
+          duration: 0.12,
+          repeat: 3,
+          yoyo: true,
+          ease: 'sine.inOut',
+        });
     }
   }
 
@@ -171,18 +196,28 @@ export class ChatWidget implements OnDestroy {
 
     const peek = this.peek();
     const abeja = this.abejaDelPeek();
+    const texto = this.textoDelPeek();
     this.expandido.set(false);
     if (!peek) return;
 
-    gsap.killTweensOf([peek, abeja]);
+    const elementos = [peek, abeja, texto];
+    gsap.killTweensOf(elementos);
     if (inmediato || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      gsap.set(peek, { width: 0, opacity: 0 });
-      gsap.set(abeja, { opacity: 0, x: 0, rotation: 0 });
+      gsap.set(peek, { width: 0, opacity: 0, scale: 1 });
+      gsap.set(abeja, { opacity: 0, x: 0, y: 0, rotation: 0, scale: 1 });
+      gsap.set(texto, { opacity: 1, x: 0 });
       return;
     }
 
-    gsap.to(peek, { width: 0, opacity: 0, duration: 0.3, ease: 'power2.in' });
-    if (abeja) gsap.to(abeja, { x: -10, opacity: 0, duration: 0.2 });
+    gsap
+      .timeline()
+      .to(texto, { x: 10, opacity: 0, duration: 0.15, ease: 'power2.in' }, 0)
+      .to(abeja, { x: -24, rotation: -30, opacity: 0, duration: 0.25, ease: 'power2.in' }, 0)
+      .to(
+        peek,
+        { width: 0, opacity: 0, scale: 0.92, duration: 0.32, ease: 'power3.in' },
+        0.05,
+      );
   }
 
   private animarBurbuja(vars: gsap.TweenVars): void {
@@ -219,6 +254,7 @@ export class ChatWidget implements OnDestroy {
     if (!this.widget.abierto()) return;
 
     this.widget.cerrar();
+    this.plegar();
     if (devolverFoco) this.burbuja()?.focus();
   }
 
