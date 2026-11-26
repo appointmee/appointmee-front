@@ -9,7 +9,8 @@ import { authService } from '../../services/auth-service';
 import { googlePlacesService } from '../../services/google-places-service';
 import { Solicitudes } from './solicitudes';
 
-const DIRECCION = 'Av. Corrientes 1234, CABA, Argentina';
+const DIRECCION =
+  '25 de Mayo 2423, B7600GWE Mar del Plata, Provincia de Buenos Aires, Argentina';
 
 const UBICACIONES = [
   {
@@ -311,6 +312,11 @@ describe('Solicitudes · empleador y empleo', () => {
 
     host.querySelector<HTMLButtonElement>('.solicitud__alternar')?.click();
     fixture.detectChanges();
+    const direccionMostrada = host.querySelector('.detalle__ubicacion-direccion')?.textContent?.trim();
+    expect(direccionMostrada).toBe('25 de Mayo 2423, Mar del Plata');
+    expect(host.textContent).not.toContain('B7600GWE');
+    expect(host.textContent).not.toContain('Provincia de Buenos Aires');
+
     const enlace = host.querySelector<HTMLAnchorElement>('.detalle__ubicacion-mapa');
     expect(enlace?.textContent).toContain('Ver en Google Maps');
     expect(new URL(enlace!.href).searchParams.get('query_place_id')).toBe('ChIJ_solicitudes');

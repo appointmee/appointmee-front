@@ -56,12 +56,17 @@
       ></textarea>
 
       <p id="solicitud-motivo-ayuda" class="solicitud-modal__ayuda">
-        Obligatorio. Mínimo {{ minimo }} caracteres, sin contar espacios al inicio y al final.
+        Obligatorio. Entre {{ minimo }} y {{ maximo }} caracteres, sin contar espacios al inicio y
+        al final.
       </p>
 
       <div id="solicitud-motivo-error" class="solicitud-modal__validacion" aria-live="polite">
         @if (mostrarAyudaValidacion()) {
-          <p>El comentario debe tener al menos {{ minimo }} caracteres.</p>
+          @if (excedeMaximo()) {
+            <p>El comentario no puede superar los {{ maximo }} caracteres.</p>
+          } @else {
+            <p>El comentario debe tener al menos {{ minimo }} caracteres.</p>
+          }
         }
       </div>
     </div>

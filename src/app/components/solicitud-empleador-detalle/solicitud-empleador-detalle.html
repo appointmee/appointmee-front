@@ -57,14 +57,14 @@
       <ol class="detalle__ubicaciones-lista">
         @for (ubicacion of ubicaciones(); track $index) {
           <li class="detalle__ubicacion">
-            <span class="detalle__ubicacion-direccion">{{ ubicacion.direccion }}</span>
+            <span class="detalle__ubicacion-direccion">{{ direccionCorta(ubicacion) }}</span>
             @if (urlMapa(ubicacion); as url) {
               <a
                 class="detalle__ubicacion-mapa"
                 [href]="url"
                 target="_blank"
                 rel="noopener noreferrer"
-                [attr.aria-label]="'Abrir ' + ubicacion.direccion + ' en Google Maps en una pestaña nueva'"
+                [attr.aria-label]="'Abrir ' + direccionCorta(ubicacion) + ' en Google Maps en una pestaña nueva'"
               >
                 <span>Ver en Google Maps</span>
                 <svg viewBox="0 0 24 24" aria-hidden="true">

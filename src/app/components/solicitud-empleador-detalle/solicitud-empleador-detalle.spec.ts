@@ -18,7 +18,7 @@ const DETALLE: SolicitudEmpleadorDetalleDTO = {
   ubicaciones: [
     {
       id: 7,
-      direccion: 'Av. Corrientes 1234, CABA, Argentina',
+      direccion: '25 de Mayo 2423, B7600GWE Mar del Plata, Provincia de Buenos Aires, Argentina',
       latitud: -34.6037,
       longitud: -58.3816,
       googlePlaceId: 'ChIJ_corientes',
@@ -74,7 +74,15 @@ describe('SolicitudEmpleadorDetalle', () => {
     const enlaces = host.querySelectorAll<HTMLAnchorElement>('.detalle__ubicacion-mapa');
 
     expect(filas).toHaveLength(2);
-    expect(filas[0].textContent).toContain(DETALLE.ubicaciones![0].direccion);
+    expect(
+      filas[0].querySelector('.detalle__ubicacion-direccion')?.textContent?.trim(),
+    ).toBe('25 de Mayo 2423, Mar del Plata');
+    expect(filas[0].textContent).not.toContain('B7600GWE');
+    expect(filas[0].textContent).not.toContain('Provincia de Buenos Aires');
+    expect(filas[0].textContent).not.toContain('Argentina');
+    expect(
+      filas[1].querySelector('.detalle__ubicacion-direccion')?.textContent?.trim(),
+    ).toBe('Av. Santa Fe 3253, CABA');
     expect(enlaces).toHaveLength(2);
 
     const primera = new URL(enlaces[0].href);
@@ -98,5 +106,31 @@ describe('SolicitudEmpleadorDetalle', () => {
     const host = fixture.nativeElement as HTMLElement;
     expect(host.textContent).toContain('Esta solicitud no tiene ubicaciones registradas.');
     expect(host.querySelector('.detalle__ubicacion')).toBeNull();
+  });
+
+  it('usa un fallback neutro cuando la dirección no permite identificar los datos', () => {
+    const ubicacion = {
+      id: 9,
+      direccion: 'Argentina',
+      latitud: -34.6037,
+      longitud: -58.3816,
+      googlePlaceId: 'ChIJ_fallback',
+    };
+    fixture.componentRef.setInput('detalle', { ...DETALLE, ubicaciones: [ubicacion] });
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(
+      host.querySelector('.detalle__ubicacion-direccion')?.textContent?.trim(),
+    ).toBe('Dirección no disponible');
+
+    fixture.componentRef.setInput('detalle', {
+      ...DETALLE,
+      ubicaciones: [{ ...ubicacion, direccion: 'B7600GWE Mar del Plata' }],
+    });
+    fixture.detectChanges();
+    expect(
+      host.querySelector('.detalle__ubicacion-direccion')?.textContent?.trim(),
+    ).toBe('Mar del Plata');
   });
 });

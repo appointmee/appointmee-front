@@ -124,6 +124,63 @@ export function urlGoogleMapsUbicacion(
   return null;
 }
 
+const CODIGO_POSTAL_CON_LETRA = /^[A-Z]\d{4}[A-Z]{2,3}\s+/i;
+const CODIGO_POSTAL_NUMERICO = /^\d{4,5}(?:-\d{4})?\s+/;
+const SEGMENTO_ADMINISTRATIVO =
+  /^(?:provincia(?:\s+de)?|departamento|estado(?:\s+de)?|state(?:\s+of)?|regi[oó]n|region|comunidad(?:\s+de)?|distrito|municipio|condado|county)\b/i;
+const SEGMENTO_ESTADO_POSTAL = /^[A-Z]{2}\s+\d{4,5}(?:-\d{4})?$/i;
+const PAISES_COMUNES =
+  /^(?:argentina|usa|estados unidos|united states|canad[aá]|chile|m[eé]xico|mexico|brasil|brazil|uruguay|paraguay|bolivia|per[uú]|peru|colombia|venezuela|ecuador|espa[nñ]a|spain|portugal|francia|france|alemania|germany|italia|italy|reino unido|united kingdom|uk|pa[ií]ses bajos|netherlands|suiza|switzerland)\b/i;
+
+function normalizarSegmento(valor: string): string {
+  return valor.replace(/\s+/g, ' ').trim();
+}
+
+function quitarCodigoPostal(segmento: string, soloAlfanumerico: boolean): string {
+  const sinAlfanumerico = segmento.replace(CODIGO_POSTAL_CON_LETRA, '').trim();
+  return soloAlfanumerico
+    ? sinAlfanumerico
+    : sinAlfanumerico.replace(CODIGO_POSTAL_NUMERICO, '').trim();
+}
+
+function esSegmentoAdministrativo(segmento: string): boolean {
+  return (
+    SEGMENTO_ADMINISTRATIVO.test(segmento) ||
+    SEGMENTO_ESTADO_POSTAL.test(segmento) ||
+    PAISES_COMUNES.test(segmento)
+  );
+}
+
+/**
+ * Presentación resumida de una dirección ya guardada: calle, altura y localidad.
+ * Solo formatea el texto persistido; no consulta Places y no altera el DTO.
+ * Ante un formato no confiable devuelve un texto neutro en lugar de inventar
+ * datos o mostrar códigos postales, provincias y países como si fueran locales.
+ */
+export function resumirDireccionSolicitudEmpleador(
+  direccion: string | null | undefined,
+): string {
+  const valor = typeof direccion === 'string' ? normalizarSegmento(direccion) : '';
+  if (!valor) return 'Dirección no disponible';
+
+  const segmentos = valor.split(',').map(normalizarSegmento).filter(Boolean);
+  // En la calle solo se quita un código postal alfanumérico (por ejemplo
+  // `B7600GWE`): un número de 4 dígitos puede ser la altura de la calle.
+  const calle = quitarCodigoPostal(segmentos[0] ?? '', true);
+  const calleConfiable = calle && !esSegmentoAdministrativo(calle) ? calle : '';
+
+  const localidad =
+    segmentos
+      .slice(1)
+      .map((segmento) => quitarCodigoPostal(segmento, false))
+      .find((segmento) => segmento && !esSegmentoAdministrativo(segmento)) ?? '';
+
+  if (calleConfiable && localidad) return `${calleConfiable}, ${localidad}`;
+  if (calleConfiable) return calleConfiable;
+  if (localidad) return localidad;
+  return 'Dirección no disponible';
+}
+
 /** Las fechas del backend son LocalDate (`YYYY-MM-DD`), sin hora ni zona. */
 export function formatearFechaSolicitud(fecha: string | null | undefined): string {
   const valor = fecha?.trim();

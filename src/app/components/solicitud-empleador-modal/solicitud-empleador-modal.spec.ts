@@ -139,6 +139,47 @@ describe('SolicitudEmpleadorModal · ubicaciones con Google Places', () => {
     expect(raiz().querySelector('#solicitud-direccion')?.getAttribute('aria-invalid')).toBe('true');
   });
 
+  it('permite escribir hasta 3000 caracteres y refleja el nuevo límite', async () => {
+    const confirmar = vi.fn();
+    fixture.componentInstance.confirmar.subscribe(confirmar);
+
+    const textarea = raiz().querySelector<HTMLTextAreaElement>('#solicitud-motivo')!;
+    expect(textarea.getAttribute('maxlength')).toBe('3000');
+    expect(raiz().querySelector('.solicitud-modal__etiqueta span')?.textContent).toContain('/3000');
+    expect(raiz().textContent).toContain('Entre 20 y 3000 caracteres');
+
+    escribirComentario('a'.repeat(3000));
+    await buscar(DIRECCIONES[0]);
+    await elegirSugerencia();
+    enviar();
+
+    expect(confirmar).toHaveBeenCalledWith({
+      motivo: 'a'.repeat(3000),
+      ubicaciones: [
+        {
+          direccion: DIRECCIONES[0],
+          latitud: -34.6037,
+          longitud: -58.3816,
+          googlePlaceId: sugerencia(DIRECCIONES[0]).id,
+        },
+      ],
+    });
+  });
+
+  it('rechaza el envío con más de 3000 caracteres y muestra el error inline', async () => {
+    const confirmar = vi.fn();
+    fixture.componentInstance.confirmar.subscribe(confirmar);
+
+    escribirComentario('a'.repeat(3001));
+    await buscar(DIRECCIONES[0]);
+    await elegirSugerencia();
+    enviar();
+
+    expect(confirmar).not.toHaveBeenCalled();
+    expect(raiz().textContent).toContain('El comentario no puede superar los 3000 caracteres.');
+    expect(raiz().querySelector('#solicitud-motivo')?.getAttribute('aria-invalid')).toBe('true');
+  });
+
   it('no guarda texto libre: solo acepta una sugerencia de Places', async () => {
     const confirmar = vi.fn();
     fixture.componentInstance.confirmar.subscribe(confirmar);

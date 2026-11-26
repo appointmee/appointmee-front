@@ -30,7 +30,7 @@ function detalle(id: number, estado: SolicitudEmpleadorDetalleDTO['estado']): So
     ubicaciones: [
       {
         id: 9,
-        direccion: 'Av. Santa Fe 3253, CABA, Argentina',
+        direccion: '25 de Mayo 2423, B7600GWE Mar del Plata, Provincia de Buenos Aires, Argentina',
         latitud: -34.5889,
         longitud: -58.3951,
         googlePlaceId: 'ChIJ_historial',
@@ -98,7 +98,10 @@ describe('Historial completo de solicitudes', () => {
 
     expect(host.textContent).toContain('Motivo de la solicitud 21');
     expect(host.textContent).toContain('Rechazada');
-    expect(host.textContent).toContain('Av. Santa Fe 3253, CABA, Argentina');
+    const direccionMostrada = host.querySelector('.detalle__ubicacion-direccion')?.textContent?.trim();
+    expect(direccionMostrada).toBe('25 de Mayo 2423, Mar del Plata');
+    expect(host.textContent).not.toContain('B7600GWE');
+    expect(host.textContent).not.toContain('Provincia de Buenos Aires');
     expect(host.querySelector('.solicitud__cargando')).toBeNull();
 
     const enlace = host.querySelector<HTMLAnchorElement>('.detalle__ubicacion-mapa');

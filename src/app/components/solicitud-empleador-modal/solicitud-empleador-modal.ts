@@ -24,7 +24,7 @@ import {
 } from '../../services/google-places-service';
 
 const MINIMO_CARACTERES = 20;
-const MAXIMO_CARACTERES = 300;
+const MAXIMO_CARACTERES = 3000;
 const MAXIMO_UBICACIONES = 10;
 const LONGITUD_MINIMA_DIRECCION = 3;
 const RETARDO_DEBOUNCE_MS = 350;
@@ -73,6 +73,7 @@ export class SolicitudEmpleadorModal {
   protected readonly infoUbicacion = signal<string | null>(null);
 
   protected readonly caracteres = computed(() => this.motivo().trim().length);
+  protected readonly excedeMaximo = computed(() => this.caracteres() > MAXIMO_CARACTERES);
   protected readonly motivoValido = computed(
     () => this.caracteres() >= MINIMO_CARACTERES && this.caracteres() <= MAXIMO_CARACTERES,
   );

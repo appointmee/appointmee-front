@@ -6,6 +6,7 @@ import {
   claseEstadoSolicitud,
   etiquetaEstadoSolicitud,
   formatearFechaSolicitud,
+  resumirDireccionSolicitudEmpleador,
   urlGoogleMapsUbicacion,
 } from '../../models/solicitud-empleador';
 
@@ -48,10 +49,17 @@ export class SolicitudEmpleadorDetalle {
     return solicitante ? solicitante.email?.trim() || null : this.detalle().usuario.email;
   });
 
-  /** Ubicaciones ya guardadas: se muestran tal cual vinieron del backend. */
+  /** Ubicaciones ya guardadas: el DTO original se usa para los enlaces. */
   protected readonly ubicaciones = computed(
     () => this.detalle().ubicaciones ?? [],
   );
+
+  /** Solo cambia la presentación: calle, altura y localidad. */
+  protected direccionCorta(
+    ubicacion: UbicacionGuardadaSolicitudEmpleadorDTO,
+  ): string {
+    return resumirDireccionSolicitudEmpleador(ubicacion.direccion);
+  }
 
   /**
    * Enlace público construido solo con los datos persistidos. No consulta
