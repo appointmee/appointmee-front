@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import { Navbar } from './navbar';
 import { authService } from '../../services/auth-service';
 import { BranchSearch } from '../../services/branch-search';
+import { notificacionService } from '../../services/notificacion-service';
 import { usuarioService } from '../../services/usuario-service';
 
 @Component({ selector: 'app-navbar-test-page', template: '' })
@@ -16,6 +17,21 @@ const usuariosMock = {
   useValue: { obtenerPerfil: () => of({ nombre: 'Ana', apellido: 'Pérez' }) },
 };
 
+const notificacionesMock = {
+  provide: notificacionService,
+  useValue: {
+    contarNoLeidas: () => of({ noLeidas: 0 }),
+    listar: () => of({
+      contenido: [],
+      pagina: 0,
+      tamano: 20,
+      totalElementos: 0,
+      totalPaginas: 0,
+      noLeidas: 0,
+    }),
+  },
+};
+
 describe('Buscador del navbar', () => {
   beforeEach(() => TestBed.resetTestingModule());
   it('muestra iniciales si la foto falla y vuelve a intentar cuando cambia la URL', async () => {
@@ -23,6 +39,7 @@ describe('Buscador del navbar', () => {
     TestBed.configureTestingModule({
       imports: [Navbar],
       providers: [
+        notificacionesMock,
         provideRouter([{ path: 'sucursales', component: EmptyPage }]),
         usuariosMock,
         { provide: authService, useValue: {
@@ -60,6 +77,7 @@ describe('Buscador del navbar', () => {
     TestBed.configureTestingModule({
       imports: [Navbar],
       providers: [
+        notificacionesMock,
         provideRouter([
           { path: '', component: EmptyPage },
           { path: 'sucursales', component: EmptyPage },
@@ -93,6 +111,7 @@ describe('Acceso a Mis Turnos', () => {
     TestBed.configureTestingModule({
       imports: [Navbar],
       providers: [
+        notificacionesMock,
         provideRouter([
           { path: 'sucursales', component: EmptyPage },
           { path: 'mis-turnos', component: EmptyPage },
@@ -142,6 +161,7 @@ describe('Acceso a Solicitudes en el menú de cuenta', () => {
     TestBed.configureTestingModule({
       imports: [Navbar],
       providers: [
+        notificacionesMock,
         provideRouter([
           { path: 'sucursales', component: EmptyPage },
           { path: 'perfil', component: EmptyPage },
@@ -199,6 +219,7 @@ describe('Navbar en la vista de error', () => {
     TestBed.configureTestingModule({
       imports: [Navbar],
       providers: [
+        notificacionesMock,
         provideRouter([{ path: 'error', component: EmptyPage }]),
         usuariosMock,
         { provide: authService, useValue: {
@@ -222,6 +243,7 @@ describe('Navbar en la vista de error', () => {
     TestBed.configureTestingModule({
       imports: [Navbar],
       providers: [
+        notificacionesMock,
         provideRouter([{ path: 'error', component: EmptyPage }]),
         usuariosMock,
         { provide: authService, useValue: {
@@ -248,6 +270,7 @@ describe('Navbar sin acceso a Mensajes', () => {
     TestBed.configureTestingModule({
       imports: [Navbar],
       providers: [
+        notificacionesMock,
         provideRouter([{ path: 'sucursales', component: EmptyPage }]),
         usuariosMock,
         {
@@ -282,6 +305,7 @@ describe('Restauración de sesión en el navbar', () => {
     TestBed.configureTestingModule({
       imports: [Navbar],
       providers: [
+        notificacionesMock,
         provideRouter([{ path: 'private', component: EmptyPage }]),
         usuariosMock,
         {
@@ -302,5 +326,60 @@ describe('Restauración de sesión en el navbar', () => {
     expect(fixture.nativeElement.querySelector('[aria-label="Restaurando sesión"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.navbar__cta')).toBeNull();
     expect(fixture.nativeElement.querySelector('.profile__avatar')).toBeNull();
+  });
+});
+
+describe('Campana de notificaciones en el navbar', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('muestra la campana para usuarios autenticados y no para visitantes', async () => {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        notificacionesMock,
+        provideRouter([{ path: 'sucursales', component: EmptyPage }]),
+        usuariosMock,
+        {
+          provide: authService,
+          useValue: {
+            autenticado: signal(true),
+            visitante: signal(false),
+            restaurando: signal(false),
+            perfil: signal(null),
+            iniciales: signal('AM'),
+            tieneAlgunRol: () => false,
+          },
+        },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/sucursales');
+    fixture.detectChanges();
+
+    const campana = fixture.nativeElement.querySelector('.notificaciones__campana') as HTMLButtonElement;
+    expect(campana).not.toBeNull();
+    expect(campana.getAttribute('aria-label')).toContain('Notificaciones');
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        notificacionesMock,
+        provideRouter([{ path: 'sucursales', component: EmptyPage }]),
+        usuariosMock,
+        {
+          provide: authService,
+          useValue: {
+            autenticado: signal(false),
+            visitante: signal(true),
+            restaurando: signal(false),
+          },
+        },
+      ],
+    });
+    const visitante = TestBed.createComponent(Navbar);
+    visitante.detectChanges();
+    expect(visitante.nativeElement.querySelector('.notificaciones__campana')).toBeNull();
   });
 });

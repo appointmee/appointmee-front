@@ -4,16 +4,33 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
 import { authService } from '../../services/auth-service';
+import { notificacionService } from '../../services/notificacion-service';
 import { usuarioService } from '../../services/usuario-service';
 import { Navbar } from './navbar';
 
 @Component({ template: '' })
 class EmptyPage {}
 
+const notificacionesMock = {
+  provide: notificacionService,
+  useValue: {
+    contarNoLeidas: () => of({ noLeidas: 0 }),
+    listar: () => of({
+      contenido: [],
+      pagina: 0,
+      tamano: 20,
+      totalElementos: 0,
+      totalPaginas: 0,
+      noLeidas: 0,
+    }),
+  },
+};
+
 function configurar(autenticado: boolean): ComponentFixture<Navbar> {
   TestBed.configureTestingModule({
     imports: [Navbar],
     providers: [
+      notificacionesMock,
       provideRouter([
         { path: 'mapa-sucursales', component: EmptyPage },
         { path: 'sucursales', component: EmptyPage },
