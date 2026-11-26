@@ -92,6 +92,7 @@ export class MotorMapaSucursales {
     private readonly api: GoogleMapsApi,
     private readonly mapa: MapaGoogle,
     private readonly alCerrar: () => void = () => undefined,
+    private readonly alAbrir: (contenido: Node | string) => void = () => undefined,
   ) {
     this.ventana = new api.maps.InfoWindow();
     this.listenerMapa = mapa.addListener('click', () => this.cerrarVentana());
@@ -226,6 +227,8 @@ export class MotorMapaSucursales {
     this.abierta = true;
     this.ventana.setContent(contenido);
     this.ventana.open(this.mapa, marcador);
+    // El wrapper de Google ya está en el DOM: la vista puede quitarle el marco.
+    this.alAbrir(contenido);
   }
 
   private removerMarcador(id: number, entrada: EntradaMarcador): void {

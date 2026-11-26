@@ -126,10 +126,9 @@ export function puntuacionMapa(
   return Math.round(valor * 10) / 10;
 }
 
-/** Texto que se dibuja dentro de la burbuja. Sin valoraciones, burbuja vacía. */
-export function textoIndicadorMapa(sucursal: SucursalMapaDTO): string | null {
-  const valor = puntuacionMapa(sucursal);
-  return valor === null ? null : String(valor);
+/** Texto que se dibuja dentro de la burbuja; `-` significa "sin puntuaciones". */
+export function textoIndicadorMapa(sucursal: SucursalMapaDTO): string {
+  return puntuacionMapa(sucursal)?.toString() ?? '-';
 }
 
 /** Una abeja por punto de la escala, con el mismo criterio del detalle. */
@@ -190,25 +189,41 @@ function colorToken(valor: string, respaldo: string): string {
 export const ABEJA_MAPA = '🐝';
 
 /**
+ * Ancho mínimo de la burbuja. Un decimal ocupa tres caracteres, así que se
+ * reserva espacio para él y para la abeja; los valores enteros quedan compactos.
+ */
+function anchoIndicador(texto: string): number {
+  const anchoContenido = Array.from(texto).length * 10 + 3 + 17 + 12;
+  return Math.max(44, Math.ceil(anchoContenido / 2) * 2);
+}
+
+/**
  * Icono SVG embebido (data URI): no descarga imágenes ni consulta ninguna API.
  * Los colores vienen de los tokens `--accent` y `--on-accent` de la app.
- * Número y abeja comparten un único texto centrado; sin puntuación no hay contenido.
+ * El ancho se ajusta al contenido para que ningún decimal se corte; número y
+ * abeja comparten un único texto centrado.
  */
 export function iconoIndicadorMapa(
-  texto: string | null,
+  texto: string,
   colorAcento: string,
   colorTexto = '#07090d',
 ): string {
   const fondo = colorToken(colorAcento, '#f7c65a');
   const tinta = colorToken(colorTexto, '#07090d');
-  const etiqueta = texto ? escaparXml(texto) : '';
-  const contenido = texto
-    ? `<tspan font-weight="700">${etiqueta}</tspan><tspan dx="3" font-size="14" font-weight="400">${ABEJA_MAPA}</tspan>`
-    : '';
+  const etiqueta = escaparXml(texto);
+  const ancho = anchoIndicador(texto);
+  const centro = ancho / 2;
+  const mitad = centro - 2;
+  const derecha = ancho - 2;
+  const curvaIzquierda = centro - mitad * 0.58;
+  const curvaDerecha = centro + mitad * 0.58;
+  const contenido =
+    `<tspan font-weight="700">${etiqueta}</tspan>` +
+    `<tspan dx="3" font-size="14" font-weight="400">${ABEJA_MAPA}</tspan>`;
   const svg = [
-    '<svg xmlns="http://www.w3.org/2000/svg" width="44" height="56" viewBox="0 0 44 56">',
-    `<path d="M22 2C10.4 2 2 10.4 2 21.5 2 36 22 54 22 54s20-18 20-32.5C42 10.4 33.6 2 22 2Z" fill="${fondo}" stroke="${tinta}" stroke-width="2"/>`,
-    `<text x="22" y="24" text-anchor="middle" dominant-baseline="middle" fill="${tinta}" font-family="Arial, sans-serif" font-size="16">${contenido}</text>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${ancho}" height="56" viewBox="0 0 ${ancho} 56">`,
+    `<path d="M${centro} 2C${curvaIzquierda} 2 2 10.4 2 21.5 2 36 ${centro} 54 ${centro} 54s${mitad}-18 ${mitad}-32.5C${derecha} 10.4 ${curvaDerecha} 2 ${centro} 2Z" fill="${fondo}" stroke="${tinta}" stroke-width="2"/>`,
+    `<text x="${centro}" y="24" text-anchor="middle" dominant-baseline="middle" fill="${tinta}" font-family="Arial, sans-serif" font-size="16">${contenido}</text>`,
     '</svg>',
   ].join('');
 

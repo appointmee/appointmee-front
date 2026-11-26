@@ -327,8 +327,11 @@ export class MapaSucursales implements AfterViewInit {
       });
 
       this.motor.set(
-        new MotorMapaSucursales(api, mapa, () =>
-          this.limpiarContenidoVentana(),
+        new MotorMapaSucursales(
+          api,
+          mapa,
+          () => this.limpiarContenidoVentana(),
+          (contenido) => this.quitarMarcoBlanco(contenido),
         ),
       );
       this.mapaListo.set(true);
@@ -364,7 +367,7 @@ export class MapaSucursales implements AfterViewInit {
       'gap:var(--space-2)',
       'max-width:17.5rem',
       'padding:var(--space-3)',
-      'background:var(--surface)',
+      'background-color:var(--surface)',
       'color:var(--text)',
       'font-family:var(--font)',
       'border-radius:var(--radius-md)',
@@ -449,6 +452,42 @@ export class MapaSucursales implements AfterViewInit {
 
     raiz.append(acciones);
     return raiz;
+  }
+
+  /**
+   * Google Maps dibuja un contenedor blanco propio alrededor del contenido.
+   * Se ajusta ese wrapper (y su puntero) para que solo se vea el panel negro.
+   */
+  private quitarMarcoBlanco(contenido: Node | string): void {
+    if (!(contenido instanceof Node)) {
+      return;
+    }
+    const marco = contenido.parentElement?.closest<HTMLElement>('.gm-style-iw');
+    if (!marco) {
+      return;
+    }
+
+    const piezas = [
+      marco,
+      ...marco.querySelectorAll<HTMLElement>('.gm-style-iw-c, .gm-style-iw-d'),
+    ];
+    for (const pieza of piezas) {
+      pieza.style.setProperty('background', 'transparent', 'important');
+      pieza.style.setProperty('background-color', 'transparent', 'important');
+      pieza.style.setProperty('border', '0', 'important');
+      pieza.style.setProperty('box-shadow', 'none', 'important');
+      pieza.style.setProperty('padding', '0', 'important');
+    }
+
+    const cuerpo = marco.querySelector<HTMLElement>('.gm-style-iw-d');
+    cuerpo?.style.setProperty('overflow', 'visible', 'important');
+    cuerpo?.style.setProperty('max-height', 'none', 'important');
+
+    for (const adorno of marco.querySelectorAll<HTMLElement>(
+      '.gm-style-iw-t, .gm-ui-hover-effect',
+    )) {
+      adorno.style.setProperty('display', 'none', 'important');
+    }
   }
 
   /** Abejas + valor numérico + cantidad, o el estado "Sin puntuaciones". */
