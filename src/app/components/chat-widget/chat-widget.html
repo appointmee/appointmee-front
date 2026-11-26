@@ -1,0 +1,79 @@
+@if (puedeChatear()) {
+  <div class="chat-widget">
+    @if (widget.abierto()) {
+      <section
+        class="chat-widget__panel"
+        id="chat-widget-panel"
+        role="dialog"
+        aria-label="Mensajes"
+      >
+        <header class="chat-widget__header">
+          <h2>Mensajes</h2>
+          <button
+            #cerrarBoton
+            dsButton
+            class="chat-widget__cerrar"
+            type="button"
+            aria-label="Cerrar mensajes"
+            (click)="cerrar()"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="iconoCerrar" />
+            </svg>
+          </button>
+        </header>
+        <div class="chat-widget__body">
+          <app-chat />
+        </div>
+      </section>
+    }
+
+    <div
+      class="chat-widget__peek-wrap"
+      [attr.aria-hidden]="!expandido()"
+      [attr.inert]="!expandido() ? '' : null"
+    >
+      <span class="chat-widget__peek-abeja" aria-hidden="true">
+        <img src="abeja-icono.svg" alt="" width="34" height="34" />
+      </span>
+      <button
+        dsButton
+        type="button"
+        class="chat-widget__peek"
+        (click)="toggle()"
+        aria-label="Abrir mensajes"
+      >
+        Mensajes
+      </button>
+    </div>
+
+    @if (abejaVisible()) {
+      <div class="abeja" (animationend)="onFinAbeja($event)" aria-hidden="true">
+        <span class="abeja__bzz">bzz bzz</span>
+        <img class="abeja__cuerpo" src="abeja-icono.svg" alt="" width="36" height="36" />
+      </div>
+    }
+
+    <button
+      #burbuja
+      dsButton
+      class="chat-widget__burbuja"
+      type="button"
+      [attr.aria-label]="etiquetaBurbuja()"
+      [attr.aria-expanded]="widget.abierto()"
+      [attr.aria-controls]="widget.abierto() ? 'chat-widget-panel' : null"
+      (mouseenter)="onBurbujaEnter()"
+      (mouseleave)="onBurbujaLeave()"
+      (focus)="onBurbujaEnter()"
+      (blur)="onBurbujaLeave()"
+      (pointerdown)="onBurbujaDown()"
+      (pointerup)="onBurbujaUp()"
+      (pointercancel)="onBurbujaLeave()"
+      (click)="toggle()"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path [attr.d]="iconoMensaje" />
+      </svg>
+    </button>
+  </div>
+}

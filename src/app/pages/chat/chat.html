@@ -1,0 +1,246 @@
+<section class="chat" aria-label="Tus conversaciones">
+  <div class="chat__layout" [class.chat__layout--hilo]="!!seleccionada()">
+    <section class="conversaciones" aria-labelledby="conversaciones-titulo">
+      <header class="conversaciones__header">
+        <h2 id="conversaciones-titulo">Conversaciones</h2>
+        @if (!cargandoLista() && conversaciones().length > 0) {
+          <span
+            class="conversaciones__contador"
+            [attr.aria-label]="conversaciones().length + ' conversaciones'"
+          >
+            {{ conversaciones().length }}
+          </span>
+        }
+      </header>
+
+      @if (cargandoLista()) {
+        <div class="lista-skeleton" aria-busy="true" aria-live="polite">
+          <span class="sr-only">Cargando tus conversaciones…</span>
+          @for (item of [1, 2, 3]; track item) {
+            <div class="conversacion-skeleton" aria-hidden="true">
+              <span class="skeleton skeleton--avatar"></span>
+              <span class="skeleton skeleton--linea"></span>
+              <span class="skeleton skeleton--linea skeleton--corta"></span>
+            </div>
+          }
+        </div>
+      } @else if (errorLista()) {
+        <div class="estado estado--error" role="alert">
+          <span class="estado__icono" aria-hidden="true">!</span>
+          <h3>No pudimos cargar tus conversaciones</h3>
+          <p>{{ errorLista() }}</p>
+          <button
+            dsButton
+            type="button"
+            class="boton"
+            [disabled]="cargandoLista()"
+            [attr.aria-busy]="cargandoLista()"
+            (click)="cargarConversaciones()"
+          >
+            Reintentar
+          </button>
+        </div>
+      } @else if (conversaciones().length === 0) {
+        <div class="estado estado--vacio" role="status">
+          <span class="estado__icono" aria-hidden="true">✉</span>
+          <h3>Todavía no tenés conversaciones</h3>
+          <p>Cuando tengas un turno asignado vas a poder chatear desde acá.</p>
+        </div>
+      } @else {
+        <ul class="conversaciones__lista" aria-live="polite">
+          @for (conversacion of conversaciones(); track conversacion.id) {
+            <li>
+              <button
+                type="button"
+                class="conversacion"
+                [class.conversacion--activa]="seleccionada()?.id === conversacion.id"
+                [attr.aria-current]="seleccionada()?.id === conversacion.id ? 'true' : null"
+                [attr.aria-label]="ariaLabelConversacion(conversacion)"
+                (click)="abrirConversacion(conversacion)"
+              >
+                <span class="conversacion__avatar" aria-hidden="true">
+                  {{ iniciales(conversacion.interlocutor) }}
+                </span>
+                <span class="conversacion__contenido">
+                  <span class="conversacion__nombre">{{ tituloConversacion(conversacion) }}</span>
+                  @if (participantesConversacion(conversacion); as participantes) {
+                    <span class="conversacion__participantes">{{ participantes }}</span>
+                  }
+                  <span class="conversacion__ultimo">
+                    {{ conversacion.ultimoMensaje ?? 'Sin mensajes' }}
+                  </span>
+                </span>
+                <span class="conversacion__meta">
+                  @if (conversacion.noLeidos > 0) {
+                    <span
+                      class="conversacion__no-leidos"
+                      [attr.aria-label]="conversacion.noLeidos + ' mensajes no leídos'"
+                    >
+                      {{ conversacion.noLeidos }}
+                    </span>
+                  }
+                  <time [attr.datetime]="conversacion.ultimoMensajeFecha">
+                    {{ formatearFechaCorta(conversacion.ultimoMensajeFecha) }}
+                  </time>
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section
+      class="hilo"
+      [class.hilo--visible]="!!seleccionada()"
+      aria-labelledby="hilo-titulo"
+    >
+      @if (!seleccionada()) {
+        <div class="estado estado--vacio" role="status">
+          <span class="estado__icono" aria-hidden="true">✉</span>
+          <h2 id="hilo-titulo">Elegí una conversación</h2>
+          <p>Seleccioná una conversación del listado para ver el historial y responder.</p>
+        </div>
+      } @else if (seleccionada(); as conversacion) {
+        <header class="hilo__header">
+          <button
+            type="button"
+            class="hilo__volver"
+            (click)="cerrarConversacion()"
+            aria-label="Volver al listado de conversaciones"
+          >
+            <span aria-hidden="true">←</span> Volver
+          </button>
+          <div class="hilo__titulo">
+            <h2 id="hilo-titulo">{{ tituloConversacion(conversacion) }}</h2>
+            <p>
+              @if (participantesConversacion(conversacion); as participantes) {
+                {{ participantes }}
+              } @else {
+                {{ conversacion.sucursalNombre }} · {{ etiquetaRol() }}
+              }
+            </p>
+          </div>
+          <span class="hilo__conexion" role="status" aria-live="polite">
+            {{ conectado() ? 'Conectado' : 'Conectando…' }}
+          </span>
+        </header>
+
+        @if (errorDetalle()) {
+          <div class="aviso aviso--error" role="alert">{{ errorDetalle() }}</div>
+        }
+
+        @if (detalleCargando() && mensajes().length === 0) {
+          <div class="hilo__cargando" aria-busy="true" aria-live="polite">
+            <span class="sr-only">Cargando el historial…</span>
+            @for (item of [1, 2, 3]; track item) {
+              <span class="skeleton skeleton--linea" aria-hidden="true"></span>
+            }
+          </div>
+        } @else if (errorHistorial() && mensajes().length === 0) {
+          <div class="estado estado--error" role="alert">
+            <span class="estado__icono" aria-hidden="true">!</span>
+            <h3>No pudimos cargar el historial</h3>
+            <p>{{ errorHistorial() }}</p>
+            <button
+              dsButton
+              type="button"
+              class="boton"
+              [disabled]="detalleCargando()"
+              [attr.aria-busy]="detalleCargando()"
+              (click)="reintentarHistorial()"
+            >
+              Reintentar
+            </button>
+          </div>
+        } @else {
+          @if (errorHistorial()) {
+            <div class="aviso aviso--error" role="alert">
+              <span>{{ errorHistorial() }}</span>
+              <button
+                dsButton
+                type="button"
+                class="boton boton--chico"
+                [disabled]="detalleCargando()"
+                [attr.aria-busy]="detalleCargando()"
+                (click)="reintentarHistorial()"
+              >
+                Reintentar
+              </button>
+            </div>
+          }
+
+          @if (mensajes().length === 0) {
+            <div class="estado estado--vacio" role="status">
+              <span class="estado__icono" aria-hidden="true">✉</span>
+              <h3>Sin mensajes todavía</h3>
+              <p>Escribí el primero para empezar la conversación.</p>
+            </div>
+          }
+
+          <ol class="hilo__mensajes" role="log" aria-live="polite" aria-relevant="additions text">
+            @for (mensaje of mensajes(); track mensaje.clienteMensajeId) {
+              <li class="mensaje" [class.mensaje--propio]="esPropio(mensaje)">
+                <div class="mensaje__meta">
+                  <strong>{{ mensaje.autorNombre }}</strong>
+                  <time [attr.datetime]="mensaje.fechaCreacion">
+                    {{ formatearFechaHora(mensaje.fechaCreacion) }}
+                  </time>
+                </div>
+                <p class="mensaje__texto">{{ mensaje.contenido }}</p>
+                <span
+                  class="mensaje__estado"
+                  [attr.aria-label]="'Estado: ' + etiquetaEstado(mensaje.estadoEntrega)"
+                >
+                  <span aria-hidden="true">
+                    {{ mensaje.estadoEntrega === 'LEIDO' ? '✓✓' : mensaje.estadoEntrega === 'ENTREGADO' ? '✓' : '○' }}
+                  </span>
+                  {{ etiquetaEstado(mensaje.estadoEntrega) }}
+                </span>
+              </li>
+            }
+          </ol>
+        }
+
+        <form class="hilo__form" (submit)="enviarMensaje($event)" novalidate>
+          <label class="sr-only" for="chat-mensaje">
+            Mensaje para {{ conversacion.interlocutor }}
+          </label>
+          <textarea
+            id="chat-mensaje"
+            name="mensaje"
+            rows="3"
+            [value]="texto()"
+            (input)="texto.set($any($event.target).value)"
+            [attr.maxlength]="limiteMensaje"
+            [attr.aria-invalid]="errorValidacion() ? 'true' : null"
+            [attr.aria-describedby]="errorValidacion() ? 'chat-mensaje-error' : 'chat-mensaje-ayuda'"
+            placeholder="Escribí un mensaje…"
+          ></textarea>
+
+          @if (errorValidacion()) {
+            <p class="campo__error" id="chat-mensaje-error" role="alert">{{ errorValidacion() }}</p>
+          } @else {
+            <p class="campo__ayuda" id="chat-mensaje-ayuda">
+              Máximo {{ limiteMensaje }} caracteres.
+            </p>
+          }
+
+          @if (errorEnvio()) {
+            <div class="aviso aviso--error" role="alert">{{ errorEnvio() }}</div>
+          }
+
+          <button
+            dsButton
+            type="submit"
+            class="boton"
+            [disabled]="!puedeEnviar()"
+            [attr.aria-busy]="enviando()"
+          >
+            {{ enviando() ? 'Enviando…' : 'Enviar' }}
+          </button>
+        </form>
+      }
+    </section>
+  </div>
+</section>

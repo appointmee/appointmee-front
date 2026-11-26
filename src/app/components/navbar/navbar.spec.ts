@@ -241,6 +241,40 @@ describe('Navbar en la vista de error', () => {
   });
 });
 
+describe('Navbar sin acceso a Mensajes', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('no muestra Mensajes: el chat se abre desde el widget flotante', async () => {
+    TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([{ path: 'sucursales', component: EmptyPage }]),
+        usuariosMock,
+        {
+          provide: authService,
+          useValue: {
+            autenticado: signal(true),
+            visitante: signal(false),
+            restaurando: signal(false),
+            perfil: signal(null),
+            iniciales: signal('AM'),
+            tieneAlgunRol: (...solicitados: string[]) =>
+              solicitados.includes('CLIENTE'),
+          },
+        },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(Navbar);
+    await router.navigateByUrl('/sucursales');
+    fixture.detectChanges();
+
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).not.toContain('Mensajes');
+    expect(html.querySelector('a[href="/chat"]')).toBeNull();
+  });
+});
+
 describe('Restauración de sesión en el navbar', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
