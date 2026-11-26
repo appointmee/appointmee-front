@@ -46,9 +46,9 @@ describe('Footer', () => {
         '/sucursales',
         '/#quienes-somos',
         '/#como-funciona',
-        '/creditos',
       ]),
     );
+    expect(links()).not.toContain('/creditos');
     expect(element.textContent).toContain('Información');
   });
 
