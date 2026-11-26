@@ -15,6 +15,22 @@ const DETALLE: SolicitudEmpleadorDetalleDTO = {
     email: 'ana@example.com',
     urlFotoPerfil: null,
   },
+  ubicaciones: [
+    {
+      id: 7,
+      direccion: 'Av. Corrientes 1234, CABA, Argentina',
+      latitud: -34.6037,
+      longitud: -58.3816,
+      googlePlaceId: 'ChIJ_corientes',
+    },
+    {
+      id: 8,
+      direccion: 'Av. Santa Fe 3253, CABA, Argentina',
+      latitud: -34.5889,
+      longitud: -58.3951,
+      googlePlaceId: '',
+    },
+  ],
 };
 
 describe('SolicitudEmpleadorDetalle', () => {
@@ -50,5 +66,37 @@ describe('SolicitudEmpleadorDetalle', () => {
       'Detalle de la solicitud',
     );
     expect(host.querySelector('h3')?.textContent?.trim()).toBe('Solicitud #42');
+  });
+
+  it('muestra las ubicaciones guardadas con enlaces públicos de Google Maps', () => {
+    const host = fixture.nativeElement as HTMLElement;
+    const filas = host.querySelectorAll<HTMLElement>('.detalle__ubicacion');
+    const enlaces = host.querySelectorAll<HTMLAnchorElement>('.detalle__ubicacion-mapa');
+
+    expect(filas).toHaveLength(2);
+    expect(filas[0].textContent).toContain(DETALLE.ubicaciones![0].direccion);
+    expect(enlaces).toHaveLength(2);
+
+    const primera = new URL(enlaces[0].href);
+    expect(primera.origin).toBe('https://www.google.com');
+    expect(primera.pathname).toBe('/maps/search/');
+    expect(primera.searchParams.get('api')).toBe('1');
+    expect(primera.searchParams.get('query')).toBe('-34.6037,-58.3816');
+    expect(primera.searchParams.get('query_place_id')).toBe('ChIJ_corientes');
+    expect(enlaces[0].target).toBe('_blank');
+    expect(enlaces[0].rel).toContain('noopener');
+
+    const segunda = new URL(enlaces[1].href);
+    expect(segunda.searchParams.get('query')).toBe(DETALLE.ubicaciones![1].direccion);
+    expect(segunda.searchParams.has('query_place_id')).toBe(false);
+  });
+
+  it('avisa cuando una solicitud histórica no tiene ubicaciones', () => {
+    fixture.componentRef.setInput('detalle', { ...DETALLE, ubicaciones: [] });
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent).toContain('Esta solicitud no tiene ubicaciones registradas.');
+    expect(host.querySelector('.detalle__ubicacion')).toBeNull();
   });
 });

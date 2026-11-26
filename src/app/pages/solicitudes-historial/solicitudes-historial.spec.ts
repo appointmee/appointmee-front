@@ -27,6 +27,15 @@ function detalle(id: number, estado: SolicitudEmpleadorDetalleDTO['estado']): So
       email: 'ana@example.com',
       urlFotoPerfil: null,
     },
+    ubicaciones: [
+      {
+        id: 9,
+        direccion: 'Av. Santa Fe 3253, CABA, Argentina',
+        latitud: -34.5889,
+        longitud: -58.3951,
+        googlePlaceId: 'ChIJ_historial',
+      },
+    ],
   };
 }
 
@@ -89,7 +98,13 @@ describe('Historial completo de solicitudes', () => {
 
     expect(host.textContent).toContain('Motivo de la solicitud 21');
     expect(host.textContent).toContain('Rechazada');
+    expect(host.textContent).toContain('Av. Santa Fe 3253, CABA, Argentina');
     expect(host.querySelector('.solicitud__cargando')).toBeNull();
+
+    const enlace = host.querySelector<HTMLAnchorElement>('.detalle__ubicacion-mapa');
+    expect(enlace?.textContent).toContain('Ver en Google Maps');
+    expect(new URL(enlace!.href).searchParams.get('query_place_id')).toBe('ChIJ_historial');
+    expect(enlace!.target).toBe('_blank');
 
     alternar();
     alternar();

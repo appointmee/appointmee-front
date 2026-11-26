@@ -18,8 +18,8 @@ class GraficosIntegradosStub {
 }
 
 const SOLICITUDES = [
-  { id: 31, nombreUsuario: 'Ana', apellidoUsuario: 'Pérez', fechaSolicitud: '2026-11-01' },
-  { id: 32, nombreUsuario: 'Bruno', apellidoUsuario: 'Gómez', fechaSolicitud: '2026-10-30' },
+  { id: 31, nombreUsuario: 'Ana', apellidoUsuario: 'Pérez', fechaSolicitud: '2026-11-01', estado: 'PENDIENTE' as const },
+  { id: 32, nombreUsuario: 'Bruno', apellidoUsuario: 'Gómez', fechaSolicitud: '2026-10-30', estado: 'PENDIENTE' as const },
 ];
 
 const SUCURSALES = [
@@ -86,6 +86,20 @@ describe('Administración · solicitudes de empleador', () => {
     );
   }
 
+  function pagina(
+    contenido: readonly unknown[],
+    totalPaginas = 1,
+    numero = 0,
+  ) {
+    return {
+      content: contenido,
+      totalElements: contenido.length,
+      totalPages: totalPaginas,
+      number: numero,
+      size: 10,
+    };
+  }
+
   function peticionDetalle(): ReturnType<HttpTestingController['expectOne']> {
     return backend.expectOne((request) => request.url.endsWith('/detalles'));
   }
@@ -97,8 +111,22 @@ describe('Administración · solicitudes de empleador', () => {
     fixture.detectChanges();
   }
 
+  it('consulta PENDIENTE por defecto con page 0 y size 10', () => {
+    const peticion = listar();
+    expect(peticion.request.params.get('estado')).toBe('PENDIENTE');
+    expect(peticion.request.params.get('page')).toBe('0');
+    expect(peticion.request.params.get('size')).toBe('10');
+    peticion.flush(pagina(SOLICITUDES));
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector<HTMLSelectElement>('#admin-solicitudes-estado')?.value).toBe(
+      'PENDIENTE',
+    );
+  });
+
   it('lista pendientes con los datos del solicitante y resuelve solo después de cargar el detalle', () => {
-    listar().flush(SOLICITUDES);
+    listar().flush(pagina(SOLICITUDES));
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
@@ -126,7 +154,7 @@ describe('Administración · solicitudes de empleador', () => {
   });
 
   it('muestra sucursales globales y permite localizarlas por nombre, categoría o número', () => {
-    listar().flush([]);
+    listar().flush(pagina([]));
     const host = fixture.nativeElement as HTMLElement;
     host.querySelector<HTMLButtonElement>('.admin__seccion[aria-controls="sucursales-admin-panel"]')?.click();
     fixture.detectChanges();
@@ -150,7 +178,7 @@ describe('Administración · solicitudes de empleador', () => {
   });
 
   it('muestra el detalle completo en modo administrador y da de baja la sucursal con confirmación', () => {
-    listar().flush([]);
+    listar().flush(pagina([]));
     const host = fixture.nativeElement as HTMLElement;
     host.querySelector<HTMLButtonElement>('.admin__seccion[aria-controls="sucursales-admin-panel"]')?.click();
     fixture.detectChanges();
@@ -210,7 +238,7 @@ describe('Administración · solicitudes de empleador', () => {
   });
 
   it('inicia sin panel seleccionado y permite elegir ambas secciones con botones accesibles', () => {
-    listar().flush([]);
+    listar().flush(pagina([]));
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
@@ -251,7 +279,7 @@ describe('Administración · solicitudes de empleador', () => {
   });
 
   it('integra las estadísticas como una sección seleccionable dentro del panel', () => {
-    listar().flush([]);
+    listar().flush(pagina([]));
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
@@ -278,7 +306,7 @@ describe('Administración · solicitudes de empleador', () => {
   });
 
   it('filtra usuarios, consulta su detalle y confirma la baja administrativa', () => {
-    listar().flush([]);
+    listar().flush(pagina([]));
     const host = fixture.nativeElement as HTMLElement;
     host.querySelector<HTMLButtonElement>('.admin__seccion[aria-controls="admin-usuarios-panel"]')?.click();
     fixture.detectChanges();
@@ -332,7 +360,7 @@ describe('Administración · solicitudes de empleador', () => {
   });
 
   it('muestra error inline y permite reintentar la búsqueda de usuarios', () => {
-    listar().flush([]);
+    listar().flush(pagina([]));
     const host = fixture.nativeElement as HTMLElement;
     host.querySelector<HTMLButtonElement>('.admin__seccion[aria-controls="admin-usuarios-panel"]')?.click();
     fixture.detectChanges();
@@ -358,7 +386,7 @@ describe('Administración · solicitudes de empleador', () => {
   });
 
   it('muestra la foto de perfil a la izquierda y usa iniciales si falta o falla', () => {
-    listar().flush([]);
+    listar().flush(pagina([]));
     const host = fixture.nativeElement as HTMLElement;
     host.querySelector<HTMLButtonElement>('.admin__seccion[aria-controls="admin-usuarios-panel"]')?.click();
     fixture.detectChanges();
@@ -377,7 +405,7 @@ describe('Administración · solicitudes de empleador', () => {
   });
 
   it('permite reactivar desde el detalle y actualiza el estado en la lista', () => {
-    listar().flush([]);
+    listar().flush(pagina([]));
     const host = fixture.nativeElement as HTMLElement;
     host.querySelector<HTMLButtonElement>('.admin__seccion[aria-controls="admin-usuarios-panel"]')?.click();
     fixture.detectChanges();
@@ -411,7 +439,7 @@ describe('Administración · solicitudes de empleador', () => {
   });
 
   it('aprueba una solicitud pendiente, actualiza el estado y quita las acciones', () => {
-    listar().flush([SOLICITUDES[0]]);
+    listar().flush(pagina([SOLICITUDES[0]]));
     fixture.detectChanges();
     alternar();
     peticionDetalle().flush(detalle(31, 'PENDIENTE'));
@@ -430,20 +458,26 @@ describe('Administración · solicitudes de empleador', () => {
     expect(aprobar?.disabled).toBe(true);
     expect(aprobar?.textContent).toContain('Aprobando');
 
+    expect(host.querySelector('.solicitud__accion--aprobar')).not.toBeNull();
+
     peticion.flush('Se aprobó la solicitud');
     fixture.detectChanges();
 
+    const recarga = listar();
+    expect(recarga.request.params.get('estado')).toBe('PENDIENTE');
+    recarga.flush(pagina([]));
+    fixture.detectChanges();
+
     expect(host.textContent).toContain('La solicitud fue aprobada');
-    expect(host.querySelector('.solicitud__resumen .estado')?.textContent).toContain('Aprobada');
     expect(host.querySelector('.solicitud__accion')).toBeNull();
-    expect(host.textContent).toContain('ya está resuelta');
+    expect(host.textContent).toContain('No hay solicitudes pendientes');
     expect(host.querySelector('.panel__contador')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       '0 pendientes',
     );
   });
 
   it('ante un error al rechazar muestra el mensaje inline y permite volver a intentar', () => {
-    listar().flush([SOLICITUDES[0]]);
+    listar().flush(pagina([SOLICITUDES[0]]));
     fixture.detectChanges();
     alternar();
     peticionDetalle().flush(detalle(31, 'PENDIENTE'));
@@ -472,7 +506,7 @@ describe('Administración · solicitudes de empleador', () => {
   });
 
   it('no ofrece acciones cuando el detalle ya está resuelto', () => {
-    listar().flush([SOLICITUDES[0]]);
+    listar().flush(pagina([SOLICITUDES[0]]));
     fixture.detectChanges();
     alternar();
     peticionDetalle().flush(detalle(31, 'APROBADA'));
@@ -484,7 +518,7 @@ describe('Administración · solicitudes de empleador', () => {
   });
 
   it('muestra el vacío cuando no hay pendientes', () => {
-    listar().flush([]);
+    listar().flush(pagina([]));
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
@@ -504,11 +538,76 @@ describe('Administración · solicitudes de empleador', () => {
     host.querySelector<HTMLButtonElement>('.estado--error .boton')?.click();
     fixture.detectChanges();
 
-    listar().flush([SOLICITUDES[0]]);
+    listar().flush(pagina([SOLICITUDES[0]]));
     fixture.detectChanges();
 
     expect(host.querySelector('.estado--error')).toBeNull();
     expect(host.textContent).toContain('Ana Pérez');
+  });
+
+  it('cambia el estado solo en el backend y reinicia la paginación', () => {
+    listar().flush(pagina(SOLICITUDES, 3));
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const filtro = host.querySelector<HTMLSelectElement>('#admin-solicitudes-estado')!;
+    filtro.value = 'APROBADA';
+    filtro.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const consulta = listar();
+    expect(consulta.request.params.get('estado')).toBe('APROBADA');
+    expect(consulta.request.params.get('page')).toBe('0');
+    expect(consulta.request.params.get('size')).toBe('10');
+
+    consulta.flush({
+      content: [
+        {
+          id: 33,
+          nombreUsuario: 'Carla',
+          apellidoUsuario: 'Díaz',
+          fechaSolicitud: '2026-10-28',
+          estado: 'APROBADA',
+        },
+      ],
+      totalElements: 1,
+      totalPages: 1,
+      number: 0,
+      size: 10,
+    });
+    fixture.detectChanges();
+
+    expect(host.textContent).toContain('Carla Díaz');
+    expect(host.querySelector('.solicitud__resumen .estado')?.textContent).toContain('Aprobada');
+    expect(host.querySelector('.solicitud__accion')).toBeNull();
+    expect(host.querySelector('.panel__contador')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      '1 aprobada',
+    );
+  });
+
+  it('muestra las ubicaciones persistidas y su enlace de Maps al abrir el detalle', () => {
+    listar().flush(pagina([SOLICITUDES[0]]));
+    fixture.detectChanges();
+    alternar();
+    peticionDetalle().flush({
+      ...detalle(31, 'PENDIENTE'),
+      ubicaciones: [
+        {
+          id: 5,
+          direccion: 'Av. Corrientes 1234, CABA',
+          latitud: -34.6037,
+          longitud: -58.3816,
+          googlePlaceId: 'ChIJ_admin',
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const enlace = host.querySelector<HTMLAnchorElement>('.detalle__ubicacion-mapa');
+    expect(host.textContent).toContain('Av. Corrientes 1234, CABA');
+    expect(new URL(enlace!.href).searchParams.get('query_place_id')).toBe('ChIJ_admin');
+    expect(enlace!.target).toBe('_blank');
   });
 });
 
@@ -549,7 +648,13 @@ describe('Administración · paginación de listados', () => {
         cantidadPuntuaciones: 0,
       })),
     );
-    backend.expectOne((request) => request.url.endsWith('/solicitudes-empleador/listar')).flush([]);
+    backend.expectOne((request) => request.url.endsWith('/solicitudes-empleador/listar')).flush({
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      number: 0,
+      size: 10,
+    });
     fixture.detectChanges();
   });
 
@@ -557,6 +662,12 @@ describe('Administración · paginación de listados', () => {
     fixture.destroy();
     backend.verify();
   });
+
+  function listar(): ReturnType<HttpTestingController['expectOne']> {
+    return backend.expectOne((request) =>
+      request.url.endsWith('/solicitudes-empleador/listar'),
+    );
+  }
 
   it('limita usuarios y sucursales a diez elementos y permite avanzar de página', () => {
     const host = fixture.nativeElement as HTMLElement;
@@ -581,5 +692,69 @@ describe('Administración · paginación de listados', () => {
     expect(host.querySelectorAll('#sucursales-admin-panel .sucursal-admin')).toHaveLength(2);
     expect(host.textContent).toContain('Sucursal 11');
     expect(host.textContent).toContain('Página 2 de 2');
+  });
+
+  it('pagina solicitudes en el backend con diez elementos y vuelve a la página 0 al filtrar', () => {
+    const host = fixture.nativeElement as HTMLElement;
+    const diez = Array.from({ length: 10 }, (_, indice) => ({
+      id: 400 + indice,
+      nombreUsuario: `Solicitante${indice + 1}`,
+      apellidoUsuario: 'Prueba',
+      fechaSolicitud: '2026-11-01',
+      estado: 'PENDIENTE' as const,
+    }));
+
+    host.querySelector<HTMLButtonElement>('#admin-solicitudes-panel .actualizar')?.click();
+    fixture.detectChanges();
+
+    listar().flush({
+      content: diez,
+      totalElements: 23,
+      totalPages: 3,
+      number: 0,
+      size: 10,
+    });
+    fixture.detectChanges();
+
+    expect(host.querySelectorAll('app-solicitud-empleador-card')).toHaveLength(10);
+    expect(host.textContent).toContain('Página 1 de 3');
+    expect(host.textContent).toContain('23 pendientes en total');
+
+    host.querySelector<HTMLButtonElement>('#admin-solicitudes-panel ds-pagination button:last-child')?.click();
+    fixture.detectChanges();
+
+    const segunda = listar();
+    expect(segunda.request.params.get('estado')).toBe('PENDIENTE');
+    expect(segunda.request.params.get('page')).toBe('1');
+    expect(segunda.request.params.get('size')).toBe('10');
+    segunda.flush({
+      content: [diez[0]],
+      totalElements: 23,
+      totalPages: 3,
+      number: 1,
+      size: 10,
+    });
+    fixture.detectChanges();
+    expect(host.textContent).toContain('Página 2 de 3');
+
+    const filtro = host.querySelector<HTMLSelectElement>('#admin-solicitudes-estado')!;
+    filtro.value = 'RECHAZADA';
+    filtro.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const consulta = listar();
+    expect(consulta.request.params.get('estado')).toBe('RECHAZADA');
+    expect(consulta.request.params.get('page')).toBe('0');
+    consulta.flush({
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      number: 0,
+      size: 10,
+    });
+    fixture.detectChanges();
+
+    expect(host.textContent).toContain('No hay solicitudes rechazadas');
+    expect(host.querySelector('#admin-solicitudes-panel ds-pagination')).toBeNull();
   });
 });
