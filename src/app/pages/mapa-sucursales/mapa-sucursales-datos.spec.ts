@@ -1,4 +1,5 @@
 import {
+  ABEJA_MAPA,
   SucursalMapaDTO,
   abejasMapa,
   coincideNombre,
@@ -116,25 +117,29 @@ describe('US-MAP-06 · datos del mapa global', () => {
       expect(textoIndicadorMapa({ ...CENTRO, puntuacion: 6 })).toBeNull();
     });
 
-    it('dibuja una burbuja amarilla con texto negro y sin otros datos', () => {
+    it('dibuja la puntuación y una abeja centradas en la burbuja amarilla', () => {
       const svg = decodeURIComponent(
         iconoIndicadorMapa('4.5', '#f7c65a'),
       );
 
       expect(svg).toContain('fill="#f7c65a"');
       expect(svg).toContain('fill="#07090d"');
-      expect(svg).toContain('>4.5<');
+      expect(svg).toContain('text-anchor="middle"');
+      expect(svg).toContain('dominant-baseline="middle"');
+      expect(svg).toContain('>4.5</tspan>');
+      expect(svg).toContain(ABEJA_MAPA);
       expect(svg).not.toContain('Flores');
       expect(svg).not.toContain('SPA');
     });
 
-    it('mantiene la burbuja visible pero sin texto cuando no hay reseñas', () => {
+    it('mantiene la burbuja visible pero sin número ni abeja cuando no hay reseñas', () => {
       const svg = decodeURIComponent(
         iconoIndicadorMapa(null, '#f7c65a'),
       );
 
       expect(svg).toContain('fill="#f7c65a"');
       expect(svg).not.toMatch(/>[\d.]+</);
+      expect(svg).not.toContain(ABEJA_MAPA);
     });
 
     it('usa el token de acento y descarta colores inválidos', () => {

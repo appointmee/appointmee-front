@@ -131,6 +131,7 @@ class VentanaFalsa {
 class MapaFalso {
   centros: unknown[] = [];
   limites: unknown[] = [];
+  listenerMapa: (() => void) | null = null;
 
   setCenter(centro: unknown): void {
     this.centros.push(centro);
@@ -138,6 +139,15 @@ class MapaFalso {
 
   fitBounds(bounds: unknown): void {
     this.limites.push(bounds);
+  }
+
+  addListener(_evento: string, manejador: () => void): { remove: () => void } {
+    this.listenerMapa = manejador;
+    return {
+      remove: () => {
+        this.listenerMapa = null;
+      },
+    };
   }
 }
 
@@ -275,8 +285,10 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
 
     expect(marcadores).toHaveLength(2);
     expect(marcadores.every((marcador) => decodeURIComponent(marcador.iconos[0]).includes('fill="#f7c65a"'))).toBe(true);
-    expect(decodeURIComponent(marcadores[0].iconos[0])).toContain('>4.5<');
+    expect(decodeURIComponent(marcadores[0].iconos[0])).toContain('>4.5</tspan>');
+    expect(decodeURIComponent(marcadores[0].iconos[0])).toContain('🐝');
     expect(decodeURIComponent(marcadores[1].iconos[0])).not.toMatch(/>[\d.]+</);
+    expect(decodeURIComponent(marcadores[1].iconos[0])).not.toContain('🐝');
     expect(mapa.limites).toHaveLength(1);
 
     const select = host.querySelector<HTMLSelectElement>('ds-select select')!;
@@ -404,6 +416,67 @@ describe('US-MAP-06 · Mapa global de sucursales', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(router.url).toBe('/sucursal/1');
+  });
+
+  it('cierra la ventana y desactiva sus acciones al hacer clic fuera de un indicador', async () => {
+    await crear();
+    await revelar();
+
+    marcadores[0].listener?.();
+    const contenido = ventana.contenido as HTMLElement;
+    expect(ventana.abierta).toBe(true);
+
+    mapa.listenerMapa?.();
+    expect(ventana.abierta).toBe(false);
+
+    contenido.querySelector<HTMLButtonElement>('button')?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(router.url).not.toBe('/sucursal/1');
+  });
+
+  it('reemplaza la selección al elegir otro indicador conservando sus acciones', async () => {
+    await crear();
+    await revelar();
+
+    marcadores[0].listener?.();
+    const anterior = ventana.contenido as HTMLElement;
+    expect(anterior.textContent).toContain('Sucursal Flores');
+
+    marcadores[1].listener?.();
+    const actual = ventana.contenido as HTMLElement;
+    expect(ventana.abierta).toBe(true);
+    expect(actual).not.toBe(anterior);
+    expect(actual.textContent).toContain('Sucursal Norte');
+    expect(anterior.textContent).not.toContain('Sucursal Norte');
+
+    actual.querySelector<HTMLButtonElement>('button')?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(router.url).toBe('/sucursal/2');
+  });
+
+  it('cierra la ventana al cambiar la categoría o la búsqueda', async () => {
+    await crear();
+    await revelar();
+
+    marcadores[0].listener?.();
+    expect(ventana.abierta).toBe(true);
+
+    const select = host.querySelector<HTMLSelectElement>('ds-select select')!;
+    select.value = 'BARBERIA';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(ventana.abierta).toBe(false);
+
+    select.value = 'SPA';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    marcadores.at(-1)?.listener?.();
+    expect(ventana.abierta).toBe(true);
+
+    await buscar('Norte');
+    expect(ventana.abierta).toBe(false);
   });
 
   it('muestra un estado vacío accesible cuando no quedan sucursales visibles', async () => {

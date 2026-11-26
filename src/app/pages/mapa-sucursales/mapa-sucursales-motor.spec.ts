@@ -23,6 +23,7 @@ class MarcadorFalso implements MarcadorGoogle {
 
   constructor(readonly opciones: Record<string, unknown>) {
     this.iconos.push(String(opciones['icon'] ?? ''));
+    this.mapa = (opciones['map'] as MapaGoogle | undefined) ?? null;
   }
 
   setPosition(posicion: PuntoGoogle): void {
@@ -68,6 +69,7 @@ class VentanaFalsa implements VentanaGoogle {
 class MapaFalso implements MapaGoogle {
   centros: PuntoGoogle[] = [];
   limites: LimitesGoogle[] = [];
+  listenerMapa: (() => void) | null = null;
 
   setCenter(centro: PuntoGoogle): void {
     this.centros.push(centro);
@@ -75,6 +77,15 @@ class MapaFalso implements MapaGoogle {
 
   fitBounds(bounds: LimitesGoogle): void {
     this.limites.push(bounds);
+  }
+
+  addListener(_evento: string, manejador: () => void): ListenerGoogle {
+    this.listenerMapa = manejador;
+    return {
+      remove: () => {
+        this.listenerMapa = null;
+      },
+    };
   }
 }
 
@@ -171,8 +182,10 @@ describe('US-MAP-06 · motor de indicadores', () => {
     expect(marcadores).toHaveLength(2);
     expect(motor.cantidadMarcadores).toBe(2);
     expect(marcadores[0].opciones['map']).toBe(mapa);
-    expect(decodeURIComponent(marcadores[0].iconos[0])).toContain('>4.5<');
+    expect(decodeURIComponent(marcadores[0].iconos[0])).toContain('>4.5</tspan>');
+    expect(decodeURIComponent(marcadores[0].iconos[0])).toContain('🐝');
     expect(decodeURIComponent(marcadores[1].iconos[0])).not.toMatch(/>[\d.]+</);
+    expect(decodeURIComponent(marcadores[1].iconos[0])).not.toContain('🐝');
     expect(decodeURIComponent(marcadores[0].iconos[0])).not.toContain('Sucursal 1');
     expect(mapa.limites).toHaveLength(1);
     expect(limites[0].puntos).toHaveLength(2);
@@ -222,7 +235,7 @@ describe('US-MAP-06 · motor de indicadores', () => {
 
     expect(marcadores).toHaveLength(1);
     expect(marcadores[0].iconos).toHaveLength(2);
-    expect(decodeURIComponent(marcadores[0].iconos[1])).toContain('>5<');
+    expect(decodeURIComponent(marcadores[0].iconos[1])).toContain('>5</tspan>');
   });
 
   it('separa indicadores con la misma coordenada sin perder ninguno', () => {
@@ -259,6 +272,95 @@ describe('US-MAP-06 · motor de indicadores', () => {
     expect(mapa.centros).toHaveLength(1);
   });
 
+  it('cierra y deselecciona al hacer clic fuera de un indicador', () => {
+    const { api, mapa, ventana, marcadores } = crearApi();
+    const alCerrar = vi.fn();
+    const motor = new MotorMapaSucursales(api, mapa, alCerrar);
+
+    motor.actualizar(
+      [sucursal(1, -34.6), sucursal(2, -35.2)],
+      contenido,
+      icono,
+    );
+    marcadores[0].listener?.();
+    expect(motor.seleccionActual).toBe(1);
+    expect(motor.ventanaAbierta).toBe(true);
+
+    expect(mapa.listenerMapa).not.toBeNull();
+    mapa.listenerMapa?.();
+
+    expect(ventana.abierta).toBe(false);
+    expect(motor.ventanaAbierta).toBe(false);
+    expect(motor.seleccionActual).toBeNull();
+    expect(alCerrar).toHaveBeenCalledTimes(1);
+    expect(mapa.listenerMapa).not.toBeNull();
+  });
+
+  it('reemplaza la selección al elegir otro indicador', () => {
+    const { api, mapa, ventana, marcadores } = crearApi();
+    const alCerrar = vi.fn();
+    const motor = new MotorMapaSucursales(api, mapa, alCerrar);
+
+    motor.actualizar(
+      [sucursal(1, -34.6), sucursal(2, -35.2)],
+      contenido,
+      icono,
+    );
+    marcadores[0].listener?.();
+    marcadores[1].listener?.();
+
+    expect(alCerrar).toHaveBeenCalledTimes(1);
+    expect(motor.seleccionActual).toBe(2);
+    expect(motor.ventanaAbierta).toBe(true);
+    expect(ventana.abierta).toBe(true);
+    expect(ventana.contenido).toBe('Sucursal 2');
+    expect(mapa.listenerMapa).not.toBeNull();
+  });
+
+  it('cierra y deselecciona cuando los filtros actualizan los marcadores', () => {
+    const { api, mapa, ventana, marcadores } = crearApi();
+    const alCerrar = vi.fn();
+    const motor = new MotorMapaSucursales(api, mapa, alCerrar);
+    const centro = sucursal(1, -34.6, 4);
+    const norte = sucursal(2, -35.2, 3);
+
+    motor.actualizar([centro, norte], contenido, icono);
+    marcadores[0].listener?.();
+    expect(ventana.abierta).toBe(true);
+
+    motor.actualizar([centro, norte], contenido, icono);
+
+    expect(ventana.abierta).toBe(false);
+    expect(motor.ventanaAbierta).toBe(false);
+    expect(motor.seleccionActual).toBeNull();
+    expect(alCerrar).toHaveBeenCalledTimes(1);
+    expect(marcadores).toHaveLength(2);
+    expect(marcadores[0].listener).not.toBeNull();
+  });
+
+  it('no deja ventanas abiertas ni marcadores obsoletos al filtrar', () => {
+    const { api, mapa, ventana, marcadores } = crearApi();
+    const alCerrar = vi.fn();
+    const motor = new MotorMapaSucursales(api, mapa, alCerrar);
+    const centro = sucursal(1, -34.6, 4);
+    const norte = sucursal(2, -35.2, 3);
+
+    motor.actualizar([centro, norte], contenido, icono);
+    marcadores[1].listener?.();
+    const obsoleto = marcadores[1];
+
+    motor.actualizar([centro], contenido, icono);
+
+    expect(ventana.abierta).toBe(false);
+    expect(motor.seleccionActual).toBeNull();
+    expect(obsoleto.removido).toBe(true);
+    expect(obsoleto.listener).toBeNull();
+    expect(obsoleto.mapa).toBeNull();
+    expect(motor.cantidadMarcadores).toBe(1);
+    expect(marcadores.filter((marcador) => marcador.mapa === mapa)).toHaveLength(1);
+    expect(alCerrar).toHaveBeenCalledTimes(1);
+  });
+
   it('libera todos los marcadores al destruir el motor', () => {
     const { api, mapa, marcadores } = crearApi();
     const motor = new MotorMapaSucursales(api, mapa);
@@ -268,5 +370,6 @@ describe('US-MAP-06 · motor de indicadores', () => {
 
     expect(marcadores.every((marcador) => marcador.removido)).toBe(true);
     expect(motor.cantidadMarcadores).toBe(0);
+    expect(mapa.listenerMapa).toBeNull();
   });
 });
