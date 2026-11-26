@@ -8,6 +8,7 @@ import {
   filtrarSucursalesMapa,
   humanizarCategoria,
   iconoIndicadorMapa,
+  iconoUbicacionClienteMapa,
   puntuacionMapa,
   terminoDeBusquedaMapa,
   textoIndicadorMapa,
@@ -166,6 +167,30 @@ describe('US-MAP-06 · datos del mapa global', () => {
       expect(decodeURIComponent(iconoIndicadorMapa('3', 'url(x)'))).toContain(
         'fill="#f7c65a"',
       );
+    });
+
+    it('dibuja la abeja del cliente con forma y colores propios', () => {
+      const svg = decodeURIComponent(
+        iconoUbicacionClienteMapa('#5aa0f7', '#eef2f7'),
+      );
+
+      expect(svg).toContain('width="88"');
+      expect(svg).toContain('height="88"');
+      expect(svg).toContain(ABEJA_MAPA);
+      expect(svg).toContain('>VOS<');
+      expect(svg).toContain('fill="#5aa0f7"');
+      expect(svg).toContain('stroke="#eef2f7"');
+      expect(svg).not.toContain('width="44"');
+      expect(svg).not.toContain('width="62"');
+    });
+
+    it('descarta colores inválidos en el indicador del cliente', () => {
+      const svg = decodeURIComponent(
+        iconoUbicacionClienteMapa('url(x)', 'expresion(0)'),
+      );
+
+      expect(svg).toContain('fill="#5aa0f7"');
+      expect(svg).toContain('stroke="#eef2f7"');
     });
 
     it('llena las abejas hasta el valor redondeado', () => {
