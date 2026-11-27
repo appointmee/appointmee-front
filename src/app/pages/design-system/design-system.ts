@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { CarruselSucursales } from '../../components/carrusel-sucursales/carrusel-sucursales';
+import { SucursalMiniDTO } from '../../models/sucursal';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { DsInputComponent } from '../../shared/ui/input/input.component';
 import { DsCardComponent } from '../../shared/ui/card/card.component';
@@ -20,6 +22,7 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    CarruselSucursales,
     DsButtonComponent,
     DsInputComponent,
     DsCardComponent,
@@ -103,6 +106,18 @@ import {
       <section aria-labelledby="paginacion">
         <h2 id="paginacion">Paginación</h2>
         <ds-pagination [page]="1" [totalPages]="5"></ds-pagination>
+        <ds-pagination [page]="2" [totalPages]="5" [showDirectNavigation]="true"></ds-pagination>
+      </section>
+
+      <section aria-labelledby="carrusel">
+        <h2 id="carrusel">Carrusel de sucursales</h2>
+        <app-carrusel-sucursales
+          id="demo-carrusel"
+          titulo="Sección de ejemplo"
+          descripcion="Se desplaza con rueda horizontal, gesto táctil, flechas y teclado."
+          [sucursales]="sucursalesDemo"
+          [verTodas]="true"
+        />
       </section>
 
       <section aria-labelledby="modal">
@@ -129,4 +144,22 @@ import {
 export class DesignSystemPage {
   readonly abrirModal = signal(false);
   readonly modalAbierto = this.abrirModal;
+  readonly sucursalesDemo: readonly SucursalMiniDTO[] = [
+    {
+      id: 1,
+      nombre: 'Sucursal de ejemplo',
+      categoria: 'PELUQUERIA',
+      fotoPerfil: null,
+      puntuacion: 4.5,
+      cantidadPuntuaciones: 10,
+    },
+    {
+      id: 2,
+      nombre: 'Otra sucursal',
+      categoria: 'SPA',
+      fotoPerfil: null,
+      puntuacion: null,
+      cantidadPuntuaciones: 0,
+    },
+  ];
 }
