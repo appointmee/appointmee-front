@@ -81,6 +81,23 @@ export class sucursalService {
     });
   }
 
+  /** Listado administrativo: filtro libre en base de datos, 10 por página. */
+  listarPaginadoAdmin(
+    q: string | null,
+    page: number,
+    silenciarErroresGlobales = true,
+  ): Observable<PaginaSucursalesDTO> {
+    let params = new HttpParams().set('page', String(page));
+    const termino = q?.trim();
+    if (termino) {
+      params = params.set('q', termino);
+    }
+    return this.http.get<PaginaSucursalesDTO>(
+      `${this.api.baseUrl}/sucursales/listar/paginado/admin`,
+      { params, context: contextoSilenciado(silenciarErroresGlobales) },
+    );
+  }
+
   /** Secciones horizontales del Home; el backend resuelve el usuario por token. */
   recomendaciones(silenciarErroresGlobales = true): Observable<RecomendacionesSucursalesDTO> {
     return this.http.get<RecomendacionesSucursalesDTO>(

@@ -1,4 +1,4 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -7,6 +7,8 @@ import {
   SolicitudEmpleadoDetalleDTO,
   SolicitudEmpleadoMiniPropiaDTO,
   SolicitudEmpleadoMiniSucursalDTO,
+  PaginaSolicitudesEmpleadoDTO,
+  VistaPreviaSolicitudesEmpleadoDTO,
 } from '../models/solicitud-empleado';
 import { backendService } from './backend-service';
 
@@ -19,10 +21,22 @@ export class solicitudEmpleadoService {
   private readonly api = inject(backendService);
   private readonly http = inject(HttpClient);
 
-  listarRecibidas(): Observable<SolicitudEmpleadoMiniPropiaDTO[]> {
-    return this.http.get<SolicitudEmpleadoMiniPropiaDTO[]>(
+  /** Vista inicial: últimas 5 solicitudes y flag para mostrar «Ver todas». */
+  listarRecibidas(): Observable<VistaPreviaSolicitudesEmpleadoDTO> {
+    return this.http.get<VistaPreviaSolicitudesEmpleadoDTO>(
       `${this.api.baseUrl}/solicitudes-empleado/recibidas`,
       { context: this.contextoSinAvisoGlobal() },
+    );
+  }
+
+  /** Historial completo: 10 solicitudes por página (page 0-based). */
+  listarRecibidasPaginado(page: number): Observable<PaginaSolicitudesEmpleadoDTO> {
+    return this.http.get<PaginaSolicitudesEmpleadoDTO>(
+      `${this.api.baseUrl}/solicitudes-empleado/recibidas/paginado`,
+      {
+        params: new HttpParams().set('page', String(page)),
+        context: this.contextoSinAvisoGlobal(),
+      },
     );
   }
 

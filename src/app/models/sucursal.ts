@@ -1,3 +1,4 @@
+import type { PaginaDTO } from './paginacion';
 
 /**
  * Modelos sucursal
@@ -26,13 +27,7 @@ export interface RecomendacionesSucursalesDTO {
 }
 
 /** Respuesta de GET /sucursales/listar/paginado. page/number es 0-based. */
-export interface PaginaSucursalesDTO {
-  readonly content: readonly SucursalMiniDTO[];
-  readonly totalElements: number;
-  readonly totalPages: number;
-  readonly number: number;
-  readonly size: number;
-}
+export type PaginaSucursalesDTO = PaginaDTO<SucursalMiniDTO>;
 
 /**
  * Respuesta de GET /sucursales/{id} (SucursalResponseDTO del backend).

@@ -4,7 +4,12 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
-import { UsuarioMiniAdminDTO, UsuarioPerfilDTO, UsuarioResponseDTO } from '../models/usuario';
+import {
+  PaginaUsuariosAdminDTO,
+  UsuarioMiniAdminDTO,
+  UsuarioPerfilDTO,
+  UsuarioResponseDTO,
+} from '../models/usuario';
 import { backendService } from './backend-service';
 
 @Injectable({ providedIn: 'root' })
@@ -38,6 +43,23 @@ export class usuarioService {
     if (apellido) params = params.set('apellido', apellido);
     if (filtros.activo !== undefined) params = params.set('activo', String(filtros.activo));
     return this.http.get<UsuarioMiniAdminDTO[]>(`${this.api.baseUrl}/usuarios/listar/filtrar`, {
+      params,
+      context: this.contextoSinAvisoGlobal(),
+    });
+  }
+
+  /** Listado administrativo con filtros y paginación resueltos en la base. */
+  listarPaginadoAdmin(
+    filtros: { nombre?: string; apellido?: string; activo?: boolean },
+    page: number,
+  ): Observable<PaginaUsuariosAdminDTO> {
+    let params = new HttpParams().set('page', String(page));
+    const nombre = filtros.nombre?.trim();
+    const apellido = filtros.apellido?.trim();
+    if (nombre) params = params.set('nombre', nombre);
+    if (apellido) params = params.set('apellido', apellido);
+    if (filtros.activo !== undefined) params = params.set('activo', String(filtros.activo));
+    return this.http.get<PaginaUsuariosAdminDTO>(`${this.api.baseUrl}/usuarios/listar/paginado`, {
       params,
       context: this.contextoSinAvisoGlobal(),
     });

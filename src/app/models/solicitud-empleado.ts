@@ -1,3 +1,4 @@
+import type { PaginaDTO, VistaPreviaDTO } from './paginacion';
 import {
   EstadoSolicitudEmpleador,
   claseEstadoSolicitud,
@@ -37,6 +38,12 @@ export interface SolicitudEmpleadoMiniSucursalDTO {
   readonly apellidoEmpleado: string;
   readonly fechaSolicitud: string;
 }
+
+/** Vista previa de `/solicitudes-empleado/recibidas`: últimas 5 solicitudes. */
+export type VistaPreviaSolicitudesEmpleadoDTO = VistaPreviaDTO<SolicitudEmpleadoMiniPropiaDTO>;
+
+/** Historial completo de solicitudes recibidas: 10 por página. */
+export type PaginaSolicitudesEmpleadoDTO = PaginaDTO<SolicitudEmpleadoMiniPropiaDTO>;
 
 export interface UsuarioSolicitudEmpleadoDTO {
   readonly id: number;

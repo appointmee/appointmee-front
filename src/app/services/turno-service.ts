@@ -9,6 +9,7 @@ import {
   TurnoCrearDTO,
   TurnoEmpleadorDetalleDTO,
   TurnoMiniDTO,
+  PaginaTurnosDTO,
 } from '../models/turno';
 import { backendService } from './backend-service';
 
@@ -37,6 +38,14 @@ export class turnoService {
     });
   }
 
+  /** GET /turnos/propios/paginado: 10 turnos por página (page 0-based). */
+  propiosPaginado(page: number): Observable<PaginaTurnosDTO> {
+    return this.http.get<PaginaTurnosDTO>(`${this.api.baseUrl}/turnos/propios/paginado`, {
+      params: { page: String(page) },
+      context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+    });
+  }
+
   detallePropio(turnoId: number): Observable<TurnoClienteDetalleDTO> {
     return this.http.get<TurnoClienteDetalleDTO>(
       `${this.api.baseUrl}/turnos/propios/detalles/${turnoId}`,
@@ -58,6 +67,21 @@ export class turnoService {
     );
   }
 
+  /** Historial paginado de la sucursal: filtro por estado en la base. */
+  turnosDeSucursalPaginados(
+    sucursalId: number,
+    estadoTurno: EstadoTurno,
+    page: number,
+  ): Observable<PaginaTurnosDTO> {
+    return this.http.get<PaginaTurnosDTO>(
+      `${this.api.baseUrl}/turnos/de-sucursal/${sucursalId}/paginado`,
+      {
+        params: { estadoTurno, page: String(page) },
+        context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+      },
+    );
+  }
+
   /**
    * GET /turnos/de-sucursal/{sucursalId}/propios.
    * Turnos del empleado autenticado en la sucursal, filtrados por estado.
@@ -70,6 +94,21 @@ export class turnoService {
       `${this.api.baseUrl}/turnos/de-sucursal/${sucursalId}/propios`,
       {
         params: { estadoTurno },
+        context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+      },
+    );
+  }
+
+  /** Turnos asignados paginados: filtro por estado en la base. */
+  turnosAsignadosDeSucursalPaginados(
+    sucursalId: number,
+    estadoTurno: EstadoTurno,
+    page: number,
+  ): Observable<PaginaTurnosDTO> {
+    return this.http.get<PaginaTurnosDTO>(
+      `${this.api.baseUrl}/turnos/de-sucursal/${sucursalId}/propios/paginado`,
+      {
+        params: { estadoTurno, page: String(page) },
         context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
       },
     );
