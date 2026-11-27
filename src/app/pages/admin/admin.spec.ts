@@ -76,6 +76,12 @@ function peticionUsuariosAdmin(
   return backend.expectOne((request) => request.url.endsWith('/usuarios/listar/paginado'));
 }
 
+function peticionCategorias(
+  backend: HttpTestingController,
+): ReturnType<HttpTestingController['expectOne']> {
+  return backend.expectOne((request) => request.url.endsWith('/sucursales/categorias'));
+}
+
 function detalle(
   id: number,
   estado: SolicitudEmpleadorDetalleDTO['estado'],
@@ -114,6 +120,7 @@ describe('Administración · solicitudes de empleador', () => {
     fixture = TestBed.createComponent(Administracion);
     fixture.detectChanges();
     backend = TestBed.inject(HttpTestingController);
+    peticionCategorias(backend).flush(['SPA', 'GASTRONOMIA']);
 
     const usuarios = peticionUsuariosAdmin(backend);
     expect(usuarios.request.params.get('page')).toBe('0');
@@ -699,6 +706,7 @@ describe('Administración · paginación de listados', () => {
     fixture = TestBed.createComponent(Administracion);
     fixture.detectChanges();
     backend = TestBed.inject(HttpTestingController);
+    peticionCategorias(backend).flush(['SPA', 'GASTRONOMIA']);
     const usuarios = peticionUsuariosAdmin(backend);
     expect(usuarios.request.params.get('page')).toBe('0');
     usuarios.flush(pagina(USUARIOS_PAGINADOS.slice(0, 10), 2, 0, 12));
@@ -831,6 +839,152 @@ describe('Administración · paginación de listados', () => {
     expect(estado.value).toBe('todos');
     expect(host.querySelectorAll('#admin-usuarios-panel .usuario-admin')).toHaveLength(10);
     expect(host.querySelector('#admin-usuarios-panel .panel__contador')?.textContent).toContain('12 usuarios');
+  });
+
+  it('combina todos los filtros de usuarios y vuelve a page=0 en cada cambio', () => {
+    const host = fixture.nativeElement as HTMLElement;
+    host.querySelector<HTMLButtonElement>('.admin__seccion[aria-controls="admin-usuarios-panel"]')?.click();
+    fixture.detectChanges();
+    host.querySelector<HTMLButtonElement>('#admin-usuarios-panel ds-pagination button:last-child')?.click();
+    fixture.detectChanges();
+    const segunda = peticionUsuariosAdmin(backend);
+    expect(segunda.request.params.get('page')).toBe('1');
+    segunda.flush(pagina(USUARIOS_PAGINADOS.slice(10), 2, 1, 12));
+    fixture.detectChanges();
+
+    const nombre = host.querySelector<HTMLInputElement>('.usuarios-filtros__nombre input')!;
+    nombre.value = 'Lucía';
+    nombre.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const porNombre = peticionUsuariosAdmin(backend);
+    expect(porNombre.request.params.get('page')).toBe('0');
+    expect(porNombre.request.params.get('nombre')).toBe('Lucía');
+    porNombre.flush(pagina([USUARIOS[0]], 1, 0, 1));
+    fixture.detectChanges();
+
+    const apellido = host.querySelector<HTMLInputElement>('.usuarios-filtros__apellido input')!;
+    apellido.value = 'García';
+    apellido.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const porApellido = peticionUsuariosAdmin(backend);
+    expect(porApellido.request.params.get('nombre')).toBe('Lucía');
+    expect(porApellido.request.params.get('apellido')).toBe('García');
+    expect(porApellido.request.params.get('page')).toBe('0');
+    porApellido.flush(pagina([USUARIOS[0]], 1, 0, 1));
+    fixture.detectChanges();
+
+    const email = host.querySelector<HTMLInputElement>('.usuarios-filtros__email input')!;
+    email.value = '  lucia@  ';
+    email.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const porEmail = peticionUsuariosAdmin(backend);
+    expect(porEmail.request.params.get('email')).toBe('lucia@');
+    expect(porEmail.request.params.get('nombre')).toBe('Lucía');
+    expect(porEmail.request.params.get('apellido')).toBe('García');
+    porEmail.flush(pagina([USUARIOS[0]], 1, 0, 1));
+    fixture.detectChanges();
+
+    const rol = host.querySelector<HTMLSelectElement>('.usuarios-filtros__rol select')!;
+    rol.value = 'CLIENTE';
+    rol.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const porRol = peticionUsuariosAdmin(backend);
+    expect(porRol.request.params.get('rol')).toBe('CLIENTE');
+    expect(porRol.request.params.get('email')).toBe('lucia@');
+    expect(porRol.request.params.get('nombre')).toBe('Lucía');
+    expect(porRol.request.params.get('apellido')).toBe('García');
+    porRol.flush(pagina([USUARIOS[0]], 1, 0, 1));
+    fixture.detectChanges();
+
+    const estado = host.querySelector<HTMLSelectElement>('.usuarios-filtros__estado select')!;
+    estado.value = 'activos';
+    estado.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const combinados = peticionUsuariosAdmin(backend);
+    expect(combinados.request.params.get('activo')).toBe('true');
+    expect(combinados.request.params.get('rol')).toBe('CLIENTE');
+    expect(combinados.request.params.get('email')).toBe('lucia@');
+    expect(combinados.request.params.get('nombre')).toBe('Lucía');
+    expect(combinados.request.params.get('apellido')).toBe('García');
+    expect(combinados.request.params.get('page')).toBe('0');
+    combinados.flush(pagina([USUARIOS[0]], 1, 0, 1));
+    fixture.detectChanges();
+    expect(host.querySelectorAll('#admin-usuarios-panel .usuario-admin')).toHaveLength(1);
+    expect(host.textContent).toContain('Lucía García');
+  });
+
+  it('combina q, nombre y categoría de sucursales y vuelve a page=0 en cada cambio', () => {
+    const host = fixture.nativeElement as HTMLElement;
+    host.querySelector<HTMLButtonElement>('.admin__seccion[aria-controls="sucursales-admin-panel"]')?.click();
+    fixture.detectChanges();
+    expect(host.querySelectorAll('.sucursales-admin__categoria option')).toHaveLength(3);
+    host.querySelector<HTMLButtonElement>('#sucursales-admin-panel ds-pagination button:last-child')?.click();
+    fixture.detectChanges();
+    const segunda = peticionSucursalesAdmin(backend);
+    expect(segunda.request.params.get('page')).toBe('1');
+    segunda.flush(pagina(SUCURSALES_PAGINADAS.slice(10), 2, 1, 12));
+    fixture.detectChanges();
+
+    const q = host.querySelector<HTMLInputElement>('#sucursales-admin-panel input[type="search"]')!;
+    q.value = 'spa';
+    q.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const porQ = peticionSucursalesAdmin(backend);
+    expect(porQ.request.params.get('page')).toBe('0');
+    expect(porQ.request.params.get('q')).toBe('spa');
+    porQ.flush(pagina([SUCURSALES[1]], 1, 0, 1));
+    fixture.detectChanges();
+
+    const nombre = host.querySelector<HTMLInputElement>('.sucursales-admin__nombre input')!;
+    nombre.value = 'Norte';
+    nombre.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const porNombre = peticionSucursalesAdmin(backend);
+    expect(porNombre.request.params.get('q')).toBe('spa');
+    expect(porNombre.request.params.get('nombre')).toBe('Norte');
+    expect(porNombre.request.params.get('page')).toBe('0');
+    porNombre.flush(pagina([SUCURSALES[1]], 1, 0, 1));
+    fixture.detectChanges();
+
+    const categoria = host.querySelector<HTMLSelectElement>('.sucursales-admin__categoria select')!;
+    categoria.value = 'SPA';
+    categoria.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const combinados = peticionSucursalesAdmin(backend);
+    expect(combinados.request.params.get('q')).toBe('spa');
+    expect(combinados.request.params.get('nombre')).toBe('Norte');
+    expect(combinados.request.params.get('categoria')).toBe('SPA');
+    expect(combinados.request.params.get('page')).toBe('0');
+    combinados.flush(pagina([SUCURSALES[1]], 1, 0, 1));
+    fixture.detectChanges();
+    expect(host.querySelectorAll('#sucursales-admin-panel .sucursal-admin')).toHaveLength(1);
+    expect(host.textContent).toContain('Norte');
+  });
+
+  it('descarta la respuesta anterior cuando cambia un filtro antes de que llegue', () => {
+    const host = fixture.nativeElement as HTMLElement;
+    host.querySelector<HTMLButtonElement>('.admin__seccion[aria-controls="admin-usuarios-panel"]')?.click();
+    fixture.detectChanges();
+
+    const nombre = host.querySelector<HTMLInputElement>('.usuarios-filtros__nombre input')!;
+    nombre.value = 'Lucía';
+    nombre.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const anterior = peticionUsuariosAdmin(backend);
+    expect(anterior.request.params.get('nombre')).toBe('Lucía');
+
+    nombre.value = 'Mario';
+    nombre.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const actual = peticionUsuariosAdmin(backend);
+    expect(actual.request.params.get('nombre')).toBe('Mario');
+    expect(anterior.cancelled).toBe(true);
+
+    actual.flush(pagina([USUARIOS[1]], 1, 0, 1));
+    fixture.detectChanges();
+    expect(host.querySelectorAll('#admin-usuarios-panel .usuario-admin')).toHaveLength(1);
+    expect(host.textContent).toContain('Mario Paz');
+    expect(host.textContent).not.toContain('Lucía García');
   });
 
   it('toma el contador y el total de páginas de la metadata del backend', () => {
