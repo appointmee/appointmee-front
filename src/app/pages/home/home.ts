@@ -19,14 +19,24 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { catchError, distinctUntilChanged, map, of, switchMap, tap, timer } from 'rxjs';
 
+import { CarruselSucursales } from '../../components/carrusel-sucursales/carrusel-sucursales';
 import { authService } from '../../services/auth-service';
-import { SucursalMiniDTO } from '../../models/sucursal';
+import { RecomendacionesSucursalesDTO, SucursalMiniDTO } from '../../models/sucursal';
 import { sucursalService } from '../../services/sucursal-service';
 
 interface SuggestionResult {
   readonly term: string;
   readonly suggestions: readonly SucursalMiniDTO[];
   readonly error: string | null;
+}
+
+interface SeccionHome {
+  readonly id: string;
+  readonly titulo: string;
+  readonly descripcion: string;
+  readonly sucursales: readonly SucursalMiniDTO[];
+  readonly verTodas: boolean;
+  readonly etiquetaVerTodas: string;
 }
 
 function comparisonKey(value: string): string {
@@ -38,6 +48,7 @@ function comparisonKey(value: string): string {
   imports: [
     DsInputComponent,
     DsButtonComponent,
+    CarruselSucursales,
     ReactiveFormsModule,
     RouterLink,
   ],
@@ -67,6 +78,71 @@ export class Home implements OnInit, AfterViewInit {
   protected readonly activeSuggestionIndex = signal(-1);
   protected readonly term = signal('');
   protected readonly termTooShort = computed(() => this.term().trim().length === 1);
+
+  protected readonly recomendaciones = signal<RecomendacionesSucursalesDTO | null>(null);
+  protected readonly recomendacionesLoading = signal(true);
+  protected readonly recomendacionesError = signal<string | null>(null);
+  protected readonly reintentandoRecomendaciones = signal(false);
+
+  /** Las secciones sin resultados no se renderizan. «Todas» es una vista
+   * previa del listado completo y siempre ofrece el acceso a la página. */
+  protected readonly secciones = computed<readonly SeccionHome[]>(() => {
+    const datos = this.recomendaciones();
+    if (!datos) {
+      return [];
+    }
+
+    return [
+      {
+        id: 'mejores',
+        titulo: 'Las mejores de AppointMee',
+        descripcion: 'Las más valoradas por la comunidad, según reseñas y puntuación.',
+        sucursales: datos.mejores ?? [],
+        verTodas: false,
+        etiquetaVerTodas: '',
+      },
+      {
+        id: 'demandadas',
+        titulo: 'Las más demandadas',
+        descripcion: 'Las sucursales con más turnos confirmados en los últimos 30 días.',
+        sucursales: datos.masDemandadas ?? [],
+        verTodas: false,
+        etiquetaVerTodas: '',
+      },
+      {
+        id: 'nuevas',
+        titulo: 'Nuevas en AppointMee',
+        descripcion: 'Establecimientos que se sumaron en los últimos dos meses.',
+        sucursales: datos.nuevas ?? [],
+        verTodas: false,
+        etiquetaVerTodas: '',
+      },
+      {
+        id: 'recientes',
+        titulo: 'Visto recientemente',
+        descripcion: 'Volvé a las sucursales que visitaste últimamente.',
+        sucursales: datos.vistasRecientes ?? [],
+        verTodas: false,
+        etiquetaVerTodas: '',
+      },
+      {
+        id: 'para-vos',
+        titulo: 'Recomendado para vos',
+        descripcion: 'Sugerencias según tus reservas y tus categorías preferidas.',
+        sucursales: datos.paraVos ?? [],
+        verTodas: false,
+        etiquetaVerTodas: '',
+      },
+      {
+        id: 'todas',
+        titulo: 'Todas las sucursales',
+        descripcion: 'Un adelanto de todo lo que podés reservar en AppointMee.',
+        sucursales: datos.todas ?? [],
+        verTodas: true,
+        etiquetaVerTodas: 'Ver todas',
+      },
+    ].filter((seccion) => seccion.sucursales.length > 0);
+  });
 
   constructor() {
     this.search.valueChanges
@@ -117,6 +193,8 @@ export class Home implements OnInit, AfterViewInit {
         this.lastSuggestionTerm.set(result.term);
         this.suggestionsOpen.set(this.searchFocused && result.term.length >= 2);
       });
+
+    this.cargarRecomendaciones();
   }
   protected submitSearch(event: Event): void {
     event.preventDefault();
@@ -262,6 +340,38 @@ export class Home implements OnInit, AfterViewInit {
     this.searchFocused = false;
     this.suggestionsOpen.set(false);
     this.activeSuggestionIndex.set(-1);
+  }
+
+  protected reintentarRecomendaciones(): void {
+    if (this.reintentandoRecomendaciones()) {
+      return;
+    }
+    this.reintentandoRecomendaciones.set(true);
+    this.cargarRecomendaciones();
+  }
+
+  private cargarRecomendaciones(): void {
+    this.recomendacionesLoading.set(true);
+    this.recomendaciones.set(null);
+
+    this.sucursalesService
+      .recomendaciones()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (datos) => {
+          this.recomendaciones.set(datos);
+          this.recomendacionesError.set(null);
+          this.recomendacionesLoading.set(false);
+          this.reintentandoRecomendaciones.set(false);
+        },
+        error: () => {
+          this.recomendacionesError.set(
+            'No pudimos cargar las recomendaciones. Revisá tu conexión e intentá de nuevo.',
+          );
+          this.recomendacionesLoading.set(false);
+          this.reintentandoRecomendaciones.set(false);
+        },
+      });
   }
 
   ngOnInit(): void {

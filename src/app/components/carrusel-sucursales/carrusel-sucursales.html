@@ -1,0 +1,78 @@
+<section class="carrusel" [attr.aria-labelledby]="id() + '-titulo'">
+  <header class="carrusel__header">
+    <div class="carrusel__texto">
+      <h2 class="carrusel__titulo" [id]="id() + '-titulo'">{{ titulo() }}</h2>
+      @if (descripcion()) {
+        <p class="carrusel__descripcion">{{ descripcion() }}</p>
+      }
+    </div>
+    <div class="carrusel__acciones">
+      @if (verTodas()) {
+        <a class="carrusel__ver-todas" routerLink="/sucursales">{{ etiquetaVerTodas() }}</a>
+      }
+      <div class="carrusel__flechas" role="group" [attr.aria-label]="'Controles de ' + titulo()">
+        <button
+          type="button"
+          class="carrusel__flecha"
+          [disabled]="!puedeAnterior()"
+          [attr.aria-label]="'Ver anteriores de ' + titulo()"
+          (click)="mover(-1)"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+        </button>
+        <button
+          type="button"
+          class="carrusel__flecha"
+          [disabled]="!puedeSiguiente()"
+          [attr.aria-label]="'Ver siguientes de ' + titulo()"
+          (click)="mover(1)"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div
+    #track
+    class="carrusel__track"
+    role="region"
+    [attr.aria-label]="ariaLabel()"
+    tabindex="0"
+    (scroll)="actualizarControles()"
+    (wheel)="onWheel($event)"
+    (keydown)="onKeydown($event)"
+  >
+    @for (sucursal of sucursales(); track trackById($index, sucursal); let indice = $index) {
+      <a
+        class="carrusel__card"
+        [routerLink]="['/sucursal', sucursal.id]"
+        [attr.aria-label]="ariaTarjeta(sucursal)"
+        [style.--i]="indice"
+      >
+        <div class="carrusel__media">
+          <img
+            [src]="sucursal.fotoPerfil || placeholderImage"
+            [alt]="sucursal.nombre"
+            loading="lazy"
+            decoding="async"
+            referrerpolicy="no-referrer"
+            (error)="onImageError($event)"
+          />
+        </div>
+        <div class="carrusel__body">
+          <h3 class="carrusel__nombre">{{ sucursal.nombre }}</h3>
+          <p class="carrusel__categoria">{{ humanizeCategory(sucursal.categoria) }}</p>
+          @if (tieneResenas(sucursal)) {
+            <p class="carrusel__rating">
+              <span aria-hidden="true">🐝</span>
+              <span>{{ promedio(sucursal.puntuacion) }} de 5 · {{ sucursal.cantidadPuntuaciones }} reseñas</span>
+            </p>
+          } @else {
+            <p class="carrusel__rating carrusel__rating--vacio">Sin reseñas todavía</p>
+          }
+        </div>
+      </a>
+    }
+  </div>
+</section>
