@@ -154,6 +154,7 @@ describe('ReseniasSucursal', () => {
 
     const fixture = crear();
     expect(empleados(fixture)).toEqual([]);
+    expect(fixture.nativeElement.querySelector('.resenia-card__empleado-etiqueta')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Ya no forma parte');
     expect(fixture.nativeElement.querySelectorAll('.resenia-card')).toHaveLength(1);
   });
@@ -176,9 +177,13 @@ describe('ReseniasSucursal', () => {
       Array.from(tarjeta.children).map((elemento) => (elemento as HTMLElement).className),
     ).toEqual([
       'resenia-card__header',
+      'resenia-card__empleado-etiqueta',
       'resenia-card__empleado',
       'resenia-card__comentario',
     ]);
+    expect(
+      fixture.nativeElement.querySelector('.resenia-card__empleado-etiqueta')?.textContent?.trim(),
+    ).toBe('Empleado');
     expect(empleados(fixture)).toEqual(['Ana Pérez']);
     expect(comentarios(fixture)).toEqual(['Excelente atención']);
   });
@@ -199,6 +204,9 @@ describe('ReseniasSucursal', () => {
     expect(empleados(fixture)).toEqual([
       'Ana Pérez (Ya no forma parte de la sucursal)',
     ]);
+    expect(
+      fixture.nativeElement.querySelector('.resenia-card__empleado-aclaracion')?.textContent,
+    ).toBe(' (Ya no forma parte de la sucursal)');
     expect(fixture.nativeElement.textContent).toContain('4 / 5');
     expect(comentarios(fixture)).toEqual(['Muy buena']);
   });

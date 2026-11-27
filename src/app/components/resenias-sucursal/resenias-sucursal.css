@@ -177,12 +177,25 @@
   white-space: nowrap;
 }
 
+.resenia-card__empleado-etiqueta {
+  margin: 0;
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
 .resenia-card__empleado {
   margin: 0;
   color: var(--accent);
   font-size: 12.5px;
   font-weight: 650;
   overflow-wrap: anywhere;
+}
+
+.resenia-card__empleado-aclaracion {
+  color: var(--text);
+  font-weight: 500;
 }
 
 .resenia-card__comentario {

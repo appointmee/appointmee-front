@@ -177,12 +177,14 @@ export class ReseniasSucursal {
   protected empleadoResenia(resenia: ReseniaDTO): string {
     const nombre = resenia.empleadoNombre?.trim() ?? '';
     const apellido = resenia.empleadoApellido?.trim() ?? '';
-    const nombreCompleto = `${nombre} ${apellido}`.trim();
-    if (!nombreCompleto) return '';
+    return `${nombre} ${apellido}`.trim();
+  }
 
+  /** Aclaración separada para poder mostrarla en blanco, sin cambiar el texto. */
+  protected aclaracionEmpleado(resenia: ReseniaDTO): string {
     return resenia.empleadoPerteneceASucursal === false
-      ? `${nombreCompleto} (Ya no forma parte de la sucursal)`
-      : nombreCompleto;
+      ? ' (Ya no forma parte de la sucursal)'
+      : '';
   }
 
   protected comentarioResenia(resenia: ReseniaDTO): string {
