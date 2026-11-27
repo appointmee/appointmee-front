@@ -173,6 +173,18 @@ export class ReseniasSucursal {
     return this.normalizarPuntuacion(resenia.puntuacion);
   }
 
+  /** El nombre viene del snapshot de la reseña, no de la relación con el usuario. */
+  protected empleadoResenia(resenia: ReseniaDTO): string {
+    const nombre = resenia.empleadoNombre?.trim() ?? '';
+    const apellido = resenia.empleadoApellido?.trim() ?? '';
+    const nombreCompleto = `${nombre} ${apellido}`.trim();
+    if (!nombreCompleto) return '';
+
+    return resenia.empleadoPerteneceASucursal === false
+      ? `${nombreCompleto} (Ya no forma parte de la sucursal)`
+      : nombreCompleto;
+  }
+
   protected comentarioResenia(resenia: ReseniaDTO): string {
     const comentario = resenia.comentario?.trim();
     return comentario ? comentario : 'Sin comentario';

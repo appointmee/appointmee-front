@@ -26,6 +26,7 @@ import {
 
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
+  DsCheckboxComponent,
   DsModalComponent,
   DsPaginationComponent,
   DsSelectComponent,
@@ -101,6 +102,7 @@ interface PartesFecha {
   selector: 'app-mis-turnos',
   imports: [
     DsButtonComponent,
+    DsCheckboxComponent,
     DsModalComponent,
     DsPaginationComponent,
     DsSelectComponent,
@@ -202,12 +204,27 @@ export class MisTurnos {
   protected readonly reseniaConfirmacion = signal(false);
   protected readonly reseniaPuntuacion = signal<number | null>(null);
   protected readonly reseniaComentario = signal('');
+  protected readonly reseniaIncluirEmpleado = signal(false);
   protected readonly reseniaIntentada = signal(false);
   protected readonly reseniaEnviando = signal(false);
   protected readonly reseniaError = signal<string | null>(null);
   protected readonly reseniaExito = signal<string | null>(null);
   protected readonly comentarioMinimo = COMENTARIO_MINIMO;
   protected readonly comentarioMaximo = COMENTARIO_MAXIMO;
+
+  /** El empleado siempre es el del turno reseñado; el cliente no puede elegir otro. */
+  protected readonly empleadoReseniaTexto = computed(() => {
+    const empleado = this.detalle()?.empleado;
+    if (!empleado) return null;
+    const nombreCompleto = `${empleado.nombre ?? ''} ${empleado.apellido ?? ''}`.trim();
+    if (!nombreCompleto) return null;
+
+    const detalle = this.detalle();
+    const pertenece =
+      (detalle?.empleadoActivo ?? true) !== false &&
+      (detalle?.empleadoPerteneceASucursal ?? true) !== false;
+    return pertenece ? nombreCompleto : `${nombreCompleto} (Ya no forma parte de la sucursal)`;
+  });
 
   protected readonly turnosFiltrados = computed(() => {
     const filtro = this.filtro();
@@ -453,6 +470,7 @@ export class MisTurnos {
 
     this.reseniaPuntuacion.set(null);
     this.reseniaComentario.set('');
+    this.reseniaIncluirEmpleado.set(false);
     this.reseniaIntentada.set(false);
     this.reseniaEnviando.set(false);
     this.reseniaError.set(null);
@@ -500,6 +518,7 @@ export class MisTurnos {
       .crearParaTurno(turno.id, {
         puntuacion,
         comentario: comentario === '' ? null : comentario,
+        incluirEmpleado: this.reseniaIncluirEmpleado(),
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -510,6 +529,7 @@ export class MisTurnos {
           this.reseniaIntentada.set(false);
           this.reseniaPuntuacion.set(null);
           this.reseniaComentario.set('');
+          this.reseniaIncluirEmpleado.set(false);
           this.turnos.update((turnos) =>
             turnos.map((item) =>
               item.id === turno.id ? { ...item, puntuacion } : item,
@@ -549,6 +569,11 @@ export class MisTurnos {
   protected actualizarComentario(event: Event): void {
     const valor = (event.target as HTMLTextAreaElement).value;
     this.reseniaComentario.set(valor.slice(0, COMENTARIO_MAXIMO));
+  }
+
+  protected actualizarIncluirEmpleado(incluir: boolean): void {
+    if (this.reseniaEnviando()) return;
+    this.reseniaIncluirEmpleado.set(incluir);
   }
 
   protected etiquetaEstado(estado: EstadoTurno | null | undefined): string {

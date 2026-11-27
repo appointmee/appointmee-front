@@ -76,6 +76,9 @@
             </div>
             <time class="resenia-card__fecha">{{ fechaResenia(resenia) }}</time>
           </header>
+          @if (empleadoResenia(resenia); as empleado) {
+            <p class="resenia-card__empleado">{{ empleado }}</p>
+          }
           <p class="resenia-card__comentario">{{ comentarioResenia(resenia) }}</p>
         </article>
       }

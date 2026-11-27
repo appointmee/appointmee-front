@@ -597,6 +597,14 @@
         }
       </div>
 
+      <div class="resenia__empleado">
+        <ds-checkbox
+          [checked]="reseniaIncluirEmpleado()"
+          [disabled]="reseniaEnviando()"
+          (checkedChange)="actualizarIncluirEmpleado($event)"
+        >Incluir empleado en la reseña</ds-checkbox>
+      </div>
+
       <footer class="resenia__acciones">
         <button
           dsButton
@@ -649,6 +657,12 @@
             }
           </span>
         </div>
+        @if (reseniaIncluirEmpleado() && empleadoReseniaTexto(); as empleado) {
+          <div class="confirmacion__fila">
+            <span class="confirmacion__etiqueta">Empleado</span>
+            <p class="confirmacion__comentario">{{ empleado }}</p>
+          </div>
+        }
         <div class="confirmacion__fila confirmacion__fila--comentario">
           <span class="confirmacion__etiqueta">Comentario</span>
           @if (reseniaComentarioPreview(); as comentario) {
