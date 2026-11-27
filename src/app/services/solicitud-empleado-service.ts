@@ -1,6 +1,6 @@
 import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import {
@@ -12,6 +12,23 @@ import {
   VistaPreviaSolicitudesEmpleadoSucursalDTO,
 } from '../models/solicitud-empleado';
 import { backendService } from './backend-service';
+
+/**
+ * El contrato nuevo debe traer `content` como arreglo. Validarlo en el cliente
+ * HTTP evita que un payload del formato anterior (array plano) llegue al
+ * componente como un `TypeError` sin `status` y se confunda con una falla de red.
+ */
+function esVistaPreviaSolicitudesEmpleadoSucursal(
+  payload: unknown,
+): payload is VistaPreviaSolicitudesEmpleadoSucursalDTO {
+  if (!payload || typeof payload !== 'object') return false;
+  const candidato = payload as Partial<VistaPreviaSolicitudesEmpleadoSucursalDTO>;
+  return (
+    Array.isArray(candidato.content) &&
+    typeof candidato.totalElements === 'number' &&
+    typeof candidato.hayMas === 'boolean'
+  );
+}
 
 /**
  * Cliente de los endpoints existentes de solicitudes de empleo.
@@ -45,9 +62,16 @@ export class solicitudEmpleadoService {
   listarEnviadas(
     sucursalId: number,
   ): Observable<VistaPreviaSolicitudesEmpleadoSucursalDTO> {
-    return this.http.get<VistaPreviaSolicitudesEmpleadoSucursalDTO>(
+    return this.http.get<unknown>(
       `${this.api.baseUrl}/solicitudes-empleado/enviadas/sucursal/${sucursalId}`,
       { context: this.contextoSinAvisoGlobal() },
+    ).pipe(
+      map((respuesta) => {
+        if (!esVistaPreviaSolicitudesEmpleadoSucursal(respuesta)) {
+          throw new Error('Formato inesperado en la vista previa de invitaciones enviadas');
+        }
+        return respuesta;
+      }),
     );
   }
 

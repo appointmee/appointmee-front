@@ -79,7 +79,7 @@ export class SolicitudesSucursal {
               solicitudes: vista.content.map(vistaSolicitudEnviada),
               hayMas: vista.hayMas,
             })),
-            catchError((error: HttpErrorResponse) => {
+            catchError((error: unknown) => {
               this.errorEnviadas.set(mensajeErrorSolicitudEmpleado(error, 'carga'));
               this.cargandoEnviadas.set(false);
               this.reintentandoEnviadas.set(false);

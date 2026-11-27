@@ -160,4 +160,37 @@ describe('SolicitudesSucursal', () => {
     expect(html.querySelectorAll('app-solicitud-empleado-card')).toHaveLength(1);
     expect(html.querySelector('.ver-mas')).toBeNull();
   });
+
+  it('no confunde un formato anterior del backend con una falla de conexión', () => {
+    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush({
+      fotoPerfil: null,
+    });
+    backend
+      .expectOne((request) => request.url.endsWith('/solicitudes-empleado/enviadas/sucursal/7'))
+      .flush([
+        {
+          id: 300,
+          nombreEmpleado: 'Formato anterior',
+          apellidoEmpleado: 'Invitado',
+          fechaSolicitud: '2026-11-20',
+        },
+      ]);
+    fixture.detectChanges();
+
+    expect(html.querySelector('.estado--error')).not.toBeNull();
+    expect(html.textContent).not.toContain('No pudimos conectarnos');
+    expect(html.textContent).toContain('No pudimos cargar tus solicitudes de empleo');
+  });
+
+  it('sí informa falla de conexión cuando la petición realmente falla', () => {
+    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush({
+      fotoPerfil: null,
+    });
+    backend
+      .expectOne((request) => request.url.endsWith('/solicitudes-empleado/enviadas/sucursal/7'))
+      .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
+    fixture.detectChanges();
+
+    expect(html.textContent).toContain('No pudimos conectarnos');
+  });
 });
