@@ -32,7 +32,7 @@ function recomendacionesVacias(): RecomendacionesSucursalesDTO {
   };
 }
 
-describe('Home branch autocomplete', () => {
+describe('Home como pantalla de descubrimiento sin filtros (SCRUM-364)', () => {
   let router: Router;
   let filtrar: ReturnType<typeof vi.fn>;
   let listar: ReturnType<typeof vi.fn>;
@@ -99,153 +99,27 @@ describe('Home branch autocomplete', () => {
     expect(fixture.nativeElement.querySelector('.hero__visual .hero-card')).toBeNull();
   });
 
-  it('waits for two characters and debounces backend suggestions for 350 ms', async () => {
-    vi.useFakeTimers();
+  it('no ofrece buscador ni filtros en la pantalla de descubrimiento', () => {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
-    const input = fixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
+    const raiz = fixture.nativeElement as HTMLElement;
 
-    input.focus();
-    input.value = 'p';
-    input.dispatchEvent(new Event('input'));
-    await vi.advanceTimersByTimeAsync(350);
+    expect(raiz.querySelector('[role="search"]')).toBeNull();
+    expect(raiz.querySelector('input, select, [role="combobox"]')).toBeNull();
+    expect(raiz.querySelector('.branch-search, .branch-suggestions')).toBeNull();
     expect(filtrar).not.toHaveBeenCalled();
-
-    input.value = 'pe';
-    input.dispatchEvent(new Event('input'));
-    await vi.advanceTimersByTimeAsync(349);
-    expect(filtrar).not.toHaveBeenCalled();
-
-    await vi.advanceTimersByTimeAsync(1);
-    expect(filtrar).toHaveBeenCalledOnce();
-    expect(filtrar).toHaveBeenCalledWith(null, 'pe');
   });
 
-  it('keeps only the newest autocomplete response', async () => {
-    vi.useFakeTimers();
-    const first = new Subject<SucursalMiniDTO[]>();
-    const second = new Subject<SucursalMiniDTO[]>();
-    filtrar.mockReturnValueOnce(first).mockReturnValueOnce(second);
+  it('mantiene «Conocer sucursales» como entrada al listado completo', () => {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
-    const input = fixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
 
-    input.focus();
-    input.value = 'pe';
-    input.dispatchEvent(new Event('input'));
-    await vi.advanceTimersByTimeAsync(350);
-    input.value = 'pelu';
-    input.dispatchEvent(new Event('input'));
-    await vi.advanceTimersByTimeAsync(350);
+    const enlaces = Array.from(
+      fixture.nativeElement.querySelectorAll('.hero__actions a'),
+    ) as HTMLAnchorElement[];
+    const conocer = enlaces.find((enlace) => enlace.textContent?.includes('Conocer sucursales'));
 
-    second.next([PELUQUERIA]);
-    fixture.detectChanges();
-    first.next([]);
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain(PELUQUERIA.nombre);
-  });
-
-  it('opens the existing detail route when a suggestion is selected', async () => {
-    vi.useFakeTimers();
-    filtrar.mockReturnValue(of([PELUQUERIA]));
-    const fixture = TestBed.createComponent(Home);
-    fixture.detectChanges();
-    const input = fixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
-
-    input.focus();
-    input.value = 'pelu';
-    input.dispatchEvent(new Event('input'));
-    await vi.advanceTimersByTimeAsync(350);
-    fixture.detectChanges();
-    (fixture.nativeElement.querySelector('.branch-suggestion') as HTMLButtonElement).click();
-
-    await vi.waitFor(() => expect(router.url).toBe('/sucursal/17'));
-  });
-
-  it('navigates to the branches page with busqueda when the form is submitted', async () => {
-    const fixture = TestBed.createComponent(Home);
-    fixture.detectChanges();
-    const input = fixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
-    const form = fixture.nativeElement.querySelector('.branch-search') as HTMLFormElement;
-
-    input.value = 'pelu';
-    input.dispatchEvent(new Event('input'));
-    form.dispatchEvent(new Event('submit'));
-
-    await vi.waitFor(() => expect(router.url).toBe('/sucursales?busqueda=pelu'));
-  });
-
-  it('Enter with multiple results preserves the search in the listing even after hovering', async () => {
-    vi.useFakeTimers();
-    filtrar.mockReturnValue(
-      of([PELUQUERIA, { ...PELUQUERIA, id: 18, nombre: 'Peluquería Norte' }]),
-    );
-    const fixture = TestBed.createComponent(Home);
-    fixture.detectChanges();
-    const input = fixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
-    input.focus();
-    input.value = '  pelu  ';
-    input.dispatchEvent(new Event('input'));
-    await vi.advanceTimersByTimeAsync(350);
-    fixture.detectChanges();
-    fixture.nativeElement
-      .querySelector('.branch-suggestion')
-      .dispatchEvent(new MouseEvent('mouseenter'));
-    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
-    input.dispatchEvent(enter);
-    expect(enter.defaultPrevented).toBe(false);
-    fixture.nativeElement.querySelector('.branch-search').dispatchEvent(new Event('submit'));
-    await vi.waitFor(() => expect(router.url).toBe('/sucursales?busqueda=pelu'));
-  });
-
-  it('Enter opens the detail when the current search has exactly one result', async () => {
-    vi.useFakeTimers();
-    filtrar.mockReturnValue(of([PELUQUERIA]));
-    const fixture = TestBed.createComponent(Home);
-    fixture.detectChanges();
-    const input = fixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
-    input.focus();
-    input.value = 'pelu';
-    input.dispatchEvent(new Event('input'));
-    await vi.advanceTimersByTimeAsync(350);
-    fixture.detectChanges();
-    fixture.nativeElement.querySelector('.branch-search').dispatchEvent(new Event('submit'));
-    await vi.waitFor(() => expect(router.url).toBe('/sucursal/17'));
-  });
-
-  it('does not use a previous single result while a different search is pending', async () => {
-    vi.useFakeTimers();
-    filtrar.mockReturnValue(of([PELUQUERIA]));
-    const fixture = TestBed.createComponent(Home);
-    fixture.detectChanges();
-    const input = fixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
-    input.value = 'pelu';
-    input.dispatchEvent(new Event('input'));
-    await vi.advanceTimersByTimeAsync(350);
-    input.value = 'barbería';
-    input.dispatchEvent(new Event('input'));
-    fixture.nativeElement.querySelector('.branch-search').dispatchEvent(new Event('submit'));
-    await vi.waitFor(() => expect(decodeURI(router.url)).toBe('/sucursales?busqueda=barbería'));
-  });
-
-  it('allows selecting a particular suggestion with arrows and Enter', async () => {
-    vi.useFakeTimers();
-    filtrar.mockReturnValue(of([PELUQUERIA, { ...PELUQUERIA, id: 18 }]));
-    const fixture = TestBed.createComponent(Home);
-    fixture.detectChanges();
-    const input = fixture.nativeElement.querySelector('#branch-search') as HTMLInputElement;
-    input.focus();
-    input.value = 'pelu';
-    input.dispatchEvent(new Event('input'));
-    await vi.advanceTimersByTimeAsync(350);
-    fixture.detectChanges();
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
-    input.dispatchEvent(enter);
-    expect(enter.defaultPrevented).toBe(true);
-    await vi.waitFor(() => expect(router.url).toBe('/sucursal/18'));
+    expect(conocer?.getAttribute('href')).toBe('/sucursales');
   });
 
   describe('secciones horizontales de descubrimiento (SCRUM-364)', () => {
