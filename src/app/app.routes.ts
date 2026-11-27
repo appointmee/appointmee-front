@@ -22,10 +22,12 @@ export const routes: Routes = [
     title: 'AppointMee | Sucursales',
     data: {
       title: 'Sucursales',
-      description: 'Explorá las sucursales disponibles y encontrá la más cercana.',
+      description: 'Descubrí sucursales recomendadas, nuevas y las más demandadas.',
     },
     loadComponent: () =>
-      import('./pages/sucursales/sucursales').then((module) => module.Sucursales),
+      import('./pages/sucursales-descubrimiento/sucursales-descubrimiento').then(
+        (module) => module.SucursalesDescubrimiento,
+      ),
   },
   {
     path: 'mapa-sucursales',
@@ -41,7 +43,13 @@ export const routes: Routes = [
   },
   {
     path: 'listado-sucursales',
-    redirectTo: 'sucursales',
+    title: 'AppointMee | Listado de sucursales',
+    data: {
+      title: 'Listado de sucursales',
+      description: 'Buscá y filtrá todas las sucursales operativas de AppointMee.',
+    },
+    loadComponent: () =>
+      import('./pages/sucursales/sucursales').then((module) => module.Sucursales),
   },
   {
     path: 'sucursal/:sucursalId/servicios/:servicioId/empleados',

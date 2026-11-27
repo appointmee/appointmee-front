@@ -1,13 +1,19 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { DesignSystemPage } from './design-system';
 
 describe('DesignSystemPage', () => {
   it('renderiza la demo y abre/cierra el modal con teclado', async () => {
-    await TestBed.configureTestingModule({ imports: [DesignSystemPage] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [DesignSystemPage],
+      providers: [provideRouter([])],
+    }).compileComponents();
     const f = TestBed.createComponent(DesignSystemPage);
     f.detectChanges();
     expect(f.nativeElement.querySelector('h1').textContent).toContain('Sistema de diseño');
     expect(f.nativeElement.querySelectorAll('button[dsButton]').length).toBeGreaterThan(0);
+    expect(f.nativeElement.querySelector('app-carrusel-sucursales .carrusel__card')).toBeTruthy();
+    expect(f.nativeElement.querySelector('ds-pagination input[type="number"]')).toBeTruthy();
 
     const abrir = Array.from(
       f.nativeElement.querySelectorAll('button[dsButton]') as NodeListOf<HTMLButtonElement>,

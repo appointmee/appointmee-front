@@ -18,6 +18,7 @@ import { EquipoSucursal } from '../../components/equipo-sucursal/equipo-sucursal
 import { MapaSucursal } from '../../components/mapa-sucursal/mapa-sucursal';
 import { ReseniasSucursal } from '../../components/resenias-sucursal/resenias-sucursal';
 import { apiErrorsService } from '../../http/api-errors-service';
+import { authService } from '../../services/auth-service';
 import { reservaContextoService } from '../../services/reserva-contexto-service';
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import { sucursalService } from '../../services/sucursal-service';
@@ -55,8 +56,11 @@ export class SucursalDetalle {
   private readonly router = inject(Router);
   private readonly title = inject(Title);
   private readonly apiErrors = inject(apiErrorsService);
+  private readonly auth = inject(authService);
   private readonly reservaContexto = inject(reservaContextoService);
   private readonly destroyRef = inject(DestroyRef);
+  /** Evita duplicar la visita al reintentar o al volver a la misma ruta. */
+  private readonly visitasRegistradas = new Set<number>();
 
   protected readonly placeholderImage = `data:image/svg+xml;utf8,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="700" viewBox="0 0 1600 700"><rect width="1600" height="700" fill="#10151d"/><g fill="none" stroke="#98a2b3" stroke-width="3" opacity="0.7"><rect x="590" y="210" width="420" height="280" rx="24"/><circle cx="700" cy="290" r="36"/><path d="M590 420l110-100 90 75 70-60 150 150"/></g><text x="800" y="560" text-anchor="middle" fill="#98a2b3" font-size="30" font-family="sans-serif">Sin imagen disponible</text></svg>',
@@ -315,6 +319,19 @@ export class SucursalDetalle {
 
     return this.service.obtenerPorId(id, true).pipe(
       map((sucursal): CargaResultado => ({ estado: 'ok', sucursal })),
+      tap((resultado) => {
+        if (
+          resultado.estado === 'ok' &&
+          this.auth.autenticado() &&
+          !this.visitasRegistradas.has(id)
+        ) {
+          this.visitasRegistradas.add(id);
+          // La visita es secundaria: un fallo no debe romper la pantalla.
+          this.service.registrarVisita(id)
+            .pipe(catchError(() => of(null)), takeUntilDestroyed(this.destroyRef))
+            .subscribe();
+        }
+      }),
       catchError((err: HttpErrorResponse) => of(this.mapearError(err))),
     );
   }

@@ -3,7 +3,14 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { backendService } from './backend-service';
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
-import { SucursalCrearPayload, SucursalDetalleDTO, SucursalMiniDTO, SucursalModificarPayload } from '../models/sucursal';
+import {
+  PaginaSucursalesDTO,
+  RecomendacionesSucursalesDTO,
+  SucursalCrearPayload,
+  SucursalDetalleDTO,
+  SucursalMiniDTO,
+  SucursalModificarPayload,
+} from '../models/sucursal';
 import { UsuarioResponseDTO } from '../models/usuario';
 
 export interface SucursalGaleriaImagenDTO {
@@ -52,6 +59,45 @@ export class sucursalService {
       context: contextoSilenciado(silenciarErroresGlobales),
     });
   }
+  /** Listado general con paginación real en backend (page 0-based). */
+  listarPaginado(
+    categoria: string | null,
+    nombre: string | null,
+    page: number,
+    size: number,
+    silenciarErroresGlobales = true,
+  ): Observable<PaginaSucursalesDTO> {
+    let params = new HttpParams().set('page', String(page)).set('size', String(size));
+    if (categoria) {
+      params = params.set('categoria', categoria);
+    }
+    const termino = nombre?.trim();
+    if (termino) {
+      params = params.set('nombre', termino);
+    }
+    return this.http.get<PaginaSucursalesDTO>(`${this.api.baseUrl}/sucursales/listar/paginado`, {
+      params,
+      context: contextoSilenciado(silenciarErroresGlobales),
+    });
+  }
+
+  /** Secciones horizontales del Home; el backend resuelve el usuario por token. */
+  recomendaciones(silenciarErroresGlobales = true): Observable<RecomendacionesSucursalesDTO> {
+    return this.http.get<RecomendacionesSucursalesDTO>(
+      `${this.api.baseUrl}/sucursales/recomendaciones`,
+      { context: contextoSilenciado(silenciarErroresGlobales) },
+    );
+  }
+
+  /** Registra la visita del usuario autenticado para «Visto recientemente». */
+  registrarVisita(sucursalId: number): Observable<string> {
+    return this.http.post(
+      `${this.api.baseUrl}/sucursales/${sucursalId}/vistas`,
+      {},
+      { context: this.contextoSinAvisoGlobal(), responseType: 'text' },
+    );
+  }
+
   /** Obtiene las categorías disponibles para construir los filtros de sucursales. */
   categorias(): Observable<string[]> {
     return this.http.get<string[]>(`${this.api.baseUrl}/sucursales/categorias`, {

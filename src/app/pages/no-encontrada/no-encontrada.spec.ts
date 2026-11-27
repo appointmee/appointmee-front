@@ -14,6 +14,7 @@ describe('NotFoundPage', () => {
       providers: [
         provideRouter([
           { path: 'sucursales', component: TestRoute },
+          { path: 'listado-sucursales', component: TestRoute },
           { path: '', component: TestRoute },
           { path: '**', component: TestRoute },
         ]),
@@ -34,7 +35,7 @@ describe('NotFoundPage', () => {
     );
     expect(link).not.toBeNull();
     expect(link?.textContent).toContain('Buscar la sucursal 123');
-    expect(link?.getAttribute('href')).toBe('/sucursales?busqueda=123');
+    expect(link?.getAttribute('href')).toBe('/listado-sucursales?busqueda=123');
   });
 
   it('offers both Home and a safe fallback from Volver when there is no internal route', async () => {

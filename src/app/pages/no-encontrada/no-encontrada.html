@@ -18,7 +18,7 @@
       @if (idSucursal()) {
         <a
           class="page404__cta page404__cta--sucursal"
-          [routerLink]="['/sucursales']"
+          [routerLink]="['/listado-sucursales']"
           [queryParams]="{ busqueda: idSucursal() }"
         >
           Buscar la sucursal {{ idSucursal() }}
