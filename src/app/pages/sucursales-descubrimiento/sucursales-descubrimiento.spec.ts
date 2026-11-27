@@ -1,11 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, WritableSignal, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { Observable, Subject, of, throwError } from 'rxjs';
 
 import { routes } from '../../app.routes';
 import { RecomendacionesSucursalesDTO, SucursalMiniDTO } from '../../models/sucursal';
+import { authService } from '../../services/auth-service';
 import { sucursalService } from '../../services/sucursal-service';
 import { Sucursales } from '../sucursales/sucursales';
 import { SucursalesDescubrimiento } from './sucursales-descubrimiento';
@@ -41,8 +42,10 @@ describe('SucursalesDescubrimiento: pantalla principal de sucursales (SCRUM-364)
   let router: Router;
   let recomendaciones: ReturnType<typeof vi.fn>;
   let filtrar: ReturnType<typeof vi.fn>;
+  let autenticado: WritableSignal<boolean>;
 
   beforeEach(() => {
+    autenticado = signal(true);
     recomendaciones = vi.fn<
       () => Observable<RecomendacionesSucursalesDTO>
     >(() => of(recomendacionesVacias()));
@@ -58,6 +61,7 @@ describe('SucursalesDescubrimiento: pantalla principal de sucursales (SCRUM-364)
           { path: 'sucursal/:id', component: EmptyPage },
         ]),
         { provide: sucursalService, useValue: { recomendaciones, filtrar } },
+        { provide: authService, useValue: { autenticado } },
       ],
     });
     router = TestBed.inject(Router);
@@ -75,6 +79,66 @@ describe('SucursalesDescubrimiento: pantalla principal de sucursales (SCRUM-364)
     expect(raiz.querySelector('select, .categoria-chip, [aria-label="Filtrar por categoría"]')).toBeNull();
     expect(filtrar).not.toHaveBeenCalled();
     expect(recomendaciones).toHaveBeenCalledOnce();
+  });
+
+  it('no repite la etiqueta del buscador y conserva el placeholder', () => {
+    const fixture = TestBed.createComponent(SucursalesDescubrimiento);
+    fixture.detectChanges();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const input = raiz.querySelector('#branch-search') as HTMLInputElement;
+
+    expect(raiz.textContent).not.toContain('Buscar sucursal por nombre');
+    expect(raiz.querySelectorAll('label')).toHaveLength(0);
+    expect(input.getAttribute('aria-label')).toBe('Buscar sucursal por nombre');
+    expect(input.placeholder).toBe('Nombre de la sucursal...');
+  });
+
+  it('muestra sólo las secciones públicas a un visitante, aunque lleguen datos personales', () => {
+    autenticado.set(false);
+    recomendaciones.mockReturnValue(
+      of({
+        mejores: [sucursal(1, 'Mejor')],
+        masDemandadas: [sucursal(2, 'Demandada')],
+        nuevas: [sucursal(3, 'Nueva')],
+        vistasRecientes: [sucursal(4, 'Visitada')],
+        paraVos: [sucursal(5, 'Para vos')],
+        todas: [sucursal(6, 'Todas')],
+      }),
+    );
+
+    const fixture = TestBed.createComponent(SucursalesDescubrimiento);
+    fixture.detectChanges();
+    const titulos = Array.from(
+      fixture.nativeElement.querySelectorAll('.carrusel__titulo'),
+    ) as HTMLElement[];
+
+    expect(titulos.map((titulo) => titulo.textContent?.trim())).toEqual([
+      'Las mejores de AppointMee',
+      'Las más demandadas',
+      'Nuevas en AppointMee',
+      'Todas las sucursales',
+    ]);
+    expect(fixture.nativeElement.textContent).not.toContain('Visto recientemente');
+    expect(fixture.nativeElement.textContent).not.toContain('Recomendado para vos');
+    expect(fixture.nativeElement.querySelector('.descubrir__boton-ver-todas')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('form[role="search"]')).toBeTruthy();
+  });
+
+  it('mantiene las secciones personales para el usuario autenticado con resultados', () => {
+    autenticado.set(true);
+    recomendaciones.mockReturnValue(
+      of({
+        ...recomendacionesVacias(),
+        vistasRecientes: [sucursal(4, 'Visitada')],
+        paraVos: [sucursal(5, 'Para vos')],
+      }),
+    );
+
+    const fixture = TestBed.createComponent(SucursalesDescubrimiento);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Visto recientemente');
+    expect(fixture.nativeElement.textContent).toContain('Recomendado para vos');
   });
 
   it('no muestra un contador ni un mensaje técnico de secciones disponibles', () => {
