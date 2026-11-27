@@ -11,6 +11,27 @@ export interface SucursalMiniDTO {
   readonly puntuacion: number | null;
   readonly cantidadPuntuaciones: number;
   readonly diasApertura?: readonly string[];
+  readonly latitud?: number | null;
+  readonly longitud?: number | null;
+}
+
+/** Respuesta de GET /sucursales/recomendaciones para el Home. */
+export interface RecomendacionesSucursalesDTO {
+  readonly mejores: readonly SucursalMiniDTO[];
+  readonly masDemandadas: readonly SucursalMiniDTO[];
+  readonly nuevas: readonly SucursalMiniDTO[];
+  readonly vistasRecientes: readonly SucursalMiniDTO[];
+  readonly paraVos: readonly SucursalMiniDTO[];
+  readonly todas: readonly SucursalMiniDTO[];
+}
+
+/** Respuesta de GET /sucursales/listar/paginado. page/number es 0-based. */
+export interface PaginaSucursalesDTO {
+  readonly content: readonly SucursalMiniDTO[];
+  readonly totalElements: number;
+  readonly totalPages: number;
+  readonly number: number;
+  readonly size: number;
 }
 
 /**
