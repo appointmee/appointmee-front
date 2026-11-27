@@ -1,5 +1,6 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { TestBed } from '@angular/core/testing';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
@@ -83,7 +84,9 @@ describe('ReseniasSucursal', () => {
       'Segunda según backend',
     ]);
     expect(fixture.nativeElement.textContent).toContain('7 reseñas');
-    expect(fixture.nativeElement.querySelector('.resenias__ver-mas')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.resenias__ver-mas')?.textContent).toContain(
+      'Ver todas las reseñas',
+    );
     expect(fixture.nativeElement.querySelector('ds-pagination')).toBeNull();
   });
 
@@ -145,5 +148,76 @@ describe('ReseniasSucursal', () => {
     expect(listarPorSucursal).toHaveBeenCalledTimes(2);
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
     expect(comentarios(fixture)).toHaveLength(2);
+  });
+});
+
+/**
+ * Contrato real de GET /sucursales/:id/resenias. El mock del servicio podía
+ * ocultar una regresión donde el backend devolvía un array plano y el
+ * componente interpretaba `content` como undefined.
+ */
+describe('ReseniasSucursal con la respuesta HTTP del backend', () => {
+  let backend: HttpTestingController;
+  let fixture: ComponentFixture<ReseniasSucursal>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ReseniasSucursal],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: apiErrorsService, useValue: { dismiss: vi.fn() } },
+      ],
+    }).compileComponents();
+
+    backend = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(ReseniasSucursal);
+    fixture.componentRef.setInput('sucursalId', 7);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+    backend.verify();
+  });
+
+  function responder(contenido: readonly ReseniaDTO[], totalElements: number, hayMas: boolean) {
+    const peticion = backend.expectOne((request) =>
+      request.url.endsWith('/sucursales/7/resenias'),
+    );
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush({ content: contenido, totalElements, hayMas });
+    fixture.detectChanges();
+  }
+
+  it('muestra cinco reseñas y «Ver más» con el objeto VistaPreviaDTO real', () => {
+    const contenido: readonly ReseniaDTO[] = Array.from({ length: 5 }, (_, indice) => ({
+      puntuacion: 5,
+      comentario: `Reseña ${indice + 1}`,
+      fechaResenia: '2026-01-01',
+    }));
+
+    responder(contenido, 8, true);
+
+    const comentarios = Array.from(
+      fixture.nativeElement.querySelectorAll('.resenia-card__comentario') as NodeListOf<HTMLElement>,
+    ).map((elemento) => elemento.textContent?.trim() ?? '');
+    expect(comentarios).toEqual(['Reseña 1', 'Reseña 2', 'Reseña 3', 'Reseña 4', 'Reseña 5']);
+    expect(fixture.nativeElement.textContent).toContain('8 reseñas');
+    expect(fixture.nativeElement.querySelector('.resenias__ver-mas')).toBeTruthy();
+  });
+
+  it('oculta «Ver más» cuando el backend informa exactamente cinco reseñas', () => {
+    const contenido: readonly ReseniaDTO[] = Array.from({ length: 5 }, (_, indice) => ({
+      puntuacion: 4,
+      comentario: `Única ${indice + 1}`,
+      fechaResenia: '2026-01-01',
+    }));
+
+    responder(contenido, 5, false);
+
+    expect(fixture.nativeElement.querySelectorAll('.resenia-card')).toHaveLength(5);
+    expect(fixture.nativeElement.querySelector('.resenias__ver-mas')).toBeNull();
   });
 });
