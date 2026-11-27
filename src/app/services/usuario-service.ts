@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators';
 
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import {
+  FiltrosUsuariosAdmin,
   PaginaUsuariosAdminDTO,
   UsuarioMiniAdminDTO,
   UsuarioPerfilDTO,
@@ -34,35 +35,39 @@ export class usuarioService {
     });
   }
 
-  /** Filtra usuarios por nombre, apellido y estado activo según el contrato admin. */
-  filtrarAdmin(filtros: { nombre?: string; apellido?: string; activo?: boolean }): Observable<UsuarioMiniAdminDTO[]> {
-    let params = new HttpParams();
-    const nombre = filtros.nombre?.trim();
-    const apellido = filtros.apellido?.trim();
-    if (nombre) params = params.set('nombre', nombre);
-    if (apellido) params = params.set('apellido', apellido);
-    if (filtros.activo !== undefined) params = params.set('activo', String(filtros.activo));
+  /** Filtra usuarios según el contrato admin, con todos los filtros combinables. */
+  filtrarAdmin(filtros: FiltrosUsuariosAdmin): Observable<UsuarioMiniAdminDTO[]> {
     return this.http.get<UsuarioMiniAdminDTO[]>(`${this.api.baseUrl}/usuarios/listar/filtrar`, {
-      params,
+      params: this.paramsDeFiltros(filtros),
       context: this.contextoSinAvisoGlobal(),
     });
   }
 
   /** Listado administrativo con filtros y paginación resueltos en la base. */
   listarPaginadoAdmin(
-    filtros: { nombre?: string; apellido?: string; activo?: boolean },
+    filtros: FiltrosUsuariosAdmin,
     page: number,
   ): Observable<PaginaUsuariosAdminDTO> {
-    let params = new HttpParams().set('page', String(page));
-    const nombre = filtros.nombre?.trim();
-    const apellido = filtros.apellido?.trim();
-    if (nombre) params = params.set('nombre', nombre);
-    if (apellido) params = params.set('apellido', apellido);
-    if (filtros.activo !== undefined) params = params.set('activo', String(filtros.activo));
     return this.http.get<PaginaUsuariosAdminDTO>(`${this.api.baseUrl}/usuarios/listar/paginado`, {
-      params,
+      params: this.paramsDeFiltros(filtros).set('page', String(page)),
       context: this.contextoSinAvisoGlobal(),
     });
+  }
+
+  private paramsDeFiltros(filtros: FiltrosUsuariosAdmin): HttpParams {
+    let params = new HttpParams();
+    const valores: ReadonlyArray<readonly [string, string | undefined]> = [
+      ['nombre', filtros.nombre],
+      ['apellido', filtros.apellido],
+      ['email', filtros.email],
+      ['rol', filtros.rol],
+      ['activo', filtros.activo === undefined ? undefined : String(filtros.activo)],
+    ];
+    for (const [clave, valor] of valores) {
+      const texto = valor?.trim();
+      if (texto) params = params.set(clave, texto);
+    }
+    return params;
   }
 
   /** Baja lógica administrativa. El backend restringe el endpoint a ADMINISTRADOR. */

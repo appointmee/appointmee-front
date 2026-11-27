@@ -33,5 +33,14 @@ export interface UsuarioMiniAdminDTO {
   readonly fotoPerfil: string | null;
 }
 
+/** Filtros opcionales aceptados por los listados administrativos de usuarios. */
+export interface FiltrosUsuariosAdmin {
+  readonly nombre?: string;
+  readonly apellido?: string;
+  readonly email?: string;
+  readonly rol?: string;
+  readonly activo?: boolean;
+}
+
 /** Respuesta de GET /usuarios/listar/paginado. */
 export type PaginaUsuariosAdminDTO = PaginaDTO<UsuarioMiniAdminDTO>;

@@ -238,8 +238,8 @@
         <span class="panel__contador" [attr.aria-label]="totalSucursales() + ' sucursales activas en total'">{{ totalSucursales() }} activas</span>
       </header>
 
-      <p class="panel__ayuda">El listado disponible incluye solo sucursales activas. Localizalas por nombre, categoría o número.</p>
-      <div class="sucursales-admin__busqueda">
+      <p class="panel__ayuda">El listado incluye solo sucursales activas. Buscá por nombre, categoría o número y combiná con los filtros específicos.</p>
+      <div class="sucursales-admin__filtros">
         <ds-input label="Buscar sucursales" placeholder="Nombre, categoría o número">
           <input
             class="ds-input"
@@ -249,6 +249,26 @@
             aria-controls="admin-sucursales-lista"
           />
         </ds-input>
+        <ds-input class="sucursales-admin__nombre" label="Nombre" placeholder="Nombre de la sucursal">
+          <input
+            class="ds-input"
+            type="text"
+            [value]="nombreSucursal()"
+            (input)="cambiarNombreSucursales($any($event.target).value)"
+            aria-controls="admin-sucursales-lista"
+          />
+        </ds-input>
+        <ds-select
+          class="sucursales-admin__categoria"
+          label="Categoría"
+          [value]="categoriaSucursal()"
+          (change)="cambiarCategoriaSucursales($any($event.target).value)"
+        >
+          <option value="">Todas</option>
+          @for (categoria of categoriasSucursal(); track categoria) {
+            <option [value]="categoria">{{ categoria }}</option>
+          }
+        </ds-select>
       </div>
 
       @if (sucursalesCargando()) {
@@ -272,8 +292,8 @@
         </div>
       } @else if (sucursales().length === 0) {
         <div class="estado estado--vacio" role="status">
-          <h3>{{ !busquedaSucursal().trim() && totalSucursales() === 0 ? 'Todavía no hay sucursales activas' : 'No encontramos sucursales' }}</h3>
-          <p>{{ !busquedaSucursal().trim() && totalSucursales() === 0 ? 'Las sucursales activas aparecerán en este panel.' : 'Probá con otro nombre, categoría o número.' }}</p>
+          <h3>{{ !busquedaSucursal().trim() && !nombreSucursal().trim() && !categoriaSucursal() && totalSucursales() === 0 ? 'Todavía no hay sucursales activas' : 'No encontramos sucursales' }}</h3>
+          <p>{{ !busquedaSucursal().trim() && !nombreSucursal().trim() && !categoriaSucursal() && totalSucursales() === 0 ? 'Las sucursales activas aparecerán en este panel.' : 'Probá con otra búsqueda, nombre o categoría.' }}</p>
         </div>
       } @else {
         @if (sucursalesError()) {
@@ -330,15 +350,56 @@
         <p class="aviso aviso--exito" role="status" aria-live="polite">{{ usuarioActualizado() }}</p>
       }
 
+      <p class="panel__ayuda">Combiná los filtros que necesites. Nombre, apellido y correo admiten coincidencia parcial.</p>
       <div class="usuarios-filtros">
-        <label class="usuarios-filtros__estado">
-          Estado de cuenta
-          <select aria-label="Filtrar usuarios por estado de cuenta" [value]="filtroEstadoUsuario()" (change)="cambiarFiltroUsuario($any($event.target).value)">
-            <option value="todos">Todos</option>
-            <option value="activos">Activos</option>
-            <option value="inactivos">Inactivos</option>
-          </select>
-        </label>
+        <ds-input class="usuarios-filtros__nombre" label="Nombre" placeholder="Ej.: Gio">
+          <input
+            class="ds-input"
+            type="text"
+            [value]="nombreUsuario()"
+            (input)="cambiarFiltroTextoUsuario('nombre', $any($event.target).value)"
+            aria-controls="admin-usuarios-lista"
+          />
+        </ds-input>
+        <ds-input class="usuarios-filtros__apellido" label="Apellido" placeholder="Ej.: Mar">
+          <input
+            class="ds-input"
+            type="text"
+            [value]="apellidoUsuario()"
+            (input)="cambiarFiltroTextoUsuario('apellido', $any($event.target).value)"
+            aria-controls="admin-usuarios-lista"
+          />
+        </ds-input>
+        <ds-input class="usuarios-filtros__email" label="Correo electrónico" placeholder="Ej.: @example.com">
+          <input
+            class="ds-input"
+            type="text"
+            [value]="emailUsuario()"
+            (input)="cambiarFiltroTextoUsuario('email', $any($event.target).value)"
+            aria-controls="admin-usuarios-lista"
+          />
+        </ds-input>
+        <ds-select
+          class="usuarios-filtros__rol"
+          label="Rol"
+          [value]="rolUsuario()"
+          (change)="cambiarFiltroRolUsuario($any($event.target).value)"
+        >
+          <option value="">Todos</option>
+          @for (rol of rolesUsuario; track rol) {
+            <option [value]="rol">{{ rol }}</option>
+          }
+        </ds-select>
+        <ds-select
+          class="usuarios-filtros__estado"
+          label="Estado de cuenta"
+          [value]="filtroEstadoUsuario()"
+          (change)="cambiarFiltroUsuario($any($event.target).value)"
+        >
+          <option value="todos">Todos</option>
+          <option value="activos">Activos</option>
+          <option value="inactivos">Inactivos</option>
+        </ds-select>
       </div>
 
       @if (usuariosCargando()) {
