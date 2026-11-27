@@ -8,7 +8,7 @@
     </div>
     <div class="carrusel__acciones">
       @if (verTodas()) {
-        <a class="carrusel__ver-todas" routerLink="/sucursales">{{ etiquetaVerTodas() }}</a>
+        <a class="carrusel__ver-todas" [routerLink]="rutaVerTodas()">{{ etiquetaVerTodas() }}</a>
       }
       <div class="carrusel__flechas" role="group" [attr.aria-label]="'Controles de ' + titulo()">
         <button

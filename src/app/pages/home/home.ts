@@ -1,4 +1,3 @@
-import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,39 +5,23 @@ import {
   ElementRef,
   AfterViewInit,
   OnInit,
-  computed,
   inject,
-  signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-import { CarruselSucursales } from '../../components/carrusel-sucursales/carrusel-sucursales';
 import { authService } from '../../services/auth-service';
-import { RecomendacionesSucursalesDTO, SucursalMiniDTO } from '../../models/sucursal';
-import { sucursalService } from '../../services/sucursal-service';
-
-interface SeccionHome {
-  readonly id: string;
-  readonly titulo: string;
-  readonly descripcion: string;
-  readonly sucursales: readonly SucursalMiniDTO[];
-  readonly verTodas: boolean;
-  readonly etiquetaVerTodas: string;
-}
 
 @Component({
   selector: 'app-home',
-  imports: [DsButtonComponent, CarruselSucursales, RouterLink],
+  imports: [RouterLink],
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Home implements OnInit, AfterViewInit {
   private readonly auth = inject(authService);
-  private readonly sucursalesService = inject(sucursalService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -46,75 +29,6 @@ export class Home implements OnInit, AfterViewInit {
   private animationContext: ReturnType<typeof gsap.context> | null = null;
 
   protected readonly isAuthenticated = this.auth.autenticado;
-
-  protected readonly recomendaciones = signal<RecomendacionesSucursalesDTO | null>(null);
-  protected readonly recomendacionesLoading = signal(true);
-  protected readonly recomendacionesError = signal<string | null>(null);
-  protected readonly reintentandoRecomendaciones = signal(false);
-
-  /** Las secciones sin resultados no se renderizan. «Todas» es una vista
-   * previa del listado completo y siempre ofrece el acceso a la página. */
-  protected readonly secciones = computed<readonly SeccionHome[]>(() => {
-    const datos = this.recomendaciones();
-    if (!datos) {
-      return [];
-    }
-
-    return [
-      {
-        id: 'mejores',
-        titulo: 'Las mejores de AppointMee',
-        descripcion: 'Las más valoradas por la comunidad, según reseñas y puntuación.',
-        sucursales: datos.mejores ?? [],
-        verTodas: false,
-        etiquetaVerTodas: '',
-      },
-      {
-        id: 'demandadas',
-        titulo: 'Las más demandadas',
-        descripcion: 'Las sucursales con más turnos confirmados en los últimos 30 días.',
-        sucursales: datos.masDemandadas ?? [],
-        verTodas: false,
-        etiquetaVerTodas: '',
-      },
-      {
-        id: 'nuevas',
-        titulo: 'Nuevas en AppointMee',
-        descripcion: 'Establecimientos que se sumaron en los últimos dos meses.',
-        sucursales: datos.nuevas ?? [],
-        verTodas: false,
-        etiquetaVerTodas: '',
-      },
-      {
-        id: 'recientes',
-        titulo: 'Visto recientemente',
-        descripcion: 'Volvé a las sucursales que visitaste últimamente.',
-        sucursales: datos.vistasRecientes ?? [],
-        verTodas: false,
-        etiquetaVerTodas: '',
-      },
-      {
-        id: 'para-vos',
-        titulo: 'Recomendado para vos',
-        descripcion: 'Sugerencias según tus reservas y tus categorías preferidas.',
-        sucursales: datos.paraVos ?? [],
-        verTodas: false,
-        etiquetaVerTodas: '',
-      },
-      {
-        id: 'todas',
-        titulo: 'Todas las sucursales',
-        descripcion: 'Un adelanto de todo lo que podés reservar en AppointMee.',
-        sucursales: datos.todas ?? [],
-        verTodas: true,
-        etiquetaVerTodas: 'Ver todas',
-      },
-    ].filter((seccion) => seccion.sucursales.length > 0);
-  });
-
-  constructor() {
-    this.cargarRecomendaciones();
-  }
 
   protected onHeroVisualPointerMove(event: PointerEvent): void {
     if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') {
@@ -155,42 +69,10 @@ export class Home implements OnInit, AfterViewInit {
     });
   }
 
-  protected reintentarRecomendaciones(): void {
-    if (this.reintentandoRecomendaciones()) {
-      return;
-    }
-    this.reintentandoRecomendaciones.set(true);
-    this.cargarRecomendaciones();
-  }
-
-  private cargarRecomendaciones(): void {
-    this.recomendacionesLoading.set(true);
-    this.recomendaciones.set(null);
-
-    this.sucursalesService
-      .recomendaciones()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (datos) => {
-          this.recomendaciones.set(datos);
-          this.recomendacionesError.set(null);
-          this.recomendacionesLoading.set(false);
-          this.reintentandoRecomendaciones.set(false);
-        },
-        error: () => {
-          this.recomendacionesError.set(
-            'No pudimos cargar las recomendaciones. Revisá tu conexión e intentá de nuevo.',
-          );
-          this.recomendacionesLoading.set(false);
-          this.reintentandoRecomendaciones.set(false);
-        },
-      });
-  }
-
   ngOnInit(): void {
     const qp = this.route.snapshot.queryParams;
     if (qp['busqueda'] || qp['categoria']) {
-      void this.router.navigate(['/sucursales'], { queryParams: qp });
+      void this.router.navigate(['/listado-sucursales'], { queryParams: qp });
     }
   }
 

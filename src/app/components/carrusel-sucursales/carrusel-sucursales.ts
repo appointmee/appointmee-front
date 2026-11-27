@@ -14,7 +14,7 @@ import {
 import { SucursalMiniDTO } from '../../models/sucursal';
 
 /**
- * Carrusel horizontal reutilizable para las secciones del Home.
+ * Carrusel horizontal reutilizable para las secciones de descubrimiento.
  * El desplazamiento funciona con rueda horizontal/Shift+rueda, gesto táctil
  * nativo, flechas del componente y teclado cuando el riel tiene el foco.
  */
@@ -34,6 +34,7 @@ export class CarruselSucursales implements AfterViewInit {
   readonly sucursales = input.required<readonly SucursalMiniDTO[]>();
   readonly verTodas = input(false);
   readonly etiquetaVerTodas = input('Ver todas las sucursales');
+  readonly rutaVerTodas = input('/listado-sucursales');
 
   protected readonly placeholderImage = `data:image/svg+xml;utf8,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="#1a1f2b"/><g fill="none" stroke="#98a2b3" stroke-width="2"><rect x="120" y="80" width="160" height="120" rx="12"/><circle cx="160" cy="120" r="18"/><path d="M120 180l45-40 35 30 30-25 70 60"/></g><text x="200" y="215" text-anchor="middle" fill="#98a2b3" font-size="14" font-family="sans-serif">Sin imagen</text></svg>',

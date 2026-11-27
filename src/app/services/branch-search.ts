@@ -43,7 +43,7 @@ export class BranchSearch {
         takeUntilDestroyed(),
       )
       .subscribe((term) => {
-        void this.router.navigate(['/sucursales'], {
+        void this.router.navigate(['/listado-sucursales'], {
           queryParams: { busqueda: term || null },
           queryParamsHandling: 'merge',
         });

@@ -64,7 +64,7 @@ Estados relevantes: hover usa `--accent-soft` manteniendo el color de texto; foc
 | Modal | Sí | No aplica | Sí | No aplica | No aplica | No aplica | No aplica |
 | Skeleton / empty state | Sí | No aplica | No aplica | No aplica | No aplica | Skeleton representa carga | Empty state representa ausencia |
 | Paginación | Sí | Heredado de botones nativos | Heredado de botones nativos | Heredado de botones nativos | Sí en límites | No aplica | No aplica |
-| Carrusel de sucursales | Sí | Sí en tarjetas y flechas | Sí en riel, tarjetas y flechas | No aplica | Sí en flechas de los extremos | No aplica: la Home muestra skeletons propios | No aplica: la Home muestra el error inline |
+| Carrusel de sucursales | Sí | Sí en tarjetas y flechas | Sí en riel, tarjetas y flechas | No aplica | Sí en flechas de los extremos | No aplica: la pantalla de descubrimiento muestra skeletons propios | No aplica: la pantalla de descubrimiento muestra el error inline |
 
 La tabla describe estados aplicables; un estado que no tiene sentido para un componente se marca “No aplica”. La demo permite recorrer los controles con teclado, comprobar el foco visible y activar hover/active con puntero; sus ejemplos exponen carga, error y deshabilitado. Los ratios de texto sobre fondos translúcidos de badge, compuestos sobre `--surface`, son 7,00:1 para success, 5,67:1 para info y 6,04:1 para danger. Si se cambia la superficie, se debe recalcular el ratio.
 
@@ -88,7 +88,7 @@ Los tokens y el foco visible son globales. Las tarjetas, avisos y diálogos espe
 - Card interactiva: `interactive` agrega rol y foco; `(activated)` funciona con clic, Enter y Espacio. Para navegación, preferir un enlace nativo y evitar controles anidados dentro de una card que actúe como botón.
 - Modal: proporcionar `ariaLabel` o `ariaLabelledby`, controlar `[open]` y responder a `(close)`. El foco queda dentro; Escape solicita el cierre. El fondo se vuelve `inert`, el backdrop aplica blur y el panel tiene scroll interno. `maxWidth` permite ampliar el panel (por defecto `500px`) sin duplicar estilos.
 - Paginación: `[showDirectNavigation]="true"` habilita un campo numérico y el botón «Ir»; `(pageChange)` entrega la página 1-based ya validada. Las flechas se deshabilitan en los extremos.
-- Carrusel de sucursales: componente del dominio en `src/app/components/` (no genérico). Recibe `id`, `titulo`, `sucursales` y, opcionalmente, `descripcion`, `verTodas` y `etiquetaVerTodas`. El riel tiene `role="region"` y `tabindex="0"`; se desplaza con rueda horizontal o Shift+rueda (la rueda vertical de la página no se intercepta), gesto táctil nativo, flechas y teclado. `prefers-reduced-motion` desactiva animaciones.
+- Carrusel de sucursales: componente del dominio en `src/app/components/` (no genérico). Recibe `id`, `titulo`, `sucursales` y, opcionalmente, `descripcion`, `verTodas`, `etiquetaVerTodas` y `rutaVerTodas` (por defecto `/listado-sucursales`, el listado completo con filtros). El riel tiene `role="region"` y `tabindex="0"`; se desplaza con rueda horizontal o Shift+rueda (la rueda vertical de la página no se intercepta), gesto táctil nativo, flechas y teclado. `prefers-reduced-motion` desactiva animaciones.
 - Breakpoints: `--bp-*` documenta los valores comunes. Las variables CSS no se sustituyen directamente en condiciones `@media`; usar los valores documentados.
 
 ### Verificación
