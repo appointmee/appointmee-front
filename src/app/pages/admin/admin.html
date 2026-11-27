@@ -350,9 +350,9 @@
         <p class="aviso aviso--exito" role="status" aria-live="polite">{{ usuarioActualizado() }}</p>
       }
 
-      <p class="panel__ayuda">Combiná los filtros que necesites. Nombre y apellido buscan coincidencia exacta; el correo admite parte del email.</p>
+      <p class="panel__ayuda">Combiná los filtros que necesites. Nombre, apellido y correo admiten coincidencia parcial.</p>
       <div class="usuarios-filtros">
-        <ds-input class="usuarios-filtros__nombre" label="Nombre" placeholder="Nombre exacto">
+        <ds-input class="usuarios-filtros__nombre" label="Nombre" placeholder="Ej.: Gio">
           <input
             class="ds-input"
             type="text"
@@ -361,7 +361,7 @@
             aria-controls="admin-usuarios-lista"
           />
         </ds-input>
-        <ds-input class="usuarios-filtros__apellido" label="Apellido" placeholder="Apellido exacto">
+        <ds-input class="usuarios-filtros__apellido" label="Apellido" placeholder="Ej.: Mar">
           <input
             class="ds-input"
             type="text"
