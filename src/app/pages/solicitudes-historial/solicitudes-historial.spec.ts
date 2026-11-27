@@ -142,6 +142,39 @@ describe('Historial completo de solicitudes', () => {
     expect(host.textContent).toContain('Estado a consultar');
   });
 
+  it('recorre más de diez solicitudes en páginas consecutivas sin duplicados', () => {
+    const primeraPagina = Array.from({ length: 10 }, (_, indice) => ({
+      ...SOLICITUDES[0],
+      id: 100 + indice,
+      nombreUsuario: `Primera ${100 + indice}`,
+    }));
+    const segundaPagina = Array.from({ length: 2 }, (_, indice) => ({
+      ...SOLICITUDES[0],
+      id: 110 + indice,
+      nombreUsuario: `Segunda ${110 + indice}`,
+    }));
+
+    listar(0).flush(pagina(primeraPagina, 12, 2, 0));
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelectorAll('app-solicitud-empleador-card')).toHaveLength(10);
+    expect(host.textContent).toContain('12 solicitudes en total · 10 por página');
+
+    host.querySelector<HTMLButtonElement>('ds-pagination .ds-pagination__next')?.click();
+    fixture.detectChanges();
+
+    listar(1).flush(pagina(segundaPagina, 12, 2, 1));
+    fixture.detectChanges();
+
+    expect(host.querySelectorAll('app-solicitud-empleador-card')).toHaveLength(2);
+    expect(host.textContent).toContain('Página 2 de 2');
+    expect(host.textContent).toContain('12 solicitudes en total');
+    expect(host.textContent).toContain('Segunda 110');
+    expect(host.textContent).toContain('Segunda 111');
+    expect(host.textContent).not.toContain('Primera 100');
+  });
+
   it('ante un error de detalle permite reintentar sin perder la solicitud', () => {
     listar(0).flush(pagina([SOLICITUDES[0]], 1, 1, 0));
     fixture.detectChanges();
