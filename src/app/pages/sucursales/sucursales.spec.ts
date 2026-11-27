@@ -299,6 +299,25 @@ describe('Sucursales', () => {
     expect(listarPaginado).toHaveBeenLastCalledWith('SPA', null, 2, 12, false);
   });
 
+  it('la navegación directa sigue disponible desde la última página', async () => {
+    listarPaginado.mockReturnValue(of(pagina([CENTRO], 30, 3, 2)));
+    const fixture = await create('/sucursales?pagina=3');
+    const botonIr = fixture.nativeElement.querySelector(
+      'ds-pagination .ds-pagination__go',
+    ) as HTMLButtonElement;
+    const input = fixture.nativeElement.querySelector(
+      'ds-pagination input[type="number"]',
+    ) as HTMLInputElement;
+
+    expect(botonIr.disabled).toBe(false);
+
+    input.value = '1';
+    input.dispatchEvent(new Event('input'));
+    botonIr.click();
+    await vi.waitFor(() => expect(router.url).not.toContain('pagina='));
+    expect(listarPaginado).toHaveBeenLastCalledWith(null, null, 0, 12, false);
+  });
+
   it('cambiar un filtro vuelve a la primera página y limpia el parámetro', async () => {
     listarPaginado.mockReturnValue(of(pagina([CENTRO], 30, 3, 0)));
     const fixture = await create('/sucursales?pagina=3');

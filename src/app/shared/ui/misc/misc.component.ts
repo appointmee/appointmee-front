@@ -228,7 +228,6 @@ export class DsModalComponent implements AfterViewChecked, OnDestroy {
           type="button"
           class="ds-pagination__go"
           (click)="irDirecto(destino.value)"
-          [disabled]="page >= totalPages"
         >{{ goButtonLabel }}</button>
       </span>
     }
