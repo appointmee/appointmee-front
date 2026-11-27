@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -13,15 +12,22 @@ import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 
 import { SolicitudEmpleadoLista } from '../../components/solicitud-empleado-lista/solicitud-empleado-lista';
 import { mensajeErrorSolicitudEmpleado } from '../../http/solicitud-empleado-errors';
+import { TAMANO_PAGINA } from '../../models/paginacion';
 import {
+  PaginaSolicitudesEmpleadoSucursalDTO,
   SolicitudEmpleadoVista,
   vistaSolicitudEnviada,
 } from '../../models/solicitud-empleado';
+import { DsPaginationComponent } from '../../shared/ui/misc/misc.component';
 import { solicitudEmpleadoService } from '../../services/solicitud-empleado-service';
+
+type ResultadoLista =
+  | { readonly ok: true; readonly pagina: PaginaSolicitudesEmpleadoSucursalDTO }
+  | { readonly ok: false; readonly error: HttpErrorResponse };
 
 @Component({
   selector: 'app-solicitudes-empleado-enviadas-historial',
-  imports: [RouterLink, SolicitudEmpleadoLista],
+  imports: [DsPaginationComponent, RouterLink, SolicitudEmpleadoLista],
   templateUrl: './solicitudes-empleado-enviadas-historial.html',
   styleUrl: './solicitudes-empleado-enviadas-historial.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,7 +44,11 @@ export class SolicitudesEmpleadoEnviadasHistorial {
   protected readonly error = signal<string | null>(null);
   protected readonly reintentando = signal(false);
 
-  protected readonly total = computed(() => this.solicitudes().length);
+  /** Página 0-based pedida al backend y metadatos que él informa. */
+  protected readonly pagina = signal(0);
+  protected readonly totalPaginas = signal(0);
+  protected readonly total = signal(0);
+  protected readonly tamanoPagina = TAMANO_PAGINA;
 
   constructor() {
     this.route.paramMap
@@ -53,6 +63,9 @@ export class SolicitudesEmpleadoEnviadasHistorial {
         this.sucursalId.set(id);
         this.solicitudes.set([]);
         this.error.set(null);
+        this.pagina.set(0);
+        this.totalPaginas.set(0);
+        this.total.set(0);
         this.cargando.set(true);
         this.recargar.next();
       });
@@ -61,34 +74,77 @@ export class SolicitudesEmpleadoEnviadasHistorial {
       .pipe(
         startWith(undefined as void),
         switchMap(() => {
+          this.cargando.set(true);
+
+          // Nunca se pide una página que el backend ya informó que no existe.
+          const ultimaPagina = Math.max(0, this.totalPaginas() - 1);
+          const page = Math.min(this.pagina(), ultimaPagina);
+          if (page !== this.pagina()) this.pagina.set(page);
+
           const id = this.sucursalId();
           if (id === null) {
-            this.cargando.set(false);
-            return of<readonly SolicitudEmpleadoVista[]>([]);
+            return of<ResultadoLista>({
+              ok: true,
+              pagina: {
+                content: [],
+                totalElements: 0,
+                totalPages: 0,
+                number: 0,
+                size: TAMANO_PAGINA,
+              },
+            });
           }
-          this.cargando.set(this.solicitudes().length === 0);
-          return this.api.listarEnviadas(id).pipe(
-            map((solicitudes) => solicitudes.map(vistaSolicitudEnviada)),
-            catchError((error: HttpErrorResponse) => {
-              this.error.set(mensajeErrorSolicitudEmpleado(error, 'carga'));
-              this.cargando.set(false);
-              this.reintentando.set(false);
-              return of<readonly SolicitudEmpleadoVista[]>([]);
-            }),
+
+          return this.api.listarEnviadasPaginadas(id, page).pipe(
+            map((pagina): ResultadoLista => ({ ok: true, pagina })),
+            catchError((error: HttpErrorResponse) => of<ResultadoLista>({ ok: false, error })),
           );
         }),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((solicitudes) => {
-        this.solicitudes.set(solicitudes);
-        this.cargando.set(false);
-        this.reintentando.set(false);
-      });
+      .subscribe((resultado) => this.aplicarLista(resultado));
   }
 
   protected reintentar(): void {
     if (this.reintentando()) return;
     this.reintentando.set(true);
+    this.pagina.set(0);
     this.recargar.next();
+  }
+
+  /** `ds-pagination` es 1-based; el backend usa páginas 0-based. */
+  protected cambiarPagina(paginaVisible: number): void {
+    const ultimaPagina = Math.max(0, this.totalPaginas() - 1);
+    const destino = Math.min(Math.max(0, paginaVisible - 1), ultimaPagina);
+    if (destino === this.pagina()) return;
+
+    this.pagina.set(destino);
+    this.recargar.next();
+  }
+
+  private aplicarLista(resultado: ResultadoLista): void {
+    if (!resultado.ok) {
+      this.error.set(mensajeErrorSolicitudEmpleado(resultado.error, 'carga'));
+      this.cargando.set(false);
+      this.reintentando.set(false);
+
+      if (this.solicitudes().length === 0) {
+        this.pagina.set(0);
+        this.totalPaginas.set(0);
+        this.total.set(0);
+      }
+      return;
+    }
+
+    const { content, totalElements, totalPages, number } = resultado.pagina;
+    const paginaSegura = Math.min(Math.max(0, number), Math.max(0, totalPages - 1));
+
+    this.error.set(null);
+    this.solicitudes.set(content.map(vistaSolicitudEnviada));
+    this.total.set(totalElements);
+    this.totalPaginas.set(totalPages);
+    this.pagina.set(paginaSegura);
+    this.cargando.set(false);
+    this.reintentando.set(false);
   }
 }

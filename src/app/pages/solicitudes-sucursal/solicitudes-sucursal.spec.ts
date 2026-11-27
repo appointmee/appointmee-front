@@ -43,7 +43,34 @@ describe('SolicitudesSucursal', () => {
   function responderSolicitudes(): void {
     backend
       .expectOne((request) => request.url.endsWith('/solicitudes-empleado/enviadas/sucursal/7'))
-      .flush([]);
+      .flush({ content: [], totalElements: 0, hayMas: false });
+  }
+
+  function responderDetalles(ids: readonly number[]): void {
+    for (const id of ids) {
+      backend
+        .expectOne((request) => request.url.endsWith(`/solicitudes-empleado/${id}/detalles`))
+        .flush({
+          id,
+          estadoSolicitud: 'PENDIENTE',
+          fechaSolicitud: '2026-11-20',
+          empleado: {
+            id,
+            nombre: 'Invitado',
+            apellido: 'Apellido',
+            email: `invitado-${id}@example.com`,
+            urlFotoPerfil: null,
+          },
+          sucursal: {
+            id: 7,
+            nombre: 'Sucursal',
+            categoria: 'SPA',
+            fotoPerfil: null,
+            puntuacion: null,
+            cantidadPuntuaciones: 0,
+          },
+        });
+    }
   }
 
   it('muestra la foto de la sucursal desenfocada detrás de las solicitudes', () => {
@@ -81,5 +108,56 @@ describe('SolicitudesSucursal', () => {
     expect(html.querySelector('.pagina__fondo-sucursal')).toBeNull();
     expect(html.querySelector('.solicitudes__layout')).toBeTruthy();
     expect(html.textContent).toContain('Solicitudes de empleo');
+  });
+
+  it('muestra las tres del backend y enlaza al historial solo si hay más', () => {
+    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush({
+      fotoPerfil: null,
+    });
+    backend
+      .expectOne((request) => request.url.endsWith('/solicitudes-empleado/enviadas/sucursal/7'))
+      .flush({
+        content: Array.from({ length: 3 }, (_, indice) => ({
+          id: 100 + indice,
+          nombreEmpleado: `Invitado ${indice}`,
+          apellidoEmpleado: 'Apellido',
+          fechaSolicitud: '2026-11-20',
+        })),
+        totalElements: 8,
+        hayMas: true,
+      });
+    fixture.detectChanges();
+    responderDetalles([100, 101, 102]);
+    fixture.detectChanges();
+
+    expect(html.querySelectorAll('app-solicitud-empleado-card')).toHaveLength(3);
+    expect(html.textContent).toContain('Invitado 0');
+    expect(html.querySelector('.ver-mas')).not.toBeNull();
+  });
+
+  it('oculta el enlace cuando el backend informa que no hay más', () => {
+    backend.expectOne((request) => request.url.endsWith('/sucursales/7')).flush({
+      fotoPerfil: null,
+    });
+    backend
+      .expectOne((request) => request.url.endsWith('/solicitudes-empleado/enviadas/sucursal/7'))
+      .flush({
+        content: [
+          {
+            id: 200,
+            nombreEmpleado: 'Único',
+            apellidoEmpleado: 'Invitado',
+            fechaSolicitud: '2026-11-20',
+          },
+        ],
+        totalElements: 1,
+        hayMas: false,
+      });
+    fixture.detectChanges();
+    responderDetalles([200]);
+    fixture.detectChanges();
+
+    expect(html.querySelectorAll('app-solicitud-empleado-card')).toHaveLength(1);
+    expect(html.querySelector('.ver-mas')).toBeNull();
   });
 });

@@ -6,9 +6,10 @@ import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import {
   SolicitudEmpleadoDetalleDTO,
   SolicitudEmpleadoMiniPropiaDTO,
-  SolicitudEmpleadoMiniSucursalDTO,
   PaginaSolicitudesEmpleadoDTO,
+  PaginaSolicitudesEmpleadoSucursalDTO,
   VistaPreviaSolicitudesEmpleadoDTO,
+  VistaPreviaSolicitudesEmpleadoSucursalDTO,
 } from '../models/solicitud-empleado';
 import { backendService } from './backend-service';
 
@@ -40,10 +41,27 @@ export class solicitudEmpleadoService {
     );
   }
 
-  listarEnviadas(sucursalId: number): Observable<SolicitudEmpleadoMiniSucursalDTO[]> {
-    return this.http.get<SolicitudEmpleadoMiniSucursalDTO[]>(
+  /** Vista inicial: 3 invitaciones y flag para mostrar «Ver más» (0-based page). */
+  listarEnviadas(
+    sucursalId: number,
+  ): Observable<VistaPreviaSolicitudesEmpleadoSucursalDTO> {
+    return this.http.get<VistaPreviaSolicitudesEmpleadoSucursalDTO>(
       `${this.api.baseUrl}/solicitudes-empleado/enviadas/sucursal/${sucursalId}`,
       { context: this.contextoSinAvisoGlobal() },
+    );
+  }
+
+  /** Historial completo: 10 invitaciones por página (page 0-based). */
+  listarEnviadasPaginadas(
+    sucursalId: number,
+    page: number,
+  ): Observable<PaginaSolicitudesEmpleadoSucursalDTO> {
+    return this.http.get<PaginaSolicitudesEmpleadoSucursalDTO>(
+      `${this.api.baseUrl}/solicitudes-empleado/enviadas/sucursal/${sucursalId}/paginado`,
+      {
+        params: new HttpParams().set('page', String(page)),
+        context: this.contextoSinAvisoGlobal(),
+      },
     );
   }
 
