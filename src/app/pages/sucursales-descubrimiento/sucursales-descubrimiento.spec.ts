@@ -4,8 +4,10 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Observable, Subject, of, throwError } from 'rxjs';
 
+import { routes } from '../../app.routes';
 import { RecomendacionesSucursalesDTO, SucursalMiniDTO } from '../../models/sucursal';
 import { sucursalService } from '../../services/sucursal-service';
+import { Sucursales } from '../sucursales/sucursales';
 import { SucursalesDescubrimiento } from './sucursales-descubrimiento';
 
 @Component({ template: '' })
@@ -164,5 +166,18 @@ describe('SucursalesDescubrimiento: pantalla principal de sucursales (SCRUM-364)
     respuesta.next({ ...recomendacionesVacias(), mejores: [sucursal(1, 'Mejor')] });
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.carrusel__card')).toBeTruthy();
+  });
+
+  it('conecta /sucursales con el descubrimiento y /listado-sucursales con el listado', async () => {
+    const descubrimiento = routes.find((ruta) => ruta.path === 'sucursales');
+    const listado = routes.find((ruta) => ruta.path === 'listado-sucursales');
+
+    expect(descubrimiento).toBeDefined();
+    expect(listado).toBeDefined();
+    const cargarDescubrimiento = descubrimiento?.loadComponent as () => Promise<unknown>;
+    const cargarListado = listado?.loadComponent as () => Promise<unknown>;
+
+    await expect(cargarDescubrimiento()).resolves.toBe(SucursalesDescubrimiento);
+    await expect(cargarListado()).resolves.toBe(Sucursales);
   });
 });
