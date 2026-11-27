@@ -319,8 +319,11 @@ ds-pagination {
   margin-top: var(--space-4);
 }
 
-.sucursales-admin__busqueda {
-  width: min(100%, 25rem);
+.sucursales-admin__filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  align-items: end;
+  gap: var(--space-4);
 }
 
 .sucursal-admin {
@@ -356,31 +359,9 @@ ds-pagination {
 
 .usuarios-filtros {
   display: grid;
-  grid-template-columns: minmax(0, 18rem);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
   align-items: end;
   gap: var(--space-4);
-}
-
-.usuarios-filtros__estado {
-  display: grid;
-  gap: var(--space-1);
-  color: var(--muted);
-  font-size: var(--font-size-sm);
-}
-
-.usuarios-filtros__estado select {
-  min-height: 2.6rem;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-}
-
-.usuarios-filtros__estado select:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
 }
 
 .usuario-admin {
@@ -766,6 +747,7 @@ ds-pagination {
     flex-direction: column;
   }
 
+  .sucursales-admin__filtros,
   .usuarios-filtros {
     grid-template-columns: 1fr;
   }

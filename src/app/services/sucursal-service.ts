@@ -81,16 +81,23 @@ export class sucursalService {
     });
   }
 
-  /** Listado administrativo: filtro libre en base de datos, 10 por página. */
+  /** Listado administrativo: búsqueda libre (q), nombre y categoría combinables. */
   listarPaginadoAdmin(
     q: string | null,
+    nombre: string | null,
+    categoria: string | null,
     page: number,
     silenciarErroresGlobales = true,
   ): Observable<PaginaSucursalesDTO> {
     let params = new HttpParams().set('page', String(page));
-    const termino = q?.trim();
-    if (termino) {
-      params = params.set('q', termino);
+    const valores: ReadonlyArray<readonly [string, string | null]> = [
+      ['q', q],
+      ['nombre', nombre],
+      ['categoria', categoria],
+    ];
+    for (const [clave, valor] of valores) {
+      const termino = valor?.trim();
+      if (termino) params = params.set(clave, termino);
     }
     return this.http.get<PaginaSucursalesDTO>(
       `${this.api.baseUrl}/sucursales/listar/paginado/admin`,

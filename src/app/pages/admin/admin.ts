@@ -31,8 +31,17 @@ import { PaginaSucursalesDTO, SucursalMiniDTO } from '../../models/sucursal';
 import { SucursalDetalleModal } from '../../components/sucursal-detalle-modal/sucursal-detalle-modal';
 import { Graficos } from '../graficos/graficos';
 import { usuarioService } from '../../services/usuario-service';
-import { PaginaUsuariosAdminDTO, UsuarioMiniAdminDTO, UsuarioPerfilDTO } from '../../models/usuario';
-import { DsModalComponent, DsPaginationComponent } from '../../shared/ui/misc/misc.component';
+import {
+  FiltrosUsuariosAdmin,
+  PaginaUsuariosAdminDTO,
+  UsuarioMiniAdminDTO,
+  UsuarioPerfilDTO,
+} from '../../models/usuario';
+import {
+  DsModalComponent,
+  DsPaginationComponent,
+  DsSelectComponent,
+} from '../../shared/ui/misc/misc.component';
 import { fotoPerfilDe } from '../../shared/foto-perfil';
 
 type ResultadoLista =
@@ -63,9 +72,12 @@ type ResultadoUsuarios =
   | { readonly ok: true; readonly pagina: PaginaUsuariosAdminDTO }
   | { readonly ok: false };
 
-interface FiltrosUsuarios {
-  readonly activo: boolean | undefined;
-}
+const ROLES_USUARIO: readonly string[] = [
+  'ADMINISTRADOR',
+  'EMPLEADOR',
+  'EMPLEADO',
+  'CLIENTE',
+];
 
 /** Evita pedir páginas que el backend ya informó que no existen. */
 function paginaValida(pagina: number, totalPaginas: number): number {
@@ -74,7 +86,7 @@ function paginaValida(pagina: number, totalPaginas: number): number {
 
 @Component({
   selector: 'app-admin',
-  imports: [DsButtonComponent, DsInputComponent, DsModalComponent, DsPaginationComponent, SolicitudEmpleadorCard, SucursalDetalleModal, Graficos],
+  imports: [DsButtonComponent, DsInputComponent, DsModalComponent, DsPaginationComponent, DsSelectComponent, SolicitudEmpleadorCard, SucursalDetalleModal, Graficos],
   templateUrl: './admin.html',
   styleUrl: './admin.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -117,10 +129,13 @@ export class Administracion {
   protected readonly sucursalesError = signal(false);
   protected readonly sucursalesReintentando = signal(false);
   protected readonly busquedaSucursal = signal('');
+  protected readonly nombreSucursal = signal('');
+  protected readonly categoriaSucursal = signal('');
+  protected readonly categoriasSucursal = signal<readonly string[]>([]);
   protected readonly seccionActiva = signal<'sucursales' | 'solicitudes' | 'estadisticas' | 'usuarios' | null>(null);
   protected readonly sucursalDetalleId = signal<number | null>(null);
   private readonly recargarSucursales = new Subject<void>();
-  private readonly filtrosUsuarios$ = new Subject<FiltrosUsuarios>();
+  private readonly filtrosUsuarios$ = new Subject<FiltrosUsuariosAdmin>();
   protected readonly usuarios = signal<readonly UsuarioMiniAdminDTO[]>([]);
   protected readonly totalUsuarios = signal(0);
   protected readonly totalPaginasUsuarios = signal(0);
@@ -130,6 +145,11 @@ export class Administracion {
   protected readonly usuariosError = signal(false);
   protected readonly usuariosReintentando = signal(false);
   protected readonly filtroEstadoUsuario = signal('todos');
+  protected readonly nombreUsuario = signal('');
+  protected readonly apellidoUsuario = signal('');
+  protected readonly emailUsuario = signal('');
+  protected readonly rolUsuario = signal('');
+  protected readonly rolesUsuario = ROLES_USUARIO;
   protected readonly usuarioDetalleId = signal<number | null>(null);
   protected readonly usuarioDetalle = signal<UsuarioPerfilDTO | null>(null);
   protected readonly detalleUsuarioCargando = signal(false);
@@ -153,6 +173,13 @@ export class Administracion {
   );
 
   constructor() {
+    this.sucursalesApi.categorias()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (categorias) => this.categoriasSucursal.set(categorias),
+        error: () => this.categoriasSucursal.set([]),
+      });
+
     this.recargarSucursales
       .pipe(
         startWith(undefined as void),
@@ -163,7 +190,9 @@ export class Administracion {
           if (pagina !== this.paginaSucursales()) this.paginaSucursales.set(pagina);
 
           const q = this.busquedaSucursal().trim() || null;
-          return this.sucursalesApi.listarPaginadoAdmin(q, pagina).pipe(
+          const nombre = this.nombreSucursal().trim() || null;
+          const categoria = this.categoriaSucursal() || null;
+          return this.sucursalesApi.listarPaginadoAdmin(q, nombre, categoria, pagina).pipe(
             map((pagina): ResultadoSucursales => ({ ok: true, pagina })),
             catchError(() => of<ResultadoSucursales>({ ok: false })),
           );
@@ -220,6 +249,22 @@ export class Administracion {
   protected buscarSucursales(valor: string): void {
     if (valor === this.busquedaSucursal()) return;
     this.busquedaSucursal.set(valor);
+    this.reiniciarSucursales();
+  }
+
+  protected cambiarNombreSucursales(valor: string): void {
+    if (valor === this.nombreSucursal()) return;
+    this.nombreSucursal.set(valor);
+    this.reiniciarSucursales();
+  }
+
+  protected cambiarCategoriaSucursales(valor: string): void {
+    if (valor === this.categoriaSucursal()) return;
+    this.categoriaSucursal.set(valor);
+    this.reiniciarSucursales();
+  }
+
+  private reiniciarSucursales(): void {
     this.paginaSucursales.set(0);
     this.recargarSucursales.next();
   }
@@ -272,6 +317,33 @@ export class Administracion {
     if (estado === this.filtroEstadoUsuario() && this.paginaUsuarios() === 0) return;
 
     this.filtroEstadoUsuario.set(estado);
+    this.reiniciarUsuarios();
+  }
+
+  protected cambiarFiltroTextoUsuario(
+    campo: 'nombre' | 'apellido' | 'email',
+    valor: string,
+  ): void {
+    const signal = campo === 'nombre'
+      ? this.nombreUsuario
+      : campo === 'apellido'
+        ? this.apellidoUsuario
+        : this.emailUsuario;
+    if (signal() === valor) return;
+
+    signal.set(valor);
+    this.reiniciarUsuarios();
+  }
+
+  protected cambiarFiltroRolUsuario(valor: string): void {
+    const rol = ROLES_USUARIO.includes(valor) ? valor : '';
+    if (rol === this.rolUsuario()) return;
+
+    this.rolUsuario.set(rol);
+    this.reiniciarUsuarios();
+  }
+
+  private reiniciarUsuarios(): void {
     this.paginaUsuarios.set(0);
     this.filtrosUsuarios$.next(this.filtrosActuales());
   }
@@ -399,9 +471,13 @@ export class Administracion {
       : 'Sin sucursales asociadas';
   }
 
-  private filtrosActuales(): FiltrosUsuarios {
+  private filtrosActuales(): FiltrosUsuariosAdmin {
     const estado = this.filtroEstadoUsuario();
     return {
+      nombre: this.nombreUsuario().trim() || undefined,
+      apellido: this.apellidoUsuario().trim() || undefined,
+      email: this.emailUsuario().trim() || undefined,
+      rol: this.rolUsuario() || undefined,
       activo: estado === 'activos' ? true : estado === 'inactivos' ? false : undefined,
     };
   }
