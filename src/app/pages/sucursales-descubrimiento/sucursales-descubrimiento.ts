@@ -30,6 +30,7 @@ import {
   normalizarTerminoBusqueda,
 } from '../../shared/busqueda-sucursales';
 import { RecomendacionesSucursalesDTO, SucursalMiniDTO } from '../../models/sucursal';
+import { authService } from '../../services/auth-service';
 import { sucursalService } from '../../services/sucursal-service';
 
 interface SeccionDescubrimiento {
@@ -37,6 +38,7 @@ interface SeccionDescubrimiento {
   readonly titulo: string;
   readonly descripcion: string;
   readonly sucursales: readonly SucursalMiniDTO[];
+  readonly personal?: boolean;
 }
 
 interface SugerenciasBusqueda {
@@ -56,6 +58,7 @@ interface SugerenciasBusqueda {
 export class SucursalesDescubrimiento {
   private readonly router = inject(Router);
   private readonly sucursalesService = inject(sucursalService);
+  private readonly auth = inject(authService);
   private readonly destroyRef = inject(DestroyRef);
   private buscadorEnfocado = false;
   private readonly ultimoTerminoSugerencias = signal<string | null>(null);
@@ -74,13 +77,16 @@ export class SucursalesDescubrimiento {
   protected readonly recomendacionesError = signal<string | null>(null);
   protected readonly reintentandoRecomendaciones = signal(false);
 
-  /** Las secciones sin resultados no se renderizan. «Todas» es una vista
-   * previa del listado completo y siempre ofrece el acceso a la página. */
+  /** Las secciones sin resultados no se renderizan. «Visto recientemente» y
+   * «Recomendado para vos» requieren sesión; el resto es público. «Todas» es
+   * una vista previa y siempre ofrece el acceso al listado completo. */
   protected readonly secciones = computed<readonly SeccionDescubrimiento[]>(() => {
     const datos = this.recomendaciones();
     if (!datos) {
       return [];
     }
+
+    const autenticado = this.auth.autenticado();
 
     return [
       {
@@ -106,12 +112,14 @@ export class SucursalesDescubrimiento {
         titulo: 'Visto recientemente',
         descripcion: 'Volvé a las sucursales que visitaste últimamente.',
         sucursales: datos.vistasRecientes ?? [],
+        personal: true,
       },
       {
         id: 'para-vos',
         titulo: 'Recomendado para vos',
         descripcion: 'Sugerencias según tus reservas y tus categorías preferidas.',
         sucursales: datos.paraVos ?? [],
+        personal: true,
       },
       {
         id: 'todas',
@@ -119,7 +127,10 @@ export class SucursalesDescubrimiento {
         descripcion: 'Un adelanto de todo lo que podés reservar en AppointMee.',
         sucursales: datos.todas ?? [],
       },
-    ].filter((seccion) => seccion.sucursales.length > 0);
+    ].filter(
+      (seccion) =>
+        seccion.sucursales.length > 0 && (autenticado || !seccion.personal),
+    );
   });
 
   /** La acción destacada acompaña exclusivamente a la preview del listado. */
