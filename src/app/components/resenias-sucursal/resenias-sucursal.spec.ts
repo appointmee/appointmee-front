@@ -73,6 +73,18 @@ describe('ReseniasSucursal', () => {
     ).map((elemento) => elemento.textContent?.trim() ?? '');
   }
 
+  function empleados(fixture: ReturnType<typeof crear>): string[] {
+    return Array.from(
+      fixture.nativeElement.querySelectorAll('.resenia-card__empleado') as NodeListOf<HTMLElement>,
+    ).map((elemento) => elemento.textContent?.trim() ?? '');
+  }
+
+  function responderVistaPrevia(contenido: readonly ReseniaDTO[]): void {
+    listarPorSucursal.mockReturnValue(
+      of({ content: contenido, totalElements: contenido.length, hayMas: false }),
+    );
+  }
+
   it('en vista previa usa el contenido y hayMas del backend sin recortar ni ordenar', () => {
     const fixture = crear({ cantidad: 99 });
 
@@ -126,6 +138,77 @@ describe('ReseniasSucursal', () => {
     expect(comentarios(fixture)).toEqual(['Página 2']);
     expect(fixture.nativeElement.textContent).toContain('Página 2 de 3');
     expect(fixture.nativeElement.querySelector('.resenias__ver-mas')).toBeNull();
+  });
+
+  it('no muestra nada del empleado cuando la reseña no lo incluyó', () => {
+    responderVistaPrevia([
+      {
+        puntuacion: 5,
+        comentario: 'Sin empleado',
+        fechaResenia: '2026-01-01',
+        empleadoNombre: null,
+        empleadoApellido: null,
+        empleadoPerteneceASucursal: false,
+      },
+    ]);
+
+    const fixture = crear();
+    expect(empleados(fixture)).toEqual([]);
+    expect(fixture.nativeElement.querySelector('.resenia-card__empleado-etiqueta')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Ya no forma parte');
+    expect(fixture.nativeElement.querySelectorAll('.resenia-card')).toHaveLength(1);
+  });
+
+  it('muestra el nombre entre la puntuación y el comentario cuando se incluyó al empleado', () => {
+    responderVistaPrevia([
+      {
+        puntuacion: 5,
+        comentario: 'Excelente atención',
+        fechaResenia: '2026-01-01',
+        empleadoNombre: 'Ana',
+        empleadoApellido: 'Pérez',
+        empleadoPerteneceASucursal: true,
+      },
+    ]);
+
+    const fixture = crear();
+    const tarjeta = fixture.nativeElement.querySelector('.resenia-card') as HTMLElement;
+    expect(
+      Array.from(tarjeta.children).map((elemento) => (elemento as HTMLElement).className),
+    ).toEqual([
+      'resenia-card__header',
+      'resenia-card__empleado-etiqueta',
+      'resenia-card__empleado',
+      'resenia-card__comentario',
+    ]);
+    expect(
+      fixture.nativeElement.querySelector('.resenia-card__empleado-etiqueta')?.textContent?.trim(),
+    ).toBe('Empleado');
+    expect(empleados(fixture)).toEqual(['Ana Pérez']);
+    expect(comentarios(fixture)).toEqual(['Excelente atención']);
+  });
+
+  it('conserva el nombre histórico y aclara que ya no forma parte de la sucursal', () => {
+    responderVistaPrevia([
+      {
+        puntuacion: 4,
+        comentario: 'Muy buena',
+        fechaResenia: '2026-01-02',
+        empleadoNombre: 'Ana',
+        empleadoApellido: 'Pérez',
+        empleadoPerteneceASucursal: false,
+      },
+    ]);
+
+    const fixture = crear();
+    expect(empleados(fixture)).toEqual([
+      'Ana Pérez (Ya no forma parte de la sucursal)',
+    ]);
+    expect(
+      fixture.nativeElement.querySelector('.resenia-card__empleado-aclaracion')?.textContent,
+    ).toBe(' (Ya no forma parte de la sucursal)');
+    expect(fixture.nativeElement.textContent).toContain('4 / 5');
+    expect(comentarios(fixture)).toEqual(['Muy buena']);
   });
 
   it('mantiene el error inline y reintenta la misma consulta', () => {

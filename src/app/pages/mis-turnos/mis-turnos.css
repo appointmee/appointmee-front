@@ -1145,6 +1145,11 @@
   color: #ffb0b0;
 }
 
+.resenia__empleado {
+  color: var(--text);
+  font-size: 13px;
+}
+
 .resenia__acciones {
   display: flex;
   justify-content: flex-end;

@@ -255,6 +255,19 @@ describe('Mis Turnos', () => {
     fixture.detectChanges();
   }
 
+  function casillaEmpleado(scope: ParentNode = html): HTMLInputElement {
+    const checkbox = scope.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    expect(checkbox).toBeTruthy();
+    return checkbox!;
+  }
+
+  function marcarIncluirEmpleado(): void {
+    const checkbox = casillaEmpleado();
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
   async function abrirConfirmacionPublicacion(
     puntuacion = 4,
     comentario = '',
@@ -627,13 +640,18 @@ describe('Mis Turnos', () => {
     flushLista();
     await abrirModalResenia();
     const confirmacion = await abrirConfirmacionPublicacion(5);
+    expect(confirmacion.textContent).not.toContain('Ana Pérez');
 
     botonPorTexto('Confirmar publicación', confirmacion).click();
     const peticion = backend.expectOne(
       (request) =>
         request.url.endsWith('/turnos/3/resenia') && request.method === 'POST',
     );
-    expect(peticion.request.body).toEqual({ puntuacion: 5, comentario: null });
+    expect(peticion.request.body).toEqual({
+      puntuacion: 5,
+      comentario: null,
+      incluirEmpleado: false,
+    });
     peticion.flush('Reseña guardada correctamente');
     fixture.detectChanges();
     await fixture.whenStable();
@@ -658,6 +676,82 @@ describe('Mis Turnos', () => {
         (boton) => boton.textContent?.trim() === 'Reseñar',
       ),
     ).toBe(false);
+  });
+
+  it('ofrece incluir al empleado del turno con la casilla desmarcada por defecto', async () => {
+    flushLista();
+    const modal = await abrirModalResenia();
+
+    const checkbox = casillaEmpleado(modal);
+    expect(checkbox.type).toBe('checkbox');
+    expect(checkbox.checked).toBe(false);
+    expect(checkbox.closest('label')?.textContent?.trim()).toBe(
+      'Incluir empleado en la reseña',
+    );
+
+    const confirmacion = await abrirConfirmacionPublicacion(4);
+    expect(confirmacion.querySelectorAll('.confirmacion__fila')).toHaveLength(2);
+    expect(confirmacion.textContent).not.toContain('Ana Pérez');
+  });
+
+  it('publica con el empleado del turno cuando se marca la casilla', async () => {
+    flushLista();
+    await abrirModalResenia();
+    marcarIncluirEmpleado();
+
+    const confirmacion = await abrirConfirmacionPublicacion(5, 'Excelente atención');
+    expect(confirmacion.textContent).toContain('Ana Pérez');
+
+    botonPorTexto('Confirmar publicación', confirmacion).click();
+    const peticion = backend.expectOne((request) =>
+      request.url.endsWith('/turnos/3/resenia'),
+    );
+    expect(peticion.request.body).toEqual({
+      puntuacion: 5,
+      comentario: 'Excelente atención',
+      incluirEmpleado: true,
+    });
+    peticion.flush('Reseña publicada correctamente');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(html.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('aclara en la confirmación cuando el empleado ya no forma parte de la sucursal', async () => {
+    flushLista();
+    await abrirDetalleDe('Arreglo de barba', 3, {
+      ...DETALLE_REALIZADO,
+      empleadoPerteneceASucursal: false,
+    });
+    botonPorTexto('Reseñar', dialogo()).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    marcarIncluirEmpleado();
+
+    const confirmacion = await abrirConfirmacionPublicacion(4);
+    expect(confirmacion.textContent).toContain(
+      'Ana Pérez (Ya no forma parte de la sucursal)',
+    );
+  });
+
+  it('conserva la casilla al volver atrás y la reinicia al abrir otra reseña', async () => {
+    flushLista();
+    await abrirModalResenia();
+    marcarIncluirEmpleado();
+    await abrirConfirmacionPublicacion(4);
+
+    botonPorTexto('Volver atrás', dialogo()).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(casillaEmpleado(dialogo()).checked).toBe(true);
+
+    botonPorTexto('Cancelar', dialogo()).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const modal = await abrirModalResenia();
+    expect(casillaEmpleado(modal).checked).toBe(false);
   });
 
   it('muestra un turno ya reseñado y evita publicar una segunda reseña', async () => {
@@ -703,6 +797,7 @@ describe('Mis Turnos', () => {
     expect(segunda.request.body).toEqual({
       puntuacion: 3,
       comentario: 'Muy buena experiencia',
+      incluirEmpleado: false,
     });
     segunda.flush('Reseña guardada correctamente');
     fixture.detectChanges();
