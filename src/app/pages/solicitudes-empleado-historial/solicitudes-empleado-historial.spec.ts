@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
+import { TAMANO_PAGINA } from '../../models/paginacion';
 import { SolicitudEmpleadoDetalleDTO } from '../../models/solicitud-empleado';
 import { SolicitudesEmpleadoHistorial } from './solicitudes-empleado-historial';
 
@@ -13,6 +14,15 @@ const RECIBIDAS = [
   { id: 44, nombreSucursal: 'Peluquería Sur', fechaSolicitud: '2026-10-27' },
   { id: 45, nombreSucursal: 'Gimnasio Oeste', fechaSolicitud: '2026-10-25' },
 ];
+
+function pagina(
+  content: readonly (typeof RECIBIDAS)[number][] = RECIBIDAS,
+  totalElements = RECIBIDAS.length,
+  totalPages = 1,
+  number = 0,
+) {
+  return { content, totalElements, totalPages, number, size: TAMANO_PAGINA };
+}
 
 function detalle(
   id: number,
@@ -61,10 +71,12 @@ describe('Historial completo de solicitudes de empleo', () => {
     backend.verify();
   });
 
-  function listar(): ReturnType<HttpTestingController['expectOne']> {
-    return backend.expectOne((request) =>
-      request.url.endsWith('/solicitudes-empleado/recibidas'),
+  function listar(page = 0): ReturnType<HttpTestingController['expectOne']> {
+    const peticion = backend.expectOne((request) =>
+      request.url.endsWith('/solicitudes-empleado/recibidas/paginado'),
     );
+    expect(peticion.request.params.get('page')).toBe(String(page));
+    return peticion;
   }
 
   function peticionDetalle(): ReturnType<HttpTestingController['expectOne']> {
@@ -79,13 +91,16 @@ describe('Historial completo de solicitudes de empleo', () => {
     fixture.detectChanges();
   }
 
-  it('lista todas las invitaciones y carga el detalle solo al expandir', () => {
-    listar().flush(RECIBIDAS);
+  it('pide la página 0, usa los metadatos del backend y pagina sin perder el total', () => {
+    listar(0).flush(pagina(RECIBIDAS, 23, 3, 0));
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelectorAll('app-solicitud-empleado-card')).toHaveLength(5);
-    expect(host.querySelector('.panel__contador')?.textContent?.trim()).toBe('5');
+    expect(host.querySelector('.panel__contador')?.textContent?.trim()).toBe('23');
+    expect(host.textContent).toContain('Página 1 de 3');
+    expect(host.textContent).toContain('10 por página');
+    expect(host.querySelector('ds-pagination')).not.toBeNull();
     expect(host.textContent).toContain('Estado a consultar');
     expect(backend.match((request) => request.url.endsWith('/detalles'))).toHaveLength(0);
     expect(host.querySelector<HTMLAnchorElement>('.volver')?.getAttribute('href')).toBe(
@@ -108,10 +123,21 @@ describe('Historial completo de solicitudes de empleo', () => {
 
     expect(backend.match((request) => request.url.endsWith('/detalles'))).toHaveLength(0);
     expect(host.textContent).toContain('Barbería Central');
+
+    host.querySelector<HTMLButtonElement>('ds-pagination .ds-pagination__next')?.click();
+    fixture.detectChanges();
+
+    listar(1).flush(pagina([RECIBIDAS[0]], 23, 3, 1));
+    fixture.detectChanges();
+
+    expect(host.querySelectorAll('app-solicitud-empleado-card')).toHaveLength(1);
+    expect(host.querySelector('.panel__contador')?.textContent?.trim()).toBe('23');
+    expect(host.textContent).toContain('Página 2 de 3');
+    expect(host.textContent).toContain('Estado a consultar');
   });
 
   it('permite aprobar una invitación pendiente desde el historial', () => {
-    listar().flush([RECIBIDAS[0]]);
+    listar(0).flush(pagina([RECIBIDAS[0]], 1, 1, 0));
     fixture.detectChanges();
 
     alternar();
@@ -135,7 +161,7 @@ describe('Historial completo de solicitudes de empleo', () => {
   });
 
   it('ante un error de detalle permite reintentar sin perder la invitación', () => {
-    listar().flush([RECIBIDAS[0]]);
+    listar(0).flush(pagina([RECIBIDAS[0]], 1, 1, 0));
     fixture.detectChanges();
 
     alternar();
@@ -159,7 +185,7 @@ describe('Historial completo de solicitudes de empleo', () => {
   });
 
   it('muestra el vacío con acceso de vuelta y recupera el listado ante un error', () => {
-    listar().flush({}, { status: 503, statusText: 'Unavailable' });
+    listar(0).flush({}, { status: 503, statusText: 'Unavailable' });
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
@@ -168,12 +194,36 @@ describe('Historial completo de solicitudes de empleo', () => {
     host.querySelector<HTMLButtonElement>('.estado--error .boton')?.click();
     fixture.detectChanges();
 
-    listar().flush([]);
+    listar(0).flush(pagina([], 0, 0, 0));
     fixture.detectChanges();
 
     expect(host.textContent).toContain('Todavía no recibiste invitaciones');
+    expect(host.querySelector('ds-pagination')).toBeNull();
     const volver = host.querySelector<HTMLAnchorElement>('.estado--vacio a.boton');
     expect(volver?.textContent).toContain('Volver a Solicitudes');
     expect(volver?.getAttribute('href')).toBe('/solicitudes');
+  });
+
+  it('vuelve a la página 0 al reintentar un error ocurrido en otra página', () => {
+    listar(0).flush(pagina(RECIBIDAS, 23, 3, 0));
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    host.querySelector<HTMLButtonElement>('ds-pagination .ds-pagination__next')?.click();
+    fixture.detectChanges();
+
+    listar(1).flush({}, { status: 503, statusText: 'Unavailable' });
+    fixture.detectChanges();
+
+    expect(host.querySelector('.aviso--error')).not.toBeNull();
+
+    host.querySelector<HTMLButtonElement>('.aviso--error button')?.click();
+    fixture.detectChanges();
+
+    listar(0).flush(pagina([RECIBIDAS[0]], 23, 3, 0));
+    fixture.detectChanges();
+
+    expect(host.textContent).toContain('Página 1 de 3');
+    expect(host.querySelector('.aviso--error')).toBeNull();
   });
 });

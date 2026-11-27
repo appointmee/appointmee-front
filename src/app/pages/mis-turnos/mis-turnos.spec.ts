@@ -36,6 +36,23 @@ const TURNOS = [
   },
 ] as const;
 
+function paginaTurnos(
+  contenido: readonly unknown[],
+  opciones: {
+    readonly totalElements?: number;
+    readonly totalPages?: number;
+    readonly number?: number;
+  } = {},
+) {
+  return {
+    content: [...contenido],
+    totalElements: opciones.totalElements ?? contenido.length,
+    totalPages: opciones.totalPages ?? 1,
+    number: opciones.number ?? 0,
+    size: 10,
+  };
+}
+
 const DETALLE = {
   fechaReserva: '2026-11-05T10:12:00',
   fechaHora: '2026-11-12T23:30:00',
@@ -128,8 +145,22 @@ describe('Mis Turnos', () => {
     backend.verify();
   });
 
-  function flushLista(turnos: readonly unknown[] = TURNOS): void {
-    backend.expectOne((request) => request.url.endsWith('/turnos/propios')).flush(turnos);
+  function flushLista(
+    turnos: readonly unknown[] = TURNOS,
+    opciones: {
+      readonly totalElements?: number;
+      readonly totalPages?: number;
+      readonly number?: number;
+    } = {},
+  ): void {
+    const pagina = opciones.number ?? 0;
+    const peticion = backend.expectOne(
+      (request) =>
+        request.url.endsWith('/turnos/propios/paginado') &&
+        request.params.get('page') === String(pagina),
+    );
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush(paginaTurnos(turnos, { ...opciones, number: pagina }));
     fixture.detectChanges();
   }
 
@@ -252,6 +283,63 @@ describe('Mis Turnos', () => {
     expect(html.querySelector('.panel__contador')?.textContent?.trim()).toBe('3');
   });
 
+  it('toma el total del backend y aclara cuántos turnos de la página filtra el estado', () => {
+    flushLista(TURNOS, { totalElements: 27, totalPages: 3 });
+
+    const contador = html.querySelector('.panel__contador');
+    expect(contador?.textContent?.trim()).toBe('27');
+    expect(contador?.getAttribute('aria-label')).toContain('27 turnos en total');
+
+    const select = html.querySelector('select') as HTMLSelectElement;
+    select.value = 'CANCELADO';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(botonesTurno()).toHaveLength(1);
+    expect(html.querySelector('.panel__conteo-detalle')?.textContent).toContain(
+      '1 de 3 turnos de esta página coinciden con el filtro',
+    );
+    expect(contador?.getAttribute('aria-label')).toContain(
+      '1 de 3 turnos de esta página',
+    );
+    backend.expectNone((request) => request.url.endsWith('/turnos/propios/paginado'));
+  });
+
+  it('navega a la página 2 con page=1 y muestra los turnos devueltos', () => {
+    flushLista(TURNOS, { totalElements: 20, totalPages: 2 });
+
+    const paginacion = html.querySelector('ds-pagination');
+    expect(paginacion).not.toBeNull();
+    expect(paginacion?.querySelector('.ds-pagination__next')?.hasAttribute('disabled')).toBe(
+      false,
+    );
+
+    (paginacion?.querySelector('.ds-pagination__next') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const segundaPagina = [
+      {
+        id: 11,
+        nombreServicio: 'Pedicura',
+        fechaTurno: '2026-11-18T16:00:00',
+        estadoTurno: 'CONFIRMADO',
+        puntuacion: null,
+      },
+    ];
+    const peticion = backend.expectOne(
+      (request) =>
+        request.url.endsWith('/turnos/propios/paginado') &&
+        request.params.get('page') === '1',
+    );
+    peticion.flush(paginaTurnos(segundaPagina, { totalElements: 20, totalPages: 2, number: 1 }));
+    fixture.detectChanges();
+
+    expect(botonesTurno()).toHaveLength(1);
+    expect(botonesTurno()[0].textContent).toContain('Pedicura');
+    expect(html.querySelector('.panel__contador')?.textContent?.trim()).toBe('20');
+    expect(paginacion?.textContent).toContain('Página 2 de 2');
+  });
+
   it('filtra por estado y permite volver a ver todos', () => {
     flushLista();
     const select = html.querySelector('select') as HTMLSelectElement;
@@ -283,7 +371,7 @@ describe('Mis Turnos', () => {
 
   it('muestra un error inline y permite reintentar la carga', () => {
     backend
-      .expectOne((request) => request.url.endsWith('/turnos/propios'))
+      .expectOne((request) => request.url.endsWith('/turnos/propios/paginado'))
       .flush(null, { status: 500, statusText: 'Error' });
     fixture.detectChanges();
 
@@ -772,7 +860,7 @@ describe('Mis Turnos', () => {
         boton.textContent?.includes('Corte de pelo'),
       );
       expect(turno?.textContent).toContain('Confirmado');
-      backend.expectNone((request) => request.url.endsWith('/turnos/propios'));
+      backend.expectNone((request) => request.url.endsWith('/turnos/propios/paginado'));
     } finally {
       setTimeoutSpy.mockRestore();
       openSpy.mockRestore();
@@ -801,7 +889,9 @@ describe('Mis Turnos · destino de notificación', () => {
     const fixture = TestBed.createComponent(MisTurnos);
     fixture.detectChanges();
 
-    backend.expectOne((request) => request.url.endsWith('/turnos/propios')).flush(TURNOS);
+    backend
+      .expectOne((request) => request.url.endsWith('/turnos/propios/paginado'))
+      .flush(paginaTurnos(TURNOS));
     fixture.detectChanges();
 
     backend

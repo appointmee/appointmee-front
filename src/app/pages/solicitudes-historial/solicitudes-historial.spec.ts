@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
+import { TAMANO_PAGINA } from '../../models/paginacion';
 import { SolicitudEmpleadorDetalleDTO } from '../../models/solicitud-empleador';
 import { SolicitudesHistorial } from './solicitudes-historial';
 
@@ -13,6 +14,15 @@ const SOLICITUDES = [
   { id: 24, nombreUsuario: 'Diego', apellidoUsuario: 'Sosa', fechaSolicitud: '2026-10-25' },
   { id: 25, nombreUsuario: 'Elena', apellidoUsuario: 'Ruiz', fechaSolicitud: '2026-10-20' },
 ];
+
+function pagina(
+  content: readonly (typeof SOLICITUDES)[number][] = SOLICITUDES,
+  totalElements = SOLICITUDES.length,
+  totalPages = 1,
+  number = 0,
+) {
+  return { content, totalElements, totalPages, number, size: TAMANO_PAGINA };
+}
 
 function detalle(id: number, estado: SolicitudEmpleadorDetalleDTO['estado']): SolicitudEmpleadorDetalleDTO {
   return {
@@ -59,10 +69,12 @@ describe('Historial completo de solicitudes', () => {
     backend.verify();
   });
 
-  function listar(): ReturnType<HttpTestingController['expectOne']> {
-    return backend.expectOne((request) =>
-      request.url.endsWith('/solicitudes-empleador/propias'),
+  function listar(page = 0): ReturnType<HttpTestingController['expectOne']> {
+    const peticion = backend.expectOne((request) =>
+      request.url.endsWith('/solicitudes-empleador/propias/paginado'),
     );
+    expect(peticion.request.params.get('page')).toBe(String(page));
+    return peticion;
   }
 
   function peticionDetalle(): ReturnType<HttpTestingController['expectOne']> {
@@ -76,13 +88,16 @@ describe('Historial completo de solicitudes', () => {
     fixture.detectChanges();
   }
 
-  it('lista todas las solicitudes y carga el detalle solo al expandir', () => {
-    listar().flush(SOLICITUDES);
+  it('pide la página 0, usa los metadatos del backend y pagina sin perder el total', () => {
+    listar(0).flush(pagina(SOLICITUDES, 23, 3, 0));
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelectorAll('app-solicitud-empleador-card')).toHaveLength(5);
-    expect(host.querySelector('.panel__contador')?.textContent?.trim()).toBe('5');
+    expect(host.querySelector('.panel__contador')?.textContent?.trim()).toBe('23');
+    expect(host.textContent).toContain('Página 1 de 3');
+    expect(host.textContent).toContain('10 por página');
+    expect(host.querySelector('ds-pagination')).not.toBeNull();
     expect(host.textContent).toContain('Estado a consultar');
     expect(backend.match((request) => request.url.endsWith('/detalles'))).toHaveLength(0);
     expect(host.querySelector<HTMLAnchorElement>('.volver')?.getAttribute('href')).toBe(
@@ -114,10 +129,21 @@ describe('Historial completo de solicitudes', () => {
 
     expect(backend.match((request) => request.url.endsWith('/detalles'))).toHaveLength(0);
     expect(host.textContent).toContain('Motivo de la solicitud 21');
+
+    host.querySelector<HTMLButtonElement>('ds-pagination .ds-pagination__next')?.click();
+    fixture.detectChanges();
+
+    listar(1).flush(pagina([SOLICITUDES[0]], 23, 3, 1));
+    fixture.detectChanges();
+
+    expect(host.querySelectorAll('app-solicitud-empleador-card')).toHaveLength(1);
+    expect(host.querySelector('.panel__contador')?.textContent?.trim()).toBe('23');
+    expect(host.textContent).toContain('Página 2 de 3');
+    expect(host.textContent).toContain('Estado a consultar');
   });
 
   it('ante un error de detalle permite reintentar sin perder la solicitud', () => {
-    listar().flush([SOLICITUDES[0]]);
+    listar(0).flush(pagina([SOLICITUDES[0]], 1, 1, 0));
     fixture.detectChanges();
 
     alternar();
@@ -142,7 +168,7 @@ describe('Historial completo de solicitudes', () => {
   });
 
   it('muestra el vacío con acceso de vuelta y recupera el listado ante un error', () => {
-    listar().flush({}, { status: 503, statusText: 'Unavailable' });
+    listar(0).flush({}, { status: 503, statusText: 'Unavailable' });
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
@@ -151,12 +177,36 @@ describe('Historial completo de solicitudes', () => {
     host.querySelector<HTMLButtonElement>('.estado--error .boton')?.click();
     fixture.detectChanges();
 
-    listar().flush([]);
+    listar(0).flush(pagina([], 0, 0, 0));
     fixture.detectChanges();
 
     expect(host.textContent).toContain('Todavía no enviaste solicitudes');
+    expect(host.querySelector('ds-pagination')).toBeNull();
     const volver = host.querySelector<HTMLAnchorElement>('.estado--vacio a.boton');
     expect(volver?.textContent).toContain('Volver a Solicitudes');
     expect(volver?.getAttribute('href')).toBe('/solicitudes');
+  });
+
+  it('vuelve a la página 0 al reintentar un error ocurrido en otra página', () => {
+    listar(0).flush(pagina(SOLICITUDES, 23, 3, 0));
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    host.querySelector<HTMLButtonElement>('ds-pagination .ds-pagination__next')?.click();
+    fixture.detectChanges();
+
+    listar(1).flush({}, { status: 503, statusText: 'Unavailable' });
+    fixture.detectChanges();
+
+    expect(host.querySelector('.aviso--error')).not.toBeNull();
+
+    host.querySelector<HTMLButtonElement>('.aviso--error button')?.click();
+    fixture.detectChanges();
+
+    listar(0).flush(pagina([SOLICITUDES[0]], 23, 3, 0));
+    fixture.detectChanges();
+
+    expect(host.textContent).toContain('Página 1 de 3');
+    expect(host.querySelector('.aviso--error')).toBeNull();
   });
 });

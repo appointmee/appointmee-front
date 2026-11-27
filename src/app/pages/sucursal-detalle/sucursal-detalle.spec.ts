@@ -24,6 +24,8 @@ class TestShell {}
 })
 class Dummy {}
 
+const VISTA_PREVIA_RESENIAS_VACIA = { content: [], totalElements: 0, hayMas: false };
+
 const SUCURSAL = {
   id: 7,
   nombre: 'Sucursal Flores',
@@ -102,7 +104,7 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
     fixture.detectChanges();
     backend
       .expectOne((request) => request.url.endsWith('/sucursales/7/resenias'))
-      .flush([]);
+      .flush(VISTA_PREVIA_RESENIAS_VACIA);
     backend
       .expectOne((request) => request.url.endsWith('/sucursales/7/elegir-empleado'))
       .flush([]);
@@ -125,14 +127,18 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
     fixture.detectChanges();
     backend
       .expectOne((request) => request.url.endsWith('/sucursales/7/resenias'))
-      .flush([]);
+      .flush(VISTA_PREVIA_RESENIAS_VACIA);
     backend
       .expectOne((request) => request.url.endsWith('/sucursales/7/elegir-empleado'))
       .flush([]);
 
     await fixture.whenStable();
     fixture.detectChanges();
-    for (const request of backend.match(request => /\/(resenias|elegir-empleado)$/.test(request.url))) request.flush([]);
+    for (const request of backend.match((request) => /\/(resenias|elegir-empleado)$/.test(request.url))) {
+      request.flush(
+        request.request.url.endsWith('/resenias') ? VISTA_PREVIA_RESENIAS_VACIA : [],
+      );
+    }
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
