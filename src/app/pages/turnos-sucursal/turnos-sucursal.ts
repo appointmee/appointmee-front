@@ -21,9 +21,12 @@ import {
 
 import { TurnoDetalleModal } from '../../components/turno-detalle-modal/turno-detalle-modal';
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
-import { DsSelectComponent } from '../../shared/ui/misc/misc.component';
+import {
+  DsPaginationComponent,
+  DsSelectComponent,
+} from '../../shared/ui/misc/misc.component';
 import { SucursalDetalleDTO } from '../../models/sucursal';
-import { EstadoTurno, TurnoMiniDTO } from '../../models/turno';
+import { EstadoTurno, PaginaTurnosDTO, TurnoMiniDTO } from '../../models/turno';
 import { sucursalService } from '../../services/sucursal-service';
 import { turnoService } from '../../services/turno-service';
 
@@ -33,13 +36,20 @@ type ResultadoLista =
   | {
       readonly ok: true;
       readonly estado: EstadoTurno;
-      readonly turnos: readonly TurnoMiniDTO[];
+      readonly paginaSolicitada: number;
+      readonly pagina: PaginaTurnosDTO;
     }
   | {
       readonly ok: false;
       readonly estado: EstadoTurno;
+      readonly paginaSolicitada: number;
       readonly error: unknown;
     };
+
+interface SolicitudLista {
+  readonly estado: EstadoTurno;
+  readonly pagina: number;
+}
 
 type ContextoError = 'lista' | 'sucursal';
 
@@ -75,7 +85,13 @@ interface PartesFecha {
 
 @Component({
   selector: 'app-turnos-sucursal',
-  imports: [DsButtonComponent, DsSelectComponent, RouterLink, TurnoDetalleModal],
+  imports: [
+    DsButtonComponent,
+    DsPaginationComponent,
+    DsSelectComponent,
+    RouterLink,
+    TurnoDetalleModal,
+  ],
   templateUrl: './turnos-sucursal.html',
   styleUrl: './turnos-sucursal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -85,7 +101,7 @@ export class TurnosSucursal {
   private readonly sucursalesApi = inject(sucursalService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly recargar = new Subject<EstadoTurno>();
+  private readonly recargar = new Subject<SolicitudLista>();
 
   protected readonly sucursalId = Number(
     this.route.snapshot.paramMap.get('sucursalId') ?? '',
@@ -98,9 +114,14 @@ export class TurnosSucursal {
   protected readonly estados = ESTADOS;
   protected readonly estado = signal<EstadoTurno>(ESTADO_INICIAL);
   protected readonly turnos = signal<readonly TurnoMiniDTO[]>([]);
+  /** Página 0-based; ds-pagination emite y recibe páginas 1-based. */
+  protected readonly pagina = signal(0);
+  protected readonly totalPaginas = signal(0);
+  protected readonly totalElementos = signal(0);
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly reintentando = signal(false);
+  protected readonly mostrarPaginacion = computed(() => this.totalPaginas() > 1);
 
   protected readonly sucursal = signal<SucursalDetalleDTO | null>(null);
   protected readonly sucursalCargando = signal(true);
@@ -127,17 +148,29 @@ export class TurnosSucursal {
 
     this.recargar
       .pipe(
-        startWith(ESTADO_INICIAL),
-        switchMap((estado) => {
+        startWith({ estado: ESTADO_INICIAL, pagina: 0 } as SolicitudLista),
+        switchMap(({ estado, pagina }) => {
           this.cargando.set(this.turnos().length === 0 && !this.error());
-          return this.turnosApi.turnosDeSucursal(this.sucursalId, estado).pipe(
-            map(
-              (turnos): ResultadoLista => ({ ok: true, estado, turnos }),
-            ),
-            catchError((error: unknown) =>
-              of<ResultadoLista>({ ok: false, estado, error }),
-            ),
-          );
+          return this.turnosApi
+            .turnosDeSucursalPaginados(this.sucursalId, estado, pagina)
+            .pipe(
+              map(
+                (paginaBackend): ResultadoLista => ({
+                  ok: true,
+                  estado,
+                  paginaSolicitada: pagina,
+                  pagina: paginaBackend,
+                }),
+              ),
+              catchError((error: unknown) =>
+                of<ResultadoLista>({
+                  ok: false,
+                  estado,
+                  paginaSolicitada: pagina,
+                  error,
+                }),
+              ),
+            );
         }),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -151,17 +184,39 @@ export class TurnosSucursal {
     if (!this.esEstadoValido(valor) || valor === this.estado()) return;
 
     this.estado.set(valor);
+    this.pagina.set(0);
     this.turnos.set([]);
+    this.totalPaginas.set(0);
+    this.totalElementos.set(0);
     this.error.set(null);
     this.cargando.set(true);
     this.reintentando.set(false);
-    this.recargar.next(valor);
+    this.recargar.next({ estado: valor, pagina: 0 });
+  }
+
+  /** ds-pagination emite páginas 1-based; el backend espera 0-based. */
+  protected cambiarPagina(pagina1based: number): void {
+    const destino = pagina1based - 1;
+    if (
+      !Number.isInteger(destino) ||
+      destino < 0 ||
+      destino >= this.totalPaginas() ||
+      destino === this.pagina()
+    ) {
+      return;
+    }
+
+    this.pagina.set(destino);
+    this.turnos.set([]);
+    this.error.set(null);
+    this.cargando.set(true);
+    this.recargar.next({ estado: this.estado(), pagina: destino });
   }
 
   protected reintentar(): void {
     if (this.reintentando() || this.cargando()) return;
     this.reintentando.set(true);
-    this.recargar.next(this.estado());
+    this.recargar.next({ estado: this.estado(), pagina: this.pagina() });
   }
 
   protected reintentarSucursal(): void {
@@ -200,7 +255,12 @@ export class TurnosSucursal {
   }
 
   private aplicarLista(resultado: ResultadoLista): void {
-    if (resultado.estado !== this.estado()) return;
+    if (
+      resultado.estado !== this.estado() ||
+      resultado.paginaSolicitada !== this.pagina()
+    ) {
+      return;
+    }
 
     if (!resultado.ok) {
       this.error.set(this.mensajeError(resultado.error, 'lista'));
@@ -209,10 +269,13 @@ export class TurnosSucursal {
       return;
     }
 
-    const ordenados = [...resultado.turnos].sort(
+    const { content, totalElements, totalPages } = resultado.pagina;
+    const ordenados = [...content].sort(
       (a, b) => this.timestamp(b.fechaTurno) - this.timestamp(a.fechaTurno),
     );
     this.turnos.set(ordenados);
+    this.totalElementos.set(totalElements);
+    this.totalPaginas.set(totalPages);
     this.error.set(null);
     this.cargando.set(false);
     this.reintentando.set(false);

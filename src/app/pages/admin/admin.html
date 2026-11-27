@@ -235,7 +235,7 @@
           <span class="panel__eyebrow">Gestión global</span>
           <h2 id="sucursales-admin-titulo">Sucursales activas</h2>
         </div>
-        <span class="panel__contador">{{ sucursales().length }} activas</span>
+        <span class="panel__contador" [attr.aria-label]="totalSucursales() + ' sucursales activas en total'">{{ totalSucursales() }} activas</span>
       </header>
 
       <p class="panel__ayuda">El listado disponible incluye solo sucursales activas. Localizalas por nombre, categoría o número.</p>
@@ -270,10 +270,10 @@
             {{ sucursalesReintentando() ? 'Reintentando…' : 'Reintentar' }}
           </button>
         </div>
-      } @else if (sucursalesFiltradas().length === 0) {
+      } @else if (sucursales().length === 0) {
         <div class="estado estado--vacio" role="status">
-          <h3>{{ sucursales().length === 0 ? 'Todavía no hay sucursales activas' : 'No encontramos sucursales' }}</h3>
-          <p>{{ sucursales().length === 0 ? 'Las sucursales activas aparecerán en este panel.' : 'Probá con otro nombre, categoría o número.' }}</p>
+          <h3>{{ !busquedaSucursal().trim() && totalSucursales() === 0 ? 'Todavía no hay sucursales activas' : 'No encontramos sucursales' }}</h3>
+          <p>{{ !busquedaSucursal().trim() && totalSucursales() === 0 ? 'Las sucursales activas aparecerán en este panel.' : 'Probá con otro nombre, categoría o número.' }}</p>
         </div>
       } @else {
         @if (sucursalesError()) {
@@ -283,7 +283,7 @@
           </div>
         }
         <ul id="admin-sucursales-lista" class="lista sucursales-admin" aria-live="polite">
-          @for (sucursal of sucursalesPaginadas(); track sucursal.id) {
+          @for (sucursal of sucursales(); track sucursal.id) {
             <li class="sucursal-admin">
               <div>
                 <h3>{{ sucursal.nombre }}</h3>
@@ -302,7 +302,7 @@
         </ul>
         @if (totalPaginasSucursales() > 1) {
           <ds-pagination
-            [page]="paginaSucursales()"
+            [page]="paginaSucursales() + 1"
             [totalPages]="totalPaginasSucursales()"
             ariaLabel="Paginación de sucursales activas"
             (pageChange)="cambiarPaginaSucursales($event)"
@@ -323,6 +323,7 @@
           <span class="panel__eyebrow">Gestión de cuentas</span>
           <h2 id="admin-usuarios-titulo">Usuarios</h2>
         </div>
+        <span class="panel__contador" [attr.aria-label]="totalUsuarios() + ' usuarios en total'">{{ totalUsuarios() }} usuarios</span>
       </header>
 
       @if (usuarioActualizado()) {
@@ -362,8 +363,8 @@
         @if (usuariosError()) {
           <div class="aviso aviso--error" role="alert"><p>No se pudo actualizar la lista. Se muestran los últimos resultados.</p><button dsButton type="button" [disabled]="usuariosReintentando()" (clicked)="reintentarUsuarios()">Reintentar</button></div>
         }
-        <ul class="lista usuarios-admin" aria-label="Resultados de usuarios" aria-live="polite">
-          @for (usuario of usuariosPaginados(); track usuario.id) {
+        <ul id="admin-usuarios-lista" class="lista usuarios-admin" aria-label="Resultados de usuarios" aria-live="polite">
+          @for (usuario of usuarios(); track usuario.id) {
             <li class="usuario-admin">
               <span class="usuario-admin__foto" aria-hidden="true">
                 @if (fotoUsuario(usuario); as foto) {
@@ -390,7 +391,7 @@
         </ul>
         @if (totalPaginasUsuarios() > 1) {
           <ds-pagination
-            [page]="paginaUsuarios()"
+            [page]="paginaUsuarios() + 1"
             [totalPages]="totalPaginasUsuarios()"
             ariaLabel="Paginación de usuarios"
             (pageChange)="cambiarPaginaUsuarios($event)"

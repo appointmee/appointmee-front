@@ -95,6 +95,21 @@
               </li>
             }
           </ul>
+
+          <div class="historial__paginacion">
+            <p class="historial__paginacion-nota" role="status" aria-live="polite">
+              Página {{ pagina() + 1 }} de {{ totalPaginas() || 1 }} · {{ total() }} solicitudes
+              en total · {{ tamanoPagina }} por página
+            </p>
+            @if (totalPaginas() > 1) {
+              <ds-pagination
+                [page]="pagina() + 1"
+                [totalPages]="totalPaginas()"
+                ariaLabel="Paginación del historial de solicitudes"
+                (pageChange)="cambiarPagina($event)"
+              />
+            }
+          </div>
         }
       }
     </section>

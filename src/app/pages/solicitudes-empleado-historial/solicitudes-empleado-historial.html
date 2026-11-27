@@ -100,6 +100,21 @@
             [precargarVisibles]="false"
             (solicitudResuelta)="onSolicitudResuelta($event)"
           />
+
+          <div class="historial__paginacion">
+            <p class="historial__paginacion-nota" role="status" aria-live="polite">
+              Página {{ pagina() + 1 }} de {{ totalPaginas() || 1 }} · {{ total() }} invitaciones
+              en total · {{ tamanoPagina }} por página
+            </p>
+            @if (totalPaginas() > 1) {
+              <ds-pagination
+                [page]="pagina() + 1"
+                [totalPages]="totalPaginas()"
+                ariaLabel="Paginación del historial de solicitudes de empleo"
+                (pageChange)="cambiarPagina($event)"
+              />
+            }
+          </div>
         }
       }
     </section>

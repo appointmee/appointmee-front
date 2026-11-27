@@ -20,6 +20,7 @@ import { mensajeErrorSolicitud } from '../../http/solicitud-empleador-errors';
 import {
   ResultadoResolucionSolicitudEmpleado,
   SolicitudEmpleadoVista,
+  VistaPreviaSolicitudesEmpleadoDTO,
   vistaSolicitudRecibida,
 } from '../../models/solicitud-empleado';
 import {
@@ -27,19 +28,18 @@ import {
   SolicitudEmpleadorCrearDTO,
   SolicitudEmpleadorDetalleDTO,
   SolicitudEmpleadorMiniDTO,
+  VistaPreviaSolicitudesEmpleadorDTO,
 } from '../../models/solicitud-empleador';
 import { authService } from '../../services/auth-service';
 import { solicitudEmpleadoService } from '../../services/solicitud-empleado-service';
 import { solicitudEmpleadorService } from '../../services/solicitud-empleador-service';
 
-const SOLICITUDES_VISIBLES = 3;
-
 type ResultadoLista =
-  | { readonly ok: true; readonly solicitudes: readonly SolicitudEmpleadorMiniDTO[] }
+  | { readonly ok: true; readonly vista: VistaPreviaSolicitudesEmpleadorDTO }
   | { readonly ok: false; readonly error: HttpErrorResponse };
 
 type ResultadoListaEmpleo =
-  | { readonly ok: true; readonly solicitudes: readonly SolicitudEmpleadoVista[] }
+  | { readonly ok: true; readonly vista: VistaPreviaSolicitudesEmpleadoDTO }
   | { readonly ok: false; readonly error: HttpErrorResponse };
 
 @Component({
@@ -90,18 +90,11 @@ export class Solicitudes {
   protected readonly errorEnvio = signal<string | null>(null);
   protected readonly exito = signal<string | null>(null);
 
-  protected readonly visibles = computed(() =>
-    this.solicitudes().slice(0, SOLICITUDES_VISIBLES),
-  );
-  protected readonly hayMas = computed(() => this.solicitudes().length > SOLICITUDES_VISIBLES);
-  protected readonly total = computed(() => this.solicitudes().length);
-  protected readonly visiblesEmpleo = computed(() =>
-    this.solicitudesEmpleo().slice(0, SOLICITUDES_VISIBLES),
-  );
-  protected readonly hayMasEmpleo = computed(
-    () => this.solicitudesEmpleo().length > SOLICITUDES_VISIBLES,
-  );
-  protected readonly totalEmpleo = computed(() => this.solicitudesEmpleo().length);
+  /** Contadores y «Ver más» provistos por el backend, no calculados en el cliente. */
+  protected readonly total = signal(0);
+  protected readonly hayMas = signal(false);
+  protected readonly totalEmpleo = signal(0);
+  protected readonly hayMasEmpleo = signal(false);
   protected readonly rolSinPermiso = computed(() =>
     this.auth.tieneAlgunRol('ADMINISTRADOR', 'EMPLEADOR'),
   );
@@ -120,7 +113,7 @@ export class Solicitudes {
         switchMap(() => {
           this.cargando.set(this.solicitudes().length === 0);
           return this.api.listarPropias().pipe(
-            map((solicitudes): ResultadoLista => ({ ok: true, solicitudes })),
+            map((vista): ResultadoLista => ({ ok: true, vista })),
             catchError((error: HttpErrorResponse) => of<ResultadoLista>({ ok: false, error })),
           );
         }),
@@ -136,9 +129,9 @@ export class Solicitudes {
             this.cargandoEmpleo.set(this.solicitudesEmpleo().length === 0);
             return this.apiEmpleo.listarRecibidas().pipe(
               map(
-                (solicitudes): ResultadoListaEmpleo => ({
+                (vista): ResultadoListaEmpleo => ({
                   ok: true,
-                  solicitudes: solicitudes.map(vistaSolicitudRecibida),
+                  vista,
                 }),
               ),
               catchError((error: HttpErrorResponse) =>
@@ -274,19 +267,21 @@ export class Solicitudes {
     }
 
     this.error.set(null);
-    this.solicitudes.set(resultado.solicitudes);
+    this.solicitudes.set(resultado.vista.content);
+    this.total.set(resultado.vista.totalElements);
+    this.hayMas.set(resultado.vista.hayMas);
     this.detalles.set(new Map());
     this.erroresDetalle.set(new Map());
     this.cargandoDetalle.set(new Set());
     this.expandidas.set(new Set());
     this.cargando.set(false);
     this.reintentando.set(false);
-    this.precargarDetalles(this.visibles());
+    this.precargarDetalles(resultado.vista.content);
 
     // Deep-link desde el centro de notificaciones: ?solicitudId= abre el detalle.
     const objetivo = this.solicitudIdDelEnlace;
     if (!this.enlaceAbierto && objetivo !== null &&
-        resultado.solicitudes.some((solicitud) => solicitud.id === objetivo)) {
+        resultado.vista.content.some((solicitud) => solicitud.id === objetivo)) {
       this.enlaceAbierto = true;
       const expandidas = new Set(this.expandidas());
       expandidas.add(objetivo);
@@ -319,12 +314,14 @@ export class Solicitudes {
 
     this.errorEmpleo.set(null);
     this.exitoEmpleo.set(null);
-    this.solicitudesEmpleo.set(resultado.solicitudes);
+    this.solicitudesEmpleo.set(resultado.vista.content.map(vistaSolicitudRecibida));
+    this.totalEmpleo.set(resultado.vista.totalElements);
+    this.hayMasEmpleo.set(resultado.vista.hayMas);
     this.cargandoEmpleo.set(false);
     this.reintentandoEmpleo.set(false);
   }
 
-  /** Solo se consultan los detalles de las tres solicitudes visibles. */
+  /** Solo se consultan los detalles de las solicitudes devueltas por el backend. */
   private precargarDetalles(solicitudes: readonly SolicitudEmpleadorMiniDTO[]): void {
     if (solicitudes.length === 0) return;
 

@@ -17,18 +17,18 @@
           <span class="panel__eyebrow">Historial</span>
           <h2 id="turnos-lista-titulo">Todos tus turnos</h2>
         </div>
-        @if (!cargando() && turnos().length > 0) {
-          <span
-            class="panel__contador"
-            [attr.aria-label]="
-              turnosFiltrados().length +
-              ' de ' +
-              turnos().length +
-              ' turnos visibles'
-            "
-          >
-            {{ turnosFiltrados().length }}
-          </span>
+        @if (!cargando() && totalElementos() > 0) {
+          <div class="panel__conteo">
+            <span
+              class="panel__contador"
+              [attr.aria-label]="contadorAriaLabel()"
+            >
+              {{ totalElementos() }}
+            </span>
+            @if (resumenFiltro(); as resumen) {
+              <span class="panel__conteo-detalle">{{ resumen }}</span>
+            }
+          </div>
         }
       </header>
 
@@ -123,7 +123,10 @@
               </svg>
             </span>
             <h3>No tenés turnos con ese estado</h3>
-            <p>Probá con otro filtro para ver el resto de tus turnos.</p>
+            <p>
+              Ningún turno de esta página tiene ese estado. Probá con otro filtro o
+              navegá a otra página.
+            </p>
             <button dsButton class="boton" type="button" (click)="limpiarFiltro()">
               Ver todos los turnos
             </button>
@@ -173,6 +176,16 @@
             </ul>
           </div>
         }
+      }
+
+      @if (mostrarPaginacion()) {
+        <ds-pagination
+          class="panel__paginacion"
+          ariaLabel="Paginación de mis turnos"
+          [page]="pagina() + 1"
+          [totalPages]="totalPaginas()"
+          (pageChange)="cambiarPagina($event)"
+        />
       }
     </section>
   </div>
