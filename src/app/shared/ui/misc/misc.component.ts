@@ -197,11 +197,47 @@ export class DsModalComponent implements AfterViewChecked, OnDestroy {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<nav class="ds-pagination" [attr.aria-label]="ariaLabel">
-    <button type="button" (click)="prev()" [disabled]="page <= 1">{{ prevLabel }}</button>
+    <button
+      type="button"
+      class="ds-pagination__prev"
+      (click)="prev()"
+      [disabled]="page <= 1"
+    >{{ prevLabel }}</button>
     <span aria-live="polite">{{ pageLabel }} {{ page }} {{ ofLabel }} {{ totalPages }}</span>
-    <button type="button" (click)="next()" [disabled]="page >= totalPages">{{ nextLabel }}</button>
+    <button
+      type="button"
+      class="ds-pagination__next"
+      (click)="next()"
+      [disabled]="page >= totalPages"
+    >{{ nextLabel }}</button>
+    @if (showDirectNavigation && totalPages > 1) {
+      <span class="ds-pagination__directo">
+        <label [attr.for]="id">{{ goLabel }}</label>
+        <input
+          #destino
+          [id]="id"
+          type="number"
+          inputmode="numeric"
+          min="1"
+          [max]="totalPages"
+          [value]="page"
+          [attr.aria-label]="goLabel"
+          (keydown.enter)="irDirecto(destino.value)"
+        />
+        <button
+          type="button"
+          class="ds-pagination__go"
+          (click)="irDirecto(destino.value)"
+          [disabled]="page >= totalPages"
+        >{{ goButtonLabel }}</button>
+      </span>
+    }
   </nav>`,
-  styles: [`.ds-pagination{display:flex;gap:var(--space-2);align-items:center}`],
+  styles: [
+    `.ds-pagination{display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap}`,
+    `.ds-pagination__directo{display:inline-flex;gap:var(--space-2);align-items:center}`,
+    `.ds-pagination__directo input{width:4.5rem;padding:var(--space-1) var(--space-2);border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);color:var(--text)}`,
+  ],
 })
 export class DsPaginationComponent {
   @Input() page = 1;
@@ -211,6 +247,10 @@ export class DsPaginationComponent {
   @Input() nextLabel = 'Siguiente';
   @Input() pageLabel = 'Página';
   @Input() ofLabel = 'de';
+  @Input() showDirectNavigation = false;
+  @Input() goLabel = 'Ir a la página';
+  @Input() goButtonLabel = 'Ir';
+  @Input() id = `ds-pagination-${++nextPaginationId}`;
   @Output() pageChange = new EventEmitter<number>();
   prev() {
     if (this.page > 1) {
@@ -224,7 +264,22 @@ export class DsPaginationComponent {
       this.pageChange.emit(this.page);
     }
   }
+  irDirecto(valor: string | number): void {
+    const destino = Number(valor);
+    if (
+      !Number.isInteger(destino) ||
+      destino < 1 ||
+      destino > this.totalPages ||
+      destino === this.page
+    ) {
+      return;
+    }
+    this.page = destino;
+    this.pageChange.emit(destino);
+  }
 }
+
+let nextPaginationId = 0;
 
 @Component({
   selector: 'ds-toast',

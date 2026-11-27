@@ -110,12 +110,13 @@
         </div>
       </aside>
 
-      <div class="listado__results">
+      <div #resultsContainer class="listado__results">
         <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">
           @if (loading()) {
             Cargando sucursales.
           } @else if (!error()) {
-            {{ sucursales().length }} sucursales encontradas.
+            {{ resumenPaginacion() }}.
+            Página {{ pagina() }} de {{ totalPages() }}.
             Categoría: {{ selectedCategory() ? humanizeCategory(selectedCategory()) : 'Todas' }}.
           }
         </p>
@@ -203,6 +204,24 @@
                 </div>
               </a>
             }
+          </div>
+        }
+
+        @if (mostrarPaginacion()) {
+          <div class="listado__paginacion">
+            <p class="listado__paginacion-resumen" aria-live="polite">
+              {{ resumenPaginacion() }} · Página {{ pagina() }} de {{ totalPages() }}
+            </p>
+            <ds-pagination
+              [page]="pagina()"
+              [totalPages]="totalPages()"
+              [showDirectNavigation]="true"
+              ariaLabel="Paginación de sucursales"
+              goLabel="Número de página"
+              prevLabel="Anterior"
+              nextLabel="Siguiente"
+              (pageChange)="irAPagina($event)"
+            />
           </div>
         }
       </div>
