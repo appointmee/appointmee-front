@@ -27,7 +27,9 @@ function textoDelBackend(cuerpo: unknown): string | null {
 
 export function mensajeErrorSolicitud(error: unknown, contexto: ContextoSolicitud): string {
   const respuesta = (error ?? {}) as ErrorConRespuesta;
-  const status = respuesta.status ?? 0;
+  // Solo un HttpErrorResponse tiene `status`. Un TypeError dentro de un pipe
+  // no tiene estado y no debe disfrazarse de falla de conexión.
+  const status = typeof respuesta.status === 'number' ? respuesta.status : null;
   const mensajeBackend = textoDelBackend(respuesta.error);
 
   if (status === 0) {

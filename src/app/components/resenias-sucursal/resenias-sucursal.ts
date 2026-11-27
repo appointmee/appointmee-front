@@ -1,4 +1,5 @@
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
+import { DsPaginationComponent } from '../../shared/ui/misc/misc.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,7 +12,7 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
-import { Observable, Subject, catchError, map, of, startWith, switchMap, tap } from 'rxjs';
+import { Observable, Subject, catchError, combineLatest, map, of, startWith, switchMap, tap } from 'rxjs';
 
 import { apiErrorsService } from '../../http/api-errors-service';
 import { ReseniaDTO } from '../../models/resenia';
@@ -26,9 +27,17 @@ const ESCALA_TEXTO: Readonly<Record<number, string>> = {
   5: 'Excelente',
 };
 
+interface DatosResenias {
+  readonly resenias: readonly ReseniaDTO[];
+  /** Total informado por backend; null cuando no viene en la respuesta. */
+  readonly total: number | null;
+  readonly totalPages: number;
+  readonly hayMas: boolean;
+}
+
 @Component({
   selector: 'app-resenias-sucursal',
-  imports: [DsButtonComponent, RouterLink],
+  imports: [DsButtonComponent, DsPaginationComponent, RouterLink],
   templateUrl: './resenias-sucursal.html',
   styleUrl: './resenias-sucursal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,17 +50,31 @@ export class ReseniasSucursal {
   readonly sucursalId = input.required<number>();
   readonly puntuacion = input<number | null>(null);
   readonly cantidad = input<number | null>(null);
+  /** Se conserva por compatibilidad: el backend ya limita la vista previa a 5. */
   readonly limite = input<number | null>(LIMITE_DETALLE);
   readonly mostrarVerMas = input(true);
   readonly mostrarResumen = input(true);
+  /** Historial completo: consulta el endpoint paginado (10 reseñas por página). */
+  readonly paginaCompleta = input(false);
 
   protected readonly resenias = signal<readonly ReseniaDTO[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+  protected readonly reintentando = signal(false);
+  /** Página 0-based pedida al backend; sólo se usa en modo historial. */
+  protected readonly pagina = signal(0);
+  protected readonly totalPaginas = signal(0);
+  private readonly totalBackend = signal<number | null>(null);
+  private readonly hayMasBackend = signal(false);
 
   private readonly recargar$ = new Subject<void>();
 
   protected readonly total = computed(() => {
+    const backend = this.totalBackend();
+    if (backend !== null) {
+      return backend;
+    }
+
     const declarado = this.cantidad();
     return typeof declarado === 'number' && Number.isFinite(declarado) && declarado >= 0
       ? declarado
@@ -84,44 +107,57 @@ export class ReseniasSucursal {
 
   protected readonly etiquetaPromedio = computed(() => this.etiqueta(this.promedio()));
 
-  protected readonly visibles = computed(() => {
-    const limite = this.limite();
-    if (limite === null || !Number.isFinite(limite) || limite < 0) {
-      return this.resenias();
-    }
-    return this.resenias().slice(0, Math.floor(limite));
-  });
+  /** El contenido ya viene filtrado y ordenado por backend: no se recorta ni se reordena acá. */
+  protected readonly visibles = computed(() => this.resenias());
 
-  protected readonly hayMas = computed(() => {
-    const limite = this.limite();
-    return (
-      this.mostrarVerMas() &&
-      limite !== null &&
-      Number.isFinite(limite) &&
-      limite >= 0 &&
-      this.resenias().length > limite
-    );
-  });
+  protected readonly hayMas = computed(
+    () => !this.paginaCompleta() && this.mostrarVerMas() && this.hayMasBackend(),
+  );
+
+  protected readonly puedePaginarse = computed(
+    () =>
+      this.paginaCompleta() &&
+      !this.loading() &&
+      !this.error() &&
+      this.totalPaginas() > 1,
+  );
 
   constructor() {
-    toObservable(this.sucursalId)
+    combineLatest([
+      toObservable(this.sucursalId),
+      toObservable(this.paginaCompleta),
+      toObservable(this.pagina),
+      this.recargar$.pipe(startWith(undefined)),
+    ])
       .pipe(
-        switchMap((id) => this.recargar$.pipe(startWith(undefined), map(() => id))),
         tap(() => {
           this.loading.set(true);
           this.error.set(null);
         }),
-        switchMap((id) => this.cargar(id)),
+        switchMap(([id, paginaCompleta, page]) => this.cargar(id, paginaCompleta, page)),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((lista) => {
-        this.resenias.set(lista);
-        this.loading.set(false);
-      });
+      .subscribe((datos) => this.aplicarDatos(datos));
   }
 
   protected reintentar(): void {
+    if (this.reintentando()) return;
+    this.reintentando.set(true);
     this.recargar$.next();
+  }
+
+  /** ds-pagination emite páginas 1-based; el servicio trabaja con índices 0-based. */
+  protected cambiarPagina(pagina: number): void {
+    const destino = Math.max(1, Math.trunc(pagina));
+    if (
+      !this.paginaCompleta() ||
+      destino > this.totalPaginas() ||
+      destino === this.pagina() + 1
+    ) {
+      return;
+    }
+
+    this.pagina.set(destino - 1);
   }
 
   protected abejasResenia(resenia: ReseniaDTO): readonly boolean[] {
@@ -149,36 +185,58 @@ export class ReseniasSucursal {
     return partes ? `${partes[3]}/${partes[2]}/${partes[1]}` : 'Sin fecha';
   }
 
-  private cargar(id: number): Observable<readonly ReseniaDTO[]> {
+  private cargar(
+    id: number,
+    paginaCompleta: boolean,
+    page: number,
+  ): Observable<DatosResenias> {
     if (!Number.isInteger(id) || id <= 0) {
-      return of([]);
+      return of(this.sinDatos());
     }
 
-    return this.service.listarPorSucursal(id).pipe(
-      map((lista) => this.ordenar(lista ?? [])),
+    const origen: Observable<DatosResenias> = paginaCompleta
+      ? this.service.listarPaginadoPorSucursal(id, page).pipe(
+          map((pagina) => ({
+            resenias: pagina?.content ?? [],
+            total: this.enteroNoNegativo(pagina?.totalElements),
+            totalPages: this.enteroNoNegativo(pagina?.totalPages) ?? 0,
+            hayMas: false,
+          })),
+        )
+      : this.service.listarPorSucursal(id).pipe(
+          map((vistaPrevia) => ({
+            resenias: vistaPrevia?.content ?? [],
+            total: this.enteroNoNegativo(vistaPrevia?.totalElements),
+            totalPages: 0,
+            hayMas: vistaPrevia?.hayMas === true,
+          })),
+        );
+
+    return origen.pipe(
       catchError((error: HttpErrorResponse) => {
         // La sección informa el problema sin interrumpir el resto del detalle.
         this.apiErrors.dismiss();
         this.error.set(this.mensajeError(error));
-        return of<readonly ReseniaDTO[]>([]);
+        return of(this.sinDatos());
       }),
     );
   }
 
-  private ordenar(lista: readonly ReseniaDTO[]): readonly ReseniaDTO[] {
-    return [...lista].sort(
-      (a, b) => this.fechaParaOrden(b.fechaResenia) - this.fechaParaOrden(a.fechaResenia),
-    );
+  private aplicarDatos(datos: DatosResenias): void {
+    this.resenias.set(datos.resenias);
+    this.totalBackend.set(datos.total);
+    this.totalPaginas.set(datos.totalPages);
+    this.hayMasBackend.set(datos.hayMas);
+    this.loading.set(false);
+    this.reintentando.set(false);
   }
 
-  private fechaParaOrden(fecha: string | null): number {
-    const partes = /^(\d{4})-(\d{2})-(\d{2})/.exec(fecha?.trim() ?? '');
-    if (!partes) {
-      return 0;
-    }
+  private sinDatos(): DatosResenias {
+    return { resenias: [], total: null, totalPages: 0, hayMas: false };
+  }
 
-    const valor = new Date(Number(partes[1]), Number(partes[2]) - 1, Number(partes[3]));
-    return Number.isNaN(valor.getTime()) ? 0 : valor.getTime();
+  private enteroNoNegativo(valor: unknown): number | null {
+    return typeof valor === 'number' && Number.isInteger(valor) && valor >= 0 ? valor : null;
   }
 
   private normalizarPuntuacion(valor: number | null | undefined): number {

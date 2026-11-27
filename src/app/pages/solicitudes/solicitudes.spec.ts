@@ -3,8 +3,14 @@ import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
-import { SolicitudEmpleadoDetalleDTO } from '../../models/solicitud-empleado';
-import { SolicitudEmpleadorDetalleDTO } from '../../models/solicitud-empleador';
+import {
+  SolicitudEmpleadoDetalleDTO,
+  VistaPreviaSolicitudesEmpleadoDTO,
+} from '../../models/solicitud-empleado';
+import {
+  SolicitudEmpleadorDetalleDTO,
+  VistaPreviaSolicitudesEmpleadorDTO,
+} from '../../models/solicitud-empleador';
 import { authService } from '../../services/auth-service';
 import { googlePlacesService } from '../../services/google-places-service';
 import { Solicitudes } from './solicitudes';
@@ -34,7 +40,26 @@ const RECIBIDAS = [
   { id: 32, nombreSucursal: 'Estudio Norte', fechaSolicitud: '2026-10-31' },
   { id: 33, nombreSucursal: 'Spa del Río', fechaSolicitud: '2026-10-29' },
   { id: 34, nombreSucursal: 'Peluquería Sur', fechaSolicitud: '2026-10-27' },
+  { id: 35, nombreSucursal: 'Gimnasio Oeste', fechaSolicitud: '2026-10-25' },
+  { id: 36, nombreSucursal: 'Salón Este', fechaSolicitud: '2026-10-22' },
 ];
+
+/** El backend envía como máximo 3 solicitudes propias y 5 recibidas. */
+function previaEmpleador(
+  content: readonly (typeof SOLICITUDES)[number][] = SOLICITUDES.slice(0, 3),
+  totalElements = SOLICITUDES.length,
+  hayMas = true,
+): VistaPreviaSolicitudesEmpleadorDTO {
+  return { content, totalElements, hayMas };
+}
+
+function previaEmpleado(
+  content: readonly (typeof RECIBIDAS)[number][] = RECIBIDAS.slice(0, 5),
+  totalElements = RECIBIDAS.length,
+  hayMas = true,
+): VistaPreviaSolicitudesEmpleadoDTO {
+  return { content, totalElements, hayMas };
+}
 
 function detalle(
   id: number,
@@ -173,7 +198,7 @@ describe('Solicitudes · empleador y empleo', () => {
   }
 
   function recrearComoCliente(): void {
-    listar().flush([]);
+    listar().flush(previaEmpleador([]));
     fixture.detectChanges();
     fixture.destroy();
 
@@ -194,18 +219,17 @@ describe('Solicitudes · empleador y empleo', () => {
   }
 
   function responderLista(
-    solicitudes: readonly (typeof SOLICITUDES)[number][],
+    vista: VistaPreviaSolicitudesEmpleadorDTO,
     detalles: ReadonlyMap<number, SolicitudEmpleadorDetalleDTO> = new Map(),
   ): void {
-    listar().flush(solicitudes);
+    listar().flush(vista);
     fixture.detectChanges();
 
-    const visibles = solicitudes.slice(0, 3);
     const solicitudesDetalle = backend.match((request) =>
       /\/solicitudes-empleador\/\d+\/detalles/.test(request.url),
     );
 
-    expect(solicitudesDetalle).toHaveLength(visibles.length);
+    expect(solicitudesDetalle).toHaveLength(vista.content.length);
 
     for (const peticion of solicitudesDetalle) {
       const id = idDeDetalle(peticion.request.url, 'empleador');
@@ -221,18 +245,17 @@ describe('Solicitudes · empleador y empleo', () => {
   }
 
   function responderRecibidas(
-    solicitudes: readonly (typeof RECIBIDAS)[number][],
+    vista: VistaPreviaSolicitudesEmpleadoDTO,
     detalles: ReadonlyMap<number, SolicitudEmpleadoDetalleDTO> = new Map(),
   ): void {
-    listarRecibidas().flush(solicitudes);
+    listarRecibidas().flush(vista);
     fixture.detectChanges();
 
-    const visibles = solicitudes.slice(0, 3);
     const solicitudesDetalle = backend.match((request) =>
       /\/solicitudes-empleado\/\d+\/detalles/.test(request.url),
     );
 
-    expect(solicitudesDetalle).toHaveLength(visibles.length);
+    expect(solicitudesDetalle).toHaveLength(vista.content.length);
 
     for (const peticion of solicitudesDetalle) {
       const id = idDeDetalle(peticion.request.url, 'empleado');
@@ -279,9 +302,9 @@ describe('Solicitudes · empleador y empleo', () => {
     vi.useRealTimers();
   }
 
-  it('muestra las últimas 3 solicitudes, el acceso al historial y explica el panel de empleo', () => {
+  it('muestra las solicitudes del backend, el acceso al historial y explica el panel de empleo', () => {
     responderLista(
-      SOLICITUDES,
+      previaEmpleador(SOLICITUDES.slice(0, 3), SOLICITUDES.length, true),
       new Map([
         [10, detalle(10, 'APROBADA')],
         [11, detalle(11, 'PENDIENTE', 'Bruno', 'Gómez')],
@@ -323,26 +346,56 @@ describe('Solicitudes · empleador y empleo', () => {
     expect(enlace!.target).toBe('_blank');
   });
 
-  it('para un cliente muestra las últimas 3 invitaciones, su estado y el acceso al historial', () => {
+  it('usa el total y el flag del backend para los contadores y «Ver más»', () => {
+    responderLista(previaEmpleador(SOLICITUDES.slice(0, 3), 12, true));
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelectorAll('app-solicitud-empleador-card')).toHaveLength(3);
+    expect(host.querySelector('.panel__contador')?.textContent?.trim()).toBe('12');
+    expect(host.querySelector<HTMLAnchorElement>('.ver-mas')?.getAttribute('href')).toBe(
+      '/solicitudes/todas',
+    );
+  });
+
+  it('oculta «Ver más» cuando el backend informa que no hay más solicitudes', () => {
     recrearComoCliente();
 
-    responderLista([]);
+    responderLista(previaEmpleador([SOLICITUDES[0]], 1, false));
+    responderRecibidas(previaEmpleado(RECIBIDAS.slice(0, 5), 5, false));
+
+    const host = fixture.nativeElement as HTMLElement;
+    const contadores = host.querySelectorAll('.panel__contador');
+    expect(contadores[0]?.textContent?.trim()).toBe('1');
+    expect(contadores[1]?.textContent?.trim()).toBe('5');
+    expect(host.querySelectorAll('.ver-mas')).toHaveLength(0);
+  });
+
+  it('para un cliente muestra las 5 invitaciones del backend, su estado y el acceso al historial', () => {
+    recrearComoCliente();
+
+    responderLista(previaEmpleador([]));
     responderRecibidas(
-      RECIBIDAS,
+      previaEmpleado(),
       new Map([
         [31, detalleEmpleado(31, 'PENDIENTE', 'Barbería Central')],
         [32, detalleEmpleado(32, 'APROBADA', 'Estudio Norte')],
         [33, detalleEmpleado(33, 'RECHAZADA', 'Spa del Río')],
+        [34, detalleEmpleado(34, 'APROBADA', 'Peluquería Sur')],
+        [35, detalleEmpleado(35, 'PENDIENTE', 'Gimnasio Oeste')],
       ]),
     );
 
     const host = fixture.nativeElement as HTMLElement;
     const contenido = host.textContent ?? '';
 
-    expect(host.querySelectorAll('app-solicitud-empleado-card')).toHaveLength(3);
+    expect(host.querySelectorAll('app-solicitud-empleado-card')).toHaveLength(5);
+    const contadores = host.querySelectorAll('.panel__contador');
+    expect(contadores[1]?.textContent?.trim()).toBe('6');
     expect(contenido).toContain('Barbería Central');
     expect(contenido).toContain('Estudio Norte');
     expect(contenido).toContain('Spa del Río');
+    expect(contenido).toContain('Peluquería Sur');
+    expect(contenido).toContain('Gimnasio Oeste');
     expect(contenido).toContain('Pendiente');
     expect(contenido).toContain('Aprobada');
     expect(contenido).toContain('Rechazada');
@@ -356,9 +409,9 @@ describe('Solicitudes · empleador y empleo', () => {
   it('permite aprobar una invitación pendiente y actualiza el estado visible', () => {
     recrearComoCliente();
 
-    responderLista([]);
+    responderLista(previaEmpleador([]));
     responderRecibidas(
-      [RECIBIDAS[0]],
+      previaEmpleado([RECIBIDAS[0]], 1, false),
       new Map([[31, detalleEmpleado(31, 'PENDIENTE')]]),
     );
 
@@ -389,7 +442,7 @@ describe('Solicitudes · empleador y empleo', () => {
   it('ante un error de invitaciones recibidas muestra el error inline y permite reintentar', () => {
     recrearComoCliente();
 
-    responderLista([]);
+    responderLista(previaEmpleador([]));
     listarRecibidas().flush({}, { status: 503, statusText: 'Unavailable' });
     fixture.detectChanges();
 
@@ -399,7 +452,7 @@ describe('Solicitudes · empleador y empleo', () => {
     host.querySelector<HTMLButtonElement>('.estado--error .boton')?.click();
     fixture.detectChanges();
 
-    listarRecibidas().flush([]);
+    listarRecibidas().flush(previaEmpleado([]));
     fixture.detectChanges();
 
     expect(host.textContent).toContain('Todavía no recibiste invitaciones');
@@ -407,7 +460,7 @@ describe('Solicitudes · empleador y empleo', () => {
   });
 
   it('abre el modal, valida el mínimo, exige ubicación y envía el payload completo', async () => {
-    responderLista([]);
+    responderLista(previaEmpleador([]));
 
     const host = fixture.nativeElement as HTMLElement;
     const abrir = host.querySelector<HTMLButtonElement>('.boton--principal');
@@ -459,14 +512,14 @@ describe('Solicitudes · empleador y empleo', () => {
     envio.flush('Se registró tu solicitud');
 
     fixture.detectChanges();
-    responderLista([SOLICITUDES[0]], new Map([[10, detalle(10, 'PENDIENTE')]]));
+    responderLista(previaEmpleador([SOLICITUDES[0]], 1, false), new Map([[10, detalle(10, 'PENDIENTE')]]));
 
     expect(host.querySelector('.solicitud-modal')).toBeNull();
     expect(host.textContent).toContain('Tu solicitud se envió correctamente');
   });
 
   it('si el backend rechaza el envío conserva el modal y muestra el mensaje inline', async () => {
-    responderLista([]);
+    responderLista(previaEmpleador([]));
 
     const host = fixture.nativeElement as HTMLElement;
     host.querySelector<HTMLButtonElement>('.boton--principal')?.click();
@@ -512,7 +565,7 @@ describe('Solicitudes · empleador y empleo', () => {
     host.querySelector<HTMLButtonElement>('.estado--error .boton')?.click();
     fixture.detectChanges();
 
-    listar().flush([]);
+    listar().flush(previaEmpleador([]));
     fixture.detectChanges();
 
     expect(host.textContent).toContain('Todavía no enviaste solicitudes');
@@ -520,7 +573,7 @@ describe('Solicitudes · empleador y empleo', () => {
   });
 
   it('con una solicitud pendiente deshabilita el acceso para volver a solicitar', () => {
-    responderLista([SOLICITUDES[0]], new Map([[10, detalle(10, 'PENDIENTE')]]));
+    responderLista(previaEmpleador([SOLICITUDES[0]], 1, false), new Map([[10, detalle(10, 'PENDIENTE')]]));
 
     const host = fixture.nativeElement as HTMLElement;
     const boton = host.querySelector<HTMLButtonElement>('.boton--principal');
@@ -530,13 +583,13 @@ describe('Solicitudes · empleador y empleo', () => {
   });
 
   it('explica que un administrador o empleador no necesita enviar la solicitud', () => {
-    responderLista([]);
+    responderLista(previaEmpleador([]));
     fixture.destroy();
 
     auth.tieneAlgunRol.mockImplementation(soloEmpleador);
     crearComponente();
 
-    listar().flush([]);
+    listar().flush(previaEmpleador([]));
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
@@ -569,7 +622,7 @@ describe('Solicitudes · destino de notificación', () => {
 
     backend
       .expectOne((request) => request.url.endsWith('/solicitudes-empleador/propias'))
-      .flush(SOLICITUDES);
+      .flush(previaEmpleador(SOLICITUDES.slice(0, 3), 3, false));
     fixture.detectChanges();
 
     for (const peticion of backend.match((request) =>

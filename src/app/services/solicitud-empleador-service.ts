@@ -10,7 +10,9 @@ import {
   SolicitudEmpleadorDetalleDTO,
   SolicitudEmpleadorMiniDTO,
   TAMANO_PAGINA_SOLICITUDES,
+  VistaPreviaSolicitudesEmpleadorDTO,
 } from '../models/solicitud-empleador';
+import type { PaginaDTO } from '../models/paginacion';
 import { backendService } from './backend-service';
 
 /**
@@ -31,10 +33,22 @@ export class solicitudEmpleadorService {
     );
   }
 
-  listarPropias(): Observable<SolicitudEmpleadorMiniDTO[]> {
-    return this.http.get<SolicitudEmpleadorMiniDTO[]>(
+  /** Vista inicial: últimas 3 solicitudes y flag para mostrar «Ver todas». */
+  listarPropias(): Observable<VistaPreviaSolicitudesEmpleadorDTO> {
+    return this.http.get<VistaPreviaSolicitudesEmpleadorDTO>(
       `${this.api.baseUrl}/solicitudes-empleador/propias`,
       { context: this.contextoSinAvisoGlobal() },
+    );
+  }
+
+  /** Historial completo: 10 solicitudes por página (page 0-based). */
+  listarPropiasPaginado(page: number): Observable<PaginaDTO<SolicitudEmpleadorMiniDTO>> {
+    return this.http.get<PaginaDTO<SolicitudEmpleadorMiniDTO>>(
+      `${this.api.baseUrl}/solicitudes-empleador/propias/paginado`,
+      {
+        params: new HttpParams().set('page', String(page)),
+        context: this.contextoSinAvisoGlobal(),
+      },
     );
   }
 

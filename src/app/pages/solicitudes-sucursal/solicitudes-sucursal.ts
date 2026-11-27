@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -19,8 +18,6 @@ import {
 } from '../../models/solicitud-empleado';
 import { sucursalService } from '../../services/sucursal-service';
 import { solicitudEmpleadoService } from '../../services/solicitud-empleado-service';
-
-const SOLICITUDES_VISIBLES = 3;
 
 @Component({
   selector: 'app-solicitudes-sucursal',
@@ -49,16 +46,10 @@ export class SolicitudesSucursal {
   protected readonly exitoEnvio = signal<string | null>(null);
 
   protected readonly solicitudesEnviadas = signal<readonly SolicitudEmpleadoVista[]>([]);
+  protected readonly hayMasEnviadas = signal(false);
   protected readonly cargandoEnviadas = signal(false);
   protected readonly errorEnviadas = signal<string | null>(null);
   protected readonly reintentandoEnviadas = signal(false);
-
-  protected readonly visiblesEnviadas = computed(() =>
-    this.solicitudesEnviadas().slice(0, SOLICITUDES_VISIBLES),
-  );
-  protected readonly hayMasEnviadas = computed(
-    () => this.solicitudesEnviadas().length > SOLICITUDES_VISIBLES,
-  );
 
   constructor() {
     if (!this.sucursalValida) {
@@ -80,23 +71,27 @@ export class SolicitudesSucursal {
       .pipe(
         startWith(undefined as void),
         switchMap(() => {
-          if (!this.sucursalValida) return of<readonly SolicitudEmpleadoVista[]>([]);
+          if (!this.sucursalValida) return of({ solicitudes: [], hayMas: false });
           this.cargandoEnviadas.set(this.solicitudesEnviadas().length === 0);
           this.errorEnviadas.set(null);
           return this.solicitudesApi.listarEnviadas(this.sucursalId).pipe(
-            map((solicitudes) => solicitudes.map(vistaSolicitudEnviada)),
-            catchError((error: HttpErrorResponse) => {
+            map((vista) => ({
+              solicitudes: vista.content.map(vistaSolicitudEnviada),
+              hayMas: vista.hayMas,
+            })),
+            catchError((error: unknown) => {
               this.errorEnviadas.set(mensajeErrorSolicitudEmpleado(error, 'carga'));
               this.cargandoEnviadas.set(false);
               this.reintentandoEnviadas.set(false);
-              return of<readonly SolicitudEmpleadoVista[]>([]);
+              return of({ solicitudes: [], hayMas: false });
             }),
           );
         }),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((solicitudes) => {
+      .subscribe(({ solicitudes, hayMas }) => {
         this.solicitudesEnviadas.set(solicitudes);
+        this.hayMasEnviadas.set(hayMas);
         this.cargandoEnviadas.set(false);
         this.reintentandoEnviadas.set(false);
       });

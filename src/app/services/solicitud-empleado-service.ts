@@ -1,14 +1,34 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 import {
   SolicitudEmpleadoDetalleDTO,
   SolicitudEmpleadoMiniPropiaDTO,
-  SolicitudEmpleadoMiniSucursalDTO,
+  PaginaSolicitudesEmpleadoDTO,
+  PaginaSolicitudesEmpleadoSucursalDTO,
+  VistaPreviaSolicitudesEmpleadoDTO,
+  VistaPreviaSolicitudesEmpleadoSucursalDTO,
 } from '../models/solicitud-empleado';
 import { backendService } from './backend-service';
+
+/**
+ * El contrato nuevo debe traer `content` como arreglo. Validarlo en el cliente
+ * HTTP evita que un payload del formato anterior (array plano) llegue al
+ * componente como un `TypeError` sin `status` y se confunda con una falla de red.
+ */
+function esVistaPreviaSolicitudesEmpleadoSucursal(
+  payload: unknown,
+): payload is VistaPreviaSolicitudesEmpleadoSucursalDTO {
+  if (!payload || typeof payload !== 'object') return false;
+  const candidato = payload as Partial<VistaPreviaSolicitudesEmpleadoSucursalDTO>;
+  return (
+    Array.isArray(candidato.content) &&
+    typeof candidato.totalElements === 'number' &&
+    typeof candidato.hayMas === 'boolean'
+  );
+}
 
 /**
  * Cliente de los endpoints existentes de solicitudes de empleo.
@@ -19,17 +39,53 @@ export class solicitudEmpleadoService {
   private readonly api = inject(backendService);
   private readonly http = inject(HttpClient);
 
-  listarRecibidas(): Observable<SolicitudEmpleadoMiniPropiaDTO[]> {
-    return this.http.get<SolicitudEmpleadoMiniPropiaDTO[]>(
+  /** Vista inicial: últimas 5 solicitudes y flag para mostrar «Ver todas». */
+  listarRecibidas(): Observable<VistaPreviaSolicitudesEmpleadoDTO> {
+    return this.http.get<VistaPreviaSolicitudesEmpleadoDTO>(
       `${this.api.baseUrl}/solicitudes-empleado/recibidas`,
       { context: this.contextoSinAvisoGlobal() },
     );
   }
 
-  listarEnviadas(sucursalId: number): Observable<SolicitudEmpleadoMiniSucursalDTO[]> {
-    return this.http.get<SolicitudEmpleadoMiniSucursalDTO[]>(
+  /** Historial completo: 10 solicitudes por página (page 0-based). */
+  listarRecibidasPaginado(page: number): Observable<PaginaSolicitudesEmpleadoDTO> {
+    return this.http.get<PaginaSolicitudesEmpleadoDTO>(
+      `${this.api.baseUrl}/solicitudes-empleado/recibidas/paginado`,
+      {
+        params: new HttpParams().set('page', String(page)),
+        context: this.contextoSinAvisoGlobal(),
+      },
+    );
+  }
+
+  /** Vista inicial: 3 invitaciones y flag para mostrar «Ver más» (0-based page). */
+  listarEnviadas(
+    sucursalId: number,
+  ): Observable<VistaPreviaSolicitudesEmpleadoSucursalDTO> {
+    return this.http.get<unknown>(
       `${this.api.baseUrl}/solicitudes-empleado/enviadas/sucursal/${sucursalId}`,
       { context: this.contextoSinAvisoGlobal() },
+    ).pipe(
+      map((respuesta) => {
+        if (!esVistaPreviaSolicitudesEmpleadoSucursal(respuesta)) {
+          throw new Error('Formato inesperado en la vista previa de invitaciones enviadas');
+        }
+        return respuesta;
+      }),
+    );
+  }
+
+  /** Historial completo: 10 invitaciones por página (page 0-based). */
+  listarEnviadasPaginadas(
+    sucursalId: number,
+    page: number,
+  ): Observable<PaginaSolicitudesEmpleadoSucursalDTO> {
+    return this.http.get<PaginaSolicitudesEmpleadoSucursalDTO>(
+      `${this.api.baseUrl}/solicitudes-empleado/enviadas/sucursal/${sucursalId}/paginado`,
+      {
+        params: new HttpParams().set('page', String(page)),
+        context: this.contextoSinAvisoGlobal(),
+      },
     );
   }
 

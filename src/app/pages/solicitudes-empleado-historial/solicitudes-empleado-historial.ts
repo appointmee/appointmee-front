@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -13,20 +12,23 @@ import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 
 import { SolicitudEmpleadoLista } from '../../components/solicitud-empleado-lista/solicitud-empleado-lista';
 import { mensajeErrorSolicitudEmpleado } from '../../http/solicitud-empleado-errors';
+import { PaginaDTO, TAMANO_PAGINA } from '../../models/paginacion';
 import {
   ResultadoResolucionSolicitudEmpleado,
+  SolicitudEmpleadoMiniPropiaDTO,
   SolicitudEmpleadoVista,
   vistaSolicitudRecibida,
 } from '../../models/solicitud-empleado';
+import { DsPaginationComponent } from '../../shared/ui/misc/misc.component';
 import { solicitudEmpleadoService } from '../../services/solicitud-empleado-service';
 
 type ResultadoLista =
-  | { readonly ok: true; readonly solicitudes: readonly SolicitudEmpleadoVista[] }
+  | { readonly ok: true; readonly pagina: PaginaDTO<SolicitudEmpleadoMiniPropiaDTO> }
   | { readonly ok: false; readonly error: HttpErrorResponse };
 
 @Component({
   selector: 'app-solicitudes-empleado-historial',
-  imports: [RouterLink, SolicitudEmpleadoLista],
+  imports: [DsPaginationComponent, RouterLink, SolicitudEmpleadoLista],
   templateUrl: './solicitudes-empleado-historial.html',
   styleUrl: './solicitudes-empleado-historial.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -42,21 +44,26 @@ export class SolicitudesEmpleadoHistorial {
   protected readonly reintentando = signal(false);
   protected readonly exito = signal<string | null>(null);
 
-  protected readonly total = computed(() => this.solicitudes().length);
+  /** Página 0-based pedida al backend y metadatos que él informa. */
+  protected readonly pagina = signal(0);
+  protected readonly totalPaginas = signal(0);
+  protected readonly total = signal(0);
+  protected readonly tamanoPagina = TAMANO_PAGINA;
 
   constructor() {
     this.recargar
       .pipe(
         startWith(undefined as void),
         switchMap(() => {
-          this.cargando.set(this.solicitudes().length === 0);
-          return this.api.listarRecibidas().pipe(
-            map(
-              (solicitudes): ResultadoLista => ({
-                ok: true,
-                solicitudes: solicitudes.map(vistaSolicitudRecibida),
-              }),
-            ),
+          this.cargando.set(true);
+
+          // Nunca se pide una página que el backend ya informó que no existe.
+          const ultimaPagina = Math.max(0, this.totalPaginas() - 1);
+          const page = Math.min(this.pagina(), ultimaPagina);
+          if (page !== this.pagina()) this.pagina.set(page);
+
+          return this.api.listarRecibidasPaginado(page).pipe(
+            map((pagina): ResultadoLista => ({ ok: true, pagina })),
             catchError((error: HttpErrorResponse) => of<ResultadoLista>({ ok: false, error })),
           );
         }),
@@ -68,6 +75,17 @@ export class SolicitudesEmpleadoHistorial {
   protected reintentar(): void {
     if (this.reintentando()) return;
     this.reintentando.set(true);
+    this.pagina.set(0);
+    this.recargar.next();
+  }
+
+  /** `ds-pagination` es 1-based; el backend usa páginas 0-based. */
+  protected cambiarPagina(paginaVisible: number): void {
+    const ultimaPagina = Math.max(0, this.totalPaginas() - 1);
+    const destino = Math.min(Math.max(0, paginaVisible - 1), ultimaPagina);
+    if (destino === this.pagina()) return;
+
+    this.pagina.set(destino);
     this.recargar.next();
   }
 
@@ -91,9 +109,15 @@ export class SolicitudesEmpleadoHistorial {
       return;
     }
 
+    const { content, totalElements, totalPages, number } = resultado.pagina;
+    const paginaSegura = Math.min(Math.max(0, number), Math.max(0, totalPages - 1));
+
     this.error.set(null);
     this.exito.set(null);
-    this.solicitudes.set(resultado.solicitudes);
+    this.solicitudes.set(content.map(vistaSolicitudRecibida));
+    this.total.set(totalElements);
+    this.totalPaginas.set(totalPages);
+    this.pagina.set(paginaSegura);
     this.cargando.set(false);
     this.reintentando.set(false);
   }

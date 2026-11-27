@@ -23,12 +23,12 @@
           <span class="panel__eyebrow">Agenda</span>
           <h2 id="turnos-lista-titulo">Turnos en {{ nombreSucursal() }}</h2>
         </div>
-        @if (!cargando() && turnos().length > 0) {
+        @if (!cargando() && totalElementos() > 0) {
           <span
             class="panel__contador"
-            [attr.aria-label]="turnos().length + ' turnos visibles'"
+            [attr.aria-label]="totalElementos() + ' turnos en estado ' + etiquetaEstadoSeleccionado()"
           >
-            {{ turnos().length }}
+            {{ totalElementos() }}
           </span>
         }
       </header>
@@ -156,6 +156,16 @@
             </ul>
           </div>
         }
+      }
+
+      @if (mostrarPaginacion()) {
+        <ds-pagination
+          class="panel__paginacion"
+          ariaLabel="Paginación de turnos asignados"
+          [page]="pagina() + 1"
+          [totalPages]="totalPaginas()"
+          (pageChange)="cambiarPagina($event)"
+        />
       }
     </section>
   </div>

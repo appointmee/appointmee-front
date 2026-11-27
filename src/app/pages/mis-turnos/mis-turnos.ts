@@ -27,12 +27,14 @@ import {
 import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import {
   DsModalComponent,
+  DsPaginationComponent,
   DsSelectComponent,
 } from '../../shared/ui/misc/misc.component';
 import {
   MENSAJE_EMPLEADO_DESVINCULADO,
   MENSAJE_SUCURSAL_DE_BAJA,
   EstadoTurno,
+  PaginaTurnosDTO,
   TurnoClienteDetalleDTO,
   TurnoMiniDTO,
 } from '../../models/turno';
@@ -46,8 +48,8 @@ import { turnoService } from '../../services/turno-service';
 type FiltroEstado = EstadoTurno | 'TODOS';
 
 type ResultadoLista =
-  | { readonly ok: true; readonly turnos: readonly TurnoMiniDTO[] }
-  | { readonly ok: false; readonly error: unknown };
+  | { readonly ok: true; readonly pagina: PaginaTurnosDTO; readonly paginaSolicitada: number }
+  | { readonly ok: false; readonly paginaSolicitada: number; readonly error: unknown };
 
 type ContextoError = 'lista' | 'detalle' | 'sucursal';
 
@@ -97,7 +99,13 @@ interface PartesFecha {
 
 @Component({
   selector: 'app-mis-turnos',
-  imports: [DsButtonComponent, DsModalComponent, DsSelectComponent, RouterLink],
+  imports: [
+    DsButtonComponent,
+    DsModalComponent,
+    DsPaginationComponent,
+    DsSelectComponent,
+    RouterLink,
+  ],
   templateUrl: './mis-turnos.html',
   styleUrl: './mis-turnos.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -115,7 +123,7 @@ export class MisTurnos {
   );
   private enlaceAbierto = false;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly recargar = new Subject<void>();
+  private readonly recargar = new Subject<number>();
   private readonly formatoMoneda = new Intl.NumberFormat('es-AR', {
     style: 'currency',
     currency: 'ARS',
@@ -131,9 +139,14 @@ export class MisTurnos {
   protected readonly estados = ESTADOS;
   protected readonly filtro = signal<FiltroEstado>('TODOS');
   protected readonly turnos = signal<readonly TurnoMiniDTO[]>([]);
+  /** Página 0-based solicitada al backend. ds-pagination trabaja en 1-based. */
+  protected readonly pagina = signal(0);
+  protected readonly totalPaginas = signal(0);
+  protected readonly totalElementos = signal(0);
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly reintentando = signal(false);
+  protected readonly mostrarPaginacion = computed(() => this.totalPaginas() > 1);
 
   protected readonly turnoSeleccionado = signal<TurnoMiniDTO | null>(null);
   protected readonly detalle = signal<TurnoClienteDetalleDTO | null>(null);
@@ -201,6 +214,19 @@ export class MisTurnos {
     return filtro === 'TODOS'
       ? this.turnos()
       : this.turnos().filter((turno) => turno.estadoTurno === filtro);
+  });
+
+  /** El filtro es local: sólo se aplica a los turnos de la página cargada. */
+  protected readonly resumenFiltro = computed(() => {
+    if (this.filtro() === 'TODOS') return null;
+    return `${this.turnosFiltrados().length} de ${this.turnos().length} turnos de esta página coinciden con el filtro.`;
+  });
+
+  protected readonly contadorAriaLabel = computed(() => {
+    const total = this.totalElementos();
+    const base = total === 1 ? '1 turno en total' : `${total} turnos en total`;
+    const resumen = this.resumenFiltro();
+    return resumen ? `${base}. ${resumen}` : base;
   });
 
   protected readonly detalleTitulo = computed(
@@ -283,12 +309,20 @@ export class MisTurnos {
   constructor() {
     this.recargar
       .pipe(
-        startWith(undefined as void),
-        switchMap(() => {
+        startWith(0),
+        switchMap((paginaSolicitada) => {
           this.cargando.set(this.turnos().length === 0 && !this.error());
-          return this.turnosApi.propios().pipe(
-            map((turnos): ResultadoLista => ({ ok: true, turnos })),
-            catchError((error: unknown) => of<ResultadoLista>({ ok: false, error })),
+          return this.turnosApi.propiosPaginado(paginaSolicitada).pipe(
+            map(
+              (pagina): ResultadoLista => ({
+                ok: true,
+                pagina,
+                paginaSolicitada,
+              }),
+            ),
+            catchError((error: unknown) =>
+              of<ResultadoLista>({ ok: false, paginaSolicitada, error }),
+            ),
           );
         }),
         takeUntilDestroyed(this.destroyRef),
@@ -310,7 +344,26 @@ export class MisTurnos {
   protected reintentar(): void {
     if (this.reintentando()) return;
     this.reintentando.set(true);
-    this.recargar.next();
+    this.recargar.next(this.pagina());
+  }
+
+  /** ds-pagination emite páginas 1-based; el backend espera 0-based. */
+  protected cambiarPagina(pagina1based: number): void {
+    const destino = pagina1based - 1;
+    if (
+      !Number.isInteger(destino) ||
+      destino < 0 ||
+      destino >= this.totalPaginas() ||
+      destino === this.pagina()
+    ) {
+      return;
+    }
+
+    this.pagina.set(destino);
+    this.turnos.set([]);
+    this.error.set(null);
+    this.cargando.set(true);
+    this.recargar.next(destino);
   }
 
   protected abrirDetalle(turno: TurnoMiniDTO): void {
@@ -534,6 +587,8 @@ export class MisTurnos {
   }
 
   private aplicarLista(resultado: ResultadoLista): void {
+    if (resultado.paginaSolicitada !== this.pagina()) return;
+
     if (!resultado.ok) {
       this.error.set(this.mensajeError(resultado.error, 'lista'));
       this.cargando.set(false);
@@ -541,15 +596,19 @@ export class MisTurnos {
       return;
     }
 
-    const ordenados = [...resultado.turnos].sort(
+    const { content, totalElements, totalPages } = resultado.pagina;
+    const ordenados = [...content].sort(
       (a, b) => this.timestamp(b.fechaTurno) - this.timestamp(a.fechaTurno),
     );
     this.turnos.set(ordenados);
+    this.totalElementos.set(totalElements);
+    this.totalPaginas.set(totalPages);
     this.error.set(null);
     this.cargando.set(false);
     this.reintentando.set(false);
 
-    // Deep-link desde el centro de notificaciones: ?turnoId= abre el detalle del turno.
+    // Deep-link desde el centro de notificaciones: ?turnoId= abre el detalle
+    // del turno cuando está entre los turnos de la página cargada.
     const objetivo = this.turnoIdDelEnlace;
     if (!this.enlaceAbierto && objetivo !== null) {
       const turno = ordenados.find((item) => item.id === objetivo);

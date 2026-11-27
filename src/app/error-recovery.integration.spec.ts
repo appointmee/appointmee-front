@@ -14,6 +14,7 @@ import { Sucursales } from './pages/sucursales/sucursales';
 import { NavigationHistory } from './navigation-history';
 import { Reporte404 } from './pages/no-encontrada/reporte-404';
 import { ReporteError } from './pages/error/reporte-error';
+import { TAMANO_PAGINA } from './models/paginacion';
 
 @Component({
   standalone: true,
@@ -25,7 +26,7 @@ class TestShell {
 }
 
 function paginaVacia() {
-  return { content: [], totalElements: 0, totalPages: 0, number: 0, size: 12 };
+  return { content: [], totalElements: 0, totalPages: 0, number: 0, size: TAMANO_PAGINA };
 }
 
 function recomendacionesVacias() {
@@ -97,6 +98,8 @@ describe('US-ERR-03 recovery flows', () => {
     );
     expect(failedList.request.params.get('nombre')).toBe('Flores');
     expect(failedList.request.params.get('categoria')).toBe('CAFE');
+    expect(failedList.request.params.get('page')).toBe('0');
+    expect(failedList.request.params.get('size')).toBe(String(TAMANO_PAGINA));
     failedList.flush({}, { status: 503, statusText: 'Unavailable' });
     await fixture.whenStable();
     fixture.detectChanges();
@@ -119,6 +122,8 @@ describe('US-ERR-03 recovery flows', () => {
     const retriedList = backend.expectOne((request) => request.url.endsWith('/sucursales/listar/paginado'));
     expect(retriedList.request.params.get('nombre')).toBe('Flores');
     expect(retriedList.request.params.get('categoria')).toBe('CAFE');
+    expect(retriedList.request.params.get('page')).toBe('0');
+    expect(retriedList.request.params.get('size')).toBe(String(TAMANO_PAGINA));
     retriedList.flush(paginaVacia());
     await fixture.whenStable();
     fixture.detectChanges();

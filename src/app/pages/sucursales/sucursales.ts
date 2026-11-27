@@ -21,6 +21,7 @@ import { of } from 'rxjs';
 import { sucursalService } from '../../services/sucursal-service';
 import { PaginaSucursalesDTO, SucursalMiniDTO } from '../../models/sucursal';
 import { ApiErrors } from '../../http/api-errors';
+import { TAMANO_PAGINA } from '../../models/paginacion';
 import {
   DEBOUNCE_BUSQUEDA_MS,
   MIN_CARACTERES_BUSQUEDA,
@@ -36,8 +37,6 @@ interface SolicitudBusqueda {
   /** 1-based, como se muestra en la interfaz y en la URL. */
   readonly pagina: number;
 }
-
-const TAMANO_PAGINA = 12;
 
 @Component({
   selector: 'app-sucursales',

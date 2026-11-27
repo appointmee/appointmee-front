@@ -1,3 +1,4 @@
+import type { PaginaDTO } from './paginacion';
 import type { SucursalMiniDTO } from './sucursal';
 
 /** DTO devuelto por `/usuarios/email`. */
@@ -31,3 +32,6 @@ export interface UsuarioMiniAdminDTO {
   readonly estado: boolean;
   readonly fotoPerfil: string | null;
 }
+
+/** Respuesta de GET /usuarios/listar/paginado. */
+export type PaginaUsuariosAdminDTO = PaginaDTO<UsuarioMiniAdminDTO>;

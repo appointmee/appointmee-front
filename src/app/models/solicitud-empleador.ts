@@ -1,3 +1,5 @@
+import type { VistaPreviaDTO } from './paginacion';
+
 /** Estados reales expuestos por el backend (`EstadoSolicitud`). */
 export type EstadoSolicitudEmpleador = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
 
@@ -58,6 +60,9 @@ export interface SolicitudEmpleadorCrearDTO {
   readonly motivo: string;
   readonly ubicaciones: readonly UbicacionSolicitudEmpleadorDTO[];
 }
+
+/** Vista previa de `/solicitudes-empleador/propias`: últimas 3 solicitudes. */
+export type VistaPreviaSolicitudesEmpleadorDTO = VistaPreviaDTO<SolicitudEmpleadorMiniDTO>;
 
 /** Contrato de paginación del listado administrativo. */
 export interface PaginaSolicitudesEmpleadorDTO {

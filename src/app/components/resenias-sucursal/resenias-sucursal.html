@@ -44,7 +44,14 @@
   } @else if (error()) {
     <div class="resenias__estado resenias__estado--error" role="alert">
       <p class="resenias__estado-texto">{{ error() }}</p>
-      <button dsButton class="resenias__reintentar" type="button" (click)="reintentar()">Reintentar</button>
+      <button
+        dsButton
+        class="resenias__reintentar"
+        type="button"
+        [disabled]="reintentando()"
+        [attr.aria-busy]="reintentando()"
+        (click)="reintentar()"
+      >{{ reintentando() ? 'Reintentando…' : 'Reintentar' }}</button>
     </div>
   } @else if (!hayResenias()) {
     <div class="resenias__vacio">
@@ -81,12 +88,30 @@
           [routerLink]="['/sucursal', sucursalId(), 'resenias']"
           aria-label="Ver todas las reseñas de esta sucursal"
         >
-          Ver más
+          Ver todas las reseñas
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="m9 6 6 6-6 6" />
           </svg>
         </a>
       </div>
     }
+  }
+
+  @if (puedePaginarse()) {
+    <div class="resenias__paginacion">
+      <p class="resenias__paginacion-resumen" aria-live="polite">
+        {{ total() }} {{ total() === 1 ? 'reseña' : 'reseñas' }} · Página {{ pagina() + 1 }} de {{ totalPaginas() }}
+      </p>
+      <ds-pagination
+        [page]="pagina() + 1"
+        [totalPages]="totalPaginas()"
+        ariaLabel="Paginación de reseñas"
+        pageLabel="Página"
+        ofLabel="de"
+        prevLabel="Anterior"
+        nextLabel="Siguiente"
+        (pageChange)="cambiarPagina($event)"
+      />
+    </div>
   }
 </section>

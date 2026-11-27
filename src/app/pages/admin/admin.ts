@@ -27,11 +27,11 @@ import {
 } from '../../models/solicitud-empleador';
 import { solicitudEmpleadorService } from '../../services/solicitud-empleador-service';
 import { sucursalService } from '../../services/sucursal-service';
-import { SucursalMiniDTO } from '../../models/sucursal';
+import { PaginaSucursalesDTO, SucursalMiniDTO } from '../../models/sucursal';
 import { SucursalDetalleModal } from '../../components/sucursal-detalle-modal/sucursal-detalle-modal';
 import { Graficos } from '../graficos/graficos';
 import { usuarioService } from '../../services/usuario-service';
-import { UsuarioMiniAdminDTO, UsuarioPerfilDTO } from '../../models/usuario';
+import { PaginaUsuariosAdminDTO, UsuarioMiniAdminDTO, UsuarioPerfilDTO } from '../../models/usuario';
 import { DsModalComponent, DsPaginationComponent } from '../../shared/ui/misc/misc.component';
 import { fotoPerfilDe } from '../../shared/foto-perfil';
 
@@ -55,12 +55,21 @@ function esEstadoSolicitud(valor: string): valor is EstadoSolicitudEmpleador {
   return ESTADOS_SOLICITUD.some((estado) => estado === valor);
 }
 
+type ResultadoSucursales =
+  | { readonly ok: true; readonly pagina: PaginaSucursalesDTO }
+  | { readonly ok: false };
+
 type ResultadoUsuarios =
-  | { readonly ok: true; readonly usuarios: readonly UsuarioMiniAdminDTO[] }
+  | { readonly ok: true; readonly pagina: PaginaUsuariosAdminDTO }
   | { readonly ok: false };
 
 interface FiltrosUsuarios {
   readonly activo: boolean | undefined;
+}
+
+/** Evita pedir páginas que el backend ya informó que no existen. */
+function paginaValida(pagina: number, totalPaginas: number): number {
+  return Math.min(Math.max(0, pagina), Math.max(0, totalPaginas - 1));
 }
 
 @Component({
@@ -78,7 +87,6 @@ export class Administracion {
   private readonly recargar = new Subject<void>();
 
   private revision = 0;
-  private readonly elementosPorPagina = 10;
 
   /** Filtro y paginación del listado administrativo: los resuelve el backend. */
   protected readonly filtroEstadoSolicitud = signal<EstadoSolicitudEmpleador>('PENDIENTE');
@@ -101,7 +109,10 @@ export class Administracion {
   protected readonly erroresAccion = signal<ReadonlyMap<number, string>>(new Map());
   protected readonly exito = signal<string | null>(null);
   protected readonly sucursales = signal<readonly SucursalMiniDTO[]>([]);
-  protected readonly paginaSucursales = signal(1);
+  /** Paginación y totales que resuelve el backend; `pagina` es 0-based. */
+  protected readonly totalSucursales = signal(0);
+  protected readonly totalPaginasSucursales = signal(0);
+  protected readonly paginaSucursales = signal(0);
   protected readonly sucursalesCargando = signal(true);
   protected readonly sucursalesError = signal(false);
   protected readonly sucursalesReintentando = signal(false);
@@ -111,7 +122,9 @@ export class Administracion {
   private readonly recargarSucursales = new Subject<void>();
   private readonly filtrosUsuarios$ = new Subject<FiltrosUsuarios>();
   protected readonly usuarios = signal<readonly UsuarioMiniAdminDTO[]>([]);
-  protected readonly paginaUsuarios = signal(1);
+  protected readonly totalUsuarios = signal(0);
+  protected readonly totalPaginasUsuarios = signal(0);
+  protected readonly paginaUsuarios = signal(0);
   protected readonly fotosUsuariosFallidas = signal<ReadonlySet<number>>(new Set());
   protected readonly usuariosCargando = signal(true);
   protected readonly usuariosError = signal(false);
@@ -129,30 +142,6 @@ export class Administracion {
   protected readonly errorActivarUsuario = signal<string | null>(null);
   protected readonly usuarioActualizado = signal<string | null>(null);
 
-  protected readonly sucursalesFiltradas = computed(() => {
-    const termino = this.busquedaSucursal().trim().toLocaleLowerCase('es');
-    if (!termino) return this.sucursales();
-    return this.sucursales().filter((sucursal) =>
-      `${sucursal.nombre} ${sucursal.categoria} ${sucursal.id}`.toLocaleLowerCase('es').includes(termino),
-    );
-  });
-  protected readonly totalPaginasSucursales = computed(() =>
-    Math.max(1, Math.ceil(this.sucursalesFiltradas().length / this.elementosPorPagina)),
-  );
-  protected readonly sucursalesPaginadas = computed(() => {
-    const pagina = Math.min(this.paginaSucursales(), this.totalPaginasSucursales());
-    const inicio = (pagina - 1) * this.elementosPorPagina;
-    return this.sucursalesFiltradas().slice(inicio, inicio + this.elementosPorPagina);
-  });
-  protected readonly totalPaginasUsuarios = computed(() =>
-    Math.max(1, Math.ceil(this.usuarios().length / this.elementosPorPagina)),
-  );
-  protected readonly usuariosPaginados = computed(() => {
-    const pagina = Math.min(this.paginaUsuarios(), this.totalPaginasUsuarios());
-    const inicio = (pagina - 1) * this.elementosPorPagina;
-    return this.usuarios().slice(inicio, inicio + this.elementosPorPagina);
-  });
-
   protected readonly total = computed(() => this.totalSolicitudes());
   protected readonly etiquetaTotal = computed(() => {
     const total = this.totalSolicitudes();
@@ -169,22 +158,19 @@ export class Administracion {
         startWith(undefined as void),
         switchMap(() => {
           this.sucursalesCargando.set(this.sucursales().length === 0);
-          return this.sucursalesApi.listar(true).pipe(
-            map((sucursales) => ({ ok: true as const, sucursales })),
-            catchError(() => of({ ok: false as const })),
+          // Nunca se pide una página que el backend ya informó que no existe.
+          const pagina = paginaValida(this.paginaSucursales(), this.totalPaginasSucursales());
+          if (pagina !== this.paginaSucursales()) this.paginaSucursales.set(pagina);
+
+          const q = this.busquedaSucursal().trim() || null;
+          return this.sucursalesApi.listarPaginadoAdmin(q, pagina).pipe(
+            map((pagina): ResultadoSucursales => ({ ok: true, pagina })),
+            catchError(() => of<ResultadoSucursales>({ ok: false })),
           );
         }),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((resultado) => {
-        this.sucursalesCargando.set(false);
-        this.sucursalesReintentando.set(false);
-        this.sucursalesError.set(!resultado.ok);
-        if (resultado.ok) {
-          this.sucursales.set(resultado.sucursales);
-          this.paginaSucursales.set(1);
-        }
-      });
+      .subscribe((resultado) => this.aplicarSucursales(resultado));
 
     this.recargar
       .pipe(
@@ -214,25 +200,17 @@ export class Administracion {
         startWith(this.filtrosActuales()),
         switchMap((filtros) => {
           this.usuariosCargando.set(this.usuarios().length === 0);
-          const request = filtros.activo === undefined
-            ? this.usuariosApi.listarAdmin()
-            : this.usuariosApi.filtrarAdmin({ activo: filtros.activo });
-          return request.pipe(
-            map((usuarios): ResultadoUsuarios => ({ ok: true, usuarios })),
+          const pagina = paginaValida(this.paginaUsuarios(), this.totalPaginasUsuarios());
+          if (pagina !== this.paginaUsuarios()) this.paginaUsuarios.set(pagina);
+
+          return this.usuariosApi.listarPaginadoAdmin(filtros, pagina).pipe(
+            map((pagina): ResultadoUsuarios => ({ ok: true, pagina })),
             catchError(() => of<ResultadoUsuarios>({ ok: false })),
           );
         }),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((resultado) => {
-        this.usuariosCargando.set(false);
-        this.usuariosReintentando.set(false);
-        this.usuariosError.set(!resultado.ok);
-        if (resultado.ok) {
-          this.usuarios.set(resultado.usuarios);
-          this.paginaUsuarios.set(1);
-        }
-      });
+      .subscribe((resultado) => this.aplicarUsuarios(resultado));
   }
 
   protected detalleDe(id: number): SolicitudEmpleadorDetalleDTO | null {
@@ -240,16 +218,28 @@ export class Administracion {
   }
 
   protected buscarSucursales(valor: string): void {
+    if (valor === this.busquedaSucursal()) return;
     this.busquedaSucursal.set(valor);
-    this.paginaSucursales.set(1);
+    this.paginaSucursales.set(0);
+    this.recargarSucursales.next();
   }
 
-  protected cambiarPaginaSucursales(pagina: number): void {
-    this.paginaSucursales.set(pagina);
+  /** `ds-pagination` es 1-based; la API usa páginas 0-based. */
+  protected cambiarPaginaSucursales(paginaVisible: number): void {
+    const destino = paginaValida(paginaVisible - 1, this.totalPaginasSucursales());
+    if (destino === this.paginaSucursales()) return;
+
+    this.paginaSucursales.set(destino);
+    this.recargarSucursales.next();
   }
 
-  protected cambiarPaginaUsuarios(pagina: number): void {
-    this.paginaUsuarios.set(pagina);
+  /** `ds-pagination` es 1-based; la API usa páginas 0-based. */
+  protected cambiarPaginaUsuarios(paginaVisible: number): void {
+    const destino = paginaValida(paginaVisible - 1, this.totalPaginasUsuarios());
+    if (destino === this.paginaUsuarios()) return;
+
+    this.paginaUsuarios.set(destino);
+    this.filtrosUsuarios$.next(this.filtrosActuales());
   }
 
   /** Cambia el estado consultado y vuelve siempre a la primera página (0). */
@@ -276,9 +266,13 @@ export class Administracion {
     this.seccionActiva.update((actual) => (actual === seccion ? null : seccion));
   }
 
+  /** Cambia el estado consultado y vuelve siempre a la primera página (0). */
   protected cambiarFiltroUsuario(valor: string): void {
-    this.filtroEstadoUsuario.set(valor);
-    this.paginaUsuarios.set(1);
+    const estado = valor === 'activos' || valor === 'inactivos' ? valor : 'todos';
+    if (estado === this.filtroEstadoUsuario() && this.paginaUsuarios() === 0) return;
+
+    this.filtroEstadoUsuario.set(estado);
+    this.paginaUsuarios.set(0);
     this.filtrosUsuarios$.next(this.filtrosActuales());
   }
 
@@ -427,9 +421,12 @@ export class Administracion {
   }
 
   protected quitarSucursalEliminada(id: number): void {
-    this.sucursales.update((actuales) => actuales.filter((sucursal) => sucursal.id !== id));
-    this.paginaSucursales.set(1);
     this.sucursalDetalleId.set(null);
+    // La baja ya se confirmó en el backend: se recarga la página actual con sus filtros
+    // para que el listado y sus totales vuelvan a surgir de la base de datos.
+    if (this.sucursales().some((sucursal) => sucursal.id === id)) {
+      this.recargarSucursales.next();
+    }
   }
 
   protected estadoDe(id: number): EstadoSolicitudEmpleador | null {
@@ -554,6 +551,32 @@ export class Administracion {
       siguiente.delete(id);
       return siguiente;
     });
+  }
+
+  private aplicarSucursales(resultado: ResultadoSucursales): void {
+    this.sucursalesCargando.set(false);
+    this.sucursalesReintentando.set(false);
+    this.sucursalesError.set(!resultado.ok);
+    if (!resultado.ok) return;
+
+    const { content, totalElements, totalPages, number } = resultado.pagina;
+    this.sucursales.set(content);
+    this.totalSucursales.set(totalElements);
+    this.totalPaginasSucursales.set(totalPages);
+    this.paginaSucursales.set(paginaValida(number, totalPages));
+  }
+
+  private aplicarUsuarios(resultado: ResultadoUsuarios): void {
+    this.usuariosCargando.set(false);
+    this.usuariosReintentando.set(false);
+    this.usuariosError.set(!resultado.ok);
+    if (!resultado.ok) return;
+
+    const { content, totalElements, totalPages, number } = resultado.pagina;
+    this.usuarios.set(content);
+    this.totalUsuarios.set(totalElements);
+    this.totalPaginasUsuarios.set(totalPages);
+    this.paginaUsuarios.set(paginaValida(number, totalPages));
   }
 
   private aplicarLista(resultado: ResultadoLista): void {

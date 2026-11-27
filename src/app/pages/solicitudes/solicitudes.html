@@ -122,7 +122,7 @@
             </div>
           } @else {
             <ul class="lista" aria-live="polite">
-              @for (solicitud of visibles(); track solicitud.id) {
+              @for (solicitud of solicitudes(); track solicitud.id) {
                 <li>
                   <app-solicitud-empleador-card
                     [solicitud]="solicitud"
@@ -247,7 +247,7 @@
               </div>
             } @else {
               <app-solicitud-empleado-lista
-                [solicitudes]="visiblesEmpleo()"
+                [solicitudes]="solicitudesEmpleo()"
                 tipo="recibida"
                 (solicitudResuelta)="onSolicitudEmpleoResuelta($event)"
               />

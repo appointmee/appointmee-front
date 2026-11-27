@@ -1,10 +1,8 @@
-import { DsButtonComponent } from '../../shared/ui/button/button.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -14,20 +12,23 @@ import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 
 import { SolicitudEmpleadorCard } from '../../components/solicitud-empleador-card/solicitud-empleador-card';
 import { mensajeErrorSolicitud } from '../../http/solicitud-empleador-errors';
+import { PaginaDTO, TAMANO_PAGINA } from '../../models/paginacion';
 import {
   EstadoSolicitudEmpleador,
   SolicitudEmpleadorDetalleDTO,
   SolicitudEmpleadorMiniDTO,
 } from '../../models/solicitud-empleador';
+import { DsButtonComponent } from '../../shared/ui/button/button.component';
+import { DsPaginationComponent } from '../../shared/ui/misc/misc.component';
 import { solicitudEmpleadorService } from '../../services/solicitud-empleador-service';
 
 type ResultadoLista =
-  | { readonly ok: true; readonly solicitudes: readonly SolicitudEmpleadorMiniDTO[] }
+  | { readonly ok: true; readonly pagina: PaginaDTO<SolicitudEmpleadorMiniDTO> }
   | { readonly ok: false; readonly error: HttpErrorResponse };
 
 @Component({
   selector: 'app-solicitudes-historial',
-  imports: [DsButtonComponent, RouterLink, SolicitudEmpleadorCard],
+  imports: [DsButtonComponent, DsPaginationComponent, RouterLink, SolicitudEmpleadorCard],
   templateUrl: './solicitudes-historial.html',
   styleUrl: './solicitudes-historial.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,16 +49,26 @@ export class SolicitudesHistorial {
   protected readonly cargandoDetalle = signal<ReadonlySet<number>>(new Set());
   protected readonly erroresDetalle = signal<ReadonlyMap<number, string>>(new Map());
 
-  protected readonly total = computed(() => this.solicitudes().length);
+  /** Página 0-based pedida al backend y metadatos que él informa. */
+  protected readonly pagina = signal(0);
+  protected readonly totalPaginas = signal(0);
+  protected readonly total = signal(0);
+  protected readonly tamanoPagina = TAMANO_PAGINA;
 
   constructor() {
     this.recargar
       .pipe(
         startWith(undefined as void),
         switchMap(() => {
-          this.cargando.set(this.solicitudes().length === 0);
-          return this.api.listarPropias().pipe(
-            map((solicitudes): ResultadoLista => ({ ok: true, solicitudes })),
+          this.cargando.set(true);
+
+          // Nunca se pide una página que el backend ya informó que no existe.
+          const ultimaPagina = Math.max(0, this.totalPaginas() - 1);
+          const page = Math.min(this.pagina(), ultimaPagina);
+          if (page !== this.pagina()) this.pagina.set(page);
+
+          return this.api.listarPropiasPaginado(page).pipe(
+            map((pagina): ResultadoLista => ({ ok: true, pagina })),
             catchError((error: HttpErrorResponse) => of<ResultadoLista>({ ok: false, error })),
           );
         }),
@@ -110,6 +121,17 @@ export class SolicitudesHistorial {
   protected reintentar(): void {
     if (this.reintentando()) return;
     this.reintentando.set(true);
+    this.pagina.set(0);
+    this.recargar.next();
+  }
+
+  /** `ds-pagination` es 1-based; el backend usa páginas 0-based. */
+  protected cambiarPagina(paginaVisible: number): void {
+    const ultimaPagina = Math.max(0, this.totalPaginas() - 1);
+    const destino = Math.min(Math.max(0, paginaVisible - 1), ultimaPagina);
+    if (destino === this.pagina()) return;
+
+    this.pagina.set(destino);
     this.recargar.next();
   }
 
@@ -128,8 +150,14 @@ export class SolicitudesHistorial {
       return;
     }
 
+    const { content, totalElements, totalPages, number } = resultado.pagina;
+    const paginaSegura = Math.min(Math.max(0, number), Math.max(0, totalPages - 1));
+
     this.error.set(null);
-    this.solicitudes.set(resultado.solicitudes);
+    this.solicitudes.set(content);
+    this.total.set(totalElements);
+    this.totalPaginas.set(totalPages);
+    this.pagina.set(paginaSegura);
     this.detalles.set(new Map());
     this.erroresDetalle.set(new Map());
     this.cargandoDetalle.set(new Set());

@@ -1,3 +1,4 @@
+import type { PaginaDTO } from './paginacion';
 import { UsuarioResponseDTO } from './usuario';
 
 export interface DisponibilidadDTO {
@@ -34,6 +35,9 @@ export interface TurnoMiniDTO {
   readonly estadoTurno: EstadoTurno;
   readonly puntuacion: number | null;
 }
+
+/** Respuesta de los listados paginados de turnos. */
+export type PaginaTurnosDTO = PaginaDTO<TurnoMiniDTO>;
 
 export interface UsuarioMiniDTO {
   readonly nombre: string;

@@ -1,8 +1,13 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { ReseniaDTO, ReseniaPayload } from '../models/resenia';
+import {
+  PaginaReseniasDTO,
+  ReseniaDTO,
+  ReseniaPayload,
+  VistaPreviaReseniasDTO,
+} from '../models/resenia';
 import { backendService } from './backend-service';
 import { SIN_MANEJO_GLOBAL_DE_ERRORES } from '../http/error-handling-context';
 
@@ -13,11 +18,25 @@ export class reseniaService {
   private readonly api = inject(backendService);
   private readonly http = inject(HttpClient);
 
-  //GET
-  listarPorSucursal(sucursalId: number): Observable<ReseniaDTO[]> {
-    return this.http.get<ReseniaDTO[]>(
+  //GET: últimas 5 reseñas para el detalle de la sucursal.
+  listarPorSucursal(sucursalId: number): Observable<VistaPreviaReseniasDTO> {
+    return this.http.get<VistaPreviaReseniasDTO>(
       `${this.api.baseUrl}/sucursales/${sucursalId}/resenias`,
       { context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true) },
+    );
+  }
+
+  /** Historial completo: 10 reseñas por página (page 0-based). */
+  listarPaginadoPorSucursal(
+    sucursalId: number,
+    page: number,
+  ): Observable<PaginaReseniasDTO> {
+    return this.http.get<PaginaReseniasDTO>(
+      `${this.api.baseUrl}/sucursales/${sucursalId}/resenias/paginado`,
+      {
+        params: new HttpParams().set('page', String(page)),
+        context: new HttpContext().set(SIN_MANEJO_GLOBAL_DE_ERRORES, true),
+      },
     );
   }
 
