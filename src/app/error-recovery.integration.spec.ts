@@ -9,6 +9,7 @@ import { ErrorPage } from './pages/error/error';
 import { Home } from './pages/home/home';
 import { LoginPage } from './pages/login/login';
 import { NotFoundPage } from './pages/no-encontrada/no-encontrada';
+import { SucursalesDescubrimiento } from './pages/sucursales-descubrimiento/sucursales-descubrimiento';
 import { Sucursales } from './pages/sucursales/sucursales';
 import { NavigationHistory } from './navigation-history';
 import { Reporte404 } from './pages/no-encontrada/reporte-404';
@@ -50,7 +51,8 @@ describe('US-ERR-03 recovery flows', () => {
       providers: [
         provideRouter([
           { path: '', component: Home },
-          { path: 'sucursales', component: Sucursales },
+          { path: 'sucursales', component: SucursalesDescubrimiento },
+          { path: 'listado-sucursales', component: Sucursales },
           { path: 'error', component: ErrorPage },
           { path: 'login', component: LoginPage },
           { path: '**', component: NotFoundPage },
@@ -84,7 +86,7 @@ describe('US-ERR-03 recovery flows', () => {
   }
 
   it('retries a 503 listing load once with filters, showing loading and keeping the app mounted', async () => {
-    const origin = '/sucursales?busqueda=Flores&categoria=CAFE';
+    const origin = '/listado-sucursales?busqueda=Flores&categoria=CAFE';
     await router.navigateByUrl(origin);
     fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);
@@ -128,9 +130,9 @@ describe('US-ERR-03 recovery flows', () => {
   it('returns to the previous internal route after a failure instead of looping to its failed origin', async () => {
     await router.navigateByUrl('/');
     await fixture.whenStable();
-    // La home carga sus secciones de descubrimiento al inicializarse.
+    // La Home ya no carga secciones; se drenan peticiones pendientes del shell.
     vaciarPendientes();
-    await router.navigateByUrl('/sucursales');
+    await router.navigateByUrl('/listado-sucursales');
     fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush([]);
     fixture.detectChanges();
@@ -145,7 +147,7 @@ describe('US-ERR-03 recovery flows', () => {
       .click();
     await fixture.whenStable();
     expect(router.url).toBe('/');
-    // Al volver a la home se vuelven a cargar sus secciones.
+    // Al volver a la Home no quedan peticiones de descubrimiento pendientes.
     vaciarPendientes();
   });
 
@@ -153,7 +155,7 @@ describe('US-ERR-03 recovery flows', () => {
     TestBed.inject(authService);
     localStorage.setItem('token', 'expired-token');
 
-    const origin = '/sucursales?busqueda=Flores&categoria=CAFE';
+    const origin = '/listado-sucursales?busqueda=Flores&categoria=CAFE';
     await router.navigateByUrl(origin);
     fixture.detectChanges();
     backend.expectOne((request) => request.url.endsWith('/sucursales/categorias')).flush(['CAFE']);

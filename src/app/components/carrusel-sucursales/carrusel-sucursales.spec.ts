@@ -46,12 +46,26 @@ describe('CarruselSucursales', () => {
     );
   });
 
-  it('muestra «Ver todas» sólo cuando se habilita y apunta al listado', () => {
+  it('muestra «Ver todas» sólo cuando se habilita y apunta al listado completo', () => {
     const fixture = crear(true);
     const enlace = fixture.nativeElement.querySelector('.carrusel__ver-todas') as HTMLAnchorElement;
 
-    expect(enlace.getAttribute('href')).toBe('/sucursales');
+    expect(enlace.getAttribute('href')).toBe('/listado-sucursales');
     expect(enlace.textContent).toContain('Ver todas las sucursales');
+  });
+
+  it('permite personalizar la ruta de «Ver todas»', () => {
+    const fixture = TestBed.createComponent(CarruselSucursales);
+    fixture.componentRef.setInput('id', 'mejores');
+    fixture.componentRef.setInput('titulo', 'Las mejores de AppointMee');
+    fixture.componentRef.setInput('sucursales', [SUCURSAL]);
+    fixture.componentRef.setInput('verTodas', true);
+    fixture.componentRef.setInput('rutaVerTodas', '/sucursales');
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('.carrusel__ver-todas').getAttribute('href'),
+    ).toBe('/sucursales');
   });
 
   it('desplaza el riel con las flechas y actualiza su estado disabled', () => {

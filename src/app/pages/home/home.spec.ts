@@ -32,7 +32,7 @@ function recomendacionesVacias(): RecomendacionesSucursalesDTO {
   };
 }
 
-describe('Home como pantalla de descubrimiento sin filtros (SCRUM-364)', () => {
+describe('Home con su estructura original y sin secciones de descubrimiento (SCRUM-364)', () => {
   let router: Router;
   let filtrar: ReturnType<typeof vi.fn>;
   let listar: ReturnType<typeof vi.fn>;
@@ -99,7 +99,7 @@ describe('Home como pantalla de descubrimiento sin filtros (SCRUM-364)', () => {
     expect(fixture.nativeElement.querySelector('.hero__visual .hero-card')).toBeNull();
   });
 
-  it('no ofrece buscador ni filtros en la pantalla de descubrimiento', () => {
+  it('no ofrece buscador ni filtros en el Home', () => {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
     const raiz = fixture.nativeElement as HTMLElement;
@@ -110,7 +110,7 @@ describe('Home como pantalla de descubrimiento sin filtros (SCRUM-364)', () => {
     expect(filtrar).not.toHaveBeenCalled();
   });
 
-  it('mantiene «Conocer sucursales» como entrada al listado completo', () => {
+  it('mantiene «Conocer sucursales» como entrada a la pantalla de descubrimiento', () => {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
 
@@ -120,122 +120,6 @@ describe('Home como pantalla de descubrimiento sin filtros (SCRUM-364)', () => {
     const conocer = enlaces.find((enlace) => enlace.textContent?.includes('Conocer sucursales'));
 
     expect(conocer?.getAttribute('href')).toBe('/sucursales');
-  });
-
-  describe('secciones horizontales de descubrimiento (SCRUM-364)', () => {
-    function sucursal(id: number, nombre: string): SucursalMiniDTO {
-      return {
-        id,
-        nombre,
-        categoria: 'PELUQUERIA',
-        fotoPerfil: null,
-        puntuacion: 4.5,
-        cantidadPuntuaciones: 8,
-      };
-    }
-
-    it('muestra las seis secciones en el orden acordado, cada una con su carrusel', () => {
-      recomendaciones.mockReturnValue(
-        of({
-          mejores: [sucursal(1, 'Mejor')],
-          masDemandadas: [sucursal(2, 'Demandada')],
-          nuevas: [sucursal(3, 'Nueva')],
-          vistasRecientes: [sucursal(4, 'Visitada')],
-          paraVos: [sucursal(5, 'Para vos')],
-          todas: [sucursal(6, 'Todas')],
-        }),
-      );
-
-      const fixture = TestBed.createComponent(Home);
-      fixture.detectChanges();
-
-      const titulos = Array.from(
-        fixture.nativeElement.querySelectorAll('.descubrir .carrusel__titulo'),
-      ) as HTMLElement[];
-      expect(titulos.map((titulo) => titulo.textContent?.trim())).toEqual([
-        'Las mejores de AppointMee',
-        'Las más demandadas',
-        'Nuevas en AppointMee',
-        'Visto recientemente',
-        'Recomendado para vos',
-        'Todas las sucursales',
-      ]);
-      expect(fixture.nativeElement.querySelectorAll('.carrusel__track')).toHaveLength(6);
-      expect(fixture.nativeElement.querySelectorAll('.carrusel__card')).toHaveLength(6);
-      expect(recomendaciones).toHaveBeenCalledOnce();
-    });
-
-    it('oculta las secciones vacías y ofrece «Ver todas» sólo en la preview', () => {
-      recomendaciones.mockReturnValue(
-        of({
-          ...recomendacionesVacias(),
-          mejores: [sucursal(1, 'Mejor')],
-          todas: [sucursal(6, 'Todas')],
-        }),
-      );
-
-      const fixture = TestBed.createComponent(Home);
-      fixture.detectChanges();
-
-      expect(fixture.nativeElement.querySelectorAll('.carrusel')).toHaveLength(2);
-      expect(fixture.nativeElement.textContent).toContain('Las mejores de AppointMee');
-      expect(fixture.nativeElement.textContent).not.toContain('Visto recientemente');
-      const verTodas = fixture.nativeElement.querySelector('.carrusel__ver-todas');
-      expect(verTodas.getAttribute('href')).toBe('/sucursales');
-      expect(verTodas.textContent).toContain('Ver todas');
-    });
-
-    it('muestra skeletons accesibles mientras cargan las recomendaciones', () => {
-      recomendaciones.mockReturnValue(new Subject<RecomendacionesSucursalesDTO>());
-
-      const fixture = TestBed.createComponent(Home);
-      fixture.detectChanges();
-
-      expect(fixture.nativeElement.querySelector('.descubrir__skeleton[aria-busy="true"]')).toBeTruthy();
-      expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain(
-        'Cargando recomendaciones',
-      );
-      expect(fixture.nativeElement.querySelectorAll('.descubrir__skeleton-card')).toHaveLength(8);
-    });
-
-    it('muestra estado vacío con salida al listado cuando todas las secciones están vacías', () => {
-      const fixture = TestBed.createComponent(Home);
-      fixture.detectChanges();
-
-      expect(fixture.nativeElement.querySelector('.descubrir__estado[role="status"]')).toBeTruthy();
-      expect(fixture.nativeElement.textContent).toContain(
-        'Por ahora no hay sucursales para mostrar',
-      );
-      expect(
-        fixture.nativeElement.querySelector('.descubrir__estado a').getAttribute('href'),
-      ).toBe('/sucursales');
-    });
-
-    it('muestra error inline, bloquea el doble reintento y se recupera con datos', () => {
-      const respuesta = new Subject<RecomendacionesSucursalesDTO>();
-      recomendaciones
-        .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 0 })))
-        .mockReturnValue(respuesta);
-
-      const fixture = TestBed.createComponent(Home);
-      fixture.detectChanges();
-
-      const alerta = fixture.nativeElement.querySelector('.descubrir__estado[role="alert"]');
-      expect(alerta.textContent).toContain('No pudimos cargar las recomendaciones');
-      const reintentar = alerta.querySelector('button') as HTMLButtonElement;
-      expect(reintentar.disabled).toBe(false);
-
-      reintentar.click();
-      fixture.detectChanges();
-      expect(reintentar.disabled).toBe(true);
-      expect(reintentar.textContent).toContain('Reintentando');
-      reintentar.click();
-      expect(recomendaciones).toHaveBeenCalledTimes(2);
-
-      respuesta.next({ ...recomendacionesVacias(), mejores: [sucursal(1, 'Mejor')] });
-      fixture.detectChanges();
-      expect(fixture.nativeElement.querySelector('.carrusel__card')).toBeTruthy();
-    });
   });
 
   describe.skip('listado de sucursales destacado en la home (US-HOME-05) - eliminado', () => {

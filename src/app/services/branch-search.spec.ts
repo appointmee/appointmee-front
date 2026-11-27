@@ -37,6 +37,7 @@ describe('Navegación de sucursales desde Home', () => {
         provideRouter([
           { path: '', component: EmptyPage },
           { path: 'sucursales', component: EmptyPage },
+          { path: 'listado-sucursales', component: EmptyPage },
         ]),
         {
           provide: authService,
@@ -59,7 +60,7 @@ describe('Navegación de sucursales desde Home', () => {
 
   afterEach(() => vi.useRealTimers());
 
-  it('envía la búsqueda del hero a Sucursales después del debounce', async () => {
+  it('envía la búsqueda del hero al listado completo después del debounce', async () => {
     await router.navigateByUrl('/');
     vi.useFakeTimers();
 
@@ -68,7 +69,7 @@ describe('Navegación de sucursales desde Home', () => {
     expect(router.url).toBe('/');
 
     await vi.advanceTimersByTimeAsync(1);
-    await vi.waitFor(() => expect(router.url).toBe('/sucursales?busqueda=Centro'));
+    await vi.waitFor(() => expect(router.url).toBe('/listado-sucursales?busqueda=Centro'));
   });
 
   it('envía Enter inmediatamente sin duplicar la navegación diferida', async () => {
@@ -78,7 +79,7 @@ describe('Navegación de sucursales desde Home', () => {
 
     search.search.setValue('  Centro  ');
     search.submit();
-    await vi.waitFor(() => expect(router.url).toBe('/sucursales?busqueda=Centro'));
+    await vi.waitFor(() => expect(router.url).toBe('/listado-sucursales?busqueda=Centro'));
     await vi.advanceTimersByTimeAsync(350);
 
     expect(navigate).toHaveBeenCalledTimes(1);
@@ -96,11 +97,11 @@ describe('Navegación de sucursales desde Home', () => {
   });
 
   it('limpia el término y conserva la categoría existente', async () => {
-    await router.navigateByUrl('/sucursales?busqueda=Centro&categoria=SPA');
+    await router.navigateByUrl('/listado-sucursales?busqueda=Centro&categoria=SPA');
     search.search.setValue('Centro', { emitEvent: false });
 
     search.clear();
-    await vi.waitFor(() => expect(router.url).toBe('/sucursales?categoria=SPA'));
+    await vi.waitFor(() => expect(router.url).toBe('/listado-sucursales?categoria=SPA'));
 
     expect(search.search.value).toBe('');
     expect(search.term()).toBe('');
@@ -117,7 +118,7 @@ describe('Navegación de sucursales desde Home', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Sucursales disponibles');
   });
 
-  it('mantiene las acciones del hero y Conocer sucursales apunta al listado', async () => {
+  it('mantiene las acciones del hero y Conocer sucursales apunta al descubrimiento', async () => {
     await router.navigateByUrl('/');
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
@@ -132,13 +133,13 @@ describe('Navegación de sucursales desde Home', () => {
     expect(actions[1]?.getAttribute('href')).toBe('/sucursales');
   });
 
-  it('redirige URLs antiguas de Home con filtros hacia Sucursales', async () => {
+  it('redirige URLs antiguas de Home con filtros hacia el listado completo', async () => {
     await router.navigateByUrl('/?busqueda=Centro&categoria=SPA');
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
 
     await vi.waitFor(() =>
-      expect(router.url).toBe('/sucursales?busqueda=Centro&categoria=SPA'),
+      expect(router.url).toBe('/listado-sucursales?busqueda=Centro&categoria=SPA'),
     );
   });
 

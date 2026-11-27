@@ -15,6 +15,7 @@ describe('NavigationHistory', () => {
         provideRouter([
           { path: 'home', component: TestRoute },
           { path: 'sucursales', component: TestRoute },
+          { path: 'listado-sucursales', component: TestRoute },
           { path: 'error', component: TestRoute },
         ]),
       ],
@@ -23,7 +24,7 @@ describe('NavigationHistory', () => {
     const router = TestBed.inject(Router);
 
     await router.navigateByUrl('/home');
-    await router.navigateByUrl('/sucursales?busqueda=Flores');
+    await router.navigateByUrl('/listado-sucursales?busqueda=Flores');
     await router.navigateByUrl('/error', { replaceUrl: true });
     expect(history.backTarget('/error')).toBe('/home');
 

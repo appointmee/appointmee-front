@@ -46,7 +46,7 @@ describe('Sucursales', () => {
       imports: [Sucursales],
       providers: [
         provideRouter([
-          { path: 'sucursales', component: EmptyPage },
+          { path: 'listado-sucursales', component: EmptyPage },
           { path: 'sucursal/:id', component: EmptyPage },
         ]),
         { provide: sucursalService, useValue: { listarPaginado, categorias } },
@@ -58,7 +58,7 @@ describe('Sucursales', () => {
 
   afterEach(() => vi.useRealTimers());
 
-  async function create(url = '/sucursales') {
+  async function create(url = '/listado-sucursales') {
     await router.navigateByUrl(url);
     const fixture = TestBed.createComponent(Sucursales);
     fixture.detectChanges();
@@ -66,13 +66,13 @@ describe('Sucursales', () => {
   }
 
   it('combina busqueda y categoria recibidas por query params', async () => {
-    await create('/sucursales?busqueda=Centro&categoria=SPA');
+    await create('/listado-sucursales?busqueda=Centro&categoria=SPA');
 
     expect(listarPaginado).toHaveBeenCalledWith('SPA', 'Centro', 0, 12, false);
   });
 
   it('envía la página de la URL convertida a base cero', async () => {
-    await create('/sucursales?pagina=3');
+    await create('/listado-sucursales?pagina=3');
 
     expect(listarPaginado).toHaveBeenCalledWith(null, null, 2, 12, false);
   });
@@ -80,7 +80,7 @@ describe('Sucursales', () => {
   it('espera las categorías antes de buscar con los filtros iniciales de la URL', async () => {
     const categoriasPendientes = new Subject<string[]>();
     categorias.mockReturnValue(categoriasPendientes);
-    const fixture = await create('/sucursales?busqueda=Flores&categoria=CAFE');
+    const fixture = await create('/listado-sucursales?busqueda=Flores&categoria=CAFE');
 
     expect(listarPaginado).not.toHaveBeenCalled();
     expect(fixture.nativeElement.querySelector('[aria-busy="true"]')).toBeTruthy();
@@ -122,14 +122,14 @@ describe('Sucursales', () => {
   });
 
   it('ignora una categoría inválida sin enviarla al backend', async () => {
-    const fixture = await create('/sucursales?categoria=INEXISTENTE');
+    const fixture = await create('/listado-sucursales?categoria=INEXISTENTE');
     expect(listarPaginado).toHaveBeenCalledWith(null, null, 0, 12, false);
     expect(fixture.nativeElement.querySelector('.categoria-chip').getAttribute('aria-pressed')).toBe('true');
   });
 
   it('mantiene el listado y Todas si falla la API de categorías', async () => {
     categorias.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
-    const fixture = await create('/sucursales?categoria=SPA');
+    const fixture = await create('/listado-sucursales?categoria=SPA');
     fixture.detectChanges();
     expect(listarPaginado).toHaveBeenCalledWith(null, null, 0, 12, false);
     expect(fixture.nativeElement.querySelectorAll('.categoria-chip')).toHaveLength(1);
@@ -138,7 +138,7 @@ describe('Sucursales', () => {
   });
 
   it('anuncia los resultados y la categoría seleccionada', async () => {
-    const fixture = await create('/sucursales?categoria=SPA');
+    const fixture = await create('/listado-sucursales?categoria=SPA');
     fixture.detectChanges();
     const anuncio = fixture.nativeElement.querySelector('[aria-live="polite"][aria-atomic="true"]');
     expect(anuncio.textContent).toContain('1 sucursal encontrada');
@@ -146,7 +146,7 @@ describe('Sucursales', () => {
   });
 
   it('sincroniza el texto buscado con la URL y conserva la categoria', async () => {
-    const fixture = await create('/sucursales?categoria=SPA');
+    const fixture = await create('/listado-sucursales?categoria=SPA');
     vi.useFakeTimers();
     const input = fixture.nativeElement.querySelector('.search__input') as HTMLInputElement;
 
@@ -161,7 +161,7 @@ describe('Sucursales', () => {
   });
 
   it('sincroniza la categoria con la URL sin perder la busqueda', async () => {
-    const fixture = await create('/sucursales?busqueda=Centro');
+    const fixture = await create('/listado-sucursales?busqueda=Centro');
     const spa = Array.from(
       fixture.nativeElement.querySelectorAll('.categoria-chip') as NodeListOf<HTMLButtonElement>,
     ).find((button) => button.textContent?.trim() === 'Spa');
@@ -201,7 +201,7 @@ describe('Sucursales', () => {
 
   it('muestra el estado vacío sin eliminar los controles', async () => {
     listarPaginado.mockReturnValue(of(pagina([], 0, 0)));
-    const fixture = await create('/sucursales?busqueda=Inexistente');
+    const fixture = await create('/listado-sucursales?busqueda=Inexistente');
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.estado__vacio')).toBeTruthy();
@@ -220,7 +220,7 @@ describe('Sucursales', () => {
         throwError(() => new HttpErrorResponse({ status: 0, statusText: 'Offline' })),
       )
       .mockReturnValueOnce(of(pagina()));
-    const fixture = await create('/sucursales?busqueda=Centro&categoria=SPA');
+    const fixture = await create('/listado-sucursales?busqueda=Centro&categoria=SPA');
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
@@ -232,7 +232,7 @@ describe('Sucursales', () => {
   });
 
   it('busca IDs numéricos en el backend paginado sin listar todo', async () => {
-    const fixture = await create('/sucursales?busqueda=1&categoria=SPA');
+    const fixture = await create('/listado-sucursales?busqueda=1&categoria=SPA');
     fixture.detectChanges();
 
     expect(listarPaginado).toHaveBeenCalledWith('SPA', '1', 0, 12, false);
@@ -257,7 +257,7 @@ describe('Sucursales', () => {
 
   it('muestra paginación con flechas deshabilitadas en los extremos', async () => {
     listarPaginado.mockReturnValue(of(pagina([CENTRO], 30, 3, 2)));
-    const fixture = await create('/sucursales?pagina=3');
+    const fixture = await create('/listado-sucursales?pagina=3');
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('ds-pagination .ds-pagination__prev')).toBeTruthy();
@@ -284,7 +284,7 @@ describe('Sucursales', () => {
 
   it('permite navegar directamente a una página y conserva los filtros', async () => {
     listarPaginado.mockReturnValue(of(pagina([CENTRO], 30, 3, 0)));
-    const fixture = await create('/sucursales?categoria=SPA');
+    const fixture = await create('/listado-sucursales?categoria=SPA');
     const input = fixture.nativeElement.querySelector(
       'ds-pagination input[type="number"]',
     ) as HTMLInputElement;
@@ -301,7 +301,7 @@ describe('Sucursales', () => {
 
   it('la navegación directa sigue disponible desde la última página', async () => {
     listarPaginado.mockReturnValue(of(pagina([CENTRO], 30, 3, 2)));
-    const fixture = await create('/sucursales?pagina=3');
+    const fixture = await create('/listado-sucursales?pagina=3');
     const botonIr = fixture.nativeElement.querySelector(
       'ds-pagination .ds-pagination__go',
     ) as HTMLButtonElement;
@@ -320,7 +320,7 @@ describe('Sucursales', () => {
 
   it('cambiar un filtro vuelve a la primera página y limpia el parámetro', async () => {
     listarPaginado.mockReturnValue(of(pagina([CENTRO], 30, 3, 0)));
-    const fixture = await create('/sucursales?pagina=3');
+    const fixture = await create('/listado-sucursales?pagina=3');
     const spa = Array.from(
       fixture.nativeElement.querySelectorAll('.categoria-chip') as NodeListOf<HTMLButtonElement>,
     ).find((button) => button.textContent?.trim() === 'Spa');
