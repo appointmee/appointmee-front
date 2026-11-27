@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { Observable, Subject, of, throwError } from 'rxjs';
 import { ApiErrors } from '../../http/api-errors';
-import { SucursalMiniDTO } from '../../models/sucursal';
+import { PaginaSucursalesDTO, SucursalMiniDTO } from '../../models/sucursal';
 import { sucursalService } from '../../services/sucursal-service';
 import { Sucursales } from './sucursales';
 
@@ -20,17 +20,26 @@ const CENTRO: SucursalMiniDTO = {
   cantidadPuntuaciones: 10,
 };
 
+function pagina(
+  content: readonly SucursalMiniDTO[] = [CENTRO],
+  totalElements = content.length,
+  totalPages = 1,
+  number = 0,
+  size = 12,
+): PaginaSucursalesDTO {
+  return { content: [...content], totalElements, totalPages, number, size };
+}
+
 describe('Sucursales', () => {
   let router: Router;
-  let filtrar: ReturnType<typeof vi.fn>;
-  let listar: ReturnType<typeof vi.fn>;
+  let listarPaginado: ReturnType<typeof vi.fn>;
   let categorias: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    filtrar = vi.fn<(categoria?: string | null, nombre?: string | null) => Observable<SucursalMiniDTO[]>>(
-      () => of([CENTRO]),
-    );
-    listar = vi.fn<() => Observable<SucursalMiniDTO[]>>(() => of([CENTRO]));
+    listarPaginado = vi.fn<
+      (categoria: string | null, nombre: string | null, page: number, size: number)
+        => Observable<PaginaSucursalesDTO>
+    >(() => of(pagina()));
     categorias = vi.fn<() => Observable<string[]>>(() => of(['SPA', 'BARBERIA']));
 
     TestBed.configureTestingModule({
@@ -40,7 +49,7 @@ describe('Sucursales', () => {
           { path: 'sucursales', component: EmptyPage },
           { path: 'sucursal/:id', component: EmptyPage },
         ]),
-        { provide: sucursalService, useValue: { filtrar, listar, categorias } },
+        { provide: sucursalService, useValue: { listarPaginado, categorias } },
         { provide: ApiErrors, useValue: { dismiss: vi.fn() } },
       ],
     });
@@ -59,7 +68,13 @@ describe('Sucursales', () => {
   it('combina busqueda y categoria recibidas por query params', async () => {
     await create('/sucursales?busqueda=Centro&categoria=SPA');
 
-    expect(filtrar).toHaveBeenCalledWith('SPA', 'Centro');
+    expect(listarPaginado).toHaveBeenCalledWith('SPA', 'Centro', 0, 12, false);
+  });
+
+  it('envía la página de la URL convertida a base cero', async () => {
+    await create('/sucursales?pagina=3');
+
+    expect(listarPaginado).toHaveBeenCalledWith(null, null, 2, 12, false);
   });
 
   it('espera las categorías antes de buscar con los filtros iniciales de la URL', async () => {
@@ -67,14 +82,14 @@ describe('Sucursales', () => {
     categorias.mockReturnValue(categoriasPendientes);
     const fixture = await create('/sucursales?busqueda=Flores&categoria=CAFE');
 
-    expect(filtrar).not.toHaveBeenCalled();
+    expect(listarPaginado).not.toHaveBeenCalled();
     expect(fixture.nativeElement.querySelector('[aria-busy="true"]')).toBeTruthy();
 
     categoriasPendientes.next(['CAFE']);
     fixture.detectChanges();
 
-    expect(filtrar).toHaveBeenCalledOnce();
-    expect(filtrar).toHaveBeenCalledWith('CAFE', 'Flores');
+    expect(listarPaginado).toHaveBeenCalledOnce();
+    expect(listarPaginado).toHaveBeenCalledWith('CAFE', 'Flores', 0, 12, false);
   });
 
   it('ubica búsqueda y categorías en la barra lateral antes del listado', async () => {
@@ -108,7 +123,7 @@ describe('Sucursales', () => {
 
   it('ignora una categoría inválida sin enviarla al backend', async () => {
     const fixture = await create('/sucursales?categoria=INEXISTENTE');
-    expect(filtrar).toHaveBeenCalledWith(null, null);
+    expect(listarPaginado).toHaveBeenCalledWith(null, null, 0, 12, false);
     expect(fixture.nativeElement.querySelector('.categoria-chip').getAttribute('aria-pressed')).toBe('true');
   });
 
@@ -116,7 +131,7 @@ describe('Sucursales', () => {
     categorias.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
     const fixture = await create('/sucursales?categoria=SPA');
     fixture.detectChanges();
-    expect(filtrar).toHaveBeenCalledWith(null, null);
+    expect(listarPaginado).toHaveBeenCalledWith(null, null, 0, 12, false);
     expect(fixture.nativeElement.querySelectorAll('.categoria-chip')).toHaveLength(1);
     expect(fixture.nativeElement.querySelector('.categorias__aviso').textContent).toContain('No pudimos cargar las categorías');
     expect(fixture.nativeElement.querySelector('.card')).toBeTruthy();
@@ -126,7 +141,7 @@ describe('Sucursales', () => {
     const fixture = await create('/sucursales?categoria=SPA');
     fixture.detectChanges();
     const anuncio = fixture.nativeElement.querySelector('[aria-live="polite"][aria-atomic="true"]');
-    expect(anuncio.textContent).toContain('1 sucursales encontradas');
+    expect(anuncio.textContent).toContain('1 sucursal encontrada');
     expect(anuncio.textContent).toContain('Spa');
   });
 
@@ -142,7 +157,7 @@ describe('Sucursales', () => {
     await vi.advanceTimersByTimeAsync(300);
 
     expect(router.url).toContain('categoria=SPA');
-    expect(filtrar).toHaveBeenLastCalledWith('SPA', 'Centro');
+    expect(listarPaginado).toHaveBeenLastCalledWith('SPA', 'Centro', 0, 12, false);
   });
 
   it('sincroniza la categoria con la URL sin perder la busqueda', async () => {
@@ -155,7 +170,7 @@ describe('Sucursales', () => {
     await vi.waitFor(() => expect(router.url).toContain('categoria=SPA'));
 
     expect(router.url).toContain('busqueda=Centro');
-    expect(filtrar).toHaveBeenLastCalledWith('SPA', 'Centro');
+    expect(listarPaginado).toHaveBeenLastCalledWith('SPA', 'Centro', 0, 12, false);
   });
 
   it('reacciona a cambios externos de los query params', async () => {
@@ -163,7 +178,7 @@ describe('Sucursales', () => {
 
     await router.navigate([], { queryParams: { busqueda: 'Norte', categoria: 'BARBERIA' } });
     await vi.waitFor(() =>
-      expect(filtrar).toHaveBeenLastCalledWith('BARBERIA', 'Norte'),
+      expect(listarPaginado).toHaveBeenLastCalledWith('BARBERIA', 'Norte', 0, 12, false),
     );
   });
 
@@ -177,7 +192,7 @@ describe('Sucursales', () => {
   });
 
   it('muestra skeletons mientras la consulta está cargando', async () => {
-    filtrar.mockReturnValue(new Subject<SucursalMiniDTO[]>());
+    listarPaginado.mockReturnValue(new Subject<PaginaSucursalesDTO>());
     const fixture = await create();
 
     expect(fixture.nativeElement.querySelector('[aria-busy="true"]')).toBeTruthy();
@@ -185,7 +200,7 @@ describe('Sucursales', () => {
   });
 
   it('muestra el estado vacío sin eliminar los controles', async () => {
-    filtrar.mockReturnValue(of([]));
+    listarPaginado.mockReturnValue(of(pagina([], 0, 0)));
     const fixture = await create('/sucursales?busqueda=Inexistente');
     fixture.detectChanges();
 
@@ -200,11 +215,11 @@ describe('Sucursales', () => {
   });
 
   it('muestra error recuperable y reintenta con los mismos filtros', async () => {
-    filtrar
+    listarPaginado
       .mockReturnValueOnce(
         throwError(() => new HttpErrorResponse({ status: 0, statusText: 'Offline' })),
       )
-      .mockReturnValueOnce(of([CENTRO]));
+      .mockReturnValueOnce(of(pagina()));
     const fixture = await create('/sucursales?busqueda=Centro&categoria=SPA');
     fixture.detectChanges();
 
@@ -212,22 +227,19 @@ describe('Sucursales', () => {
     (fixture.nativeElement.querySelector('button.estado__link') as HTMLButtonElement).click();
     fixture.detectChanges();
 
-    expect(filtrar).toHaveBeenLastCalledWith('SPA', 'Centro');
+    expect(listarPaginado).toHaveBeenLastCalledWith('SPA', 'Centro', 0, 12, false);
     expect(fixture.nativeElement.querySelector('.card')).toBeTruthy();
   });
 
-  it('filtra búsquedas numéricas por id y categoría sin cambiar contratos', async () => {
-    listar.mockReturnValue(of([CENTRO, { ...CENTRO, id: 2, categoria: 'BARBERIA' }]));
+  it('busca IDs numéricos en el backend paginado sin listar todo', async () => {
     const fixture = await create('/sucursales?busqueda=1&categoria=SPA');
     fixture.detectChanges();
 
-    expect(listar).toHaveBeenCalledOnce();
-    expect(filtrar).not.toHaveBeenCalled();
+    expect(listarPaginado).toHaveBeenCalledWith('SPA', '1', 0, 12, false);
     expect(fixture.nativeElement.querySelectorAll('.card')).toHaveLength(1);
   });
 
   it('permite buscar escribiendo un ID numérico de un dígito', async () => {
-    listar.mockReturnValue(of([CENTRO, { ...CENTRO, id: 2, categoria: 'BARBERIA' }]));
     const fixture = await create();
     vi.useFakeTimers();
     const input = fixture.nativeElement.querySelector('.search__input') as HTMLInputElement;
@@ -238,8 +250,70 @@ describe('Sucursales', () => {
     await vi.advanceTimersByTimeAsync(350);
     fixture.detectChanges();
 
-    expect(listar).toHaveBeenCalled();
+    expect(listarPaginado).toHaveBeenLastCalledWith(null, '1', 0, 12, false);
     expect(fixture.nativeElement.querySelectorAll('.card')).toHaveLength(1);
     expect(fixture.nativeElement.querySelector('.search__hint--alerta')).toBeNull();
+  });
+
+  it('muestra paginación con flechas deshabilitadas en los extremos', async () => {
+    listarPaginado.mockReturnValue(of(pagina([CENTRO], 30, 3, 2)));
+    const fixture = await create('/sucursales?pagina=3');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('ds-pagination .ds-pagination__prev')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('ds-pagination .ds-pagination__next')).toBeTruthy();
+    expect(
+      (fixture.nativeElement.querySelector('ds-pagination .ds-pagination__next') as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    expect(
+      (fixture.nativeElement.querySelector('ds-pagination .ds-pagination__prev') as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
+  });
+
+  it('la flecha siguiente pide la página 0-based correspondiente', async () => {
+    listarPaginado.mockReturnValue(of(pagina([CENTRO], 30, 3, 0)));
+    const fixture = await create();
+
+    (fixture.nativeElement.querySelector('ds-pagination .ds-pagination__next') as HTMLButtonElement)
+      .click();
+    await vi.waitFor(() => expect(router.url).toContain('pagina=2'));
+    expect(listarPaginado).toHaveBeenLastCalledWith(null, null, 1, 12, false);
+  });
+
+  it('permite navegar directamente a una página y conserva los filtros', async () => {
+    listarPaginado.mockReturnValue(of(pagina([CENTRO], 30, 3, 0)));
+    const fixture = await create('/sucursales?categoria=SPA');
+    const input = fixture.nativeElement.querySelector(
+      'ds-pagination input[type="number"]',
+    ) as HTMLInputElement;
+
+    input.value = '3';
+    input.dispatchEvent(new Event('input'));
+    (fixture.nativeElement.querySelector('ds-pagination .ds-pagination__go') as HTMLButtonElement)
+      .click();
+    await vi.waitFor(() => expect(router.url).toContain('pagina=3'));
+
+    expect(router.url).toContain('categoria=SPA');
+    expect(listarPaginado).toHaveBeenLastCalledWith('SPA', null, 2, 12, false);
+  });
+
+  it('cambiar un filtro vuelve a la primera página y limpia el parámetro', async () => {
+    listarPaginado.mockReturnValue(of(pagina([CENTRO], 30, 3, 0)));
+    const fixture = await create('/sucursales?pagina=3');
+    const spa = Array.from(
+      fixture.nativeElement.querySelectorAll('.categoria-chip') as NodeListOf<HTMLButtonElement>,
+    ).find((button) => button.textContent?.trim() === 'Spa');
+
+    spa?.click();
+    await vi.waitFor(() => expect(router.url).not.toContain('pagina='));
+    expect(listarPaginado).toHaveBeenLastCalledWith('SPA', null, 0, 12, false);
+  });
+
+  it('oculta la paginación cuando hay una sola página', async () => {
+    const fixture = await create();
+
+    expect(fixture.nativeElement.querySelector('ds-pagination')).toBeNull();
   });
 });

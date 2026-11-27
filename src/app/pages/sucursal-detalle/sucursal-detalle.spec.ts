@@ -80,6 +80,13 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
   });
 
   afterEach(() => {
+    // La visita es una petición secundaria: puede quedar pendiente en cualquier
+    // test con sesión. Se cierra acá para que `verify` detecte sólo fugas nuevas.
+    for (const visita of backend.match((request) => request.url.endsWith('/vistas'))) {
+      if (!visita.cancelled) {
+        visita.flush('Visita registrada');
+      }
+    }
     fixture.destroy();
     backend.verify();
   });
@@ -321,6 +328,37 @@ describe('US-SUC-05 · Iniciar la reserva desde el detalle', () => {
     expect(direccion?.textContent).toBe('25 de Mayo 2899, Mar del Plata');
     expect(direccion?.getAttribute('title')).toContain('B7600GWG Mar del Plata');
     expect(texto(host)).not.toContain('Provincia de Buenos Aires');
+  });
+
+  it('con sesión registra la visita para «Visto recientemente»', async () => {
+    auth.autenticado.mockReturnValue(true);
+
+    await abrir('/sucursal/7');
+
+    const visitas = backend.match((request) => request.url.endsWith('/sucursales/7/vistas'));
+    expect(visitas).toHaveLength(1);
+    expect(visitas[0].request.method).toBe('POST');
+    visitas[0].flush('Visita registrada');
+  });
+
+  it('sin sesión no intenta registrar la visita', async () => {
+    await abrir('/sucursal/7');
+
+    expect(backend.match((request) => request.url.endsWith('/sucursales/7/vistas'))).toHaveLength(0);
+  });
+
+  it('un fallo al registrar la visita no rompe el detalle de la sucursal', async () => {
+    auth.autenticado.mockReturnValue(true);
+
+    const host = await abrir('/sucursal/7');
+    const visita = backend.expectOne((request) => request.url.endsWith('/sucursales/7/vistas'));
+    visita.flush('error', { status: 500, statusText: 'Internal Server Error' });
+    fixture.detectChanges();
+
+    expect(host.querySelector('.detalle__hero-img')).toBeTruthy();
+    expect(host.querySelector('.panel--reserva button.btn--primary')?.textContent).toContain(
+      'Reservar turno',
+    );
   });
 
   it('si la sucursal no existe muestra el estado de no encontrada con salida al listado', async () => {

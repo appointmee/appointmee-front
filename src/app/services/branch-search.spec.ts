@@ -19,7 +19,21 @@ describe('Navegación de sucursales desde Home', () => {
     TestBed.configureTestingModule({
       imports: [Home, Navbar],
       providers: [
-        { provide: sucursalService, useValue: { filtrar: () => of([]) } },
+        {
+          provide: sucursalService,
+          useValue: {
+            filtrar: () => of([]),
+            recomendaciones: () =>
+              of({
+                mejores: [],
+                masDemandadas: [],
+                nuevas: [],
+                vistasRecientes: [],
+                paraVos: [],
+                todas: [],
+              }),
+          },
+        },
         provideRouter([
           { path: '', component: EmptyPage },
           { path: 'sucursales', component: EmptyPage },
