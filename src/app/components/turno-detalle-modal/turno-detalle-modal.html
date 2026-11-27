@@ -82,13 +82,7 @@
         <section class="bloque" aria-labelledby="detalle-sucursal-titulo">
           <h3 id="detalle-sucursal-titulo">Sucursal</h3>
 
-          @if (sucursalCargando()) {
-            <div class="sucursal sucursal--skeleton" aria-hidden="true">
-              <span class="skeleton skeleton--foto"></span>
-              <span class="skeleton skeleton--line"></span>
-              <span class="skeleton skeleton--line skeleton--short"></span>
-            </div>
-          } @else if (sucursal(); as local) {
+          @if (sucursalVisible(); as local) {
             <div class="sucursal">
               <span class="sucursal__foto">
                 @if (fotoSucursal(); as foto) {
@@ -107,19 +101,21 @@
 
               <div class="sucursal__copy">
                 <strong>{{ local.nombre }}</strong>
-                <span class="sucursal__rating">
-                  <span class="sucursal__abejas" aria-hidden="true">
-                    @for (llena of abejasSucursal(); track $index) {
-                      <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
-                    }
+                @if (local.tieneDatosActuales) {
+                  <span class="sucursal__rating">
+                    <span class="sucursal__abejas" aria-hidden="true">
+                      @for (llena of abejasSucursal(); track $index) {
+                        <span class="abeja" [class.abeja--vacia]="!llena">🐝</span>
+                      }
+                    </span>
+                    <span>{{ puntuacionSucursal().toFixed(1) }} de 5</span>
+                    <span class="sucursal__muted">· {{ textoReseniasSucursal() }}</span>
                   </span>
-                  <span>{{ puntuacionSucursal().toFixed(1) }} de 5</span>
-                  <span class="sucursal__muted">· {{ textoReseniasSucursal() }}</span>
-                </span>
-                <span class="sr-only">
-                  Puntuación {{ puntuacionSucursal().toFixed(1) }} de 5 sobre
-                  {{ textoReseniasSucursal() }}
-                </span>
+                  <span class="sr-only">
+                    Puntuación {{ puntuacionSucursal().toFixed(1) }} de 5 sobre
+                    {{ textoReseniasSucursal() }}
+                  </span>
+                }
                 <span class="sucursal__muted">
                   {{ categoriaSucursal() }}
                   @if (local.direccion) {
@@ -131,13 +127,24 @@
                 }
               </div>
 
-              <a
-                class="boton-secundario sucursal__accion"
-                [routerLink]="['/sucursal', local.id]"
-                (click)="cerrar()"
-              >
-                Ver sucursal
-              </a>
+              @if (sucursalActiva() && local.id !== null) {
+                <a
+                  class="boton-secundario sucursal__accion"
+                  [routerLink]="['/sucursal', local.id]"
+                  (click)="cerrar()"
+                >
+                  Ver sucursal
+                </a>
+              }
+            </div>
+            @if (!sucursalActiva()) {
+              <p class="aviso-baja" role="status">{{ mensajeSucursalDeBaja }}</p>
+            }
+          } @else if (sucursalCargando()) {
+            <div class="sucursal sucursal--skeleton" aria-hidden="true">
+              <span class="skeleton skeleton--foto"></span>
+              <span class="skeleton skeleton--line"></span>
+              <span class="skeleton skeleton--line skeleton--short"></span>
             </div>
           } @else {
             <div class="detalle__fallback" role="status">
@@ -199,6 +206,9 @@
               <span class="persona__muted">{{ turno.empleado.email }}</span>
             </div>
           </div>
+          @if (mostrarAvisoEmpleado()) {
+            <p class="aviso-baja" role="status">{{ mensajeEmpleadoDesvinculado }}</p>
+          }
         </section>
 
         <section class="bloque" aria-labelledby="detalle-cliente-titulo">

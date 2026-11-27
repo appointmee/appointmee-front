@@ -6,6 +6,10 @@ import {
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
+import {
+  MENSAJE_EMPLEADO_DESVINCULADO,
+  MENSAJE_SUCURSAL_DE_BAJA,
+} from '../../models/turno';
 import { TurnosSucursal } from './turnos-sucursal';
 
 const TURNOS = [
@@ -57,6 +61,23 @@ const DETALLE = {
   },
   servicio: { id: 5, nombre: 'Corte de pelo', precio: '12500.00', duracion: 45 },
   resenia: null,
+} as const;
+
+const SUCURSAL_HISTORICA = {
+  id: 7,
+  nombre: 'Sucursal Centro Histórica',
+  direccion: 'Av. Histórica 123',
+  telefono: '11-0000-0000',
+  categoria: 'PELUQUERIA',
+  fotoPerfil: 'https://example.com/sucursal-historica.jpg',
+} as const;
+
+const DETALLE_HISTORICO = {
+  ...DETALLE,
+  sucursal: SUCURSAL_HISTORICA,
+  empleadoActivo: true,
+  empleadoPerteneceASucursal: true,
+  sucursalActiva: true,
 } as const;
 
 describe('TurnosSucursal', () => {
@@ -262,6 +283,70 @@ describe('TurnosSucursal', () => {
     expect(textoDialogo()).toContain('Confirmado');
     expect(textoDialogo()).toContain('Todavía no se ha publicado una reseña');
     expect(textoDialogo()).not.toContain('Reseñar');
+  });
+
+  it('muestra los datos históricos y el enlace cuando la sucursal sigue activa', () => {
+    flushInicial();
+    abrirDetalle(DETALLE_HISTORICO);
+
+    expect(textoDialogo()).toContain('Sucursal Centro Histórica');
+    expect(textoDialogo()).toContain('Av. Histórica 123');
+    expect(textoDialogo()).toContain('Tel. 11-0000-0000');
+    expect(textoDialogo()).toContain('Ana Pérez');
+    expect(
+      html.querySelector('[role="dialog"] a[href="/sucursal/7"]')?.textContent,
+    ).toContain('Ver sucursal');
+    expect(html.querySelector('[role="dialog"] .aviso-baja')).toBeNull();
+  });
+
+  it('avisa cuando el empleado ya no pertenece a la sucursal del turno', () => {
+    flushInicial();
+    abrirDetalle({
+      ...DETALLE_HISTORICO,
+      empleadoPerteneceASucursal: false,
+    });
+
+    expect(html.querySelector('[role="dialog"] .aviso-baja')?.textContent?.trim()).toBe(
+      MENSAJE_EMPLEADO_DESVINCULADO,
+    );
+    expect(textoDialogo()).toContain('Ana Pérez');
+    expect(textoDialogo()).not.toContain(MENSAJE_SUCURSAL_DE_BAJA);
+    expect(
+      html.querySelector('[role="dialog"] a[href="/sucursal/7"]'),
+    ).not.toBeNull();
+  });
+
+  it('avisa cuando el empleado asignado fue dado de baja', () => {
+    flushInicial();
+    abrirDetalle({
+      ...DETALLE_HISTORICO,
+      empleadoActivo: false,
+      empleadoPerteneceASucursal: true,
+    });
+
+    expect(html.querySelector('[role="dialog"] .aviso-baja')?.textContent?.trim()).toBe(
+      MENSAJE_EMPLEADO_DESVINCULADO,
+    );
+    expect(textoDialogo()).toContain('Ana Pérez');
+    expect(textoDialogo()).not.toContain(MENSAJE_SUCURSAL_DE_BAJA);
+  });
+
+  it('oculta el enlace y avisa cuando la sucursal ya no forma parte de AppointMee', () => {
+    flushInicial();
+    abrirDetalle({
+      ...DETALLE_HISTORICO,
+      sucursalActiva: false,
+    });
+
+    expect(html.querySelector('[role="dialog"] .aviso-baja')?.textContent?.trim()).toBe(
+      MENSAJE_SUCURSAL_DE_BAJA,
+    );
+    expect(textoDialogo()).toContain('Sucursal Centro Histórica');
+    expect(textoDialogo()).toContain('Av. Histórica 123');
+    expect(textoDialogo()).not.toContain(MENSAJE_EMPLEADO_DESVINCULADO);
+    expect(
+      html.querySelector('[role="dialog"] a[href="/sucursal/7"]'),
+    ).toBeNull();
   });
 
   it('muestra una reseña corta completa y sin botón Ver más', () => {

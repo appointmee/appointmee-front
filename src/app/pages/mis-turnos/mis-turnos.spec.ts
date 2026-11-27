@@ -6,6 +6,10 @@ import {
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
+import {
+  MENSAJE_EMPLEADO_DESVINCULADO,
+  MENSAJE_SUCURSAL_DE_BAJA,
+} from '../../models/turno';
 import { MisTurnos } from './mis-turnos';
 
 const TURNOS = [
@@ -85,6 +89,23 @@ const SERVICIOS_SUCURSAL = [
   { id: 9, nombre: 'Color', precio: 18000, duracion: 90 },
 ];
 
+const SUCURSAL_HISTORICA = {
+  id: 7,
+  nombre: 'Sucursal Centro Histórica',
+  direccion: 'Av. Histórica 123',
+  telefono: '11-0000-0000',
+  categoria: 'PELUQUERIA',
+  fotoPerfil: 'https://example.com/sucursal-historica.jpg',
+} as const;
+
+const DETALLE_HISTORICO = {
+  ...DETALLE,
+  sucursal: SUCURSAL_HISTORICA,
+  empleadoActivo: true,
+  empleadoPerteneceASucursal: true,
+  sucursalActiva: true,
+} as const;
+
 describe('Mis Turnos', () => {
   let fixture: ReturnType<typeof TestBed.createComponent<MisTurnos>>;
   let backend: HttpTestingController;
@@ -133,20 +154,29 @@ describe('Mis Turnos', () => {
       .flush(detalle);
     fixture.detectChanges();
 
-    backend
-      .expectOne((request) => request.url.endsWith('/servicios/5'))
-      .flush(SERVICIO);
-    fixture.detectChanges();
+    const sucursalActiva =
+      (detalle as { sucursalActiva?: boolean }).sucursalActiva !== false;
 
-    backend
-      .expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'))
-      .flush([SUCURSAL]);
-    fixture.detectChanges();
+    if (sucursalActiva) {
+      backend
+        .expectOne((request) => request.url.endsWith('/servicios/5'))
+        .flush(SERVICIO);
+      fixture.detectChanges();
 
-    backend
-      .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
-      .flush(SERVICIOS_SUCURSAL);
-    fixture.detectChanges();
+      backend
+        .expectOne((request) => request.url.endsWith('/sucursales/listar/filtrar'))
+        .flush([SUCURSAL]);
+      fixture.detectChanges();
+
+      backend
+        .expectOne((request) => request.url.endsWith('/servicios/listar/sucursal/7'))
+        .flush(SERVICIOS_SUCURSAL);
+      fixture.detectChanges();
+    } else {
+      backend.expectNone((request) =>
+        request.url.endsWith('/sucursales/listar/filtrar'),
+      );
+    }
     await fixture.whenStable();
   }
 
@@ -300,6 +330,69 @@ describe('Mis Turnos', () => {
     ) as HTMLButtonElement;
     expect(resenar).toBeTruthy();
     expect(resenar.disabled).toBe(true);
+  });
+
+  it('muestra los datos históricos del backend y el enlace si la sucursal sigue activa', async () => {
+    flushLista();
+    await abrirDetalleDe('Corte de pelo', 1, DETALLE_HISTORICO);
+
+    const detalle = dialogo();
+    expect(detalle.textContent).toContain('Sucursal Centro Histórica');
+    expect(detalle.textContent).toContain('Av. Histórica 123');
+    expect(detalle.textContent).toContain('Tel. 11-0000-0000');
+    expect(detalle.querySelector('a[href="/sucursal/7"]')?.textContent).toContain(
+      'Ver sucursal',
+    );
+    expect(detalle.querySelector('.aviso-baja')).toBeNull();
+  });
+
+  it('oculta el enlace y avisa cuando la sucursal del turno fue dada de baja', async () => {
+    flushLista();
+    await abrirDetalleDe('Corte de pelo', 1, {
+      ...DETALLE_HISTORICO,
+      sucursalActiva: false,
+    });
+
+    const detalle = dialogo();
+    expect(detalle.querySelector('.aviso-baja')?.textContent?.trim()).toBe(
+      MENSAJE_SUCURSAL_DE_BAJA,
+    );
+    expect(detalle.textContent).toContain('Sucursal Centro Histórica');
+    expect(detalle.textContent).toContain('Av. Histórica 123');
+    expect(detalle.textContent).not.toContain(MENSAJE_EMPLEADO_DESVINCULADO);
+    expect(detalle.querySelector('a[href="/sucursal/7"]')).toBeNull();
+  });
+
+  it('avisa cuando el profesional ya no pertenece a la sucursal', async () => {
+    flushLista();
+    await abrirDetalleDe('Corte de pelo', 1, {
+      ...DETALLE_HISTORICO,
+      empleadoPerteneceASucursal: false,
+    });
+
+    const detalle = dialogo();
+    expect(detalle.querySelector('.aviso-baja')?.textContent?.trim()).toBe(
+      MENSAJE_EMPLEADO_DESVINCULADO,
+    );
+    expect(detalle.textContent).toContain('Ana Pérez');
+    expect(detalle.textContent).not.toContain(MENSAJE_SUCURSAL_DE_BAJA);
+    expect(detalle.querySelector('a[href="/sucursal/7"]')).not.toBeNull();
+  });
+
+  it('avisa cuando el profesional asignado fue dado de baja', async () => {
+    flushLista();
+    await abrirDetalleDe('Corte de pelo', 1, {
+      ...DETALLE_HISTORICO,
+      empleadoActivo: false,
+      empleadoPerteneceASucursal: true,
+    });
+
+    const detalle = dialogo();
+    expect(detalle.querySelector('.aviso-baja')?.textContent?.trim()).toBe(
+      MENSAJE_EMPLEADO_DESVINCULADO,
+    );
+    expect(detalle.textContent).toContain('Ana Pérez');
+    expect(detalle.textContent).not.toContain(MENSAJE_SUCURSAL_DE_BAJA);
   });
 
   it('muestra el error del detalle y permite reintentarlo', async () => {

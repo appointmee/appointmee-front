@@ -21,6 +21,8 @@ import { humanizarCategoria } from '../../models/solicitud-empleado';
 import { fotoPerfilDe } from '../../shared/foto-perfil';
 import { SucursalDetalleDTO } from '../../models/sucursal';
 import {
+  MENSAJE_EMPLEADO_DESVINCULADO,
+  MENSAJE_SUCURSAL_DE_BAJA,
   EstadoTurno,
   TurnoEmpleadorDetalleDTO,
   TurnoMiniDTO,
@@ -108,6 +110,40 @@ export class TurnoDetalleModal {
   protected readonly detalleReintentando = signal(false);
   private readonly fotoSucursalFallida = signal<string | null>(null);
 
+  protected readonly mensajeEmpleadoDesvinculado = MENSAJE_EMPLEADO_DESVINCULADO;
+  protected readonly mensajeSucursalDeBaja = MENSAJE_SUCURSAL_DE_BAJA;
+
+  /** Datos históricos del backend, disponibles aunque la sucursal esté de baja. */
+  protected readonly sucursalVisible = computed(() => {
+    const historica = this.detalle()?.sucursal ?? null;
+    const actual = this.sucursal();
+    if (!historica && !actual) return null;
+
+    return {
+      id: historica?.id ?? actual?.id ?? null,
+      nombre: historica?.nombre ?? actual?.nombre ?? '',
+      direccion: historica?.direccion ?? actual?.direccion ?? null,
+      telefono: historica?.telefono ?? actual?.telefono ?? null,
+      categoria: historica?.categoria ?? actual?.categoria ?? null,
+      fotoPerfil: historica?.fotoPerfil ?? actual?.fotoPerfil ?? null,
+      tieneDatosActuales: actual !== null,
+    };
+  });
+
+  protected readonly sucursalActiva = computed(
+    () => this.detalle()?.sucursalActiva ?? true,
+  );
+
+  /** Una baja global y una desvinculación comparten el mismo aviso al cliente. */
+  protected readonly mostrarAvisoEmpleado = computed(() => {
+    const detalle = this.detalle();
+    if (!detalle) return false;
+    return (
+      (detalle.empleadoActivo ?? true) === false ||
+      (detalle.empleadoPerteneceASucursal ?? true) === false
+    );
+  });
+
   protected readonly procesandoAccion = signal(false);
   protected readonly accionEnCurso = signal<'finalizar' | 'cancelar' | null>(null);
   protected readonly confirmacion = signal<'finalizar' | 'cancelar' | null>(null);
@@ -165,12 +201,12 @@ export class TurnoDetalleModal {
   );
 
   protected readonly fotoSucursal = computed(() => {
-    const foto = this.sucursal()?.fotoPerfil?.trim();
+    const foto = this.sucursalVisible()?.fotoPerfil?.trim();
     return foto && foto !== this.fotoSucursalFallida() ? foto : null;
   });
 
   protected readonly categoriaSucursal = computed(() =>
-    humanizarCategoria(this.sucursal()?.categoria),
+    humanizarCategoria(this.sucursalVisible()?.categoria),
   );
 
   protected readonly puntuacionSucursal = computed(

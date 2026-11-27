@@ -29,7 +29,13 @@ import {
   DsModalComponent,
   DsSelectComponent,
 } from '../../shared/ui/misc/misc.component';
-import { EstadoTurno, TurnoClienteDetalleDTO, TurnoMiniDTO } from '../../models/turno';
+import {
+  MENSAJE_EMPLEADO_DESVINCULADO,
+  MENSAJE_SUCURSAL_DE_BAJA,
+  EstadoTurno,
+  TurnoClienteDetalleDTO,
+  TurnoMiniDTO,
+} from '../../models/turno';
 import { SucursalMiniDTO } from '../../models/sucursal';
 import { pagoService } from '../../services/pago-service';
 import { reseniaService } from '../../services/resenia-service';
@@ -140,6 +146,41 @@ export class MisTurnos {
   protected readonly sucursalError = signal<string | null>(null);
   private readonly fotoSucursalFallida = signal<string | null>(null);
 
+  protected readonly mensajeEmpleadoDesvinculado = MENSAJE_EMPLEADO_DESVINCULADO;
+  protected readonly mensajeSucursalDeBaja = MENSAJE_SUCURSAL_DE_BAJA;
+
+  /** Datos históricos del backend, disponibles aunque la sucursal esté de baja. */
+  protected readonly sucursalVisible = computed(() => {
+    const historica = this.detalle()?.sucursal ?? null;
+    const actual = this.sucursal();
+    if (!historica && !actual) return null;
+
+    return {
+      id: historica?.id ?? actual?.id ?? null,
+      nombre: historica?.nombre ?? actual?.nombre ?? '',
+      direccion: historica?.direccion ?? null,
+      telefono: historica?.telefono ?? null,
+      categoria: historica?.categoria ?? actual?.categoria ?? null,
+      fotoPerfil: historica?.fotoPerfil ?? actual?.fotoPerfil ?? null,
+      cantidadPuntuaciones: actual?.cantidadPuntuaciones ?? 0,
+      tieneDatosActuales: actual !== null,
+    };
+  });
+
+  protected readonly sucursalActiva = computed(
+    () => this.detalle()?.sucursalActiva ?? true,
+  );
+
+  /** Una baja global y una desvinculación comparten el mismo aviso al cliente. */
+  protected readonly mostrarAvisoEmpleado = computed(() => {
+    const detalle = this.detalle();
+    if (!detalle) return false;
+    return (
+      (detalle.empleadoActivo ?? true) === false ||
+      (detalle.empleadoPerteneceASucursal ?? true) === false
+    );
+  });
+
   protected readonly pagandoTurnoId = signal<number | null>(null);
   protected readonly pagoError = signal<string | null>(null);
 
@@ -181,7 +222,7 @@ export class MisTurnos {
   });
 
   protected readonly fotoSucursal = computed(() => {
-    const foto = this.sucursal()?.fotoPerfil?.trim();
+    const foto = this.sucursalVisible()?.fotoPerfil?.trim();
     return foto && foto !== this.fotoSucursalFallida() ? foto : null;
   });
 
@@ -562,6 +603,14 @@ export class MisTurnos {
     this.sucursalSub?.unsubscribe();
     this.sucursal.set(null);
     this.sucursalError.set(null);
+
+    // Una sucursal dada de baja no aparece en el filtrado activo: se muestran
+    // los datos históricos del detalle y se evita una consulta innecesaria.
+    if (detalle.sucursalActiva === false) {
+      this.sucursalCargando.set(false);
+      return;
+    }
+
     this.sucursalCargando.set(true);
 
     this.sucursalSub = this.buscarSucursal(detalle)
@@ -584,9 +633,9 @@ export class MisTurnos {
   }
 
   /**
-   * El detalle del turno no incluye la sucursal. Se obtiene el nombre y la
-   * categoría desde el servicio y después se verifica que la sucursal
-   * candidata realmente ofrezca ese servicio antes de mostrarla.
+   * El detalle actualizado incluye los datos históricos de la sucursal. Esta
+   * búsqueda solo se usa para completar calificación y reseñas de una sucursal
+   * que sigue activa, verificando que ofrezca el servicio del turno.
    */
   private buscarSucursal(detalle: TurnoClienteDetalleDTO): Observable<SucursalMiniDTO | null> {
     return this.serviciosApi.obtenerPorId(detalle.servicio.id).pipe(

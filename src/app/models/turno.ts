@@ -40,6 +40,21 @@ export interface UsuarioMiniDTO {
   readonly apellido: string;
 }
 
+/** Datos históricos de la sucursal del turno (SucursalTurnoResponseDTO). */
+export interface SucursalTurnoDTO {
+  readonly id: number;
+  readonly nombre: string;
+  readonly direccion: string | null;
+  readonly telefono: string | null;
+  readonly categoria: string | null;
+  readonly fotoPerfil: string | null;
+}
+
+export const MENSAJE_EMPLEADO_DESVINCULADO =
+  'El empleado ya no pertenece a esta sucursal';
+export const MENSAJE_SUCURSAL_DE_BAJA =
+  'Esta sucursal ya no forma parte de AppointMee';
+
 /** Respuesta de GET /turnos/de-sucursal/detalles/{turnoId} (TurnoResponseDTO). */
 export interface TurnoEmpleadorDetalleDTO {
   readonly id: number;
@@ -50,6 +65,10 @@ export interface TurnoEmpleadorDetalleDTO {
   readonly empleado: UsuarioResponseDTO;
   readonly servicio: ServicioTurnoDTO;
   readonly resenia: ReseniaTurnoDTO | null;
+  readonly sucursal?: SucursalTurnoDTO | null;
+  readonly empleadoActivo?: boolean;
+  readonly empleadoPerteneceASucursal?: boolean;
+  readonly sucursalActiva?: boolean;
 }
 
 export interface ServicioTurnoDTO {
@@ -78,4 +97,8 @@ export interface TurnoClienteDetalleDTO {
   readonly servicio: ServicioTurnoDTO;
   readonly cliente: UsuarioMiniDTO;
   readonly resenia: ReseniaTurnoDTO | null;
+  readonly sucursal?: SucursalTurnoDTO | null;
+  readonly empleadoActivo?: boolean;
+  readonly empleadoPerteneceASucursal?: boolean;
+  readonly sucursalActiva?: boolean;
 }
